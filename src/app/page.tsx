@@ -17,7 +17,7 @@ export default function LandingPage() {
             height={60}
             className="dark:invert"
           />
-          <span className="text-2xl font-bold">TinkerBox</span>
+          <span className="text-2xl font-bold">MentoPanda</span>
         </div>
         <div className="flex items-center space-x-4">
           <ThemeToggle />
