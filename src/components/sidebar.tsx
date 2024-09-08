@@ -3,14 +3,10 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Home,
-  Users,
-  MessageSquare,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { UserMenubar } from "@/components/user-menubar";
+import { Home, Search, BookOpen, PenTool, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface SidebarItem {
   icon: React.ElementType;
@@ -19,13 +15,15 @@ interface SidebarItem {
 }
 
 const sidebarItems: SidebarItem[] = [
-  { icon: Home, title: "Home", href: "/" },
-  { icon: Users, title: "Actors", href: "/actors" },
-  { icon: MessageSquare, title: "Chat", href: "/chat" },
+  { icon: Home, title: "Home", href: "/home" },
+  { icon: Search, title: "Explore", href: "/explore" },
+  { icon: BookOpen, title: "Train", href: "/train" },
+  { icon: PenTool, title: "Create", href: "/create" },
 ];
 
 export function Sidebar() {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const pathname = usePathname();
 
   function toggleSidebar() {
     setIsExpanded(!isExpanded);
@@ -35,18 +33,22 @@ export function Sidebar() {
     <aside
       className={cn(
         "flex flex-col h-screen bg-gray-100 transition-all duration-300 ease-in-out",
-        isExpanded ? "w-[150px]" : "w-16"
+        isExpanded ? "w-64" : "w-16"
       )}
     >
-      <div className="flex justify-end p-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          {isExpanded ? <ChevronLeft /> : <ChevronRight />}
-        </Button>
+      <div className="flex items-center p-4">
+        {isExpanded ? (
+          <>
+            <div className="flex-1">App Title</div>
+            <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Collapse sidebar">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </>
+        ) : (
+          <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Expand sidebar">
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
       </div>
       <nav className="flex-1">
         <ul className="space-y-2 p-2">
@@ -56,6 +58,7 @@ export function Sidebar() {
                 href={item.href}
                 className={cn(
                   "flex items-center p-2 rounded-lg hover:bg-gray-200 transition-colors",
+                  pathname === item.href && "bg-gray-200",
                   isExpanded ? "justify-start" : "justify-center"
                 )}
               >
@@ -66,6 +69,9 @@ export function Sidebar() {
           ))}
         </ul>
       </nav>
+      <div className="p-4">
+        <UserMenubar isExpanded={isExpanded} />
+      </div>
     </aside>
   );
 }
