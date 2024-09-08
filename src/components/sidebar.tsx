@@ -7,6 +7,7 @@ import { UserMenubar } from "@/components/user-menubar";
 import { Home, Search, BookOpen, PenTool, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 interface SidebarItem {
   icon: React.ElementType;
@@ -37,17 +38,26 @@ export function Sidebar() {
       )}
     >
       <div className="flex items-center p-4">
-        {isExpanded ? (
+        <Image
+          src="/logo.svg"
+          alt="MentoPanda Logo"
+          width={32}
+          height={32}
+          className="w-8 h-8"
+        />
+        {isExpanded && (
           <>
-            <div className="flex-1">App Title</div>
-            <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Collapse sidebar">
+            <span className="ml-2 font-semibold">MentoPanda</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="ml-auto"
+              aria-label="Collapse sidebar"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
           </>
-        ) : (
-          <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Expand sidebar">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
         )}
       </div>
       <nav className="flex-1">
@@ -69,8 +79,19 @@ export function Sidebar() {
           ))}
         </ul>
       </nav>
-      <div className="p-4">
+      <div className="p-4 relative">
         <UserMenubar isExpanded={isExpanded} />
+        {!isExpanded && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="absolute -top-10 left-1/2 transform -translate-x-1/2"
+            aria-label="Expand sidebar"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </aside>
   );

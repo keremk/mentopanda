@@ -29,7 +29,13 @@ export function UserMenubar({ isExpanded }: UserMenubarProps) {
           {isExpanded && <span className="ml-2 text-sm">user@example.com</span>}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" alignOffset={-40} sideOffset={10} forceMount>
+      <DropdownMenuContent 
+        className="w-56" 
+        align={isExpanded ? "end" : "start"} 
+        alignOffset={isExpanded ? -40 : 8} 
+        sideOffset={isExpanded ? 10 : 0}
+        forceMount
+      >
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">User</p>
