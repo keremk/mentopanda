@@ -45,7 +45,10 @@ export function UserMenubar({ isExpanded, user }: UserMenubarProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-full flex items-center justify-start p-0">
+        <Button
+          variant="ghost"
+          className="relative h-8 w-full flex items-center justify-start p-0"
+        >
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.avatarUrl} alt={user.name} />
             <AvatarFallback>U</AvatarFallback>
@@ -53,17 +56,19 @@ export function UserMenubar({ isExpanded, user }: UserMenubarProps) {
           {isExpanded && <span className="ml-2 text-sm">{user.email}</span>}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        className="w-56" 
-        align={isExpanded ? "end" : "start"} 
-        alignOffset={isExpanded ? -40 : 8} 
+      <DropdownMenuContent
+        className="w-56"
+        align={isExpanded ? "end" : "start"}
+        alignOffset={isExpanded ? -40 : 8}
         sideOffset={isExpanded ? 10 : 0}
         forceMount
       >
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">User</p>
-            <p className="text-xs leading-none text-muted-foreground">user@example.com</p>
+            <p className="text-sm font-medium leading-none">{user.name}</p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {user.email || "No email" }
+            </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -89,5 +94,5 @@ export function UserMenubar({ isExpanded, user }: UserMenubarProps) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
