@@ -17,21 +17,23 @@ import { useRouter } from "next/navigation"
 
 
 interface UserMenubarProps {
-  isExpanded: boolean
+  isExpanded: boolean;
+  user: {
+    name: string;
+    email: string;
+    avatarUrl: string;
+  };
 }
 
-export function UserMenubar({ isExpanded }: UserMenubarProps) {
+export function UserMenubar({ isExpanded, user }: UserMenubarProps) {
   const router = useRouter();
   const handleLogout = async () => {
-    console.log("LogoutButton clicked");
     try {
       const supabase = createClient();
-      console.log("Supabase client created");
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Error signing out:", error);
       } else {
-        console.log("Successfully signed out");
         // Redirect to the login page
         router.push("/login");
       }
@@ -45,10 +47,10 @@ export function UserMenubar({ isExpanded }: UserMenubarProps) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-full flex items-center justify-start p-0">
           <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder.svg" alt="@user" />
+            <AvatarImage src={user.avatarUrl} alt={user.name} />
             <AvatarFallback>U</AvatarFallback>
           </Avatar>
-          {isExpanded && <span className="ml-2 text-sm">user@example.com</span>}
+          {isExpanded && <span className="ml-2 text-sm">{user.email}</span>}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 

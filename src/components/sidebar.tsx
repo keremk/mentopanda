@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { UserMenubar } from "@/components/user-menubar";
 import { Home, Search, BookOpen, PenTool, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
+import { createClient } from "@/utils/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 interface SidebarItem {
   icon: React.ElementType;
@@ -24,11 +26,28 @@ const sidebarItems: SidebarItem[] = [
 
 export function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function getUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    }
+    getUser();
+  }, []);
 
   function toggleSidebar() {
     setIsExpanded(!isExpanded);
   }
+
+  const userInfo = user ? {
+    name: user.user_metadata.full_name || user.email?.split('@')[0] || 'User',
+    email: user.email || '',
+    avatarUrl: user.user_metadata.avatar_url || '/placeholder.svg',
+  } : null;
 
   return (
     <aside
@@ -80,7 +99,7 @@ export function Sidebar() {
         </ul>
       </nav>
       <div className="p-4 relative">
-        <UserMenubar isExpanded={isExpanded} />
+        {userInfo && <UserMenubar isExpanded={isExpanded} user={userInfo} />}
         {!isExpanded && (
           <Button
             variant="ghost"
