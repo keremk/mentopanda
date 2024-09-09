@@ -12,12 +12,34 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { UserIcon, SettingsIcon, HelpCircleIcon, LogOutIcon } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
+import { useRouter } from "next/navigation"
+
 
 interface UserMenubarProps {
   isExpanded: boolean
 }
 
 export function UserMenubar({ isExpanded }: UserMenubarProps) {
+  const router = useRouter();
+  const handleLogout = async () => {
+    console.log("LogoutButton clicked");
+    try {
+      const supabase = createClient();
+      console.log("Supabase client created");
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error);
+      } else {
+        console.log("Successfully signed out");
+        // Redirect to the login page
+        router.push("/login");
+      }
+    } catch (error) {
+      console.error("Error in handleLogout:", error);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -59,7 +81,7 @@ export function UserMenubar({ isExpanded }: UserMenubarProps) {
           <span>Help</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-red-600">
+        <DropdownMenuItem className="text-red-600" onSelect={handleLogout}>
           <LogOutIcon className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
