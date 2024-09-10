@@ -102,7 +102,7 @@ export function Sidebar() {
                 href={item.href}
                 className={cn(
                   "flex items-center p-2 rounded-lg hover:bg-gray-200 transition-colors",
-                  pathname === item.href && "bg-gray-200",
+                  pathname.startsWith(item.href) && "bg-gray-200",
                   isExpanded ? "justify-start" : "justify-center"
                 )}
               >
