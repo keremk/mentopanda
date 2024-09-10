@@ -4,7 +4,14 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { UserMenubar } from "@/components/user-menubar";
-import { Home, Search, BookOpen, PenTool, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Home,
+  Search,
+  BookOpen,
+  PenTool,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -33,7 +40,9 @@ export function Sidebar() {
 
   useEffect(() => {
     async function getUser() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
     }
     getUser();
@@ -43,11 +52,14 @@ export function Sidebar() {
     setIsExpanded(!isExpanded);
   }
 
-  const userInfo = user ? {
-    name: user.user_metadata.full_name || user.email?.split('@')[0] || 'User',
-    email: user.email || '',
-    avatarUrl: user.user_metadata.avatar_url || '/placeholder.svg',
-  } : null;
+  const userInfo = user
+    ? {
+        name:
+          user.user_metadata.full_name || user.email?.split("@")[0] || "User",
+        email: user.email || "",
+        avatarUrl: user.user_metadata.avatar_url || "/placeholder.svg",
+      }
+    : null;
 
   return (
     <aside
@@ -56,13 +68,16 @@ export function Sidebar() {
         isExpanded ? "w-64" : "w-16"
       )}
     >
-      <div className="flex items-center p-4">
+      <div className="flex justify-center items-center my-4">
         <Image
           src="/logo.svg"
           alt="MentoPanda Logo"
-          width={32}
-          height={32}
-          className="w-8 h-8"
+          width={64}
+          height={64}
+          className={cn(
+            "transition-all duration-300 ease-in-out",
+            isExpanded ? "w-12 h-12" : "w-16 h-16"
+          )}
         />
         {isExpanded && (
           <>
@@ -79,7 +94,7 @@ export function Sidebar() {
           </>
         )}
       </div>
-      <nav className="flex-1">
+      <nav className="flex-1 my-2">
         <ul className="space-y-2 p-2">
           {sidebarItems.map((item) => (
             <li key={item.title}>
