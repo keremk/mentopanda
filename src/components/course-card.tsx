@@ -33,7 +33,7 @@ export function CourseCard({
   };
 
   return (
-    <Card className="w-full overflow-hidden">
+    <Card className="w-full min-w-[300px] max-w-[400px]  h-[350px] flex flex-col">
       <CardHeader className="p-0 relative aspect-video">
         {imageUrl && !imageError ? (
           <Image
@@ -49,7 +49,7 @@ export function CourseCard({
           </div>
         )}
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex-grow">
         <CardTitle className="text-xl font-bold line-clamp-2">
           {title}
         </CardTitle>
