@@ -1,5 +1,7 @@
 "use client";
 
+import { useContext } from "react";
+import { SidebarContext } from "@/contexts/SidebarContext";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,8 +33,12 @@ const sidebarItems: SidebarItem[] = [
   { icon: PenTool, title: "Create", href: "/create" },
 ];
 
+interface SidebarProps {
+  onToggle: (expanded: boolean) => void
+}
+
 export function Sidebar() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { isSidebarExpanded, setIsSidebarExpanded } = useContext(SidebarContext);
   const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
   const router = useRouter();
@@ -49,7 +55,7 @@ export function Sidebar() {
   }, []);
 
   function toggleSidebar() {
-    setIsExpanded(!isExpanded);
+    setIsSidebarExpanded(!isSidebarExpanded);
   }
 
   const userInfo = user
@@ -65,7 +71,7 @@ export function Sidebar() {
     <aside
       className={cn(
         "flex flex-col h-screen bg-gray-100 transition-all duration-300 ease-in-out",
-        isExpanded ? "w-64" : "w-16"
+        isSidebarExpanded ? "w-64" : "w-16"
       )}
     >
       <div className="flex justify-center items-center my-4">
@@ -76,10 +82,10 @@ export function Sidebar() {
           height={64}
           className={cn(
             "transition-all duration-300 ease-in-out",
-            isExpanded ? "w-12 h-12" : "w-16 h-16"
+            isSidebarExpanded ? "w-12 h-12" : "w-16 h-16"
           )}
         />
-        {isExpanded && (
+        {isSidebarExpanded && (
           <>
             <span className="ml-2 font-semibold">MentoPanda</span>
             <Button
@@ -103,19 +109,19 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center p-2 rounded-lg hover:bg-gray-200 transition-colors",
                   pathname.startsWith(item.href) && "bg-gray-200",
-                  isExpanded ? "justify-start" : "justify-center"
+                  isSidebarExpanded ? "justify-start" : "justify-center"
                 )}
               >
                 <item.icon className="w-6 h-6" />
-                {isExpanded && <span className="ml-3">{item.title}</span>}
+                {isSidebarExpanded && <span className="ml-3">{item.title}</span>}
               </Link>
             </li>
           ))}
         </ul>
       </nav>
       <div className="p-4 relative">
-        {userInfo && <UserMenubar isExpanded={isExpanded} user={userInfo} />}
-        {!isExpanded && (
+        {userInfo && <UserMenubar isExpanded={isSidebarExpanded} user={userInfo} />}
+        {!isSidebarExpanded && (
           <Button
             variant="ghost"
             size="icon"
