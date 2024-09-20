@@ -18,10 +18,7 @@ type TrainingSessionsHeatmapProps = {
 export function TrainingSessionsHeatmap({
   data,
 }: TrainingSessionsHeatmapProps) {
-  const totalSessions = Object.values(data).reduce(
-    (sum, val) => sum + val,
-    0
-  );
+  const totalSessions = Object.values(data).reduce((sum, val) => sum + val, 0);
 
   const today = new Date();
   const sixMonthsAgo = subMonths(today, 6);

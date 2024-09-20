@@ -1,36 +1,40 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { EnrolledTrainings } from "@/components/enrolled-trainings"
-import { TrainingSessionsHeatmap } from "@/components/training-sessions-heatmap"
-import TrainingActivity from "@/components/training-activity"
-import { generateMockHeatmapData, generateMockTrainingSessions, mockCourses } from "@/lib/mock-data"
-import { Responsive, WidthProvider, Layout } from "react-grid-layout"
-import "react-grid-layout/css/styles.css"
-import "react-resizable/css/styles.css"
+import { useState, useEffect } from "react";
+import { EnrolledTrainings } from "@/components/enrolled-trainings";
+import { TrainingSessionsHeatmap } from "@/components/training-sessions-heatmap";
+import TrainingActivity from "@/components/training-activity";
+import {
+  generateMockHeatmapData,
+  generateMockTrainingSessions,
+  mockCourses,
+} from "@/lib/mock-data";
+import { Responsive, WidthProvider, Layout } from "react-grid-layout";
+import "react-grid-layout/css/styles.css";
+import "react-resizable/css/styles.css";
 
-const ResponsiveGridLayout = WidthProvider(Responsive)
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 export default function HomePage() {
   const [layouts, setLayouts] = useState<{ [key: string]: Layout[] }>({
     lg: [
       { i: "enrolled-trainings", x: 0, y: 0, w: 1, h: 8 },
-      { i: "training-heatmap", x: 0, y: 8, w: 1, h: 10 }, // Increased height
-      { i: "training-activity", x: 0, y: 18, w: 1, h: 12 },
+      { i: "training-heatmap", x: 2, y: 1, w: 1, h: 5 }, // Increased height
+      { i: "training-activity", x: 0, y: 2, w: 1, h: 8 },
     ],
-  })
+  });
 
-  const [windowWidth, setWindowWidth] = useState(1200)
+  const [windowWidth, setWindowWidth] = useState(1200);
 
   useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth)
-    window.addEventListener('resize', handleResize)
-    handleResize()
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
-  const mockHeatmapData = generateMockHeatmapData()
-  const mockTrainingSessions = generateMockTrainingSessions()
+  const mockHeatmapData = generateMockHeatmapData();
+  const mockTrainingSessions = generateMockTrainingSessions();
 
   return (
     <div className="container mx-auto p-4">
@@ -38,8 +42,8 @@ export default function HomePage() {
       <ResponsiveGridLayout
         className="layout"
         layouts={layouts}
-        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-        cols={{ lg: 1, md: 1, sm: 1, xs: 1, xxs: 1 }}
+        breakpoints={{ lg: 1260, md: 996, sm: 768, xs: 480, xxs: 0 }}
+        cols={{ lg: 2, md: 1, sm: 1, xs: 1, xxs: 1 }}
         rowHeight={40} // Decreased row height to allow for finer control
         width={windowWidth}
         onLayoutChange={(layout, layouts) => setLayouts(layouts)}
@@ -49,16 +53,25 @@ export default function HomePage() {
         containerPadding={[0, 0]}
         draggableHandle=".drag-handle"
       >
-        <div key="enrolled-trainings" className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div
+          key="enrolled-trainings"
+          className="bg-white rounded-lg shadow-md overflow-hidden max-w-[620px]"
+        >
           <EnrolledTrainings trainings={mockCourses} />
         </div>
-        <div key="training-heatmap" className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div
+          key="training-heatmap"
+          className="bg-white rounded-lg shadow-md overflow-hidden max-h-[300px] max-w-[620px]"
+        >
           <TrainingSessionsHeatmap data={mockHeatmapData} />
         </div>
-        <div key="training-activity" className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div
+          key="training-activity"
+          className="bg-white rounded-lg shadow-md overflow-hidden max-w-[620px]"
+        >
           <TrainingActivity sessions={mockTrainingSessions} />
         </div>
       </ResponsiveGridLayout>
     </div>
-  )
+  );
 }
