@@ -21,7 +21,7 @@ function YouTubeEmbed({ url }: { url: string }) {
   )
 }
 
-export default function CourseDetailsPage({ params }: { params: { courseId: string } }) {
+export default function TrainingDetailsPage({ params }: { params: { courseId: string } }) {
   const course = mockCourses.find(c => c.id === params.courseId)
 
   if (!course) {
