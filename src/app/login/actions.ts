@@ -65,9 +65,15 @@ export async function signup(formData: FormData) {
 }
 
 export async function githubSignIn() {
+  /* IMPORTANT (Local Development): In order for the redirectUrl to work, you need to change config.toml file to have the correct site_url and additional_redirect_urls that match the
+  URL provided below. I wasted hours on this, so beware.
+  For Production you need to change the Authentication/URL Configuration in Supabase Studio.
+  Supabase Studio in local does not have this UI, so you need to use config.toml file.
+  */ 
+
   const supabase = createClient();
 
-  const redirectUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback/`;
+  const redirectUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
   console.log("Providing redirect URL as such: ", redirectUrl);
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",
