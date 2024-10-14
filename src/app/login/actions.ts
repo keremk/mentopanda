@@ -51,17 +51,25 @@ export async function signup(formData: FormData) {
 
   const supabase = createClient();
 
-  const { error } = await supabase.auth.signUp(validatedFields.data);
+  const { data, error } = await supabase.auth.signUp(validatedFields.data);
 
   if (error) {
     return redirect(`/login?message=${encodeURIComponent(error.message)}`);
   }
 
-  return redirect(
-    `/login?message=${encodeURIComponent(
-      "We sent you an email, please confirm your email to continue"
-    )}`
-  );
+  if (data.user && data.session) {
+    // If we have a user and session, it means email confirmation is disabled
+    // or the user was automatically confirmed
+    revalidatePath("/", "layout");
+    return redirect("/home");
+  } else {
+    // Email confirmation is required
+    return redirect(
+      `/login?message=${encodeURIComponent(
+        "We sent you an email, please confirm your email to continue"
+      )}`
+    );
+  }
 }
 
 export async function githubSignIn() {

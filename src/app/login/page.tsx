@@ -10,8 +10,10 @@ import GitHubIcon from "@/components/icons/github";
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { message: string };
+  searchParams: { message: string; mode?: 'signin' | 'signup' };
 }) {
+  const isSignUp = searchParams.mode === 'signup';
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-md">
@@ -44,13 +46,17 @@ export default function LoginPage({
               />
             </div>
             <div className="flex space-x-4">
-              <Button formAction={login} className="flex-1 px-12 py-2">
+              <Button 
+                formAction={login} 
+                className={`flex-1 px-12 py-2 ${!isSignUp ? 'bg-primary text-primary-foreground' : ''}`}
+                variant={isSignUp ? "outline" : "default"}
+              >
                 Sign In
               </Button>
               <Button
                 formAction={signup}
-                className="flex-1 px-12 py-2"
-                variant="outline"
+                className={`flex-1 px-12 py-2 ${isSignUp ? 'bg-primary text-primary-foreground' : ''}`}
+                variant={!isSignUp ? "outline" : "default"}
               >
                 Sign Up
               </Button>

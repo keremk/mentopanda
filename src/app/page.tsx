@@ -22,10 +22,10 @@ export default function LandingPage() {
         <div className="flex items-center space-x-4">
           <ThemeToggle />
           <Button variant="outline" asChild>
-            <Link href="/login">Login</Link>
+            <Link href="/login?mode=signin">Login</Link>
           </Button>
           <Button asChild>
-            <Link href="/login">Get Started</Link>
+            <Link href="/login?mode=signup">Get Started</Link>
           </Button>
         </div>
       </header>
