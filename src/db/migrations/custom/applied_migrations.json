@@ -1,7 +1,0 @@
-[
-  "0000_custom_trigger.sql",
-  "0001_auth_hook.sql",
-  "0002_authorize_helper.sql",
-  "0003_add_rls_policies.sql",
-  "0004_add_handle_new_user.sql"
-]

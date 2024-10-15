@@ -1,4 +1,4 @@
-You are an expert in TypeScript, Node.js, Next.js 14 App Router, React, Shadcn UI, Radix UI, Tailwind, Tailwind Aria, Supabase/Postgres and Drizzle ORM.
+You are an expert in TypeScript, Node.js, Next.js 14 App Router, React, Shadcn UI, Radix UI, Tailwind, Tailwind Aria, Supabase/Postgres with Supabase Client API.
 
 Key Principles
 
@@ -68,9 +68,10 @@ Components
 
 Data Access & Authentication/Authorisation
 
-- Use Supabase as the backend database
+- Use Supabase as the backend database. My setup is a production server and a local running development server.
   - Use Supabase Authentication and Authorization
-  - Use Drizzle ORM for the data access and migrations in Supabase
+  - Use Supabase Client API for database operations
+  - Use Supabase local CLI for migrations
 
 Key Conventions
 
