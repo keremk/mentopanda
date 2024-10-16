@@ -14,6 +14,7 @@ import { useState } from "react";
 
 interface CourseCardProps {
   title: string;
+  tagline?: string;
   imageUrl?: string;
   onAddCourse: () => void;
   onShowDetails: () => void;
@@ -21,6 +22,7 @@ interface CourseCardProps {
 
 export function CourseCard({
   title,
+  tagline,
   imageUrl,
   onAddCourse,
   onShowDetails,
@@ -33,7 +35,7 @@ export function CourseCard({
   };
 
   return (
-    <Card className="w-full min-w-[300px] max-w-[400px]  h-[350px] flex flex-col">
+    <Card className="w-full min-w-[300px] max-w-[400px] h-[350px] flex flex-col">
       <CardHeader className="p-0 relative aspect-video">
         {imageUrl && !imageError ? (
           <Image
@@ -50,9 +52,12 @@ export function CourseCard({
         )}
       </CardHeader>
       <CardContent className="p-4 flex-grow">
-        <CardTitle className="text-xl font-bold line-clamp-2">
+        <CardTitle className="text-xl font-bold line-clamp-2 mb-2">
           {title}
         </CardTitle>
+        {tagline && (
+          <p className="text-sm text-muted-foreground line-clamp-2">{tagline}</p>
+        )}
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between">
         <Button variant="outline" onClick={onAddCourse} className="flex-1 mr-2">

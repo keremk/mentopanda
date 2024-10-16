@@ -73,8 +73,10 @@ create table if not exists "activities" (
 create table if not exists "trainings" (
 	"id" serial primary key not null,
 	"title" text not null,
-	"description" text not null,
-	"image_url" text not null,
+	"tagline" text,
+	"description" text,
+	"image_url" text,
+	"preview_url" text,
 	"is_public" boolean default true not null,
 	"organization_id" integer,
 	"created_at" timestamp default now() not null,

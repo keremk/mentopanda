@@ -3,11 +3,14 @@
 import { useState, useEffect, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { CourseCard } from "@/components/course-card";
-import { mockCourses } from "@/lib/mock-data";
 import { SidebarContext } from "@/contexts/SidebarContext";
+import { Training } from "@/data/trainings";
 
-export function CourseGrid() {
-  const [courses, setCourses] = useState(mockCourses);
+interface CourseGridProps {
+  trainings: Training[];
+}
+
+export function CourseGrid({ trainings }: CourseGridProps) {
   const router = useRouter();
   const [gridClass, setGridClass] = useState("");
   const { isSidebarExpanded } = useContext(SidebarContext);
@@ -42,13 +45,13 @@ export function CourseGrid() {
 
   return (
     <div className={`grid gap-6 px-4 ${gridClass}`}>
-      {courses.map((course) => (
+      {trainings.map((training) => (
         <CourseCard
-          key={course.id}
-          title={course.title}
-          imageUrl={course.imageUrl}
-          onAddCourse={() => handleAddCourse(course.id)}
-          onShowDetails={() => handleShowDetails(course.id)}
+          key={training.id}
+          title={training.title}
+          imageUrl={training.image_url}
+          onAddCourse={() => handleAddCourse(training.id)}
+          onShowDetails={() => handleShowDetails(training.id)}
         />
       ))}
     </div>
