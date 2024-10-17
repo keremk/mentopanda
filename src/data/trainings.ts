@@ -58,3 +58,56 @@ export async function getTrainings(): Promise<Training[]> {
 
   return userTrainings as Training[];
 }
+
+export async function getTrainingById(trainingId: string): Promise<Training | null> {
+  const supabase = createClient()
+
+  // Check if the user is authenticated
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession()
+
+  if (sessionError || !session) {
+    throw new Error("User is not authenticated")
+  }
+
+  const userId = session.user.id
+
+  // Get the user's organization ID
+  const { data: userData, error: userError } = await supabase
+    .from("profiles")
+    .select("organization_id")
+    .eq("id", userId)
+    .single()
+
+  if (userError) {
+    throw new Error(`Failed to fetch user data: ${userError.message}`)
+  }
+
+  const organizationId = userData.organization_id
+
+  // Query the specific training
+  let query = supabase
+    .from("trainings")
+    .select("*")
+    .eq("id", trainingId)
+    .or("is_public.eq.true")
+
+  // Add organization filter only if organizationId is not null
+  if (organizationId !== null) {
+    query = query.or(`organization_id.eq.${organizationId}`)
+  }
+
+  const { data: training, error: trainingError } = await query.single()
+
+  if (trainingError) {
+    if (trainingError.code === 'PGRST116') {
+      // Training not found or user doesn't have access
+      return null
+    }
+    throw new Error(`Failed to fetch training: ${trainingError.message}`)
+  }
+
+  return training as Training
+}

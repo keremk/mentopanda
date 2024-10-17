@@ -12,21 +12,21 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Info, BookOpen } from "lucide-react";
 import { useState } from "react";
 
-interface CourseCardProps {
+interface TrainingCardProps {
   title: string;
   tagline?: string;
   imageUrl?: string;
-  onAddCourse: () => void;
+  onAddTraining: () => void;
   onShowDetails: () => void;
 }
 
-export function CourseCard({
+export function TrainingCard({
   title,
   tagline,
   imageUrl,
-  onAddCourse,
+  onAddTraining,
   onShowDetails,
-}: CourseCardProps) {
+}: TrainingCardProps) {
   const [imageError, setImageError] = useState(false);
   const fallbackImage = "/placeholder.svg?height=200&width=300";
 
@@ -56,13 +56,19 @@ export function CourseCard({
           {title}
         </CardTitle>
         {tagline && (
-          <p className="text-sm text-muted-foreground line-clamp-2">{tagline}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {tagline}
+          </p>
         )}
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between">
-        <Button variant="outline" onClick={onAddCourse} className="flex-1 mr-2">
+        <Button
+          variant="outline"
+          onClick={onAddTraining}
+          className="flex-1 mr-2"
+        >
           <PlusCircle className="mr-2 h-4 w-4" />
-          Add to List
+          Enroll
         </Button>
         <Button
           variant="secondary"

@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import Image from 'next/image'
-import { mockCourses } from '@/lib/mock-data'
+import { getTrainingById } from '@/data/trainings'
+import { notFound } from 'next/navigation'
 
 function YouTubeEmbed({ url }: { url: string }) {
   const videoId = url.split('v=')[1]
@@ -21,11 +22,11 @@ function YouTubeEmbed({ url }: { url: string }) {
   )
 }
 
-export default function TrainingDetailsPage({ params }: { params: { courseId: string } }) {
-  const course = mockCourses.find(c => c.id === params.courseId)
+export default async function TrainingDetailsPage({ params }: { params: { trainingId: string } }) {
+  const training = await getTrainingById(params.trainingId)
 
-  if (!course) {
-    return <div>Course not found</div>
+  if (!training) {
+    notFound()
   }
 
   return (
@@ -34,19 +35,19 @@ export default function TrainingDetailsPage({ params }: { params: { courseId: st
         <Button asChild variant="outline">
           <Link href="/explore" className="flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4"><path d="m15 18-6-6 6-6"/></svg>
-            Back to Courses
+            Back to Trainings
           </Link>
         </Button>
         <Button>Enroll Now</Button>
       </div>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
-        <p className="text-xl text-gray-600 mb-4">{course.tagline}</p>
+        <h1 className="text-3xl font-bold mb-2">{training.title}</h1>
+        <p className="text-xl text-gray-600 mb-4">{training.tagline}</p>
         <div className="aspect-video relative mb-4">
           <Image
-            src={course.imageUrl}
-            alt={course.title}
+            src={training.image_url}
+            alt={training.title}
             layout="fill"
             objectFit="cover"
             className="rounded-lg"
@@ -55,14 +56,14 @@ export default function TrainingDetailsPage({ params }: { params: { courseId: st
       </div>
 
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Course Description</h2>
-        <p className="text-gray-700">{course.description}</p>
+        <h2 className="text-2xl font-semibold mb-4">Training Description</h2>
+        <p className="text-gray-700">{training.description}</p>
       </div>
 
-      {course.previewURL && (
+      {training.preview_url && (
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Course Preview</h2>
-          <YouTubeEmbed url={course.previewURL} />
+          <h2 className="text-2xl font-semibold mb-4">Training Preview</h2>
+          <YouTubeEmbed url={training.preview_url} />
         </div>
       )}
 
