@@ -209,22 +209,28 @@ create policy "Users can view user roles within their organization" on user_role
 select
   to authenticated using (
     exists (
-      select 1
-      from profiles p1
-      join profiles p2 on p1.organization_id = p2.organization_id
-      where p1.id = auth.uid()
+      select
+        1
+      from
+        profiles p1
+        join profiles p2 on p1.organization_id = p2.organization_id
+      where
+        p1.id = auth.uid ()
         and p2.id = user_roles.user_id
     )
   );
 
-create policy "Users with user.admin permission can manage user roles within their organization" on user_roles for all
-to authenticated using (
-  authorize('user.admin')
+create policy "Users with user.admin permission can manage user roles within their organization" on user_roles for all to authenticated using (
+  authorize ('user.admin')
+  or current_role = 'supabase_admin'
   and exists (
-    select 1
-    from profiles p1
-    join profiles p2 on p1.organization_id = p2.organization_id
-    where p1.id = auth.uid()
+    select
+      1
+    from
+      profiles p1
+      join profiles p2 on p1.organization_id = p2.organization_id
+    where
+      p1.id = auth.uid ()
       and p2.id = user_roles.user_id
   )
 );
@@ -236,10 +242,16 @@ select
 
 -- Explicitly deny insert, update, and delete operations
 create policy "Prevent insert on role_permissions" on role_permissions for insert
-  with check (false);
+with
+  check (false);
 
-create policy "Prevent update on role_permissions" on role_permissions for update
+create policy "Prevent update on role_permissions" on role_permissions
+for update
   using (false);
 
-create policy "Prevent delete on role_permissions" on role_permissions for delete
-  using (false);
+create policy "Prevent delete on role_permissions" on role_permissions for delete using (false);
+
+-- Allow insertion of initial 'member' role
+create policy "Allow insertion of initial member role" on user_roles for insert to authenticated
+with
+  check (role = 'member'::user_role);

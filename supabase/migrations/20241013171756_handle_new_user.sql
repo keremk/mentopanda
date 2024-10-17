@@ -5,6 +5,11 @@ set
 begin
   insert into public.profiles (id)
   values (new.id);
+
+  -- Assign 'member' role to the new user
+  insert into public.user_roles (user_id, role)
+  values (new.id, 'member');
+
   return new;
 end;
 $$;
