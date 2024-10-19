@@ -12,7 +12,10 @@
     "drop": "drizzle-kit drop",
     "check": "drizzle-kit check",
     "up": "drizzle-kit up",
-    "migrate": "node src/db/runMigrations.mjs"
+    "migrate": "node src/db/runMigrations.mjs",
+    "test": "vitest",
+    "test:integration": "vitest run tests/integration",
+    "create-users": "tsx src/scripts/createUsers.ts"
   },
   "dependencies": {
     "@icons-pack/react-simple-icons": "^10.0.0",
@@ -41,14 +44,19 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.0.1",
     "@types/node": "^20",
     "@types/pg": "^8.11.10",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@vitejs/plugin-react": "^4.3.2",
     "eslint": "^8",
     "eslint-config-next": "14.2.4",
+    "jsdom": "^25.0.1",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "tsx": "^4.19.1",
+    "typescript": "^5",
+    "vitest": "^2.1.3"
   }
 }
