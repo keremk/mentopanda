@@ -4,8 +4,8 @@ import { PlayCircle, Search, GripVertical } from "lucide-react";
 import Link from "next/link";
 import { Training } from "@/data/trainings";
 import { Enrollment, getEnrolledTrainings } from "@/data/enrollments";
-import { UnenrollButton } from "@/components/unenroll-button";
 import { createClient } from "@/utils/supabase/server";
+import { EnrollmentButton } from "./enrollment-button";
 
 export async function EnrolledTrainings() {
   let trainings: Enrollment[] = [];
@@ -47,7 +47,7 @@ export async function EnrolledTrainings() {
                       Start Training
                     </Link>
                   </Button>
-                  <UnenrollButton trainingId={training.id} />
+                  <EnrollmentButton trainingId={training.id} />
                 </div>
               </li>
             ))}

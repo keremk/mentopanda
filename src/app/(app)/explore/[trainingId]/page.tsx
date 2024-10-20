@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getTrainingById } from '@/data/trainings'
 import { notFound } from 'next/navigation'
+import { EnrollmentButton } from '@/components/enrollment-button'
 
 function YouTubeEmbed({ url }: { url: string }) {
   const videoId = url.split('v=')[1]
@@ -38,7 +39,7 @@ export default async function TrainingDetailsPage({ params }: { params: { traini
             Back to Trainings
           </Link>
         </Button>
-        <Button>Enroll Now</Button>
+        <EnrollmentButton trainingId={training.id} />
       </div>
 
       <div className="mb-8">
@@ -68,7 +69,7 @@ export default async function TrainingDetailsPage({ params }: { params: { traini
       )}
 
       <div className="text-center">
-        <Button size="lg">Enroll Now</Button>
+        <EnrollmentButton trainingId={training.id} />
       </div>
     </div>
   )
