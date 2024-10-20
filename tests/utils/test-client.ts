@@ -1,6 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
-import SupabaseContext from "@/utils/supabase/context";
-import { vi } from "vitest";
+// import SupabaseContext from "@/utils/supabase/context";
 
 export function setupTestClient() {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -28,7 +27,7 @@ export function setupTestClient() {
   // });
 
   // Set the test client in the context
-  SupabaseContext.setClient(testClient);
+  // SupabaseContext.setClient(testClient);
 
   return testClient;
 }

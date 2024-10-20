@@ -1,6 +1,4 @@
-import SupabaseContext from "@/utils/supabase/context";
-import { Training } from "./trainings";
-import { QueryResult, QueryData, QueryError } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 export interface Enrollment {
   id: number;
@@ -9,43 +7,34 @@ export interface Enrollment {
   createdAt: string;
 }
 
-export async function getEnrolledTrainings(): Promise<Enrollment[]> {
-  const supabase = SupabaseContext.getClient();
-
+async function getUserId(supabase: SupabaseClient): Promise<string> {
   const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (error || !user) throw new Error("User is not authenticated");
+  return user.id;
+}
 
-  if (sessionError || !session) {
-    throw new Error("User is not authenticated");
-  }
+export async function getEnrolledTrainings(
+  supabase: SupabaseClient
+): Promise<Enrollment[]> {
+  const userId = await getUserId(supabase);
 
-  const userId = session.user.id;
-
-  const enrollmentsQuery = await supabase
+  const { data, error } = await supabase
     .from("enrollments")
     .select(
       `
-    id,
-    trainings (id, title),
-    created_at
-  `
+      id,
+      trainings (id, title),
+      created_at
+    `
     )
     .eq("user_id", userId);
-
-  const { data, error } = await enrollmentsQuery;
 
   if (error) {
     throw new Error(`Failed to fetch enrollments: ${error.message}`);
   }
-
-  // const transformedData = data.map((enrollment) => ({
-  //   id: enrollment.id,
-  //   trainingTitle: enrollment.trainings.title,
-  //   trainingId: enrollment.trainings.id,
-  //   createdAt: enrollment.created_at,
-  // }));
 
   return data.map((enrollment: any) => ({
     id: enrollment.id,
@@ -55,19 +44,11 @@ export async function getEnrolledTrainings(): Promise<Enrollment[]> {
   }));
 }
 
-export async function enrollInTraining(trainingId: number): Promise<void> {
-  const supabase = SupabaseContext.getClient();
-
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
-
-  if (sessionError || !session) {
-    throw new Error("User is not authenticated");
-  }
-
-  const userId = session.user.id;
+export async function enrollInTraining(
+  supabase: SupabaseClient,
+  trainingId: number
+): Promise<void> {
+  const userId = await getUserId(supabase);
 
   const { error } = await supabase
     .from("enrollments")
@@ -78,19 +59,11 @@ export async function enrollInTraining(trainingId: number): Promise<void> {
   }
 }
 
-export async function unenrollFromTraining(trainingId: number): Promise<void> {
-  const supabase = SupabaseContext.getClient();
-
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
-
-  if (sessionError || !session) {
-    throw new Error("User is not authenticated");
-  }
-
-  const userId = session.user.id;
+export async function unenrollFromTraining(
+  supabase: SupabaseClient,
+  trainingId: number
+): Promise<void> {
+  const userId = await getUserId(supabase);
 
   const { error } = await supabase
     .from("enrollments")
@@ -102,19 +75,11 @@ export async function unenrollFromTraining(trainingId: number): Promise<void> {
   }
 }
 
-export async function isEnrolled(trainingId: number): Promise<boolean> {
-  const supabase = SupabaseContext.getClient();
-
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
-
-  if (sessionError || !session) {
-    throw new Error("User is not authenticated");
-  }
-
-  const userId = session.user.id;
+export async function isEnrolled(
+  supabase: SupabaseClient,
+  trainingId: number
+): Promise<boolean> {
+  const userId = await getUserId(supabase);
 
   const { data, error } = await supabase
     .from("enrollments")

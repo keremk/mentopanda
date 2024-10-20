@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { Enrollment, getEnrolledTrainings } from "@/data/enrollments";
-import { Training } from "@/data/trainings";
 import { setupTestClient } from "../utils/test-client";
-import SupabaseContext from "@/utils/supabase/context";
 
 describe("Enrollment Integration Tests", () => {
   let testUserId: string;
@@ -50,20 +48,19 @@ describe("Enrollment Integration Tests", () => {
       // Delete trainings
       await supabase.from("trainings").delete().eq("id", testTrainingId);
 
-      SupabaseContext.setClient(null);
     } catch (error) {
       console.error("Error during cleanup:", error);
     }
   });
 
   it("should return enrolled trainings for the authenticated user", async () => {
-    // Mock the auth.getSession to return our test user
-    vi.spyOn(supabase.auth, "getSession").mockResolvedValue({
-      data: { session: { user: { id: testUserId } } },
+    // Mock the auth.getUser to return our test user
+    vi.spyOn(supabase.auth, "getUser").mockResolvedValue({
+      data: { user: { id: testUserId } },
       error: null,
     } as any);
 
-    const enrolledTrainings = await getEnrolledTrainings();
+    const enrolledTrainings = await getEnrolledTrainings(supabase);
 
     expect(enrolledTrainings).toHaveLength(1);
     expect(enrolledTrainings[0]).toMatchObject<Partial<Enrollment>>({
