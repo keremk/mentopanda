@@ -2,18 +2,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlayCircle, Search, GripVertical } from "lucide-react";
 import Link from "next/link";
-import { Training } from "@/data/trainings";
-import { Enrollment, getEnrolledTrainings } from "@/data/enrollments";
-import { createClient } from "@/utils/supabase/server";
-import { EnrollmentButton } from "./enrollment-button";
+import { Enrollment } from "@/data/enrollments";
+import { getEnrolledTrainingsAction } from "@/app/(app)/explore/enrollActions";
 
 export async function EnrolledTrainings() {
   let trainings: Enrollment[] = [];
   let error = null;
 
   try {
-    const supabase = createClient();
-    trainings = await getEnrolledTrainings(supabase);
+    trainings = await getEnrolledTrainingsAction();
   } catch (e) {
     error = e;
     console.error("Failed to fetch enrolled trainings:", e);
@@ -47,7 +44,6 @@ export async function EnrolledTrainings() {
                       Start Training
                     </Link>
                   </Button>
-                  <EnrollmentButton trainingId={training.id} />
                 </div>
               </li>
             ))}

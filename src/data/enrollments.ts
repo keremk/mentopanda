@@ -1,10 +1,19 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
 
 export interface Enrollment {
   id: number;
   trainingTitle: String;
   trainingId: number;
   createdAt: string;
+}
+
+interface RawEnrollment {
+  id: number;
+  trainings: {
+    id: number;
+    title: string;
+  };
+  created_at: string;
 }
 
 async function getUserId(supabase: SupabaseClient): Promise<string> {
@@ -14,6 +23,18 @@ async function getUserId(supabase: SupabaseClient): Promise<string> {
   } = await supabase.auth.getUser();
   if (error || !user) throw new Error("User is not authenticated");
   return user.id;
+}
+
+function handleError(error: PostgrestError) {
+  // Postgres error codes: https://docs.postgrest.org/en/v12/references/errors.html
+
+  if (error.code === "42501") {
+    throw new Error("Access denied. Please check your permissions.");
+  } else if (error.code === "PGRST301") {
+    throw new Error("Row-level security policy violation.");
+  } else {
+    throw new Error(`Failed to fetch enrollments: ${error.message}`);
+  }
 }
 
 export async function getEnrolledTrainings(
@@ -32,14 +53,27 @@ export async function getEnrolledTrainings(
     )
     .eq("user_id", userId);
 
-  if (error) {
-    throw new Error(`Failed to fetch enrollments: ${error.message}`);
-  }
+  if (error) handleError(error);
+
+  if (!data) return [];
+
+  // console.log("Raw data:", JSON.stringify(data, null, 2));
+  // data.forEach((enrollment, index) => {
+  //   console.log(`Enrollment ${index}:`, JSON.stringify(enrollment, null, 2));
+  //   console.log(`Trainings type: ${typeof enrollment.trainings}`);
+  //   console.log(`Trainings is array: ${Array.isArray(enrollment.trainings)}`);
+  // });
+
+  /* 
+    Why am I using "any" type?
+    It's clear now that there's a mismatch between what TypeScript infers from the Supabase client and what's actually returned at runtime. 
+Given that trainings is indeed an object and not an array at runtime, we'll need to update our type definitions and the way we handle the data.
+  */
 
   return data.map((enrollment: any) => ({
     id: enrollment.id,
-    trainingTitle: enrollment.trainings.title,
-    trainingId: enrollment.trainings.id,
+    trainingTitle: enrollment.trainings?.title ?? "",
+    trainingId: enrollment.trainings?.id ?? 0,
     createdAt: enrollment.created_at,
   }));
 }
@@ -54,9 +88,7 @@ export async function enrollInTraining(
     .from("enrollments")
     .insert({ training_id: trainingId, user_id: userId });
 
-  if (error) {
-    throw new Error(`Failed to enroll in training: ${error.message}`);
-  }
+  if (error) handleError(error);
 }
 
 export async function unenrollFromTraining(
@@ -70,9 +102,7 @@ export async function unenrollFromTraining(
     .delete()
     .match({ training_id: trainingId, user_id: userId });
 
-  if (error) {
-    throw new Error(`Failed to unenroll from training: ${error.message}`);
-  }
+  if (error) handleError(error);
 }
 
 export async function isEnrolled(
@@ -87,9 +117,11 @@ export async function isEnrolled(
     .match({ training_id: trainingId, user_id: userId })
     .single();
 
-  if (error && error.code !== "PGRST116") {
-    throw new Error(`Failed to check enrollment status: ${error.message}`);
-  }
+  if (error && error.code !== "PGRST116")
+    console.error(
+      `Unexpected result for isEnrolled: ${error.code} ${error.message} `
+    );
+  if (error) handleError(error);
 
   return !!data;
 }

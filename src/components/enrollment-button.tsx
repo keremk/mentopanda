@@ -1,10 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { enrollInTraining, unenrollFromTraining, isEnrolled } from "@/data/enrollments";
+import {
+  isEnrolledAction,
+  enrollInTrainingAction,
+  unenrollFromTrainingAction,
+} from "@/app/(app)/explore/enrollActions";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import { PlusCircle, MinusCircle } from "lucide-react";
 
 interface EnrollmentButtonProps {
@@ -12,11 +15,13 @@ interface EnrollmentButtonProps {
   className?: string;
 }
 
-export function EnrollmentButton({ trainingId, className }: EnrollmentButtonProps) {
+export function EnrollmentButton({
+  trainingId,
+  className,
+}: EnrollmentButtonProps) {
   const [enrolled, setEnrolled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
     checkEnrollmentStatus();
@@ -24,7 +29,7 @@ export function EnrollmentButton({ trainingId, className }: EnrollmentButtonProp
 
   const checkEnrollmentStatus = async () => {
     try {
-      const status = await isEnrolled(supabase, trainingId);
+      const status = await isEnrolledAction(trainingId);
       setEnrolled(status);
     } catch (error) {
       console.error("Failed to check enrollment status:", error);
@@ -35,9 +40,9 @@ export function EnrollmentButton({ trainingId, className }: EnrollmentButtonProp
     setIsLoading(true);
     try {
       if (enrolled) {
-        await unenrollFromTraining(supabase, trainingId);
+        await unenrollFromTrainingAction(trainingId);
       } else {
-        await enrollInTraining(supabase, trainingId);
+        await enrollInTrainingAction(trainingId);
       }
       setEnrolled(!enrolled);
       router.refresh();

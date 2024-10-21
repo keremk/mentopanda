@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 
 export interface Training {
-  id: string
+  id: number
   title: string
   tagline: string
   description: string
