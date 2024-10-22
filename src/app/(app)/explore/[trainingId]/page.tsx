@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getTrainingById } from '@/data/trainings'
 import { notFound } from 'next/navigation'
 import { EnrollmentButton } from '@/components/enrollment-button'
+import { getTrainingByIdAction } from '@/app/(app)/trainingActions'
 
 function YouTubeEmbed({ url }: { url: string }) {
   const videoId = url.split('v=')[1]
@@ -24,7 +24,7 @@ function YouTubeEmbed({ url }: { url: string }) {
 }
 
 export default async function TrainingDetailsPage({ params }: { params: { trainingId: string } }) {
-  const training = await getTrainingById(params.trainingId)
+  const training = await getTrainingByIdAction(params.trainingId)
 
   if (!training) {
     notFound()
@@ -47,7 +47,7 @@ export default async function TrainingDetailsPage({ params }: { params: { traini
         <p className="text-xl text-gray-600 mb-4">{training.tagline}</p>
         <div className="aspect-video relative mb-4">
           <Image
-            src={training.image_url}
+            src={training.imageUrl}
             alt={training.title}
             layout="fill"
             objectFit="cover"
@@ -61,10 +61,10 @@ export default async function TrainingDetailsPage({ params }: { params: { traini
         <p className="text-gray-700">{training.description}</p>
       </div>
 
-      {training.preview_url && (
+      {training.previewUrl && (
         <div className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">Training Preview</h2>
-          <YouTubeEmbed url={training.preview_url} />
+          <YouTubeEmbed url={training.previewUrl} />
         </div>
       )}
 

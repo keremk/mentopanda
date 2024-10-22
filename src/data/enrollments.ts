@@ -1,40 +1,11 @@
-import { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { getUserId, handleError } from "./utils";
 
 export interface Enrollment {
   id: number;
   trainingTitle: String;
   trainingId: number;
   createdAt: string;
-}
-
-interface RawEnrollment {
-  id: number;
-  trainings: {
-    id: number;
-    title: string;
-  };
-  created_at: string;
-}
-
-async function getUserId(supabase: SupabaseClient): Promise<string> {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) throw new Error("User is not authenticated");
-  return user.id;
-}
-
-function handleError(error: PostgrestError) {
-  // Postgres error codes: https://docs.postgrest.org/en/v12/references/errors.html
-
-  if (error.code === "42501") {
-    throw new Error("Access denied. Please check your permissions.");
-  } else if (error.code === "PGRST301") {
-    throw new Error("Row-level security policy violation.");
-  } else {
-    throw new Error(`Failed to fetch enrollments: ${error.message}`);
-  }
 }
 
 export async function getEnrolledTrainings(

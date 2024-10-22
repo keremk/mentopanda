@@ -1,48 +1,23 @@
-import { createClient } from '@/utils/supabase/server'
-
+import { getOrganizationId, getUserId, handleError } from "./utils";
+import { SupabaseClient } from "@supabase/supabase-js";
 export interface Training {
-  id: number
-  title: string
-  tagline: string
-  description: string
-  image_url: string
-  is_public: boolean
-  organization_id: string | null
-  preview_url: string | null
-  created_at: string
-  updated_at: string
-  // Add any other fields that are part of your trainings table
+  id: number;
+  title: string;
+  tagline: string;
+  description: string;
+  imageUrl: string;
+  isPublic: boolean;
+  organizationId: string | null;
+  previewUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export async function getTrainings(): Promise<Training[]> {
-  const supabase = createClient();
+export async function getTrainings(
+  supabase: SupabaseClient
+): Promise<Training[]> {
+  const organizationId = await getOrganizationId(supabase);
 
-  // Check if the user is authenticated
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
-
-  if (sessionError || !session) {
-    throw new Error("User is not authenticated");
-  }
-
-  const userId = session.user.id;
-
-  // Get the user's organization ID
-  const { data: userData, error: userError } = await supabase
-    .from("profiles")
-    .select("organization_id")
-    .eq("id", userId)
-    .single();
-
-  if (userError) {
-    throw new Error(`Failed to fetch user data: ${userError.message}`);
-  }
-
-  const organizationId = userData.organization_id;
-
-  // Query trainings
   let query = supabase.from("trainings").select("*").or("is_public.eq.true");
 
   // Add organization filter only if organizationId is not null
@@ -53,61 +28,63 @@ export async function getTrainings(): Promise<Training[]> {
   const { data: userTrainings, error: trainingsError } = await query;
 
   if (trainingsError) {
-    throw new Error(`Failed to fetch trainings: ${trainingsError.message}`);
+    handleError(trainingsError);
   }
 
-  return userTrainings as Training[];
+  return (
+    userTrainings?.map((training) => ({
+      id: training.id,
+      title: training.title,
+      tagline: training.tagline,
+      description: training.description,
+      imageUrl: training.image_url,
+      isPublic: training.is_public,
+      organizationId: training.organization_id,
+      previewUrl: training.preview_url,
+      createdAt: training.created_at,
+      updatedAt: training.updated_at,
+    })) ?? []
+  );
 }
 
-export async function getTrainingById(trainingId: string): Promise<Training | null> {
-  const supabase = createClient()
-
-  // Check if the user is authenticated
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession()
-
-  if (sessionError || !session) {
-    throw new Error("User is not authenticated")
-  }
-
-  const userId = session.user.id
-
-  // Get the user's organization ID
-  const { data: userData, error: userError } = await supabase
-    .from("profiles")
-    .select("organization_id")
-    .eq("id", userId)
-    .single()
-
-  if (userError) {
-    throw new Error(`Failed to fetch user data: ${userError.message}`)
-  }
-
-  const organizationId = userData.organization_id
+export async function getTrainingById(
+  supabase: SupabaseClient,
+  trainingId: string
+): Promise<Training | null> {
+  const organizationId = await getOrganizationId(supabase);
 
   // Query the specific training
   let query = supabase
     .from("trainings")
     .select("*")
     .eq("id", trainingId)
-    .or("is_public.eq.true")
+    .or("is_public.eq.true");
 
   // Add organization filter only if organizationId is not null
   if (organizationId !== null) {
-    query = query.or(`organization_id.eq.${organizationId}`)
+    query = query.or(`organization_id.eq.${organizationId}`);
   }
 
-  const { data: training, error: trainingError } = await query.single()
+  const { data: training, error: trainingError } = await query.single();
 
   if (trainingError) {
-    if (trainingError.code === 'PGRST116') {
+    if (trainingError.code === "PGRST116") {
       // Training not found or user doesn't have access
-      return null
+      return null;
     }
-    throw new Error(`Failed to fetch training: ${trainingError.message}`)
+    handleError(trainingError);
   }
 
-  return training as Training
+  return {
+    id: training.id,
+    title: training.title,
+    tagline: training.tagline,
+    description: training.description,
+    imageUrl: training.image_url,
+    isPublic: training.is_public,
+    organizationId: training.organization_id,
+    previewUrl: training.preview_url,
+    createdAt: training.created_at,
+    updatedAt: training.updated_at,
+  };
 }

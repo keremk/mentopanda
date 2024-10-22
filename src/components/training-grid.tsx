@@ -14,7 +14,7 @@ export function TrainingGrid({ trainings }: TrainingGridProps) {
           id={training.id}
           title={training.title}
           tagline={training.tagline}
-          imageUrl={training.image_url}
+          imageUrl={training.imageUrl}
         />
       ))}
     </div>
