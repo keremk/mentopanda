@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { Enrollment, getEnrolledTrainings } from "@/data/enrollments";
-import { setupTestClient } from "../utils/test-client";
+import { setupTestClient } from "@/tests/utils/test-client";
 
 describe("Enrollment Integration Tests", () => {
   let testUserId: string;

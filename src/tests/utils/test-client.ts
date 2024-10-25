@@ -1,5 +1,4 @@
 import { createBrowserClient } from "@supabase/ssr";
-// import SupabaseContext from "@/utils/supabase/context";
 
 export function setupTestClient() {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -19,15 +18,6 @@ export function setupTestClient() {
       },
     }
   );
-
-  // Manually override the getUser method to return our test user
-  // testClient.auth.getUser = vi.fn().mockResolvedValue({
-  //   data: { user: { id: userId } },
-  //   error: null,
-  // });
-
-  // Set the test client in the context
-  // SupabaseContext.setClient(testClient);
 
   return testClient;
 }
