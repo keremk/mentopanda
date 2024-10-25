@@ -56,7 +56,10 @@ create table if not exists "modules" (
 	"id" serial primary key not null,
 	"training_id" integer not null,
 	"title" text not null,
-	"description" text,
+	"instructions" text,
+	"prompt" text,
+	"video_url" text,
+	"audio_url" text,
 	"created_at" timestamp default now() not null,
 	"updated_at" timestamp default now() not null
 );
@@ -65,6 +68,8 @@ create table if not exists "activities" (
 	"id" serial primary key not null,
 	"module_id" integer not null,
 	"user_id" uuid not null,
+	"assessment_text" text,
+	"assessment_score" integer,
 	"started_at" timestamp default now() not null,
 	"completed_at" timestamp
 );
