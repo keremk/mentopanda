@@ -30,7 +30,7 @@ const testUsers: TestUser[] = [
   { email: 'TestAdmin@example.com', password: 'TestAdmin123!', role: 'admin' }
 ]
 
-interface ActivitySeed {
+interface HistorySeed {
   moduleId: number
   assessmentText: string | null
   assessmentScore: number | null
@@ -38,7 +38,7 @@ interface ActivitySeed {
 }
 
 // Sample activities for users
-const sampleActivities: ActivitySeed[] = [
+const sampleHistory: HistorySeed[] = [
   {
     moduleId: 1, // Feedback Fundamentals
     assessmentText: "I would start by acknowledging their technical skills and then express concern about the missing test coverage. I'd explain the importance of tests for code reliability and team confidence, then offer to pair program on writing tests for the next feature.",
@@ -65,23 +65,23 @@ const sampleActivities: ActivitySeed[] = [
   }
 ]
 
-async function createActivitiesForUser(userId: string) {
-  for (const activity of sampleActivities) {
+async function createHistoryForUser(userId: string) {
+  for (const entry of sampleHistory) {
     try {
-      const { error: activityError } = await supabase
-        .from('activities')
+      const { error: historyError } = await supabase
+        .from('history')  // Updated from 'activities'
         .insert({
           user_id: userId,
-          module_id: activity.moduleId,
-          assessment_text: activity.assessmentText,
-          assessment_score: activity.assessmentScore,
-          completed_at: activity.completedAt,
-          started_at: new Date(Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)) // Random start date within last week
+          module_id: entry.moduleId,
+          assessment_text: entry.assessmentText,
+          assessment_score: entry.assessmentScore,
+          completed_at: entry.completedAt,
+          started_at: new Date(Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000))
         })
 
-      if (activityError) throw activityError
+      if (historyError) throw historyError
     } catch (error) {
-      console.error(`Error creating activity for user ${userId}:`, error)
+      console.error(`Error creating history entry for user ${userId}:`, error)
     }
   }
 }
@@ -114,7 +114,7 @@ async function createTestUsers() {
 
       // Create activities for member and manager users
       if (user.role === 'member' || user.role === 'manager') {
-        await createActivitiesForUser(authData.user.id)
+        await createHistoryForUser(authData.user.id)
       }
 
       console.log(`Created user: ${user.email} with role: ${user.role} and sample activities`)

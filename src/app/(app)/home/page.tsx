@@ -1,10 +1,10 @@
 import { EnrolledTrainings } from "@/components/enrolled-trainings";
 import { TrainingSessionsHeatmap } from "@/components/training-sessions-heatmap";
-import TrainingActivity from "@/components/training-activity";
 import {
   generateMockHeatmapData,
   generateMockTrainingSessions,
 } from "@/lib/mock-data";
+import { TrainingHistory } from "@/components/training-history";
 
 export default function HomePage() {
   const mockHeatmapData = generateMockHeatmapData();
@@ -21,7 +21,7 @@ export default function HomePage() {
           <TrainingSessionsHeatmap data={mockHeatmapData} />
         </div>
         <div className="bg-white rounded-lg shadow-md overflow-hidden lg:col-span-2">
-          <TrainingActivity sessions={mockTrainingSessions} />
+          <TrainingHistory />
         </div>
       </div>
     </div>

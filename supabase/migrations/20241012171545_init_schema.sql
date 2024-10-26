@@ -64,7 +64,7 @@ create table if not exists "modules" (
 	"updated_at" timestamp default now() not null
 );
 
-create table if not exists "activities" (
+create table if not exists "history" (
 	"id" serial primary key not null,
 	"module_id" integer not null,
 	"user_id" uuid not null,
@@ -159,9 +159,9 @@ end $$;
 --> statement-breakpoint
 do $$ begin
 alter table
-	"activities"
+	"history"  -- Updated from "activities"
 add
-	constraint "activities_module_id_modules_id_fk" foreign key ("module_id") references "public"."modules"("id") on delete no action on update no action;
+	constraint "history_module_id_modules_id_fk" foreign key ("module_id") references "public"."modules"("id") on delete no action on update no action;
 
 exception
 when duplicate_object then null;
@@ -171,9 +171,9 @@ end $$;
 --> statement-breakpoint
 do $$ begin
 alter table
-	"activities"
+	"history"  -- Updated from "activities"
 add
-	constraint "activities_user_id_profiles_id_fk" foreign key ("user_id") references "public"."profiles"("id") on delete no action on update no action;
+	constraint "history_user_id_profiles_id_fk" foreign key ("user_id") references "public"."profiles"("id") on delete no action on update no action;
 
 exception
 when duplicate_object then null;
@@ -220,6 +220,6 @@ alter table role_permissions enable row level security;
 
 alter table modules enable row level security;
 
-alter table activities enable row level security;
+alter table history enable row level security;
 
 alter table user_roles enable row level security;

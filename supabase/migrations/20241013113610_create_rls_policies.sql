@@ -255,3 +255,34 @@ create policy "Prevent delete on role_permissions" on role_permissions for delet
 create policy "Allow insertion of initial member role" on user_roles for insert to authenticated
 with
   check (role = 'member'::user_role);
+
+-- History policies
+create policy "Users can view their own history" on history for
+select
+  to authenticated using (user_id = auth.uid());
+
+create policy "Users can create their own history entries" on history for insert 
+to authenticated
+with check (
+  user_id = auth.uid()
+  and exists (
+    select 1
+    from modules
+    where modules.id = history.module_id
+    and exists (
+      select 1
+      from trainings
+      join profiles on profiles.organization_id = trainings.organization_id
+      where trainings.id = modules.training_id
+      and profiles.id = auth.uid()
+    )
+  )
+);
+
+create policy "Users can update their own history entries" on history for update
+to authenticated using (
+  user_id = auth.uid()
+)
+with check (
+  user_id = auth.uid()
+);

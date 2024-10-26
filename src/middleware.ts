@@ -16,12 +16,12 @@ export async function middleware(request: NextRequest) {
   // All other routes should be protected
   const isProtectedRoute = !isPublicRoute;
 
-  console.log({
-    pathname,
-    isHomePage,
-    isPublicRoute,
-    isProtectedRoute,
-  });
+  // console.log({
+  //   pathname,
+  //   isHomePage,
+  //   isPublicRoute,
+  //   isProtectedRoute,
+  // });
 
   return await updateSession(request, isProtectedRoute);
 }
