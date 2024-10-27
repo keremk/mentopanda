@@ -88,3 +88,4 @@ export async function getTrainingById(
     updatedAt: training.updated_at,
   };
 }
+

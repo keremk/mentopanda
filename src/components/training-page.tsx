@@ -1,28 +1,16 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
-import Fuse from "fuse.js";
+import { useState, useEffect } from 'react'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Input } from "@/components/ui/input"
+import { Search } from 'lucide-react'
+import Link from 'next/link'
+import Image from 'next/image'
+import Fuse from 'fuse.js'
 
 // Mock data
 const trainings = [
@@ -33,20 +21,8 @@ const trainings = [
     imageSrc: "/placeholder.svg?height=100&width=100",
     videoSrc: "https://example.com/react-intro.mp4",
     modules: [
-      {
-        id: 1,
-        title: "React Fundamentals",
-        completed: true,
-        attempts: 2,
-        lastScore: 85,
-      },
-      {
-        id: 2,
-        title: "State and Props",
-        completed: false,
-        attempts: 1,
-        lastScore: 70,
-      },
+      { id: 1, title: "React Fundamentals", completed: true, attempts: 2, lastScore: 85 },
+      { id: 2, title: "State and Props", completed: false, attempts: 1, lastScore: 70 },
       { id: 3, title: "Hooks", completed: false, attempts: 0, lastScore: null },
     ],
   },
@@ -58,53 +34,40 @@ const trainings = [
     videoSrc: "https://example.com/advanced-js.mp4",
     modules: [
       { id: 4, title: "Closures", completed: true, attempts: 1, lastScore: 90 },
-      {
-        id: 5,
-        title: "Prototypes",
-        completed: false,
-        attempts: 0,
-        lastScore: null,
-      },
-      {
-        id: 6,
-        title: "Async Programming",
-        completed: false,
-        attempts: 0,
-        lastScore: null,
-      },
+      { id: 5, title: "Prototypes", completed: false, attempts: 0, lastScore: null },
+      { id: 6, title: "Async Programming", completed: false, attempts: 0, lastScore: null },
     ],
   },
-];
+]
 
-export default function TrainingPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredTrainings, setFilteredTrainings] = useState(trainings);
+export function TrainingPageComponent() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filteredTrainings, setFilteredTrainings] = useState(trainings)
 
   const fuse = new Fuse(trainings, {
-    keys: ["title", "description"],
+    keys: ['title', 'description'],
     threshold: 0.3,
-  });
+  })
 
   useEffect(() => {
     if (searchQuery) {
-      const results = fuse.search(searchQuery);
-      setFilteredTrainings(results.map((result) => result.item));
+      const results = fuse.search(searchQuery)
+      setFilteredTrainings(results.map(result => result.item))
     } else {
-      setFilteredTrainings(trainings);
+      setFilteredTrainings(trainings)
     }
-  }, [searchQuery]);
+  }, [searchQuery])
 
-  const startRandomModule = (trainingId: number) => {
-    const training = trainings.find((t) => t.id === trainingId);
-    const incompleteModules = training?.modules.filter((m) => !m.completed);
-    if (incompleteModules && incompleteModules.length > 0) {
-      const randomModule =
-        incompleteModules[Math.floor(Math.random() * incompleteModules.length)];
-      alert(`Starting module: ${randomModule.title}`);
+  const startRandomModule = (trainingId) => {
+    const training = trainings.find(t => t.id === trainingId)
+    const incompleteModules = training.modules.filter(m => !m.completed)
+    if (incompleteModules.length > 0) {
+      const randomModule = incompleteModules[Math.floor(Math.random() * incompleteModules.length)]
+      alert(`Starting module: ${randomModule.title}`)
     } else {
-      alert("All modules completed!");
+      alert("All modules completed!")
     }
-  };
+  }
 
   return (
     <div className="container mx-auto p-4">
@@ -118,10 +81,7 @@ export default function TrainingPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 pr-4 py-2 w-64"
           />
-          <Search
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            size={20}
-          />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
         </div>
       </div>
       {filteredTrainings.map((training) => (
@@ -158,21 +118,12 @@ export default function TrainingPage() {
                   {training.modules.map((module) => (
                     <div key={module.id} className="mb-4 p-4 border rounded">
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-lg font-semibold">
-                          {module.title}
-                        </h4>
-                        <Badge
-                          variant={module.completed ? "success" : "secondary"}
-                        >
+                        <h4 className="text-lg font-semibold">{module.title}</h4>
+                        <Badge variant={module.completed ? "success" : "secondary"}>
                           {module.completed ? "Completed" : "In Progress"}
                         </Badge>
                       </div>
-                      <Progress
-                        value={
-                          module.completed ? 100 : module.attempts > 0 ? 50 : 0
-                        }
-                        className="mb-2"
-                      />
+                      <Progress value={module.completed ? 100 : (module.attempts > 0 ? 50 : 0)} className="mb-2" />
                       <div className="flex justify-between items-center">
                         <span>Attempts: {module.attempts}</span>
                         {module.lastScore !== null && (
@@ -180,18 +131,11 @@ export default function TrainingPage() {
                         )}
                       </div>
                       <div className="mt-2">
-                        <Button
-                          onClick={() =>
-                            alert(`Starting module: ${module.title}`)
-                          }
-                        >
+                        <Button onClick={() => alert(`Starting module: ${module.title}`)}>
                           Start Module
                         </Button>
                         {module.lastScore !== null && (
-                          <Link
-                            href={`/assessment/${training.id}/${module.id}`}
-                            passHref
-                          >
+                          <Link href={`/assessment/${training.id}/${module.id}`} passHref>
                             <Button variant="outline" className="ml-2">
                               View Assessment
                             </Button>
@@ -205,12 +149,10 @@ export default function TrainingPage() {
             </Accordion>
           </CardContent>
           <CardFooter>
-            <Button onClick={() => startRandomModule(training.id)}>
-              Start Random Module
-            </Button>
+            <Button onClick={() => startRandomModule(training.id)}>Start Random Module</Button>
           </CardFooter>
         </Card>
       ))}
     </div>
-  );
+  )
 }

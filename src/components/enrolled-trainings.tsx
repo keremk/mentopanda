@@ -39,7 +39,7 @@ export async function EnrolledTrainings() {
                 <span className="text-lg font-medium">{training.trainingTitle}</span>
                 <div>
                   <Button size="sm" className="mr-2" asChild>
-                    <Link href={`/explore/${training.trainingId}`}>
+                    <Link href={`/training/${training.trainingId}`}>
                       <PlayCircle className="mr-2 h-4 w-4" />
                       Start Training
                     </Link>
