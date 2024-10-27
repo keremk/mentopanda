@@ -1,5 +1,6 @@
 import { getOrganizationId, getUserId, handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
+
 export interface Training {
   id: number;
   title: string;
@@ -11,6 +12,67 @@ export interface Training {
   previewUrl: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Module {
+  id: number;
+  title: string;
+  instructions: string | null;
+  prompt: string | null;
+  videoUrl: string | null;
+  audioUrl: string | null;
+}
+
+export interface ModuleProgress {
+  id: number;
+  title: string;
+  instructions: string | null;
+  prompt: string | null;
+  videoUrl: string | null;
+  audioUrl: string | null;
+  completed: boolean;
+  attempts: number;
+  lastScore: number | null;
+}
+
+export interface TrainingWithProgress {
+  id: number;
+  title: string;
+  tagline: string;
+  description: string;
+  imageUrl: string;
+  previewUrl: string | null;
+  isPublic: boolean;
+  organizationId: number | null;
+  modules: ModuleProgress[];
+}
+
+interface DbModule {
+  id: number
+  training_id: number
+  title: string
+  instructions: string | null
+  prompt: string | null
+  video_url: string | null
+  audio_url: string | null
+  history: DbHistory[] | null
+}
+
+interface DbHistory {
+  assessment_score: number | null
+  completed_at: string | null
+}
+
+interface DbTraining {
+  id: number
+  title: string
+  tagline: string
+  description: string
+  image_url: string
+  preview_url: string | null
+  is_public: boolean
+  organization_id: number | null
+  modules: DbModule[]
 }
 
 export async function getTrainings(
@@ -89,3 +151,62 @@ export async function getTrainingById(
   };
 }
 
+export async function getTrainingWithProgress(
+  supabase: SupabaseClient,
+  trainingId?: string
+): Promise<TrainingWithProgress[]> {
+  const userId = await getUserId(supabase)
+
+  let query = supabase
+    .from('trainings')
+    .select(`
+      *,
+      modules (
+        *,
+        history (
+          assessment_score,
+          completed_at
+        )
+      ),
+      enrollments!inner (
+        user_id
+      )
+    `)
+    .eq('enrollments.user_id', userId)
+
+  // Add training filter if specified
+  if (trainingId) {
+    query = query.eq('id', trainingId)
+  }
+
+  const { data: trainings, error } = await query
+
+  if (error) handleError(error)
+
+  return (trainings as DbTraining[])?.map(training => ({
+    id: training.id,
+    title: training.title,
+    tagline: training.tagline,
+    description: training.description,
+    imageUrl: training.image_url,
+    previewUrl: training.preview_url,
+    isPublic: training.is_public,
+    organizationId: training.organization_id,
+    modules: training.modules.map((module: DbModule) => {
+      const history = module.history?.filter(h => h.completed_at !== null) || []
+      const lastAttempt = history[history.length - 1]
+      
+      return {
+        id: module.id,
+        title: module.title,
+        instructions: module.instructions,
+        prompt: module.prompt,
+        videoUrl: module.video_url,
+        audioUrl: module.audio_url,
+        completed: history.some(h => (h.assessment_score ?? 0) >= 70), // Handle null assessment_score
+        attempts: history.length,
+        lastScore: lastAttempt?.assessment_score || null
+      }
+    })
+  })) || []
+}

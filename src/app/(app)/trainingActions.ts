@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { getTrainingById, getTrainings } from "@/data/trainings";
+import { getTrainingById, getTrainings, getTrainingWithProgress } from "@/data/trainings";
 
 export async function getTrainingsAction() {
   const supabase = createClient();
@@ -11,4 +11,9 @@ export async function getTrainingsAction() {
 export async function getTrainingByIdAction(trainingId: string) {
   const supabase = createClient();
   return await getTrainingById(supabase, trainingId);
+}
+
+export async function getTrainingWithProgressAction(trainingId?: string) {
+  const supabase = createClient();
+  return await getTrainingWithProgress(supabase, trainingId);
 }

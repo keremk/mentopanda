@@ -23,62 +23,24 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import Fuse from "fuse.js";
-
-// Mock data
-const trainings = [
-  {
-    id: 1,
-    title: "Introduction to React",
-    description: "Learn the basics of React and component-based architecture.",
-    imageSrc: "/placeholder.svg?height=100&width=100",
-    videoSrc: "https://example.com/react-intro.mp4",
-    modules: [
-      {
-        id: 1,
-        title: "React Fundamentals",
-        completed: true,
-        attempts: 2,
-        lastScore: 85,
-      },
-      {
-        id: 2,
-        title: "State and Props",
-        completed: false,
-        attempts: 1,
-        lastScore: 70,
-      },
-      { id: 3, title: "Hooks", completed: false, attempts: 0, lastScore: null },
-    ],
-  },
-  {
-    id: 2,
-    title: "Advanced JavaScript Concepts",
-    description: "Dive deep into advanced JavaScript topics and patterns.",
-    imageSrc: "/placeholder.svg?height=100&width=100",
-    videoSrc: "https://example.com/advanced-js.mp4",
-    modules: [
-      { id: 4, title: "Closures", completed: true, attempts: 1, lastScore: 90 },
-      {
-        id: 5,
-        title: "Prototypes",
-        completed: false,
-        attempts: 0,
-        lastScore: null,
-      },
-      {
-        id: 6,
-        title: "Async Programming",
-        completed: false,
-        attempts: 0,
-        lastScore: null,
-      },
-    ],
-  },
-];
+import { getTrainingWithProgressAction } from "../trainingActions";
+import { TrainingWithProgress } from "@/data/trainings";
 
 export default function TrainingPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredTrainings, setFilteredTrainings] = useState(trainings);
+  const [trainings, setTrainings] = useState<TrainingWithProgress[]>([]);
+  const [filteredTrainings, setFilteredTrainings] = useState<
+    TrainingWithProgress[]
+  >([]);
+
+  useEffect(() => {
+    async function loadTrainings() {
+      const data = await getTrainingWithProgressAction();
+      setTrainings(data);
+      setFilteredTrainings(data);
+    }
+    loadTrainings();
+  }, []);
 
   const fuse = new Fuse(trainings, {
     keys: ["title", "description"],
@@ -92,12 +54,11 @@ export default function TrainingPage() {
     } else {
       setFilteredTrainings(trainings);
     }
-  }, [searchQuery]);
+  }, [searchQuery, trainings]);
 
-  const startRandomModule = (trainingId: number) => {
-    const training = trainings.find((t) => t.id === trainingId);
-    const incompleteModules = training?.modules.filter((m) => !m.completed);
-    if (incompleteModules && incompleteModules.length > 0) {
+  const startRandomModule = (training: TrainingWithProgress) => {
+    const incompleteModules = training.modules.filter((m) => !m.completed);
+    if (incompleteModules.length > 0) {
       const randomModule =
         incompleteModules[Math.floor(Math.random() * incompleteModules.length)];
       alert(`Starting module: ${randomModule.title}`);
@@ -107,9 +68,9 @@ export default function TrainingPage() {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto px-4 sm:px-8 md:px-16 lg:px-24 xl:px-36">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Training Platform</h1>
+        <h1 className="text-3xl font-bold">My Trainings</h1>
         <div className="relative">
           <Input
             type="text"
@@ -128,7 +89,7 @@ export default function TrainingPage() {
         <Card key={training.id} className="mb-6">
           <CardHeader className="flex flex-row items-start space-x-4">
             <Image
-              src={training.imageSrc}
+              src={training.imageUrl || "/placeholder.svg"}
               alt={`${training.title} cover`}
               width={100}
               height={100}
@@ -140,17 +101,19 @@ export default function TrainingPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Accordion type="single" collapsible className="mb-4">
-              <AccordionItem value="video">
-                <AccordionTrigger>Video</AccordionTrigger>
-                <AccordionContent>
-                  <video controls className="w-full">
-                    <source src={training.videoSrc} type="video/mp4" />
-                    Your browser does not support the video element.
-                  </video>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+            {training.previewUrl && (
+              <Accordion type="single" collapsible className="mb-4">
+                <AccordionItem value="video">
+                  <AccordionTrigger>Video</AccordionTrigger>
+                  <AccordionContent>
+                    <video controls className="w-full">
+                      <source src={training.previewUrl} type="video/mp4" />
+                      Your browser does not support the video element.
+                    </video>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
             <Accordion type="single" collapsible>
               <AccordionItem value="modules">
                 <AccordionTrigger>Modules</AccordionTrigger>
@@ -205,7 +168,7 @@ export default function TrainingPage() {
             </Accordion>
           </CardContent>
           <CardFooter>
-            <Button onClick={() => startRandomModule(training.id)}>
+            <Button onClick={() => startRandomModule(training)}>
               Start Random Module
             </Button>
           </CardFooter>
