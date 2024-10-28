@@ -88,13 +88,18 @@ export default function TrainingPage() {
       {filteredTrainings.map((training) => (
         <Card key={training.id} className="mb-6">
           <CardHeader className="flex flex-row items-start space-x-4">
-            <Image
-              src={training.imageUrl || "/placeholder.svg"}
-              alt={`${training.title} cover`}
-              width={100}
-              height={100}
-              className="rounded-lg"
-            />
+            <div className="flex flex-col space-y-4">
+              <Image
+                src={training.imageUrl || "/placeholder.svg"}
+                alt={`${training.title} cover`}
+                width={200}
+                height={200}
+                className="rounded-lg"
+              />
+              <Button onClick={() => startRandomModule(training)}>
+                Start Random Module
+              </Button>
+            </div>
             <div>
               <CardTitle>{training.title}</CardTitle>
               <CardDescription>{training.description}</CardDescription>
@@ -104,7 +109,7 @@ export default function TrainingPage() {
             {training.previewUrl && (
               <Accordion type="single" collapsible className="mb-4">
                 <AccordionItem value="video">
-                  <AccordionTrigger>Video</AccordionTrigger>
+                  <AccordionTrigger>Video Introduction</AccordionTrigger>
                   <AccordionContent>
                     <video controls className="w-full">
                       <source src={training.previewUrl} type="video/mp4" />
@@ -130,12 +135,12 @@ export default function TrainingPage() {
                           {module.completed ? "Completed" : "In Progress"}
                         </Badge>
                       </div>
-                      <Progress
+                      {/* <Progress
                         value={
                           module.completed ? 100 : module.attempts > 0 ? 50 : 0
                         }
                         className="mb-2"
-                      />
+                      /> */}
                       <div className="flex justify-between items-center">
                         <span>Attempts: {module.attempts}</span>
                         {module.lastScore !== null && (
@@ -167,11 +172,6 @@ export default function TrainingPage() {
               </AccordionItem>
             </Accordion>
           </CardContent>
-          <CardFooter>
-            <Button onClick={() => startRandomModule(training)}>
-              Start Random Module
-            </Button>
-          </CardFooter>
         </Card>
       ))}
     </div>
