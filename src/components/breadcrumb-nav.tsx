@@ -10,58 +10,49 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import type { NavItem } from "@/types/nav";
 
-interface BreadcrumbNavProps {
-  navItems: NavItem[];
-}
-
-export function BreadcrumbNav({ navItems }: BreadcrumbNavProps) {
+// Remove NavItem props as we don't need them anymore
+export function BreadcrumbNav() {
   const pathname = usePathname();
 
-  // Function to find the current active items in the navigation
-  const findActivePath = () => {
-    // Find the main nav item that matches the current path
-    const mainItem = navItems.find((item) => {
-      if (item.url === pathname) return true;
-      if (item.items) {
-        return item.items.some((subItem) => subItem.url === pathname);
-      }
-      return false;
+  // Generate breadcrumbs from pathname
+  const generateBreadcrumbs = () => {
+    // Remove trailing slash and split pathname
+    const paths = pathname.replace(/\/$/, "").split("/").filter(Boolean);
+
+    return paths.map((path, index) => {
+      // Create URL for this breadcrumb level
+      const href = "/" + paths.slice(0, index + 1).join("/");
+      // Format the label (capitalize, replace hyphens with spaces)
+      const label = path
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+
+      return {
+        href,
+        label,
+      };
     });
-
-    if (!mainItem) return [];
-
-    // If it's a main item without subitems, return just that
-    if (mainItem.url === pathname) {
-      return [mainItem];
-    }
-
-    // If it has subitems, find the active subitem
-    const subItem = mainItem.items?.find((item) => item.url === pathname);
-    if (subItem) {
-      return [mainItem, subItem];
-    }
-
-    return [mainItem];
   };
 
-  const activePath = findActivePath();
+  const breadcrumbs = generateBreadcrumbs();
 
-  if (activePath.length === 0) return null;
+  if (breadcrumbs.length === 0) return null;
 
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        {activePath.map((item, index) => {
-          const isLast = index === activePath.length - 1;
+        {breadcrumbs.map((crumb, index) => {
+          const isLast = index === breadcrumbs.length - 1;
           return (
-            <React.Fragment key={item.title}>
+            <React.Fragment key={crumb.href}>
               <BreadcrumbItem className="hidden md:block">
                 {isLast ? (
-                  <BreadcrumbPage>{item.title}</BreadcrumbPage>
+                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
                 ) : (
-                  <BreadcrumbLink href={item.url}>{item.title}</BreadcrumbLink>
+                  <BreadcrumbLink href={crumb.href}>
+                    {crumb.label}
+                  </BreadcrumbLink>
                 )}
               </BreadcrumbItem>
               {!isLast && <BreadcrumbSeparator className="hidden md:block" />}
