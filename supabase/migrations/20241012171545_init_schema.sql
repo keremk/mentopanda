@@ -56,23 +56,25 @@ create table if not exists "modules" (
 	"updated_at" timestamp default now() not null
 );
 
+-- https://x.com/dshukertjr/status/1851231477671079952 Sensible default for user_id
 create table if not exists "enrollments" (
 	"id" serial primary key not null,
 	"training_id" integer not null references trainings (id) on delete cascade,
-	"user_id" uuid not null references profiles (id) on delete cascade,
+	"user_id" uuid default auth.uid() not null references profiles (id) on delete cascade,
 	"created_at" timestamp default now() not null
 );
 
 create table if not exists "history" (
 	"id" serial primary key not null,
 	"module_id" integer references modules (id) on delete set null,
-	"user_id" uuid not null references profiles (id) on delete cascade,
+	"user_id" uuid default auth.uid() not null references profiles (id) on delete cascade,
 	"assessment_text" text,
 	"assessment_score" integer,
 	"started_at" timestamp default now() not null,
 	"completed_at" timestamp
 );
 
+-- In this case user_roles will be managed by the admin, so the above default is not sensible
 create table if not exists "user_roles" (
 	"user_id" uuid not null references profiles (id) on delete cascade on update cascade,
 	"role" "user_role" not null,
