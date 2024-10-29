@@ -58,9 +58,9 @@ export function TrainingPageComponent() {
     }
   }, [searchQuery])
 
-  const startRandomModule = (trainingId) => {
+  const startRandomModule = (trainingId: number) => {
     const training = trainings.find(t => t.id === trainingId)
-    const incompleteModules = training.modules.filter(m => !m.completed)
+    const incompleteModules = training?.modules.filter(m => !m.completed) || []
     if (incompleteModules.length > 0) {
       const randomModule = incompleteModules[Math.floor(Math.random() * incompleteModules.length)]
       alert(`Starting module: ${randomModule.title}`)

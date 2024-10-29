@@ -26,6 +26,11 @@ export const navItems: NavItem[] = [
     iconKey: "book",
   },
   {
+    title: "Assessments",
+    url: "/assessments",
+    iconKey: "piechart", 
+  },
+  {
     title: "Settings",
     url: "#",
     iconKey: "settings",

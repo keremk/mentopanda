@@ -9,14 +9,16 @@ type HistoryEntry = {
   assessmentScore: number | null;
   completedAt: Date | null;
   startedAt: Date;
+  attemptNumber: number;
 };
 
 export async function getTrainingHistory(
   supabase: SupabaseClient,
-  limit: number
+  limit: number,
+  completedOnly: boolean = false
 ): Promise<HistoryEntry[]> {
   const userId = await getUserId(supabase);
-  const { data: historyData, error: historyError } = await supabase
+  let query = supabase
     .from("history")
     .select(`
       id,
@@ -24,6 +26,7 @@ export async function getTrainingHistory(
       assessment_score,
       completed_at,
       started_at,
+      module_id,
       modules (
         id,
         title,
@@ -35,13 +38,26 @@ export async function getTrainingHistory(
     `)
     .eq("user_id", userId)
     .order("started_at", { ascending: false })
-    .limit(limit)
+    .limit(limit);
 
-  console.log(userId)
-  console.log(historyData)
-  if (historyError) handleError(historyError)
+  if (completedOnly) {
+    query = query.not("completed_at", "is", null);
+  }
 
-  if (!historyData) return []
+  const { data: historyData, error: historyError } = await query;
+
+  console.log(userId);
+  console.log(historyData);
+  if (historyError) handleError(historyError);
+
+  if (!historyData) return [];
+
+  // Get all attempts for each module to calculate attempt numbers
+  const moduleAttempts = new Map<number, number>();
+  historyData.forEach((entry: any) => {
+    const moduleId = entry.module_id;
+    moduleAttempts.set(moduleId, (moduleAttempts.get(moduleId) || 0) + 1);
+  });
 
   return historyData.map((entry: any) => ({
     id: entry.id,
@@ -50,6 +66,7 @@ export async function getTrainingHistory(
     assessmentText: entry.assessment_text,
     assessmentScore: entry.assessment_score,
     completedAt: entry.completed_at ? new Date(entry.completed_at) : null,
-    startedAt: new Date(entry.started_at)
-  }))
+    startedAt: new Date(entry.started_at),
+    attemptNumber: moduleAttempts.get(entry.module_id) || 1
+  }));
 }
