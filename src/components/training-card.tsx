@@ -48,11 +48,7 @@ export function TrainingCard({
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between">
         <EnrollmentButton trainingId={id} className="flex-1 mr-2" />
-        <Button
-          variant="secondary"
-          className="flex-1 ml-2"
-          asChild
-        >
+        <Button variant="secondary" className="flex-1 ml-2" asChild>
           <Link href={`/explore/${id}`}>
             <Info className="mr-2 h-4 w-4" />
             Details

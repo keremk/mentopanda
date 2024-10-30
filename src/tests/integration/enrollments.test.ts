@@ -47,13 +47,64 @@ describe("Enrollment Integration Tests", () => {
 
       // Delete trainings
       await supabase.from("trainings").delete().eq("id", testTrainingId);
-
     } catch (error) {
       console.error("Error during cleanup:", error);
     }
   });
 
   it("should return enrolled trainings for the authenticated user", async () => {
+    // Mock the auth.getUser to return our test user
+    vi.spyOn(supabase.auth, "getUser").mockResolvedValue({
+      data: { user: { id: testUserId } },
+      error: null,
+    } as any);
+
+    const enrolledTrainings = await getEnrolledTrainings(supabase);
+
+    expect(enrolledTrainings).toHaveLength(1);
+    expect(enrolledTrainings[0]).toMatchObject<Partial<Enrollment>>({
+      id: expect.any(Number),
+      trainingTitle: "Test Training",
+      trainingId: testTrainingId,
+      createdAt: expect.any(String),
+    });
+  });
+  it("should return an empty array if the user is not enrolled in any trainings", async () => {
+    // Mock the auth.getUser to return our test user
+    vi.spyOn(supabase.auth, "getUser").mockResolvedValue({
+      data: { user: { id: testUserId } },
+      error: null,
+    } as any);
+
+    // Ensure the user is not enrolled in any trainings
+    await supabase.from("enrollments").delete().eq("user_id", testUserId);
+
+    const enrolledTrainings = await getEnrolledTrainings(supabase);
+
+    expect(enrolledTrainings).toHaveLength(0);
+  });
+
+  it("should handle errors gracefully", async () => {
+    // Mock the auth.getUser to return our test user
+    vi.spyOn(supabase.auth, "getUser").mockResolvedValue({
+      data: { user: { id: testUserId } },
+      error: null,
+    } as any);
+
+    // Mock the supabase.from().select().eq() to throw an error
+    vi.spyOn(supabase.from("enrollments"), "select").mockImplementation(() => {
+      throw new Error("Test error");
+    });
+
+    try {
+      await getEnrolledTrainings(supabase);
+    } catch (error: Error | any) {
+      expect(error).toBeDefined();
+      expect(error.message).toBe("Test error");
+    }
+  });
+
+  it("should return the correct training details", async () => {
     // Mock the auth.getUser to return our test user
     vi.spyOn(supabase.auth, "getUser").mockResolvedValue({
       data: { user: { id: testUserId } },

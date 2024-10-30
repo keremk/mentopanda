@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Chrome",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Next.js App",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["${workspaceFolder}/node_modules/next/dist/bin/next", "dev"],
+      "cwd": "${workspaceFolder}",
+      "port": 9229,
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "programPath",
+      "description": "Path to the entry point of your Next.js application (e.g., src/app/page.tsx)"
+    }
+  ]
+}
