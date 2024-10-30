@@ -1,6 +1,6 @@
 import { getTrainingWithProgressAction } from "../trainingActions"
 import { SearchProvider } from "@/components/providers/search-provider"
-import { HeaderSearchArea } from "@/components/header-search-area"
+import { SearchWrapper } from "@/components/search-wrapper"
 
 export default async function TrainingsLayout({
   children,
@@ -11,7 +11,11 @@ export default async function TrainingsLayout({
 
   return (
     <>
-      <HeaderSearchArea trainings={trainings} />
+      <SearchWrapper
+        items={trainings}
+        searchKeys={["title", "description"]}
+        placeholder="Search trainings..."
+      />
       <SearchProvider initialTrainings={trainings}>
         {children}
       </SearchProvider>

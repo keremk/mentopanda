@@ -4,27 +4,42 @@ import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import Fuse from "fuse.js"
-import { TrainingWithProgress } from "@/data/trainings"
 
-interface SearchTrainingsProps {
-  trainings: TrainingWithProgress[]
-  onSearch?: (filtered: TrainingWithProgress[]) => void
+type SearchableItem = {
+  id: string | number
+  [key: string]: any
 }
 
-export function SearchTrainings({ trainings, onSearch }: SearchTrainingsProps) {
+type HeaderSearchBoxProps<T extends SearchableItem> = {
+  items: T[]
+  searchKeys: string[]
+  placeholder?: string
+  className?: string
+  threshold?: number
+  onSearch?: (filtered: T[]) => void
+}
+
+export function HeaderSearchBox<T extends SearchableItem>({
+  items,
+  searchKeys,
+  placeholder = "Search...",
+  className = "",
+  threshold = 0.3,
+  onSearch,
+}: HeaderSearchBoxProps<T>) {
   const [searchQuery, setSearchQuery] = useState("")
 
-  const handleSearch = (query: string) => {
+  function handleSearch(query: string) {
     setSearchQuery(query)
     
     if (!query.trim()) {
-      onSearch?.(trainings)
+      onSearch?.(items)
       return
     }
 
-    const fuse = new Fuse(trainings, {
-      keys: ["title", "description"],
-      threshold: 0.3,
+    const fuse = new Fuse(items, {
+      keys: searchKeys,
+      threshold,
     })
 
     const results = fuse.search(query)
@@ -32,10 +47,10 @@ export function SearchTrainings({ trainings, onSearch }: SearchTrainingsProps) {
   }
 
   return (
-    <div className="relative">
+    <div className={`relative ${className}`}>
       <Input
         type="text"
-        placeholder="Search trainings..."
+        placeholder={placeholder}
         value={searchQuery}
         onChange={(e) => handleSearch(e.target.value)}
         className="pl-10 pr-4 py-2 w-64"
