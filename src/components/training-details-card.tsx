@@ -24,16 +24,13 @@ interface TrainingDetailsCardProps {
 }
 
 export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
-  const startRandomModule = () => {
+  const getRandomModuleId = () => {
     const incompleteModules = training.modules.filter((m) => !m.completed)
-    if (incompleteModules.length > 0) {
-      const randomModule =
-        incompleteModules[Math.floor(Math.random() * incompleteModules.length)]
-      alert(`Starting module: ${randomModule.title}`)
-    } else {
-      alert("All modules completed!")
-    }
+    if (incompleteModules.length === 0) return null
+    return incompleteModules[Math.floor(Math.random() * incompleteModules.length)].id
   }
+
+  const randomModuleId = getRandomModuleId()
 
   return (
     <Card>
@@ -46,9 +43,13 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
             height={200}
             className="rounded-lg"
           />
-          <Button onClick={startRandomModule}>
-            Start Random Module
-          </Button>
+          {randomModuleId ? (
+            <Link href={`/trainings/${training.id}/${randomModuleId}`}>
+              <Button className="w-full">Start Random Module</Button>
+            </Link>
+          ) : (
+            <Button disabled className="w-full">All Modules Completed</Button>
+          )}
         </div>
         <div>
           <CardTitle>{training.title}</CardTitle>
@@ -88,17 +89,15 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
                     )}
                   </div>
                   <div className="mt-2">
-                    <Button onClick={() => alert(`Starting module: ${module.title}`)}>
-                      Start Module
-                    </Button>
+                    <Link href={`/trainings/${training.id}/${module.id}`}>
+                      <Button className="w-full sm:w-auto">Start Module</Button>
+                    </Link>
                     {module.lastScore !== null && (
                       <Link
                         href={`/assessment/${training.id}/${module.id}`}
-                        passHref
+                        className="ml-2"
                       >
-                        <Button variant="outline" className="ml-2">
-                          View Assessment
-                        </Button>
+                        <Button variant="outline">View Assessment</Button>
                       </Link>
                     )}
                   </div>

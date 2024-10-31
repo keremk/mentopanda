@@ -1,7 +1,7 @@
 import { getOrganizationId, getUserId, handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
 
-export interface Training {
+export type Training = {
   id: number;
   title: string;
   tagline: string;
@@ -14,7 +14,7 @@ export interface Training {
   updatedAt: string;
 }
 
-export interface Module {
+export type Module = {
   id: number;
   title: string;
   instructions: string | null;
@@ -23,7 +23,7 @@ export interface Module {
   audioUrl: string | null;
 }
 
-export interface ModuleProgress {
+export type ModuleProgress = {
   id: number;
   title: string;
   instructions: string | null;
@@ -35,7 +35,7 @@ export interface ModuleProgress {
   lastScore: number | null;
 }
 
-export interface TrainingWithProgress {
+export type TrainingWithProgress = {
   id: number;
   title: string;
   tagline: string;
@@ -47,7 +47,7 @@ export interface TrainingWithProgress {
   modules: ModuleProgress[];
 }
 
-interface DbModule {
+type DbModule = {
   id: number
   training_id: number
   title: string
@@ -58,12 +58,12 @@ interface DbModule {
   history: DbHistory[] | null
 }
 
-interface DbHistory {
+type DbHistory = {
   assessment_score: number | null
   completed_at: string | null
 }
 
-interface DbTraining {
+type DbTraining = {
   id: number
   title: string
   tagline: string
