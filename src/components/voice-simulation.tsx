@@ -10,7 +10,12 @@ const participants = [
   { id: 3, name: 'Charlie', color: 'bg-yellow-500' },
 ]
 
-export function VoiceSimulationComponent({ onEndCall }: { onEndCall: () => void }) {
+type VoiceSimulationProps = {
+  onEndCall: () => void;
+  prompt: string;
+}
+
+export function VoiceSimulationComponent({ onEndCall, prompt }: VoiceSimulationProps) {
   const [isPaused, setIsPaused] = useState(false)
   const [speakingParticipant, setSpeakingParticipant] = useState<number | null>(null)
 

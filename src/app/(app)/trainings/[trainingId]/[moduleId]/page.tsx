@@ -1,101 +1,41 @@
-"use client";
+import { getTrainingWithProgressAction } from "@/app/(app)/trainingActions";
+import { SimulationContainer } from "@/components/simulation-container";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { redirect } from "next/navigation";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { VoiceSimulationComponent } from "@/components/voice-simulation";
-import { ChatSimulationComponent } from "@/components/chat-simulation";
-import { useParams, useRouter } from "next/navigation";
-
-export default function Page() {
-  const [simulationStarted, setSimulationStarted] = useState(false);
-  const [simulationType, setSimulationType] = useState<"voice" | "chat" | null>(
-    null
-  );
-  const router = useRouter();
-  const { trainingId, moduleId } = useParams();
-
-  const startSimulation = (type: "voice" | "chat") => {
-    setSimulationType(type);
-    setSimulationStarted(true);
+type Props = {
+  params: {
+    trainingId: string;
+    moduleId: string;
   };
+};
 
-  const assessmentId = 1;
-  const endConversation = () => {
-    router.push(`/trainings/assessments/${assessmentId}`);
-  };
+export default async function Page({ params: { trainingId, moduleId } }: Props) {
+  const trainings = await getTrainingWithProgressAction(trainingId);
+  const training = trainings[0];
+  
+  if (!training) redirect("/trainings");
+  
+  const currentModule = training.modules.find(m => m.id === Number(moduleId));
+  if (!currentModule) redirect(`/trainings/${trainingId}`);
 
   return (
     <div className="container mx-auto py-8">
       <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
-          <CardTitle>Manager Training Simulation</CardTitle>
-          <CardDescription>
-            Practice your skills in 1:1 conversations for coaching, performance
-            assessment, and team meeting facilitation.
-          </CardDescription>
+          <CardTitle>{training.title}</CardTitle>
+          <CardDescription>{training.tagline}</CardDescription>
         </CardHeader>
         <CardContent>
-          <h2 className="text-lg font-semibold mb-2">Scenario:</h2>
-          <p className="mb-4">
-            You are conducting a performance review with an employee who has
-            been struggling to meet deadlines. Your goal is to address the issue
-            constructively and develop an improvement plan.
-          </p>
-
-          {!simulationStarted && (
-            <Tabs defaultValue="voice" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="voice">Voice Simulation</TabsTrigger>
-                <TabsTrigger value="chat">Chat Simulation</TabsTrigger>
-              </TabsList>
-              <TabsContent value="voice">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Voice Simulation</CardTitle>
-                    <CardDescription>
-                      Simulate a voice call conversation.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button onClick={() => startSimulation("voice")}>
-                      Start Voice Simulation
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="chat">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Chat Simulation</CardTitle>
-                    <CardDescription>
-                      Simulate a text-based chat conversation.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button onClick={() => startSimulation("chat")}>
-                      Start Chat Simulation
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+          <h2 className="text-lg font-semibold mb-2">{currentModule.title}</h2>
+          {currentModule.instructions && (
+            <p className="mb-4">{currentModule.instructions}</p>
           )}
-
-          {simulationStarted && simulationType === "voice" && (
-            <VoiceSimulationComponent onEndCall={endConversation} />
-          )}
-
-          {simulationStarted && simulationType === "chat" && (
-            <ChatSimulationComponent onEndConversation={endConversation} />
-          )}
+          
+          <SimulationContainer 
+            trainingId={trainingId}
+            module={currentModule}
+          />
         </CardContent>
       </Card>
     </div>
