@@ -1,76 +1,153 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Button } from "@/components/ui/button"
-import { Pause, Play, PhoneOff } from 'lucide-react'
-
-const participants = [
-  { id: 1, name: 'Alice', color: 'bg-blue-500' },
-  { id: 2, name: 'Bob', color: 'bg-green-500' },
-  { id: 3, name: 'Charlie', color: 'bg-yellow-500' },
-]
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  LiveKitRoom,
+  useVoiceAssistant,
+  BarVisualizer,
+  RoomAudioRenderer,
+  VoiceAssistantControlBar,
+  AgentState,
+  DisconnectButton,
+} from "@livekit/components-react";
+import { useCallback, useEffect, useState } from "react";
+import { MediaDeviceFailure } from "livekit-client";
+import type { ConnectionDetails } from "@/app/livekit/connection-details/route";
+import { NoAgentNotification } from "@/components/no-agent-notification";
+import { CloseIcon } from "@/components/icons/close-icon";
+// import { useKrispNoiseFilter } from "@livekit/components-react/krisp";
+import type { ModuleProgress } from "@/data/trainings";
 
 type VoiceSimulationProps = {
+  trainingId: string;
+  module: ModuleProgress;
   onEndCall: () => void;
-  prompt: string;
-}
+};
 
-export function VoiceSimulationComponent({ onEndCall, prompt }: VoiceSimulationProps) {
-  const [isPaused, setIsPaused] = useState(false)
-  const [speakingParticipant, setSpeakingParticipant] = useState<number | null>(null)
+export function VoiceSimulationComponent({
+  trainingId,
+  module,
+  onEndCall,
+}: VoiceSimulationProps) {
+  const [connectionDetails, updateConnectionDetails] = useState<
+    ConnectionDetails | undefined
+  >(undefined);
+  const [agentState, setAgentState] = useState<AgentState>("disconnected");
 
-  useEffect(() => {
-    if (!isPaused) {
-      const interval = setInterval(() => {
-        setSpeakingParticipant(Math.floor(Math.random() * participants.length))
-      }, 3000)
-      return () => clearInterval(interval)
-    }
-  }, [isPaused])
-
-  const togglePause = () => {
-    setIsPaused(!isPaused)
-    if (isPaused) {
-      setSpeakingParticipant(Math.floor(Math.random() * participants.length))
-    } else {
-      setSpeakingParticipant(null)
-    }
-  }
+  const onConnectButtonClicked = useCallback(async () => {
+    const url = new URL(
+      process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ??
+        "/livekit/connection-details",
+      window.location.origin
+    );
+    url.searchParams.set("moduleId", module.id.toString());
+    const response = await fetch(url.toString());
+    const connectionDetailsData = await response.json();
+    updateConnectionDetails(connectionDetailsData);
+  }, []);
 
   return (
-    <div className="mt-4">
-      <h3 className="text-lg font-semibold mb-2">Voice Call in Progress</h3>
-      <div className="bg-muted p-4 rounded-md min-h-[300px]">
-        <div className="flex flex-wrap justify-center gap-8">
-          {participants.map((participant, index) => (
-            <div key={participant.id} className="flex flex-col items-center">
-              <div className={`w-24 h-24 rounded-full ${participant.color} text-white flex items-center justify-center text-3xl font-semibold`}>
-                {participant.name[0]}
-              </div>
-              <span className="mt-2 text-lg font-medium">{participant.name}</span>
-              <div className="mt-2 w-24 h-4 bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full ${speakingParticipant === index ? 'bg-green-500' : 'bg-gray-400'} transition-all duration-300 ease-in-out`}
-                  style={{
-                    clipPath: speakingParticipant === index 
-                      ? 'polygon(0 50%, 5% 45%, 10% 55%, 15% 50%, 20% 45%, 25% 55%, 30% 60%, 35% 45%, 40% 50%, 45% 55%, 50% 45%, 55% 50%, 60% 55%, 65% 50%, 70% 45%, 75% 55%, 80% 50%, 85% 45%, 90% 55%, 95% 50%, 100% 45%, 100% 100%, 0 100%)'
-                      : 'polygon(0 50%, 100% 50%, 100% 100%, 0 100%)'
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="flex justify-center mt-4 space-x-2">
-        <Button onClick={togglePause} variant="outline">
-          {isPaused ? <Play className="mr-2 h-4 w-4" /> : <Pause className="mr-2 h-4 w-4" />}
-          {isPaused ? 'Resume' : 'Pause'}
-        </Button>
-        <Button onClick={onEndCall} variant="destructive">
-          <PhoneOff className="mr-2 h-4 w-4" /> End Call
-        </Button>
-      </div>
+    <div
+      data-lk-theme="default"
+      className="h-full grid content-center bg-[var(--lk-bg)]"
+    >
+      <LiveKitRoom
+        token={connectionDetails?.participantToken}
+        serverUrl={connectionDetails?.serverUrl}
+        connect={connectionDetails !== undefined}
+        audio={true}
+        video={false}
+        onMediaDeviceFailure={onDeviceFailure}
+        onDisconnected={() => {
+          updateConnectionDetails(undefined);
+        }}
+        className="grid grid-rows-[2fr_1fr] items-center"
+      >
+        <SimpleVoiceAssistant onStateChange={setAgentState} />
+        <ControlBar
+          onConnectButtonClicked={onConnectButtonClicked}
+          agentState={agentState}
+        />
+        <RoomAudioRenderer />
+        <NoAgentNotification state={agentState} />
+      </LiveKitRoom>
     </div>
-  )
+  );
+}
+
+function SimpleVoiceAssistant(props: {
+  onStateChange: (state: AgentState) => void;
+}) {
+  const { state, audioTrack } = useVoiceAssistant();
+  useEffect(() => {
+    props.onStateChange(state);
+  }, [props, state]);
+  return (
+    <div className="h-[300px] max-w-[90vw] mx-auto">
+      <BarVisualizer
+        state={state}
+        barCount={5}
+        trackRef={audioTrack}
+        className="agent-visualizer"
+        options={{ minHeight: 24 }}
+      />
+    </div>
+  );
+}
+
+function ControlBar(props: {
+  onConnectButtonClicked: () => void;
+  agentState: AgentState;
+}) {
+  /**
+   * Use Krisp background noise reduction when available.
+   * Note: This is only available on Scale plan, see {@link https://livekit.io/pricing | LiveKit Pricing} for more details.
+   */
+  // const krisp = useKrispNoiseFilter();
+  // useEffect(() => {
+  //   krisp.setNoiseFilterEnabled(true);
+  // }, []);
+
+  return (
+    <div className="relative h-[100px]">
+      <AnimatePresence>
+        {props.agentState === "disconnected" && (
+          <motion.button
+            initial={{ opacity: 0, top: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, top: "-10px" }}
+            transition={{ duration: 1, ease: [0.09, 1.04, 0.245, 1.055] }}
+            className="uppercase absolute left-1/2 -translate-x-1/2 px-4 py-2 bg-white text-black rounded-md"
+            onClick={props.onConnectButtonClicked}
+          >
+            Start a conversation
+          </motion.button>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {props.agentState !== "disconnected" &&
+          props.agentState !== "connecting" && (
+            <motion.div
+              initial={{ opacity: 0, top: "10px" }}
+              animate={{ opacity: 1, top: 0 }}
+              exit={{ opacity: 0, top: "-10px" }}
+              transition={{ duration: 0.4, ease: [0.09, 1.04, 0.245, 1.055] }}
+              className="flex h-8 absolute left-1/2 -translate-x-1/2  justify-center"
+            >
+              <VoiceAssistantControlBar controls={{ leave: false }} />
+              <DisconnectButton>
+                <CloseIcon />
+              </DisconnectButton>
+            </motion.div>
+          )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function onDeviceFailure(error?: MediaDeviceFailure) {
+  console.error(error);
+  alert(
+    "Error acquiring camera or microphone permissions. Please make sure you grant the necessary permissions in your browser and reload the tab"
+  );
 }

@@ -68,8 +68,9 @@ export function SimulationContainer({ trainingId, module }: SimulationContainerP
   if (simulationType === "voice") {
     return (
       <VoiceSimulationComponent 
+        trainingId={trainingId}
+        module={module}
         onEndCall={() => router.push(`/trainings/${trainingId}`)}
-        prompt={module.prompt || ""}
       />
     );
   }
