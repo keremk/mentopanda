@@ -1,13 +1,14 @@
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import Image from 'next/image'
-import { notFound } from 'next/navigation'
-import { EnrollmentButton } from '@/components/enrollment-button'
-import { getTrainingByIdAction } from '@/app/(app)/trainingActions'
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import Image from "next/image";
+import { notFound } from "next/navigation";
+import { EnrollmentButton } from "@/components/enrollment-button";
+import { getTrainingByIdAction } from "@/app/(app)/trainingActions";
+import { Pencil } from "lucide-react";
 
 function YouTubeEmbed({ url }: { url: string }) {
-  const videoId = url.split('v=')[1]
-  const embedUrl = `https://www.youtube.com/embed/${videoId}`
+  const videoId = url.split("v=")[1];
+  const embedUrl = `https://www.youtube.com/embed/${videoId}`;
 
   return (
     <div className="aspect-video">
@@ -20,26 +21,33 @@ function YouTubeEmbed({ url }: { url: string }) {
         className="rounded-lg"
       ></iframe>
     </div>
-  )
+  );
 }
 
-export default async function TrainingDetailsPage({ params }: { params: { trainingId: string } }) {
-  const training = await getTrainingByIdAction(params.trainingId)
+export default async function TrainingDetailsPage({
+  params,
+}: {
+  params: { trainingId: string };
+}) {
+  const training = await getTrainingByIdAction(params.trainingId);
 
   if (!training) {
-    notFound()
+    notFound();
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
+      <div className="absolute top-0 right-0 p-4 z-10">
+        <EnrollmentButton trainingId={training.id} />
         <Button asChild variant="outline">
-          <Link href="/explore" className="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4"><path d="m15 18-6-6 6-6"/></svg>
-            Back to Trainings
+          <Link
+            href={`/explore/${training.id}/edit`}
+            className="flex items-center"
+          >
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit
           </Link>
         </Button>
-        <EnrollmentButton trainingId={training.id} />
       </div>
 
       <div className="mb-8">
@@ -72,5 +80,5 @@ export default async function TrainingDetailsPage({ params }: { params: { traini
         <EnrollmentButton trainingId={training.id} />
       </div>
     </div>
-  )
+  );
 }
