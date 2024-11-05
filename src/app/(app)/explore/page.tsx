@@ -1,8 +1,8 @@
 import { TrainingGrid } from "@/components/training-grid";
-import { getTrainingsAction } from "@/app/(app)/trainingActions";
+import { getTrainingsWithEnrollmentAction } from "@/app/(app)/trainingActions";
 
 export default async function ExplorePage() {
-  const trainings = await getTrainingsAction();
+  const trainings = await getTrainingsWithEnrollmentAction();
 
   return (
     <div className="p-4">

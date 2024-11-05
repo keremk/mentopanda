@@ -13,19 +13,25 @@ import { PlusCircle, MinusCircle } from "lucide-react";
 interface EnrollmentButtonProps {
   trainingId: number;
   className?: string;
+  isEnrolled?: boolean;
 }
 
 export function EnrollmentButton({
   trainingId,
   className,
+  isEnrolled: initialEnrollmentStatus,
 }: EnrollmentButtonProps) {
   const [enrolled, setEnrolled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    checkEnrollmentStatus();
-  }, [trainingId]);
+    if (initialEnrollmentStatus !== undefined) {
+      setEnrolled(initialEnrollmentStatus);
+    } else {
+      checkEnrollmentStatus();
+    }
+  }, [trainingId, initialEnrollmentStatus]);
 
   const checkEnrollmentStatus = async () => {
     try {

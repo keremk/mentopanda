@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Info, BookOpen } from "lucide-react";
+import { Info } from "lucide-react";
 import { EnrollmentButton } from "@/components/enrollment-button";
 
 interface TrainingCardProps {
@@ -16,6 +16,7 @@ interface TrainingCardProps {
   title: string;
   tagline?: string;
   imageUrl?: string;
+  isEnrolled: boolean;
 }
 
 export function TrainingCard({
@@ -23,6 +24,7 @@ export function TrainingCard({
   title,
   tagline,
   imageUrl,
+  isEnrolled,
 }: TrainingCardProps) {
   const fallbackImage = "/placeholder.svg?height=200&width=300";
 
@@ -47,7 +49,11 @@ export function TrainingCard({
         )}
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between">
-        <EnrollmentButton trainingId={id} className="flex-1 mr-2" />
+        <EnrollmentButton 
+          trainingId={id} 
+          className="flex-1 mr-2" 
+          isEnrolled={isEnrolled}
+        />
         <Button variant="secondary" className="flex-1 ml-2" asChild>
           <Link href={`/explore/${id}`}>
             <Info className="mr-2 h-4 w-4" />

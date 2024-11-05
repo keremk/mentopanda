@@ -1,8 +1,8 @@
 import { TrainingCard } from "@/components/training-card";
-import { Training } from "@/data/trainings";
+import { TrainingWithEnrollment } from "@/data/trainings";
 
 interface TrainingGridProps {
-  trainings: Training[];
+  trainings: TrainingWithEnrollment[];
 }
 
 export function TrainingGrid({ trainings }: TrainingGridProps) {
@@ -15,6 +15,7 @@ export function TrainingGrid({ trainings }: TrainingGridProps) {
           title={training.title}
           tagline={training.tagline}
           imageUrl={training.imageUrl}
+          isEnrolled={training.isEnrolled}
         />
       ))}
     </div>

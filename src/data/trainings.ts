@@ -47,6 +47,10 @@ export type TrainingWithProgress = {
   modules: ModuleProgress[];
 }
 
+export type TrainingWithEnrollment = Training & {
+  isEnrolled: boolean;
+};
+
 type DbModule = {
   id: number
   training_id: number
@@ -209,4 +213,43 @@ export async function getTrainingWithProgress(
       }
     })
   })) || []
+}
+
+export async function getTrainingsWithEnrollment(
+  supabase: SupabaseClient
+): Promise<TrainingWithEnrollment[]> {
+  const userId = await getUserId(supabase);
+  const organizationId = await getOrganizationId(supabase);
+
+  let query = supabase
+    .from('trainings')
+    .select(`
+      *,
+      enrollments!left (
+        user_id
+      )
+    `)
+    .or('is_public.eq.true');
+
+  if (organizationId !== null) {
+    query = query.or(`organization_id.eq.${organizationId}`);
+  }
+
+  const { data: trainings, error } = await query;
+
+  if (error) handleError(error);
+
+  return trainings?.map(training => ({
+    id: training.id,
+    title: training.title,
+    tagline: training.tagline,
+    description: training.description,
+    imageUrl: training.image_url,
+    isPublic: training.is_public,
+    organizationId: training.organization_id,
+    previewUrl: training.preview_url,
+    createdAt: training.created_at,
+    updatedAt: training.updated_at,
+    isEnrolled: training.enrollments?.some(e => e.user_id === userId) ?? false
+  })) ?? [];
 }
