@@ -19,7 +19,8 @@ create table if not exists "organizations" (
 
 create table if not exists "profiles" (
 	"id" uuid primary key not null references auth.users (id) on delete cascade on update cascade,
-	"organization_id" integer references organizations (id) on delete set null,
+	"organization_id" integer references organizations (id) on delete set default default 1 not null,
+	"user_role" "user_role" default 'member' not null,
 	"created_at" timestamp default now() not null,
 	"updated_at" timestamp default now() not null
 );
@@ -74,14 +75,6 @@ create table if not exists "history" (
 	"completed_at" timestamp
 );
 
--- In this case user_roles will be managed by the admin, so the above default is not sensible
-create table if not exists "user_roles" (
-	"user_id" uuid not null references profiles (id) on delete cascade on update cascade,
-	"role" "user_role" not null,
-	"created_at" timestamp default now() not null,
-	primary key ("user_id", "role")
-);
-
 -- Indexes
 -- Enrollments (composite index for looking up user's enrollments)
 create index if not exists "enrollments_user_id_created_at_idx" on "enrollments" ("user_id", "created_at");
@@ -114,5 +107,3 @@ alter table role_permissions enable row level security;
 alter table modules enable row level security;
 
 alter table history enable row level security;
-
-alter table user_roles enable row level security;

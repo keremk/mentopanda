@@ -15,6 +15,7 @@
     "migrate": "node src/db/runMigrations.mjs",
     "test": "vitest",
     "test:integration": "vitest run tests/integration",
+    "test:db": "supabase test db",
     "create-users": "tsx src/scripts/createUsers.ts"
   },
   "dependencies": {

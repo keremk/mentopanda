@@ -12,7 +12,7 @@ export type Training = {
   previewUrl: string | null;
   createdAt: string;
   updatedAt: string;
-}
+};
 
 export type Module = {
   id: number;
@@ -21,7 +21,7 @@ export type Module = {
   prompt: string | null;
   videoUrl: string | null;
   audioUrl: string | null;
-}
+};
 
 export type ModuleProgress = {
   id: number;
@@ -33,7 +33,7 @@ export type ModuleProgress = {
   completed: boolean;
   attempts: number;
   lastScore: number | null;
-}
+};
 
 export type TrainingWithProgress = {
   id: number;
@@ -45,39 +45,39 @@ export type TrainingWithProgress = {
   isPublic: boolean;
   organizationId: number | null;
   modules: ModuleProgress[];
-}
+};
 
 export type TrainingWithEnrollment = Training & {
   isEnrolled: boolean;
 };
 
 type DbModule = {
-  id: number
-  training_id: number
-  title: string
-  instructions: string | null
-  prompt: string | null
-  video_url: string | null
-  audio_url: string | null
-  history: DbHistory[] | null
-}
+  id: number;
+  training_id: number;
+  title: string;
+  instructions: string | null;
+  prompt: string | null;
+  video_url: string | null;
+  audio_url: string | null;
+  history: DbHistory[] | null;
+};
 
 type DbHistory = {
-  assessment_score: number | null
-  completed_at: string | null
-}
+  assessment_score: number | null;
+  completed_at: string | null;
+};
 
 type DbTraining = {
-  id: number
-  title: string
-  tagline: string
-  description: string
-  image_url: string
-  preview_url: string | null
-  is_public: boolean
-  organization_id: number | null
-  modules: DbModule[]
-}
+  id: number;
+  title: string;
+  tagline: string;
+  description: string;
+  image_url: string;
+  preview_url: string | null;
+  is_public: boolean;
+  organization_id: number | null;
+  modules: DbModule[];
+};
 
 export async function getTrainings(
   supabase: SupabaseClient
@@ -87,7 +87,7 @@ export async function getTrainings(
   let query = supabase.from("trainings").select("*").or("is_public.eq.true");
 
   // Add organization filter only if organizationId is not null
-  if (organizationId !== null) {
+  if (organizationId && organizationId !== 1) {
     query = query.or(`organization_id.eq.${organizationId}`);
   }
 
@@ -127,7 +127,7 @@ export async function getTrainingById(
     .or("is_public.eq.true");
 
   // Add organization filter only if organizationId is not null
-  if (organizationId !== null) {
+  if (organizationId && organizationId !== 1) {
     query = query.or(`organization_id.eq.${organizationId}`);
   }
 
@@ -159,11 +159,12 @@ export async function getTrainingWithProgress(
   supabase: SupabaseClient,
   trainingId?: string
 ): Promise<TrainingWithProgress[]> {
-  const userId = await getUserId(supabase)
+  const userId = await getUserId(supabase);
 
   let query = supabase
-    .from('trainings')
-    .select(`
+    .from("trainings")
+    .select(
+      `
       *,
       modules (
         *,
@@ -175,44 +176,48 @@ export async function getTrainingWithProgress(
       enrollments!inner (
         user_id
       )
-    `)
-    .eq('enrollments.user_id', userId)
+    `
+    )
+    .eq("enrollments.user_id", userId);
 
   // Add training filter if specified
   if (trainingId) {
-    query = query.eq('id', trainingId)
+    query = query.eq("id", trainingId);
   }
 
-  const { data: trainings, error } = await query
+  const { data: trainings, error } = await query;
 
-  if (error) handleError(error)
+  if (error) handleError(error);
 
-  return (trainings as DbTraining[])?.map(training => ({
-    id: training.id,
-    title: training.title,
-    tagline: training.tagline,
-    description: training.description,
-    imageUrl: training.image_url,
-    previewUrl: training.preview_url,
-    isPublic: training.is_public,
-    organizationId: training.organization_id,
-    modules: training.modules.map((module: DbModule) => {
-      const history = module.history?.filter(h => h.completed_at !== null) || []
-      const lastAttempt = history[history.length - 1]
-      
-      return {
-        id: module.id,
-        title: module.title,
-        instructions: module.instructions,
-        prompt: module.prompt,
-        videoUrl: module.video_url,
-        audioUrl: module.audio_url,
-        completed: history.some(h => (h.assessment_score ?? 0) >= 70), // Handle null assessment_score
-        attempts: history.length,
-        lastScore: lastAttempt?.assessment_score || null
-      }
-    })
-  })) || []
+  return (
+    (trainings as DbTraining[])?.map((training) => ({
+      id: training.id,
+      title: training.title,
+      tagline: training.tagline,
+      description: training.description,
+      imageUrl: training.image_url,
+      previewUrl: training.preview_url,
+      isPublic: training.is_public,
+      organizationId: training.organization_id,
+      modules: training.modules.map((module: DbModule) => {
+        const history =
+          module.history?.filter((h) => h.completed_at !== null) || [];
+        const lastAttempt = history[history.length - 1];
+
+        return {
+          id: module.id,
+          title: module.title,
+          instructions: module.instructions,
+          prompt: module.prompt,
+          videoUrl: module.video_url,
+          audioUrl: module.audio_url,
+          completed: history.some((h) => (h.assessment_score ?? 0) >= 70), // Handle null assessment_score
+          attempts: history.length,
+          lastScore: lastAttempt?.assessment_score || null,
+        };
+      }),
+    })) || []
+  );
 }
 
 export async function getTrainingsWithEnrollment(
@@ -222,16 +227,18 @@ export async function getTrainingsWithEnrollment(
   const organizationId = await getOrganizationId(supabase);
 
   let query = supabase
-    .from('trainings')
-    .select(`
+    .from("trainings")
+    .select(
+      `
       *,
       enrollments!left (
         user_id
       )
-    `)
-    .or('is_public.eq.true');
+    `
+    )
+    .or("is_public.eq.true");
 
-  if (organizationId !== null) {
+  if (organizationId && organizationId !== 1) {
     query = query.or(`organization_id.eq.${organizationId}`);
   }
 
@@ -239,17 +246,255 @@ export async function getTrainingsWithEnrollment(
 
   if (error) handleError(error);
 
-  return trainings?.map(training => ({
-    id: training.id,
-    title: training.title,
-    tagline: training.tagline,
-    description: training.description,
-    imageUrl: training.image_url,
-    isPublic: training.is_public,
-    organizationId: training.organization_id,
-    previewUrl: training.preview_url,
-    createdAt: training.created_at,
-    updatedAt: training.updated_at,
-    isEnrolled: training.enrollments?.some(e => e.user_id === userId) ?? false
-  })) ?? [];
+  return (
+    trainings?.map((training) => ({
+      id: training.id,
+      title: training.title,
+      tagline: training.tagline,
+      description: training.description,
+      imageUrl: training.image_url,
+      isPublic: training.is_public,
+      organizationId: training.organization_id,
+      previewUrl: training.preview_url,
+      createdAt: training.created_at,
+      updatedAt: training.updated_at,
+      isEnrolled:
+        training.enrollments?.some((e) => e.user_id === userId) ?? false,
+    })) ?? []
+  );
 }
+
+export type UpdateTrainingInput = {
+  id: number;
+  title: string;
+  tagline: string;
+  description: string;
+  imageUrl: string;
+  previewUrl: string | null;
+  isPublic: boolean;
+};
+
+export type UpdateModuleInput = {
+  id: number;
+  trainingId: number;
+  title: string;
+  instructions: string | null;
+  prompt: string | null;
+  videoUrl: string | null;
+  audioUrl: string | null;
+};
+
+export async function updateTraining(
+  supabase: SupabaseClient,
+  training: UpdateTrainingInput
+): Promise<Training> {
+  // First verify the user has access to this training
+  const { data: existingTraining, error: verifyError } = await supabase
+    .from("trainings")
+    .select("*")
+    .eq("id", training.id)
+    .single();
+
+  if (verifyError) handleError(verifyError);
+  if (!existingTraining) throw new Error("Training not found");
+
+  console.log(training.tagline);
+
+  // Check user's organization and training's organization
+  const { data: userProfile } = await supabase
+    .from("profiles")
+    .select("organization_id")
+    .eq("id", await getUserId(supabase))
+    .single();
+
+  const { data: trainingData } = await supabase
+    .from("trainings")
+    .select("organization_id")
+    .eq("id", training.id)
+    .single();
+
+  console.log("Debug info:", {
+    userOrgId: userProfile?.organization_id,
+    trainingOrgId: trainingData?.organization_id,
+  });
+
+  // Check if user has training.manage permission
+  const { data: permissions } = await supabase
+    .from("role_permissions")
+    .select("permission")
+    .eq(
+      "role",
+      (
+        await supabase.auth.getUser()
+      ).data.user?.user_metadata?.user_role
+    )
+    .eq("permission", "training.manage");
+
+  console.log("Permission check:", {
+    userRole: (await supabase.auth.getUser()).data.user?.user_metadata
+      ?.user_role,
+    hasTrainingManage: permissions && permissions.length > 0,
+  });
+
+  // Test authorize function directly
+  const { data: hasPermission, error: authorizeError } = await supabase.rpc(
+    "authorize",
+    {
+      requested_permission: "training.manage",
+    }
+  );
+
+  console.log("Authorize check:", {
+    hasPermission,
+    authorizeError,
+  });
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  console.log("JWT payload:", {
+    jwt: session?.access_token,
+    decodedJWT: session && JSON.parse(atob(session.access_token.split(".")[1])),
+  });
+
+  // Now perform the update
+  const { data, error, statusText } = await supabase
+    .from("trainings")
+    .update({
+      title: training.title,
+      tagline: training.tagline,
+      description: training.description,
+      image_url: training.imageUrl,
+      preview_url: training.previewUrl,
+      is_public: training.isPublic,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", training.id)
+    .select();
+
+  console.log(data);
+  console.log(statusText);
+  console.log(error);
+
+  if (error) handleError(error);
+  if (!data) throw new Error("Failed to update training");
+
+  return {
+    id: data.id,
+    title: data.title,
+    tagline: data.tagline,
+    description: data.description,
+    imageUrl: data.image_url,
+    isPublic: data.is_public,
+    organizationId: data.organization_id,
+    previewUrl: data.preview_url,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
+}
+
+export async function updateModule(
+  supabase: SupabaseClient,
+  module: UpdateModuleInput
+): Promise<Module> {
+  const { data, error } = await supabase
+    .from("modules")
+    .update({
+      title: module.title,
+      instructions: module.instructions,
+      prompt: module.prompt,
+      video_url: module.videoUrl,
+      audio_url: module.audioUrl,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", module.id)
+    .eq("training_id", module.trainingId)
+    .select();
+
+  if (error) handleError(error);
+  if (!data) throw new Error("Module not found");
+
+  return {
+    id: data.id,
+    title: data.title,
+    instructions: data.instructions,
+    prompt: data.prompt,
+    videoUrl: data.video_url,
+    audioUrl: data.audio_url,
+  };
+}
+
+export async function createModule(
+  supabase: SupabaseClient,
+  trainingId: number,
+  module: Omit<UpdateModuleInput, "id" | "trainingId">
+): Promise<Module> {
+  const { data, error } = await supabase
+    .from("modules")
+    .insert({
+      training_id: trainingId,
+      title: module.title,
+      instructions: module.instructions,
+      prompt: module.prompt,
+      video_url: module.videoUrl,
+      audio_url: module.audioUrl,
+    })
+    .select()
+    .single();
+
+  if (error) handleError(error);
+  if (!data) throw new Error("Failed to create module");
+
+  return {
+    id: data.id,
+    title: data.title,
+    instructions: data.instructions,
+    prompt: data.prompt,
+    videoUrl: data.video_url,
+    audioUrl: data.audio_url,
+  };
+}
+
+export async function deleteModule(
+  supabase: SupabaseClient,
+  moduleId: number,
+  trainingId: number
+): Promise<void> {
+  const { error } = await supabase
+    .from("modules")
+    .delete()
+    .eq("id", moduleId)
+    .eq("training_id", trainingId);
+
+  if (error) handleError(error);
+}
+
+// Add this new function to get modules for a training
+export async function getModulesByTrainingId(
+  supabase: SupabaseClient,
+  trainingId: string
+): Promise<Module[]> {
+  const { data, error } = await supabase
+    .from("modules")
+    .select("*")
+    .eq("training_id", trainingId)
+    .order("id");
+
+  if (error) handleError(error);
+
+  return (
+    data?.map((module) => ({
+      id: module.id,
+      title: module.title,
+      instructions: module.instructions,
+      prompt: module.prompt,
+      videoUrl: module.video_url,
+      audioUrl: module.audio_url,
+    })) ?? []
+  );
+}
+
+// Fix the type error in getTrainingsWithEnrollment
+type DbEnrollment = {
+  user_id: string;
+};
