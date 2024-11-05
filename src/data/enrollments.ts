@@ -82,17 +82,12 @@ export async function isEnrolled(
 ): Promise<boolean> {
   const userId = await getUserId(supabase);
 
-  const { data, error } = await supabase
+  const { count, error } = await supabase
     .from("enrollments")
-    .select("id")
-    .match({ training_id: trainingId, user_id: userId })
-    .single();
+    .select("*", { count: "exact", head: true })
+    .match({ training_id: trainingId, user_id: userId });
 
-  if (error && error.code !== "PGRST116")
-    console.error(
-      `Unexpected result for isEnrolled: ${error.code} ${error.message} `
-    );
   if (error) handleError(error);
 
-  return !!data;
+  return count === 1;
 }

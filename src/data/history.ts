@@ -46,8 +46,8 @@ export async function getTrainingHistory(
 
   const { data: historyData, error: historyError } = await query;
 
-  console.log(userId);
-  console.log(historyData);
+  // console.log(userId);
+  // console.log(historyData);
   if (historyError) handleError(historyError);
 
   if (!historyData) return [];
