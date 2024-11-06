@@ -3,7 +3,8 @@ create type "public"."app_permission" as enum(
 	'training.manage',
 	'training.make.public',
 	'enrollment.manage',
-	'user.admin'
+	'user.admin',
+	'organization.admin' 
 );
 
 create type "public"."user_role" as enum('admin', 'manager', 'member');

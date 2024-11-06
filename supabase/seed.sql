@@ -19,7 +19,8 @@ values
   ('admin', 'training.manage'),
   ('admin', 'training.make.public'),
   ('admin', 'enrollment.manage'),
-  ('admin', 'user.admin');
+  ('admin', 'user.admin'),
+  ('admin', 'organization.admin');
 
 -- Seed permissions for Manager role
 insert into role_permissions (role, permission)
