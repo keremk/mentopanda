@@ -188,39 +188,56 @@ $$ language plpgsql;
  *   SELECT tests.authenticate_as('test_owner');
  * ```
  */
-CREATE
-OR REPLACE function tests.authenticate_as (identifier text) returns void AS $$
+CREATE OR REPLACE function tests.authenticate_as (identifier text) returns void AS $$
         DECLARE
                 user_data json;
                 original_auth_data text;
+                user_role text;
+                jwt_claims json;
         BEGIN
             -- store the request.jwt.claims in a variable in case we need it
             original_auth_data := current_setting('request.jwt.claims', true);
             user_data := tests.get_supabase_user(identifier);
 
+            RAISE NOTICE 'User data retrieved: %', user_data;
+
             if user_data is null OR user_data ->> 'id' IS NULL then
                 RAISE EXCEPTION 'User with identifier % not found', identifier;
             end if;
 
+            -- Get the user_role from profiles table
+            SELECT p.user_role::text INTO user_role 
+            FROM public.profiles p 
+            WHERE p.id = (user_data ->> 'id')::uuid;
 
-            perform set_config('role', 'authenticated', true);
-            perform set_config('request.jwt.claims', json_build_object(
+            RAISE NOTICE 'User role retrieved from profiles: %', user_role;
+
+            -- Build JWT claims
+            jwt_claims := json_build_object(
                 'sub', user_data ->> 'id', 
                 'email', user_data ->> 'email', 
                 'phone', user_data ->> 'phone', 
                 'user_metadata', user_data -> 'raw_user_meta_data', 
-                'app_metadata', user_data -> 'raw_app_meta_data'
-            )::text, true);
+                'app_metadata', user_data -> 'raw_app_meta_data',
+                'user_role', COALESCE(user_role, 'member')
+            );
+
+            -- RAISE NOTICE 'JWT claims created: %', jwt_claims;
+
+            perform set_config('role', 'authenticated', true);
+            perform set_config('request.jwt.claims', jwt_claims::text, true);
+
+            RAISE NOTICE 'Final JWT claims set: %', current_setting('request.jwt.claims', true);
 
         EXCEPTION
             -- revert back to original auth data
             WHEN OTHERS THEN
+                RAISE NOTICE 'Error occurred: %', SQLERRM;
                 set local role authenticated;
                 set local "request.jwt.claims" to original_auth_data;
                 RAISE;
         END
     $$ language plpgsql;
-
 /**
  * ### tests.authenticate_as_service_role()
  *   Clears authentication object and sets role to service_role.

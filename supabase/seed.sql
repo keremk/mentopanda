@@ -19,6 +19,7 @@ values
   ('admin', 'training.manage'),
   ('admin', 'training.make.public'),
   ('admin', 'enrollment.manage'),
+  ('admin', 'user.select'),
   ('admin', 'user.admin'),
   ('admin', 'organization.admin');
 
@@ -26,7 +27,8 @@ values
 insert into role_permissions (role, permission)
 values
   ('manager', 'training.manage'),
-  ('manager', 'enrollment.manage');
+  ('manager', 'enrollment.manage'),
+  ('manager', 'user.select');
 
 -- Seed permissions for Member role
 insert into role_permissions (role, permission)
