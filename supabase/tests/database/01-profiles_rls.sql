@@ -88,7 +88,7 @@ SELECT
     SELECT organization_id FROM profiles 
     WHERE id = tests.get_supabase_uid('test.member.2')
     $$,
-    ARRAY[3::integer],
+    ARRAY[3::bigint],
     'Organization ID should be unchanged'
   );
 
@@ -126,7 +126,7 @@ SELECT
     SELECT organization_id FROM profiles 
     WHERE id = tests.get_supabase_uid('test.member.3')
     $$,
-    ARRAY[3::integer],
+    ARRAY[3::bigint],
     'Organization ID should remain unchanged'
   );
 
