@@ -199,7 +199,7 @@ CREATE OR REPLACE function tests.authenticate_as (identifier text) returns void 
             original_auth_data := current_setting('request.jwt.claims', true);
             user_data := tests.get_supabase_user(identifier);
 
-            RAISE NOTICE 'User data retrieved: %', user_data;
+            -- RAISE NOTICE 'User data retrieved: %', user_data;
 
             if user_data is null OR user_data ->> 'id' IS NULL then
                 RAISE EXCEPTION 'User with identifier % not found', identifier;
@@ -210,7 +210,7 @@ CREATE OR REPLACE function tests.authenticate_as (identifier text) returns void 
             FROM public.profiles p 
             WHERE p.id = (user_data ->> 'id')::uuid;
 
-            RAISE NOTICE 'User role retrieved from profiles: %', user_role;
+            -- RAISE NOTICE 'User role retrieved from profiles: %', user_role;
 
             -- Build JWT claims
             jwt_claims := json_build_object(
@@ -227,7 +227,7 @@ CREATE OR REPLACE function tests.authenticate_as (identifier text) returns void 
             perform set_config('role', 'authenticated', true);
             perform set_config('request.jwt.claims', jwt_claims::text, true);
 
-            RAISE NOTICE 'Final JWT claims set: %', current_setting('request.jwt.claims', true);
+            -- RAISE NOTICE 'Final JWT claims set: %', current_setting('request.jwt.claims', true);
 
         EXCEPTION
             -- revert back to original auth data
