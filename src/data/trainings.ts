@@ -250,7 +250,7 @@ export async function getTrainingsWithEnrollment(
       createdAt: training.created_at,
       updatedAt: training.updated_at,
       isEnrolled:
-        training.enrollments?.some((e) => e.user_id === userId) ?? false,
+        training.enrollments?.some((e: { user_id: string; }) => e.user_id === userId) ?? false,
     })) ?? []
   );
 }
@@ -358,27 +358,18 @@ export async function updateTraining(
   console.log(error);
 
   if (error) handleError(error);
-  if (!data) throw new Error("Failed to update training");
+  if (!data || data.length === 0) throw new Error("Failed to update training");
 
   return {
-    id: data.id,
-    title: data.title,
-    tagline: data.tagline,
-    description: data.description,
-    imageUrl: data.image_url,
-    isPublic: data.is_public,
-    organizationId: data.organization_id,
-    previewUrl: data.preview_url,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    id: data[0].id,
+    title: data[0].title,
+    tagline: data[0].tagline,
+    description: data[0].description,
+    imageUrl: data[0].image_url,
+    isPublic: data[0].is_public,
+    organizationId: data[0].organization_id,
+    previewUrl: data[0].preview_url,
+    createdAt: data[0].created_at,
+    updatedAt: data[0].updated_at,
   };
 }
-
-
-
-
-
-// Fix the type error in getTrainingsWithEnrollment
-type DbEnrollment = {
-  user_id: string;
-};

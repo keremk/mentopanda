@@ -99,18 +99,18 @@ export async function updateModule(
     .select();
 
   if (error) handleError(error);
-  if (!data) throw new Error("Module not found");
+  if (!data || data.length === 0) throw new Error("Module not found");
 
   return {
-    id: data.id,
-    title: data.title,
-    trainingId: data.training_id,
-    instructions: data.instructions,
-    prompt: data.prompt,
-    videoUrl: data.video_url,
-    audioUrl: data.audio_url,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    id: data[0].id,
+    title: data[0].title,
+    trainingId: data[0].training_id,
+    instructions: data[0].instructions,
+    prompt: data[0].prompt,
+    videoUrl: data[0].video_url,
+    audioUrl: data[0].audio_url,
+    createdAt: data[0].created_at,
+    updatedAt: data[0].updated_at,
   };
 }
 
