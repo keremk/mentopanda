@@ -7,12 +7,13 @@ import { Switch } from "@/components/ui/switch";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Module, Training, UpdateTrainingInput } from "@/data/trainings";
+import { Training, UpdateTrainingInput } from "@/data/trainings";
+import { Module } from "@/data/modules";
+import { updateTrainingAction } from "@/app/(app)/trainingActions";
 import {
-  updateTrainingAction,
   createModuleAction,
   deleteModuleAction,
-} from "@/app/(app)/trainingActions";
+} from "@/app/(app)/moduleActions";
 import { PlusIcon, TrashIcon, PencilIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 

@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTrainingByIdAction } from "@/app/(app)/trainingActions";
-import { getModulesByTrainingId } from "@/data/trainings";
-import { createClient } from "@/utils/supabase/server";
+import { getModulesByTrainingIdAction } from "@/app/(app)/moduleActions";
 import EditTrainingForm from "@/components/edit-training";
 
 export default async function EditTrainingPage({
@@ -15,8 +14,7 @@ export default async function EditTrainingPage({
     notFound();
   }
 
-  const supabase = createClient();
-  const modules = await getModulesByTrainingId(supabase, params.trainingId);
+  const modules = await getModulesByTrainingIdAction(params.trainingId);
 
   return <EditTrainingForm training={training} modules={modules} />;
 }

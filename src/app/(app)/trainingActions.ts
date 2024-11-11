@@ -7,11 +7,7 @@ import {
   getTrainingWithProgress, 
   getTrainingsWithEnrollment,
   updateTraining,
-  updateModule,
-  createModule,
-  deleteModule,
   type UpdateTrainingInput,
-  type UpdateModuleInput
 } from "@/data/trainings";
 
 export async function getTrainingsAction() {
@@ -39,20 +35,3 @@ export async function updateTrainingAction(training: UpdateTrainingInput) {
   return await updateTraining(supabase, training);
 }
 
-export async function updateModuleAction(module: UpdateModuleInput) {
-  const supabase = createClient();
-  return await updateModule(supabase, module);
-}
-
-export async function createModuleAction(
-  trainingId: number,
-  module: Omit<UpdateModuleInput, 'id' | 'trainingId'>
-) {
-  const supabase = createClient();
-  return await createModule(supabase, trainingId, module);
-}
-
-export async function deleteModuleAction(moduleId: number, trainingId: number) {
-  const supabase = createClient();
-  return await deleteModule(supabase, moduleId, trainingId);
-}

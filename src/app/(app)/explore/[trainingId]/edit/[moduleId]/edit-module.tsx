@@ -6,19 +6,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Module, Training, UpdateModuleInput } from "@/data/trainings";
-import { updateModuleAction } from "@/app/(app)/trainingActions";
+import { Module } from "@/data/modules";
+import { updateModuleAction } from "@/app/(app)/moduleActions";
+import { UpdateModuleInput } from "@/data/modules";
 
 type Props = {
-  training: Training;
   module: Module;
 };
 
-export function ModuleEditForm({ training, module }: Props) {
+export function ModuleEditForm({ module }: Props) {
   const router = useRouter();
   const [formData, setFormData] = useState<UpdateModuleInput>({
     id: module.id,
-    trainingId: training.id,
+    trainingId: module.trainingId,
     title: module.title,
     instructions: module.instructions,
     prompt: module.prompt,
@@ -49,7 +49,7 @@ export function ModuleEditForm({ training, module }: Props) {
       <div className="mb-8">
         <Button
           variant="outline"
-          onClick={() => router.push(`/explore/${training.id}/edit`)}
+          onClick={() => router.push(`/explore/${module.trainingId}/edit`)}
         >
           Back to Training
         </Button>

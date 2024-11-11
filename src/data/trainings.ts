@@ -14,15 +14,6 @@ export type Training = {
   updatedAt: string;
 };
 
-export type Module = {
-  id: number;
-  title: string;
-  instructions: string | null;
-  prompt: string | null;
-  videoUrl: string | null;
-  audioUrl: string | null;
-};
-
 export type ModuleProgress = {
   id: number;
   title: string;
@@ -274,16 +265,6 @@ export type UpdateTrainingInput = {
   isPublic: boolean;
 };
 
-export type UpdateModuleInput = {
-  id: number;
-  trainingId: number;
-  title: string;
-  instructions: string | null;
-  prompt: string | null;
-  videoUrl: string | null;
-  audioUrl: string | null;
-};
-
 export async function updateTraining(
   supabase: SupabaseClient,
   training: UpdateTrainingInput
@@ -393,106 +374,9 @@ export async function updateTraining(
   };
 }
 
-export async function updateModule(
-  supabase: SupabaseClient,
-  module: UpdateModuleInput
-): Promise<Module> {
-  const { data, error } = await supabase
-    .from("modules")
-    .update({
-      title: module.title,
-      instructions: module.instructions,
-      prompt: module.prompt,
-      video_url: module.videoUrl,
-      audio_url: module.audioUrl,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", module.id)
-    .eq("training_id", module.trainingId)
-    .select();
 
-  if (error) handleError(error);
-  if (!data) throw new Error("Module not found");
 
-  return {
-    id: data.id,
-    title: data.title,
-    instructions: data.instructions,
-    prompt: data.prompt,
-    videoUrl: data.video_url,
-    audioUrl: data.audio_url,
-  };
-}
 
-export async function createModule(
-  supabase: SupabaseClient,
-  trainingId: number,
-  module: Omit<UpdateModuleInput, "id" | "trainingId">
-): Promise<Module> {
-  const { data, error } = await supabase
-    .from("modules")
-    .insert({
-      training_id: trainingId,
-      title: module.title,
-      instructions: module.instructions,
-      prompt: module.prompt,
-      video_url: module.videoUrl,
-      audio_url: module.audioUrl,
-    })
-    .select()
-    .single();
-
-  if (error) handleError(error);
-  if (!data) throw new Error("Failed to create module");
-
-  return {
-    id: data.id,
-    title: data.title,
-    instructions: data.instructions,
-    prompt: data.prompt,
-    videoUrl: data.video_url,
-    audioUrl: data.audio_url,
-  };
-}
-
-export async function deleteModule(
-  supabase: SupabaseClient,
-  moduleId: number,
-  trainingId: number
-): Promise<void> {
-  const { error } = await supabase
-    .from("modules")
-    .delete()
-    .eq("id", moduleId)
-    .eq("training_id", trainingId);
-
-  if (error) handleError(error);
-}
-
-// Add this new function to get modules for a training
-export async function getModulesByTrainingId(
-  supabase: SupabaseClient,
-  trainingId: string
-): Promise<Module[]> {
-  const { data, error } = await supabase
-    .from("modules")
-    .select("*")
-    .eq("training_id", trainingId)
-    .order("id");
-
-  if (error) handleError(error);
-
-  return (
-    data?.map((module) => ({
-      id: module.id,
-      title: module.title,
-      instructions: module.instructions,
-      prompt: module.prompt,
-      videoUrl: module.video_url,
-      audioUrl: module.audio_url,
-    })) ?? []
-  );
-}
 
 // Fix the type error in getTrainingsWithEnrollment
 type DbEnrollment = {
