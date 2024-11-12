@@ -17,6 +17,8 @@ import { NoAgentNotification } from "@/components/no-agent-notification";
 import { CloseIcon } from "@/components/icons/close-icon";
 // import { useKrispNoiseFilter } from "@livekit/components-react/krisp";
 import type { ModuleProgress } from "@/data/trainings";
+import { RoomEvent, TranscriptionSegment } from "livekit-client";
+import { useRoomContext } from "@livekit/components-react";
 
 type VoiceSimulationProps = {
   trainingId: string;
@@ -79,9 +81,37 @@ function SimpleVoiceAssistant(props: {
   onStateChange: (state: AgentState) => void;
 }) {
   const { state, audioTrack } = useVoiceAssistant();
+  const room = useRoomContext();
+  const [transcriptions, setTranscriptions] = useState<{ [id: string]: TranscriptionSegment }>({});
+
+  useEffect(() => {
+    if (!room) return;
+
+    const updateTranscriptions = (segments: TranscriptionSegment[]) => {
+      console.log("Received transcription segments:", segments);
+      
+      setTranscriptions((prev) => {
+        const newTranscriptions = { ...prev };
+        for (const segment of segments) {
+          newTranscriptions[segment.id] = segment;
+          // Log each new transcription segment
+          console.log(`Transcription [${segment.id}]: ${segment.text}`);
+        }
+        return newTranscriptions;
+      });
+    };
+
+    room.on(RoomEvent.TranscriptionReceived, updateTranscriptions);
+
+    return () => {
+      room.off(RoomEvent.TranscriptionReceived, updateTranscriptions);
+    };
+  }, [room]);
+
   useEffect(() => {
     props.onStateChange(state);
   }, [props, state]);
+
   return (
     <div className="h-[300px] max-w-[90vw] mx-auto">
       <BarVisualizer
@@ -91,6 +121,14 @@ function SimpleVoiceAssistant(props: {
         className="agent-visualizer"
         options={{ minHeight: 24 }}
       />
+      {/* Optionally render transcriptions */}
+      <ul className="mt-4 text-sm text-gray-500">
+        {Object.values(transcriptions)
+          .sort((a, b) => a.firstReceivedTime - b.firstReceivedTime)
+          .map((segment) => (
+            <li key={segment.id}>{segment.text}</li>
+          ))}
+      </ul>
     </div>
   );
 }

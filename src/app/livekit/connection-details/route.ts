@@ -21,6 +21,10 @@ export type ConnectionDetails = {
 
 export async function GET(request: Request) {
   try {
+    if (LIVEKIT_URL === undefined) {
+      throw new Error("LIVEKIT_URL is not defined");
+    }
+
     // Get moduleId and trainingId from query parameter
     const { searchParams } = new URL(request.url);
     const moduleId = searchParams.get("moduleId");
@@ -54,10 +58,6 @@ export async function GET(request: Request) {
       },
       roomName
     );
-
-    if (LIVEKIT_URL === undefined) {
-      throw new Error("LIVEKIT_URL is not defined");
-    }
 
     // Return connection details
     const data: ConnectionDetails = {
