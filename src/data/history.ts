@@ -169,14 +169,14 @@ export async function getHistoryEntry(
     .eq("id", id)
     .eq("user_id", userId) // Security: ensure user owns this entry
     .single();
-  
+
   if (!data) return null;
   if (error) handleError(error);
 
   return {
     id: data.id,
-    moduleTitle: data.modules?.title,
-    trainingTitle: data.modules?.trainings?.title,
+    moduleTitle: (data.modules as any)?.title ?? null, // Disconnect from Supabase expected schema vs. what we get back, so I am doing this here
+    trainingTitle: (data.modules as any)?.trainings?.title ?? null,
     recordingUrl: data.recording_url,
     transcript: data.transcript,
     assessmentText: data.assessment_text,
