@@ -6,7 +6,7 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[sql]": {
-    "editor.defaultFormatter": "ReneSaarsoo.sql-formatter-vsc"
+    "editor.defaultFormatter": "mtxr.sqltools"
   },
   "editor.formatOnSave": true,
   "deno.enablePaths": ["supabase/functions"],
