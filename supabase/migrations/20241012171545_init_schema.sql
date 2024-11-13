@@ -71,6 +71,8 @@ create table if not exists "history" (
 	"id" bigserial primary key not null,
 	"module_id" bigint references modules (id) on delete set null,
 	"user_id" uuid default auth.uid() not null references profiles (id) on delete cascade,
+	"transcript" text,
+	"recording_url" text,
 	"assessment_text" text,
 	"assessment_score" integer,
 	"started_at" timestamp default now() not null,

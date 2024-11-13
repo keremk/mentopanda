@@ -60,7 +60,7 @@ describe("Enrollment Integration Tests", () => {
     } as any);
 
     const enrolledTrainings = await getEnrolledTrainings(supabase);
-
+ 
     expect(enrolledTrainings).toHaveLength(1);
     expect(enrolledTrainings[0]).toMatchObject<Partial<Enrollment>>({
       id: expect.any(Number),
@@ -102,23 +102,5 @@ describe("Enrollment Integration Tests", () => {
       expect(error).toBeDefined();
       expect(error.message).toBe("Test error");
     }
-  });
-
-  it("should return the correct training details", async () => {
-    // Mock the auth.getUser to return our test user
-    vi.spyOn(supabase.auth, "getUser").mockResolvedValue({
-      data: { user: { id: testUserId } },
-      error: null,
-    } as any);
-
-    const enrolledTrainings = await getEnrolledTrainings(supabase);
-
-    expect(enrolledTrainings).toHaveLength(1);
-    expect(enrolledTrainings[0]).toMatchObject<Partial<Enrollment>>({
-      id: expect.any(Number),
-      trainingTitle: "Test Training",
-      trainingId: testTrainingId,
-      createdAt: expect.any(String),
-    });
   });
 });
