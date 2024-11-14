@@ -14,11 +14,6 @@ export type HistoryEntry = {
   attemptNumber: number;
 };
 
-export type CreateHistoryEntry = {
-  moduleId: number;
-  userId: string;
-};
-
 export type UpdateHistoryEntry = {
   id: number;
   recordingUrl?: string | null;
@@ -95,7 +90,7 @@ export async function getTrainingHistory(
 
 export async function createHistoryEntry(
   supabase: SupabaseClient,
-  { moduleId }: CreateHistoryEntry
+  moduleId: number
 ): Promise<number> {
   const userId = await getUserId(supabase);
   const organizationId = await getOrganizationId(supabase);
