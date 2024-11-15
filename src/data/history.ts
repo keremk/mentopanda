@@ -100,7 +100,6 @@ export async function createHistoryEntry(
     .insert({
       user_id: userId,
       module_id: moduleId,
-      organization_id: organizationId,
       started_at: new Date().toISOString(),
     })
     .select("id")

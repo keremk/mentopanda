@@ -19,6 +19,8 @@ import { CloseIcon } from "@/components/icons/close-icon";
 import type { ModuleProgress } from "@/data/trainings";
 import { RoomEvent, TranscriptionSegment } from "livekit-client";
 import { useRoomContext } from "@livekit/components-react";
+import { updateHistoryEntryAction } from "@/app/(app)/historyActions";
+import { createHistoryEntryAction } from "@/app/(app)/historyActions";
 
 type VoiceSimulationProps = {
   trainingId: string;
@@ -35,18 +37,49 @@ export function VoiceSimulationComponent({
     ConnectionDetails | undefined
   >(undefined);
   const [agentState, setAgentState] = useState<AgentState>("disconnected");
+  const [historyEntryId, setHistoryEntryId] = useState<number>();
+
+  // useEffect(() => {
+  //   if (agentState === "disconnected" && historyEntryId) {
+  //     updateHistoryEntryAction({
+  //       id: historyEntryId,
+  //       completedAt: new Date(),
+  //     }).catch(console.error);
+  //   }
+  // }, [agentState, historyEntryId]);
 
   const onConnectButtonClicked = useCallback(async () => {
-    const url = new URL(
-      process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ??
-        "/livekit/connection-details",
-      window.location.origin
-    );
-    url.searchParams.set("moduleId", module.id.toString());
-    const response = await fetch(url.toString());
-    const connectionDetailsData = await response.json();
-    updateConnectionDetails(connectionDetailsData);
-  }, []);
+    try {
+      setAgentState("connecting");
+
+      const newHistoryEntryId = await createHistoryEntryAction(module.id);
+      setHistoryEntryId(newHistoryEntryId);
+
+      const url = new URL(
+        process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ??
+          "/livekit/connection-details",
+        window.location.origin
+      );
+      url.searchParams.set("moduleId", module.id.toString());
+      const response = await fetch(url.toString());
+      const connectionDetailsData = await response.json();
+      updateConnectionDetails(connectionDetailsData);
+    } catch (error) {
+      setAgentState("disconnected");
+      console.error("Failed to start conversation:", error);
+    }
+  }, [module.id]);
+
+  const handleDisconnect = useCallback(() => {
+    updateConnectionDetails(undefined);
+    if (historyEntryId) {
+      updateHistoryEntryAction({
+        id: historyEntryId,
+        completedAt: new Date(),
+      }).catch(console.error);
+    }
+    setAgentState("disconnected");
+  }, [historyEntryId]);
 
   return (
     <div
@@ -60,12 +93,13 @@ export function VoiceSimulationComponent({
         audio={true}
         video={false}
         onMediaDeviceFailure={onDeviceFailure}
-        onDisconnected={() => {
-          updateConnectionDetails(undefined);
-        }}
+        onDisconnected={handleDisconnect}
         className="grid grid-rows-[2fr_1fr] items-center"
       >
-        <SimpleVoiceAssistant onStateChange={setAgentState} />
+        <SimpleVoiceAssistant
+          onStateChange={setAgentState}
+          historyEntryId={historyEntryId}
+        />
         <ControlBar
           onConnectButtonClicked={onConnectButtonClicked}
           agentState={agentState}
@@ -77,28 +111,94 @@ export function VoiceSimulationComponent({
   );
 }
 
+type TranscriptEntry = {
+  participantName: string;
+  text: string;
+  timestamp: number;
+};
+
 function SimpleVoiceAssistant(props: {
   onStateChange: (state: AgentState) => void;
+  historyEntryId?: number;
 }) {
   const { state, audioTrack } = useVoiceAssistant();
   const room = useRoomContext();
-  const [transcriptions, setTranscriptions] = useState<{ [id: string]: TranscriptionSegment }>({});
+  const [transcriptBuffer, setTranscriptBuffer] = useState<TranscriptEntry[]>(
+    []
+  );
+  const [currentAgentText, setCurrentAgentText] = useState<string>("");
+
+  // Function to save transcript buffer
+  const saveTranscriptBuffer = useCallback(async () => {
+    if (!props.historyEntryId || transcriptBuffer.length === 0) return;
+
+    const formattedTranscript = transcriptBuffer
+      .map((entry) => `${entry.participantName}: ${entry.text}`)
+      .join("\n");
+
+    try {
+      await updateHistoryEntryAction({
+        id: props.historyEntryId,
+        transcript: formattedTranscript,
+      });
+    } catch (error) {
+      console.error("Failed to save transcript:", error);
+    }
+  }, [transcriptBuffer, props.historyEntryId]);
+
+  // Set up periodic saving
+  useEffect(() => {
+    const intervalId = setInterval(saveTranscriptBuffer, 30000); // Save every 30 seconds
+
+    return () => {
+      clearInterval(intervalId);
+      saveTranscriptBuffer(); // Save one final time when component unmounts
+    };
+  }, [saveTranscriptBuffer]);
 
   useEffect(() => {
     if (!room) return;
 
-    const updateTranscriptions = (segments: TranscriptionSegment[]) => {
-      console.log("Received transcription segments:", segments);
-      
-      setTranscriptions((prev) => {
-        const newTranscriptions = { ...prev };
-        for (const segment of segments) {
-          newTranscriptions[segment.id] = segment;
-          // Log each new transcription segment
-          console.log(`Transcription [${segment.id}]: ${segment.text}`);
-        }
-        return newTranscriptions;
-      });
+    const updateTranscriptions = (
+      segments: TranscriptionSegment[],
+      participant: any
+    ) => {
+      const participantId = participant?.identity || "Unknown";
+
+      // Only process agent transcripts for display
+      if (participantId === "Agent") {
+        segments.forEach((segment) => {
+          if (!segment.final) {
+            // Update current agent text for display
+            setCurrentAgentText(segment.text);
+          } else {
+            // Add to transcript buffer for saving
+            setTranscriptBuffer((prev) => [
+              ...prev,
+              {
+                participantName: participantId,
+                text: segment.text,
+                timestamp: segment.firstReceivedTime,
+              },
+            ]);
+            // setCurrentAgentText(""); // Clear current text
+          }
+        });
+      } else {
+        // For non-agent participants, just add to buffer when final
+        segments.forEach((segment) => {
+          if (segment.final) {
+            setTranscriptBuffer((prev) => [
+              ...prev,
+              {
+                participantName: participantId,
+                text: segment.text,
+                timestamp: segment.firstReceivedTime,
+              },
+            ]);
+          }
+        });
+      }
     };
 
     room.on(RoomEvent.TranscriptionReceived, updateTranscriptions);
@@ -110,10 +210,10 @@ function SimpleVoiceAssistant(props: {
 
   useEffect(() => {
     props.onStateChange(state);
-  }, [props, state]);
+  }, [state, props.onStateChange]);
 
   return (
-    <div className="h-[300px] max-w-[90vw] mx-auto">
+    <div className="h-[300px] max-w-[90vw] mx-auto flex flex-col gap-4">
       <BarVisualizer
         state={state}
         barCount={5}
@@ -121,14 +221,15 @@ function SimpleVoiceAssistant(props: {
         className="agent-visualizer"
         options={{ minHeight: 24 }}
       />
-      {/* Optionally render transcriptions */}
-      <ul className="mt-4 text-sm text-gray-500">
-        {Object.values(transcriptions)
-          .sort((a, b) => a.firstReceivedTime - b.firstReceivedTime)
-          .map((segment) => (
-            <li key={segment.id}>{segment.text}</li>
-          ))}
-      </ul>
+
+      {/* Horizontal scrolling transcript box */}
+      <div className="relative w-full h-12 flex items-center justify-center">
+        <div className="w-full max-w-[80%] h-10 overflow-x-auto whitespace-nowrap bg-[var(--lk-bg)] rounded-lg flex items-center px-4">
+          <div key={currentAgentText}>
+            {currentAgentText || "Waiting for agent response..."}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
