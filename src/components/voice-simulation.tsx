@@ -10,26 +10,29 @@ import {
   AgentState,
   DisconnectButton,
 } from "@livekit/components-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MediaDeviceFailure } from "livekit-client";
 import type { ConnectionDetails } from "@/app/livekit/connection-details/route";
 import { NoAgentNotification } from "@/components/no-agent-notification";
 import { CloseIcon } from "@/components/icons/close-icon";
 // import { useKrispNoiseFilter } from "@livekit/components-react/krisp";
 import type { ModuleProgress } from "@/data/trainings";
-import { RoomEvent, TranscriptionSegment } from "livekit-client";
+import {
+  RoomEvent,
+  TranscriptionSegment,
+  RemoteParticipant,
+  ParticipantKind,
+} from "livekit-client";
 import { useRoomContext } from "@livekit/components-react";
 import { updateHistoryEntryAction } from "@/app/(app)/historyActions";
 import { createHistoryEntryAction } from "@/app/(app)/historyActions";
 
 type VoiceSimulationProps = {
-  trainingId: string;
   module: ModuleProgress;
   onEndCall: () => void;
 };
 
 export function VoiceSimulationComponent({
-  trainingId,
   module,
   onEndCall,
 }: VoiceSimulationProps) {
@@ -163,10 +166,11 @@ function SimpleVoiceAssistant(props: {
       segments: TranscriptionSegment[],
       participant: any
     ) => {
-      const participantId = participant?.identity || "Unknown";
+      const isAgent = participant.kind === ParticipantKind.AGENT;
 
+      const participantId = participant?.identity || "Unknown";
       // Only process agent transcripts for display
-      if (participantId === "Agent") {
+      if (isAgent) {
         segments.forEach((segment) => {
           if (!segment.final) {
             // Update current agent text for display
@@ -181,7 +185,7 @@ function SimpleVoiceAssistant(props: {
                 timestamp: segment.firstReceivedTime,
               },
             ]);
-            // setCurrentAgentText(""); // Clear current text
+            setCurrentAgentText(""); // Clear current text
           }
         });
       } else {
@@ -221,13 +225,33 @@ function SimpleVoiceAssistant(props: {
         className="agent-visualizer"
         options={{ minHeight: 24 }}
       />
+      <TranscriptBox text={currentAgentText} />
+    </div>
+  );
+}
 
-      {/* Horizontal scrolling transcript box */}
-      <div className="relative w-full h-12 flex items-center justify-center">
-        <div className="w-full max-w-[80%] h-10 overflow-x-auto whitespace-nowrap bg-[var(--lk-bg)] rounded-lg flex items-center px-4">
-          <div key={currentAgentText}>
-            {currentAgentText || "Waiting for agent response..."}
-          </div>
+export function TranscriptBox({ text }: { text: string }) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft =
+        scrollContainerRef.current.scrollWidth;
+    }
+  }, [text]);
+
+  return (
+    <div className="relative w-full h-12 flex items-center justify-center">
+      <div
+        ref={scrollContainerRef}
+        className="fixed-size w-[500px] h-10 overflow-x-auto whitespace-nowrap 
+          bg-[var(--lk-bg)] rounded-lg flex items-center px-4
+          scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none]
+          [&::-webkit-scrollbar]:hidden"
+      >
+        <div ref={textRef} className="flex-shrink-0 w-fit ">
+          {text || "Waiting for agent response..."}
         </div>
       </div>
     </div>
