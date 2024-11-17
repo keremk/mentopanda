@@ -26,6 +26,7 @@ import {
 import { useRoomContext } from "@livekit/components-react";
 import { updateHistoryEntryAction } from "@/app/(app)/historyActions";
 import { createHistoryEntryAction } from "@/app/(app)/historyActions";
+import { useTranscriptionHandler } from "@/hooks/use-transcription-handler";
 
 type VoiceSimulationProps = {
   module: ModuleProgress;
@@ -126,10 +127,8 @@ function SimpleVoiceAssistant(props: {
 }) {
   const { state, audioTrack } = useVoiceAssistant();
   const room = useRoomContext();
-  const [transcriptBuffer, setTranscriptBuffer] = useState<TranscriptEntry[]>(
-    []
-  );
-  const [currentAgentText, setCurrentAgentText] = useState<string>("");
+  const { transcriptBuffer, currentAgentText } =
+    useTranscriptionHandler(room);
 
   // Function to save transcript buffer
   const saveTranscriptBuffer = useCallback(async () => {
@@ -158,59 +157,6 @@ function SimpleVoiceAssistant(props: {
       saveTranscriptBuffer(); // Save one final time when component unmounts
     };
   }, [saveTranscriptBuffer]);
-
-  useEffect(() => {
-    if (!room) return;
-
-    const updateTranscriptions = (
-      segments: TranscriptionSegment[],
-      participant: any
-    ) => {
-      const isAgent = participant.kind === ParticipantKind.AGENT;
-
-      const participantId = participant?.identity || "Unknown";
-      // Only process agent transcripts for display
-      if (isAgent) {
-        segments.forEach((segment) => {
-          if (!segment.final) {
-            // Update current agent text for display
-            setCurrentAgentText(segment.text);
-          } else {
-            // Add to transcript buffer for saving
-            setTranscriptBuffer((prev) => [
-              ...prev,
-              {
-                participantName: participantId,
-                text: segment.text,
-                timestamp: segment.firstReceivedTime,
-              },
-            ]);
-            setCurrentAgentText(""); // Clear current text
-          }
-        });
-      } else {
-        // For non-agent participants, just add to buffer when final
-        segments.forEach((segment) => {
-          if (segment.final) {
-            setTranscriptBuffer((prev) => [
-              ...prev,
-              {
-                participantName: participantId,
-                text: segment.text,
-                timestamp: segment.firstReceivedTime,
-              },
-            ]);
-          }
-        });
-      }
-    };
-
-    room.on(RoomEvent.TranscriptionReceived, updateTranscriptions);
-
-    return () => {
-      room.off(RoomEvent.TranscriptionReceived, updateTranscriptions);
-    };
-  }, [room]);
 
   useEffect(() => {
     props.onStateChange(state);
