@@ -69,7 +69,7 @@ export function SimulationContainer({ trainingId, module }: SimulationContainerP
     return (
       <VoiceSimulationComponent 
         module={module}
-        onEndCall={() => router.push(`/trainings/${trainingId}`)}
+        onEndCall={(historyId) => router.push(`/assessments/${historyId}`)}
       />
     );
   }

@@ -41,7 +41,7 @@ import {
 import { useTranscriptSave } from "@/hooks/use-transcript-save";
 type VoiceSimulationProps = {
   module: ModuleProgress;
-  onEndCall: () => void;
+  onEndCall: (historyEntryId: number) => void;
 };
 
 export function VoiceSimulationComponent({
@@ -89,7 +89,7 @@ export function VoiceSimulationComponent({
     updateConnectionDetails(undefined);
     await saveAndComplete();
     setAgentState("disconnected");
-    onEndCall();
+    onEndCall(historyEntryId ?? 0);
   }, [saveAndComplete, onEndCall]);
 
   return (

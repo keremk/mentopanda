@@ -1,24 +1,55 @@
+import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getHistoryEntryAction } from "../../historyActions";
+import analyseTranscript from "@/app/actions/analyse-transcript";
+import { notFound } from "next/navigation";
+import { AssessmentContent } from "./assessment-content";
+import AssessmentLoading from "./loading";
 
-export default function AssessmentPage() {
+type Props = {
+  params: {
+    assessmentId: string;
+  };
+};
+
+async function generateAssessment(historyEntry: {
+  id: number;
+  transcript: string | null;
+  assessmentText: string | null;
+}) {
+  if (!historyEntry.transcript) 
+    throw new Error("No transcript found for this assessment");
+
+  const result = await analyseTranscript(
+    historyEntry.transcript,
+    historyEntry.id
+  );
+  return result.assessment;
+}
+
+export default async function AssessmentPage({ params }: Props) {
+  const historyId = parseInt(params.assessmentId);
+  if (isNaN(historyId)) notFound();
+
+  const historyEntry = await getHistoryEntryAction(historyId);
+  if (!historyEntry) notFound();
+
+  // If assessment already exists, display it
+  if (historyEntry.assessmentText) 
+    return (
+      <AssessmentContent 
+        assessment={historyEntry.assessmentText}
+        transcript={historyEntry.transcript}
+      />
+    );
+
+  // If no assessment exists yet, generate it
   return (
-    <div className="container mx-auto py-8">
-      <Card className="w-full max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle>Conversation Assessment</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <h3 className="text-lg font-semibold mb-2">Your Performance</h3>
-          <ul className="list-disc pl-5">
-            <li>You effectively addressed the performance issues.</li>
-            <li>Your tone was constructive and supportive.</li>
-            <li>
-              Consider providing more specific examples in future conversations.
-            </li>
-            <li>The improvement plan was clear and actionable.</li>
-          </ul>
-        </CardContent>
-      </Card>
-    </div>
+    <Suspense fallback={<AssessmentLoading />}>
+      <AssessmentContent
+        assessment={await generateAssessment(historyEntry)}
+        transcript={historyEntry.transcript}
+      />
+    </Suspense>
   );
 }
