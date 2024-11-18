@@ -27,7 +27,18 @@ import { useRoomContext } from "@livekit/components-react";
 import { updateHistoryEntryAction } from "@/app/(app)/historyActions";
 import { createHistoryEntryAction } from "@/app/(app)/historyActions";
 import { useTranscriptionHandler } from "@/hooks/use-transcription-handler";
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useTranscriptSave } from "@/hooks/use-transcript-save";
 type VoiceSimulationProps = {
   module: ModuleProgress;
   onEndCall: () => void;
@@ -42,15 +53,15 @@ export function VoiceSimulationComponent({
   >(undefined);
   const [agentState, setAgentState] = useState<AgentState>("disconnected");
   const [historyEntryId, setHistoryEntryId] = useState<number>();
+  const [transcriptBuffer, setTranscriptBuffer] = useState<
+    Array<{ participantName: string; text: string }>
+  >([]);
 
-  // useEffect(() => {
-  //   if (agentState === "disconnected" && historyEntryId) {
-  //     updateHistoryEntryAction({
-  //       id: historyEntryId,
-  //       completedAt: new Date(),
-  //     }).catch(console.error);
-  //   }
-  // }, [agentState, historyEntryId]);
+  const { saveAndComplete } = useTranscriptSave({
+    historyEntryId,
+    transcriptBuffer,
+    saveInterval: 30000, // 30 seconds
+  });
 
   const onConnectButtonClicked = useCallback(async () => {
     try {
@@ -74,16 +85,12 @@ export function VoiceSimulationComponent({
     }
   }, [module.id]);
 
-  const handleDisconnect = useCallback(() => {
+  const handleDisconnect = useCallback(async () => {
     updateConnectionDetails(undefined);
-    if (historyEntryId) {
-      updateHistoryEntryAction({
-        id: historyEntryId,
-        completedAt: new Date(),
-      }).catch(console.error);
-    }
+    await saveAndComplete();
     setAgentState("disconnected");
-  }, [historyEntryId]);
+    onEndCall();
+  }, [saveAndComplete, onEndCall]);
 
   return (
     <div
@@ -103,10 +110,12 @@ export function VoiceSimulationComponent({
         <SimpleVoiceAssistant
           onStateChange={setAgentState}
           historyEntryId={historyEntryId}
+          onTranscriptUpdate={setTranscriptBuffer}
         />
         <ControlBar
           onConnectButtonClicked={onConnectButtonClicked}
           agentState={agentState}
+          onDisconnect={handleDisconnect}
         />
         <RoomAudioRenderer />
         <NoAgentNotification state={agentState} />
@@ -115,48 +124,21 @@ export function VoiceSimulationComponent({
   );
 }
 
-type TranscriptEntry = {
-  participantName: string;
-  text: string;
-  timestamp: number;
-};
-
 function SimpleVoiceAssistant(props: {
   onStateChange: (state: AgentState) => void;
   historyEntryId?: number;
+  onTranscriptUpdate: (
+    transcript: Array<{ participantName: string; text: string }>
+  ) => void;
 }) {
   const { state, audioTrack } = useVoiceAssistant();
   const room = useRoomContext();
-  const { transcriptBuffer, currentAgentText } =
-    useTranscriptionHandler(room);
+  const { transcriptBuffer, currentAgentText } = useTranscriptionHandler(room);
 
-  // Function to save transcript buffer
-  const saveTranscriptBuffer = useCallback(async () => {
-    if (!props.historyEntryId || transcriptBuffer.length === 0) return;
-
-    const formattedTranscript = transcriptBuffer
-      .map((entry) => `${entry.participantName}: ${entry.text}`)
-      .join("\n");
-
-    try {
-      await updateHistoryEntryAction({
-        id: props.historyEntryId,
-        transcript: formattedTranscript,
-      });
-    } catch (error) {
-      console.error("Failed to save transcript:", error);
-    }
-  }, [transcriptBuffer, props.historyEntryId]);
-
-  // Set up periodic saving
+  // Update parent component whenever transcriptBuffer changes
   useEffect(() => {
-    const intervalId = setInterval(saveTranscriptBuffer, 30000); // Save every 30 seconds
-
-    return () => {
-      clearInterval(intervalId);
-      saveTranscriptBuffer(); // Save one final time when component unmounts
-    };
-  }, [saveTranscriptBuffer]);
+    props.onTranscriptUpdate(transcriptBuffer);
+  }, [transcriptBuffer, props.onTranscriptUpdate]);
 
   useEffect(() => {
     props.onStateChange(state);
@@ -206,6 +188,7 @@ export function TranscriptBox({ text }: { text: string }) {
 
 function ControlBar(props: {
   onConnectButtonClicked: () => void;
+  onDisconnect: () => Promise<void>;
   agentState: AgentState;
 }) {
   /**
@@ -244,13 +227,49 @@ function ControlBar(props: {
               className="flex h-8 absolute left-1/2 -translate-x-1/2  justify-center"
             >
               <VoiceAssistantControlBar controls={{ leave: false }} />
-              <DisconnectButton>
-                <CloseIcon />
-              </DisconnectButton>
+              <DisconnectAlertDialog onDisconnect={props.onDisconnect} />
             </motion.div>
           )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function DisconnectAlertDialog({
+  onDisconnect,
+}: {
+  onDisconnect: () => Promise<void>;
+}) {
+  const room = useRoomContext();
+
+  const handleConfirmedDisconnect = async () => {
+    await onDisconnect();
+    room.disconnect();
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <button className="lk-button lk-disconnect-button">
+          <CloseIcon />
+        </button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>End Conversation</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to end this conversation? Your transcript will
+            be saved and analyzed.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirmedDisconnect}>
+            End Conversation
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
