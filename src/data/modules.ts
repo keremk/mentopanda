@@ -183,10 +183,10 @@ export async function createModule(
   if (!data) throw new Error("Failed to create module");
 
    const modulePrompt: ModulePrompt = {
-     scenario: data[0].scenario_prompt,
-     assessment: data[0].assessment_prompt,
-     moderator: data[0].moderator_prompt,
-     characters: convertFieldsToCharacters(data[0]),
+     scenario: data.scenario_prompt,
+     assessment: data.assessment_prompt,
+     moderator: data.moderator_prompt,
+     characters: convertFieldsToCharacters(data),
    };
   
   return {
@@ -217,7 +217,7 @@ export async function deleteModule(
   if (error) handleError(error);
 }
 
-function convertCharactersToFields(characters: Character[]) {
+export function convertCharactersToFields(characters: Character[]) {
   return Array.from({ length: 3 }, (_, i) => i + 1).reduce(
     (acc, i) => ({
       ...acc,
@@ -228,11 +228,13 @@ function convertCharactersToFields(characters: Character[]) {
   );
 }
 
-function convertFieldsToCharacters(fields: Record<string, any>): Character[] {
+export function convertFieldsToCharacters(
+  fields: Record<string, any>
+): Character[] {
   return Array.from({ length: 3 }, (_, i) => i + 1)
     .map((i) => ({
-      name: module[`character_name${i}` as keyof typeof module] as string,
-      prompt: module[`character_prompt${i}` as keyof typeof module] as string,
+      name: fields[`character_name${i}`] as string,
+      prompt: fields[`character_prompt${i}`] as string,
     }))
     .filter((char) => char.name && char.prompt);
 }

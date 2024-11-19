@@ -16,7 +16,8 @@
     "test": "vitest",
     "test:integration": "vitest run tests/integration",
     "test:db": "supabase test db",
-    "create-users": "tsx src/scripts/createUsers.ts"
+    "import-data": "tsx src/scripts/import-data.ts",
+    "export-data": "tsx src/scripts/export-data.ts"
   },
   "dependencies": {
     "@icons-pack/react-simple-icons": "^10.0.0",

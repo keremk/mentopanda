@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -80,8 +81,15 @@ export function EditTrainingForm({ training, modules }: Props) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <div className="space-y-4">
+      <Tabs defaultValue="general" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="description">Description</TabsTrigger>
+          <TabsTrigger value="media">Media</TabsTrigger>
+          <TabsTrigger value="modules">Modules</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="general" className="space-y-4 mt-4">
           <div>
             <label className="text-sm font-medium">Title</label>
             <Input
@@ -100,16 +108,28 @@ export function EditTrainingForm({ training, modules }: Props) {
             />
           </div>
 
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={formData.isPublic}
+              onCheckedChange={handleSwitchChange}
+            />
+            <label className="text-sm font-medium">Public</label>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="description" className="space-y-4 mt-4">
           <div>
             <label className="text-sm font-medium">Description</label>
             <Textarea
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              rows={5}
+              rows={8}
             />
           </div>
+        </TabsContent>
 
+        <TabsContent value="media" className="space-y-4 mt-4">
           <div>
             <label className="text-sm font-medium">Image URL</label>
             <Input
@@ -127,53 +147,45 @@ export function EditTrainingForm({ training, modules }: Props) {
               onChange={handleInputChange}
             />
           </div>
+        </TabsContent>
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={formData.isPublic}
-              onCheckedChange={handleSwitchChange}
-            />
-            <label className="text-sm font-medium">Public</label>
+        <TabsContent value="modules" className="mt-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">Modules</h2>
+            <Button onClick={handleAddModule}>
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Add Module
+            </Button>
           </div>
-        </div>
-      </div>
 
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-semibold">Modules</h2>
-          <Button onClick={handleAddModule}>
-            <PlusIcon className="h-5 w-5 mr-2" />
-            Add Module
-          </Button>
-        </div>
-
-        <div className="space-y-2">
-          {modules.map((module) => (
-            <Card
-              key={module.id}
-              className="flex items-center justify-between p-4"
-            >
-              <span className="text-foreground">{module.title}</span>
-              <div className="space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    router.push(`/explore/${training.id}/edit/${module.id}`)
-                  }
-                >
-                  <PencilIcon className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleDeleteModule(module.id)}
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
+          <div className="space-y-2">
+            {modules.map((module) => (
+              <Card
+                key={module.id}
+                className="flex items-center justify-between p-4"
+              >
+                <span className="text-foreground">{module.title}</span>
+                <div className="space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      router.push(`/explore/${training.id}/edit/${module.id}`)
+                    }
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDeleteModule(module.id)}
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

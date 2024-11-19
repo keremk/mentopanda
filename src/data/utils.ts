@@ -35,3 +35,4 @@ export function handleError(error: PostgrestError) {
     throw new Error(`Failed to fetch data: ${error.message}`);
   }
 }
+

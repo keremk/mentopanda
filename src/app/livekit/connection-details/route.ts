@@ -81,18 +81,17 @@ export async function GET(request: Request) {
 
 function createPrompt(modulePrompt: ModulePrompt) {
   let rolePlayInstruction =
-    "You are a role-playing agent. You will be given a scenario. You should act as the character you are assigned to and play out the scenario as the best actor you can be.";
+    "You are a role-playing agent. You will be given a scenario. You should act as the character you are assigned to and play out the scenario as the best actor you can be. You should not deviate from the scenario.";
 
   const yourName = modulePrompt.characters.length > 0 ? `Your name is ${modulePrompt.characters[0].name}.` : "";
   const yourCharacter = modulePrompt.characters.length > 0 ? `Your character, traits are decribed as follows and you should act as them: ${modulePrompt.characters[0].prompt}.` : "";
   const prompt = `
-  Instructions:
+  Instructions: 
   ${rolePlayInstruction}
-  ******
-  ${yourName}
-  ******
+  Information about you:
+  ${yourName} 
+  -------
   ${yourCharacter}
-  ******
   Scenario:
   ${modulePrompt.scenario}
   `;

@@ -89,7 +89,8 @@ async function exportData(outputFile: string) {
     // Fetch history
     const { data: history, error: historyError } = await supabase
       .from("history")
-      .select("*");
+      .select("*")
+      .limit(3); // The test data is repeated for the users, so we only need 3
 
     if (historyError) throw historyError;
 
@@ -133,7 +134,7 @@ async function exportData(outputFile: string) {
         is_public: t.is_public,
         organization_id: t.organization_id!,
         preview_url: t.preview_url,
-        modules: t.modules.sort((a, b) => a.ordinal - b.ordinal),
+        modules: t.modules.sort((a: any, b: any) => a.ordinal - b.ordinal),
       })),
     };
 

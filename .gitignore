@@ -36,5 +36,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .aider*
+
+
 /src/scripts/test-data.json
 /foo.json
+/ui-mocks/
