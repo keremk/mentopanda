@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import testData from "./test-data.json";
 
 dotenv.config({ path: ".env.local" });
 
@@ -25,67 +26,19 @@ interface TestUser {
   organization_id?: number;
 }
 
-const testUsers: TestUser[] = [
-  { email: "TestMember@example.com", password: "Test123!", role: "member" },
-  { email: "TestManager@example.com", password: "Test123!", role: "manager" },
-  { email: "TestAdmin@example.com", password: "Test123!", role: "admin" },
-  {
-    email: "admin@codingventures.com",
-    password: "Test123!",
-    role: "admin",
-    organization_id: 2,
-  },
-];
-
-interface HistorySeed {
-  moduleId: number;
-  assessmentText: string | null;
-  assessmentScore: number | null;
-  completedAt: Date | null;
-}
-
-// Sample activities for users
-const sampleHistory: HistorySeed[] = [
-  {
-    moduleId: 1, // Feedback Fundamentals
-    assessmentText:
-      "I would start by acknowledging their technical skills and then express concern about the missing test coverage. I'd explain the importance of tests for code reliability and team confidence, then offer to pair program on writing tests for the next feature.",
-    assessmentScore: 85,
-    completedAt: new Date("2024-01-15"),
-  },
-  {
-    moduleId: 2, // Handling Defensive Responses
-    assessmentText:
-      "I understand you feel others interrupt more frequently. Let's look at specific instances and discuss how we can improve the overall meeting dynamics for everyone.",
-    assessmentScore: 90,
-    completedAt: new Date("2024-01-16"),
-  },
-  {
-    moduleId: 4, // Meeting Structure module
-    assessmentText: null,
-    assessmentScore: null,
-    completedAt: null, // In progress
-  },
-  {
-    moduleId: 7, // Preparing for Reviews
-    assessmentText:
-      "I would gather specific examples of both technical excellence and mentoring challenges. For the technical aspects, I'd highlight their strengths in system design and code quality. For mentoring, I'd provide concrete examples where junior team members could have benefited from more guidance.",
-    assessmentScore: 95,
-    completedAt: new Date("2024-01-20"),
-  },
-];
-
 async function createHistoryForUser(userId: string) {
-  for (const entry of sampleHistory) {
+  for (const history of testData.history) {
     try {
       const { error: historyError } = await supabase
         .from("history") // Updated from 'activities'
         .insert({
           user_id: userId,
-          module_id: entry.moduleId,
-          assessment_text: entry.assessmentText,
-          assessment_score: entry.assessmentScore,
-          completed_at: entry.completedAt,
+          module_id: history.module_id,
+          transcript: history.transcript,
+          recording_url: history.recording_url,
+          assessment_text: history.assessment_text,
+          assessment_score: history.assessment_score,
+          completed_at: history.completed ? new Date().toISOString() : null,
           started_at: new Date(
             Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)
           ),
@@ -99,7 +52,7 @@ async function createHistoryForUser(userId: string) {
 }
 
 async function createTestUsers() {
-  for (const user of testUsers) {
+  for (const user of testData.users) {
     try {
       // Create user
       const { data: authData, error: authError } =
@@ -137,7 +90,58 @@ async function createTestUsers() {
   }
 }
 
-createTestUsers()
-  .then(() => console.log("Test users creation completed"))
-  .catch((error) => console.error("Error in test users creation:", error))
+async function createTrainingData() {
+  for (const training of testData.trainings) {
+    try {
+      // Create training
+      const { data: trainingData, error: trainingError } = await supabase
+        .from("trainings")
+        .insert({
+          title: training.title,
+          tagline: training.tagline,
+          description: training.description,
+          image_url: training.image_url,
+          is_public: training.is_public,
+          organization_id: training.organization_id,
+          preview_url: training.preview_url,
+        })
+        .select()
+        .single();
+
+      if (trainingError) throw trainingError;
+      if (!trainingData) throw new Error("No training data returned");
+
+      // Create modules for this training
+      for (const module of training.modules) {
+        const { error: moduleError } = await supabase.from("modules").insert({
+          training_id: trainingData.id,
+          title: module.title,
+          instructions: module.instructions,
+          ordinal: module.ordinal,
+          scenario_prompt: module.scenario_prompt,
+          assessment_prompt: module.assessment_prompt,
+          character_name1: module.character_name1,
+          character_prompt1: module.character_prompt1,
+          moderator_prompt: module.moderator_prompt,
+          video_url: module.video_url,
+          audio_url: module.audio_url,
+        });
+
+        if (moduleError) throw moduleError;
+      }
+
+      console.log(
+        `Created training: ${training.title} with ${training.modules.length} modules`
+      );
+    } catch (error) {
+      console.error(`Error creating training ${training.title}:`, error);
+    }
+  }
+}
+
+
+createTrainingData()
+  .then(() => createTestUsers())
+  .then(() => console.log("Test data creation completed"))
+  .catch((error) => console.error("Error in test data creation:", error))
   .finally(() => process.exit());
