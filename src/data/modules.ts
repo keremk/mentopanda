@@ -1,17 +1,38 @@
-import { handleError } from "./utils"
-import { SupabaseClient } from "@supabase/supabase-js"
+import { handleError } from "./utils";
+import { SupabaseClient } from "@supabase/supabase-js";
+
+export type Character = {
+  name: string;
+  prompt: string;
+};
+
+export type ModulePrompt = {
+  scenario: string;
+  assessment: string;
+  moderator: string | null;
+  characters: Character[];
+};
 
 export type Module = {
-  id: number
-  trainingId: number
-  title: string
-  instructions: string | null
-  prompt: string | null
-  videoUrl: string | null
-  audioUrl: string | null
-  createdAt: string
-  updatedAt: string
-}
+  id: number;
+  trainingId: number;
+  title: string;
+  instructions: string | null;
+  ordinal: number;
+  modulePrompt: ModulePrompt;
+  videoUrl: string | null;
+  audioUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ModuleSummary = {
+  id: number;
+  title: string;
+  trainingId: number;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export async function getModuleById(
   supabase: SupabaseClient,
@@ -21,38 +42,48 @@ export async function getModuleById(
     .from("modules")
     .select("*")
     .eq("id", moduleId)
-    .single()
+    .single();
 
   if (error) {
-    if (error.code === "PGRST116") return null
-    handleError(error)
+    if (error.code === "PGRST116") return null;
+    handleError(error);
   }
 
-  if (!module) return null
+  if (!module) return null;
+
+  const characters: Character[] = convertFieldsToCharacters(module);
+
+  const modulePrompt: ModulePrompt = {
+    scenario: module.scenario_prompt,
+    assessment: module.assessment_prompt,
+    moderator: module.moderator_prompt,
+    characters: characters,
+  };
 
   return {
     id: module.id,
     trainingId: module.training_id,
     title: module.title,
     instructions: module.instructions,
-    prompt: module.prompt,
+    ordinal: module.ordinal,
+    modulePrompt: modulePrompt,
     videoUrl: module.video_url,
     audioUrl: module.audio_url,
     createdAt: module.created_at,
-    updatedAt: module.updated_at
-  }
+    updatedAt: module.updated_at,
+  };
 }
 
 // Add this new function to get modules for a training
 export async function getModulesByTrainingId(
   supabase: SupabaseClient,
   trainingId: string
-): Promise<Module[]> {
+): Promise<ModuleSummary[]> {
   const { data, error } = await supabase
     .from("modules")
-    .select("*")
+    .select("id, title, training_id, ordinal, created_at, updated_at")
     .eq("training_id", trainingId)
-    .order("id");
+    .order("ordinal");
 
   if (error) handleError(error);
 
@@ -61,10 +92,7 @@ export async function getModulesByTrainingId(
       id: module.id,
       title: module.title,
       trainingId: module.training_id,
-      instructions: module.instructions,
-      prompt: module.prompt,
-      videoUrl: module.video_url,
-      audioUrl: module.audio_url,
+      ordinal: module.ordinal,
       createdAt: module.created_at,
       updatedAt: module.updated_at,
     })) ?? []
@@ -76,7 +104,8 @@ export type UpdateModuleInput = {
   trainingId: number;
   title: string;
   instructions: string | null;
-  prompt: string | null;
+  ordinal: number;
+  modulePrompt: ModulePrompt;
   videoUrl: string | null;
   audioUrl: string | null;
 };
@@ -85,12 +114,17 @@ export async function updateModule(
   supabase: SupabaseClient,
   module: UpdateModuleInput
 ): Promise<Module> {
+  const characterFields = convertCharactersToFields(module.modulePrompt.characters);
+
   const { data, error } = await supabase
     .from("modules")
     .update({
       title: module.title,
       instructions: module.instructions,
-      prompt: module.prompt,
+      scenario_prompt: module.modulePrompt.scenario,
+      assessment_prompt: module.modulePrompt.assessment,
+      moderator_prompt: module.modulePrompt.moderator,
+      ...characterFields,
       video_url: module.videoUrl,
       audio_url: module.audioUrl,
       updated_at: new Date().toISOString(),
@@ -101,12 +135,20 @@ export async function updateModule(
   if (error) handleError(error);
   if (!data || data.length === 0) throw new Error("Module not found");
 
+  const modulePrompt: ModulePrompt = {
+    scenario: data[0].scenario_prompt,
+    assessment: data[0].assessment_prompt,
+    moderator: data[0].moderator_prompt,
+    characters: convertFieldsToCharacters(data[0]),
+  };
+
   return {
     id: data[0].id,
     title: data[0].title,
     trainingId: data[0].training_id,
     instructions: data[0].instructions,
-    prompt: data[0].prompt,
+    ordinal: data[0].ordinal,
+    modulePrompt: modulePrompt,
     videoUrl: data[0].video_url,
     audioUrl: data[0].audio_url,
     createdAt: data[0].created_at,
@@ -119,13 +161,18 @@ export async function createModule(
   trainingId: number,
   module: Omit<UpdateModuleInput, "id" | "trainingId">
 ): Promise<Module> {
+  const characterFields = convertCharactersToFields(module.modulePrompt.characters);
+
   const { data, error } = await supabase
     .from("modules")
     .insert({
       training_id: trainingId,
       title: module.title,
       instructions: module.instructions,
-      prompt: module.prompt,
+      scenario_prompt: module.modulePrompt.scenario,
+      assessment_prompt: module.modulePrompt.assessment,
+      moderator_prompt: module.modulePrompt.moderator,
+      ...characterFields,
       video_url: module.videoUrl,
       audio_url: module.audioUrl,
     })
@@ -135,12 +182,20 @@ export async function createModule(
   if (error) handleError(error);
   if (!data) throw new Error("Failed to create module");
 
+   const modulePrompt: ModulePrompt = {
+     scenario: data[0].scenario_prompt,
+     assessment: data[0].assessment_prompt,
+     moderator: data[0].moderator_prompt,
+     characters: convertFieldsToCharacters(data[0]),
+   };
+  
   return {
     id: data.id,
     trainingId: data.training_id,
     title: data.title,
     instructions: data.instructions,
-    prompt: data.prompt,
+    ordinal: data.ordinal,
+    modulePrompt: modulePrompt,
     videoUrl: data.video_url,
     audioUrl: data.audio_url,
     createdAt: data.created_at,
@@ -160,4 +215,24 @@ export async function deleteModule(
     .eq("training_id", trainingId);
 
   if (error) handleError(error);
+}
+
+function convertCharactersToFields(characters: Character[]) {
+  return Array.from({ length: 3 }, (_, i) => i + 1).reduce(
+    (acc, i) => ({
+      ...acc,
+      [`character_name${i}`]: characters[i - 1]?.name ?? null,
+      [`character_prompt${i}`]: characters[i - 1]?.prompt ?? null,
+    }),
+    {} as Record<string, string | null>
+  );
+}
+
+function convertFieldsToCharacters(fields: Record<string, any>): Character[] {
+  return Array.from({ length: 3 }, (_, i) => i + 1)
+    .map((i) => ({
+      name: module[`character_name${i}` as keyof typeof module] as string,
+      prompt: module[`character_prompt${i}` as keyof typeof module] as string,
+    }))
+    .filter((char) => char.name && char.prompt);
 }

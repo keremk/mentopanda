@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTrainingByIdAction } from "@/app/(app)/trainingActions";
 import { getModulesByTrainingIdAction } from "@/app/(app)/moduleActions";
-import EditTrainingForm from "@/components/edit-training";
+import { EditTrainingForm } from "./edit-training";
 
 export default async function EditTrainingPage({
   params,

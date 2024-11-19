@@ -18,10 +18,11 @@ export function ModuleEditForm({ module }: Props) {
   const router = useRouter();
   const [formData, setFormData] = useState<UpdateModuleInput>({
     id: module.id,
+    ordinal: module.ordinal,
     trainingId: module.trainingId,
     title: module.title,
     instructions: module.instructions,
-    prompt: module.prompt,
+    modulePrompt: module.modulePrompt,
     videoUrl: module.videoUrl,
     audioUrl: module.audioUrl,
   });
@@ -78,8 +79,8 @@ export function ModuleEditForm({ module }: Props) {
         <div>
           <label className="text-sm font-medium">Prompt</label>
           <Textarea
-            name="prompt"
-            value={formData.prompt || ""}
+            name="scenarioPrompt"
+            value={formData.modulePrompt.scenario || ""}
             onChange={handleInputChange}
             rows={5}
           />

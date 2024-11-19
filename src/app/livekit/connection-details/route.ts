@@ -6,7 +6,7 @@ import {
 } from "livekit-server-sdk";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { getModuleById } from "@/data/modules";
+import { getModuleById, ModulePrompt } from "@/data/modules";
 
 const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
@@ -33,9 +33,17 @@ export async function GET(request: Request) {
     const supabase = createClient();
     const module = await getModuleById(supabase, moduleId);
     if (!module) throw new Error("Module not found");
-    const prompt = module.prompt;
 
-    const roomName = "voice_assistant_room";
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not found");
+    const participantIdentity =
+      user?.user_metadata.full_name || user?.email?.split("@")[0] || "User";
+
+    const prompt = createPrompt(module.modulePrompt);
+
+    const roomName = `training_${module.trainingId}_module_${module.ordinal}`;
 
     // Create room with metadata
     const roomClient = new RoomServiceClient(
@@ -48,10 +56,6 @@ export async function GET(request: Request) {
       metadata: JSON.stringify({ prompt }),
     });
 
-    // Generate participant token
-    const participantIdentity = `voice_assistant_user_${Math.round(
-      Math.random() * 10_000
-    )}`;
     const participantToken = await createParticipantToken(
       {
         identity: participantIdentity,
@@ -73,6 +77,27 @@ export async function GET(request: Request) {
       return new NextResponse(error.message, { status: 500 });
     }
   }
+}
+
+function createPrompt(modulePrompt: ModulePrompt) {
+  let rolePlayInstruction =
+    "You are a role-playing agent. You will be given a scenario. You should act as the character you are assigned to and play out the scenario as the best actor you can be.";
+
+  const yourName = modulePrompt.characters.length > 0 ? `Your name is ${modulePrompt.characters[0].name}.` : "";
+  const yourCharacter = modulePrompt.characters.length > 0 ? `Your character, traits are decribed as follows and you should act as them: ${modulePrompt.characters[0].prompt}.` : "";
+  const prompt = `
+  Instructions:
+  ${rolePlayInstruction}
+  ******
+  ${yourName}
+  ******
+  ${yourCharacter}
+  ******
+  Scenario:
+  ${modulePrompt.scenario}
+  `;
+
+  return prompt;
 }
 
 function createParticipantToken(

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Training, UpdateTrainingInput } from "@/data/trainings";
-import { Module } from "@/data/modules";
+import { ModuleSummary } from "@/data/modules";
 import { updateTrainingAction } from "@/app/(app)/trainingActions";
 import {
   createModuleAction,
@@ -19,7 +19,7 @@ import { Card } from "@/components/ui/card";
 
 type Props = {
   training: Training;
-  modules: Module[];
+  modules: ModuleSummary[];
 };
 
 export function EditTrainingForm({ training, modules }: Props) {
@@ -60,9 +60,15 @@ export function EditTrainingForm({ training, modules }: Props) {
     const newModule = await createModuleAction(training.id, {
       title: "New Module",
       instructions: null,
-      prompt: null,
+      modulePrompt: {
+        scenario: "",
+        assessment: "",
+        moderator: null,
+        characters: [],
+      },
       videoUrl: null,
       audioUrl: null,
+      ordinal: modules.length,
     });
     router.refresh();
   };
