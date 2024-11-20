@@ -12,26 +12,50 @@ import {
 } from "@/components/ui/breadcrumb";
 
 // Remove NavItem props as we don't need them anymore
+const PATH_SEGMENTS_MAP: Record<string, string> = {
+  explore: "Explore",
+  "[trainingId]": "Training",
+  edit: "Edit",
+  "[moduleId]": "Module",
+  trainings: "Trainings",
+};
+
 export function BreadcrumbNav() {
   const pathname = usePathname();
 
-  // Generate breadcrumbs from pathname
   const generateBreadcrumbs = () => {
-    // Remove trailing slash and split pathname
     const paths = pathname.replace(/\/$/, "").split("/").filter(Boolean);
 
     return paths.map((path, index) => {
-      // Create URL for this breadcrumb level
       const href = "/" + paths.slice(0, index + 1).join("/");
-      // Format the label (capitalize, replace hyphens with spaces)
-      const label = path
-        .replace(/-/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase());
+      // Check if the path segment is a number (ID)
+      const isNumber = /^\d+$/.test(path);
 
-      return {
-        href,
-        label,
-      };
+      // If it's a number, use the previous segment to determine the label
+      let label;
+      if (isNumber) {
+        const previousSegment = paths[index - 1];
+        switch (previousSegment) {
+          case "explore":
+            label = "Training";
+            break;
+          case "edit":
+            label = "Module";
+            break;
+          case "trainings":
+            label = "Training";
+            break;
+          default:
+            label = path;
+        }
+      } else {
+        // Use mapping or fallback to formatted path
+        label =
+          PATH_SEGMENTS_MAP[path] ||
+          path.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      }
+
+      return { href, label };
     });
   };
 
