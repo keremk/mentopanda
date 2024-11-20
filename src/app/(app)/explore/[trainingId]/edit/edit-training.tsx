@@ -81,6 +81,14 @@ export function EditTrainingForm({ training, modules }: Props) {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <div className="mb-8 absolute top-0 right-0 p-4 z-10">
+        <Button
+          variant="outline"
+          onClick={() => router.push(`/explore/${training.id}`)}
+        >
+          Save & Exit
+        </Button>
+      </div>
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="general">General</TabsTrigger>

@@ -82,7 +82,7 @@ export function ModuleEditForm({ module }: Props) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
+      <div className="mb-8 absolute top-0 right-0 p-4 z-10">
         <Button
           variant="outline"
           onClick={() => router.push(`/explore/${module.trainingId}/edit`)}
@@ -186,7 +186,9 @@ export function ModuleEditForm({ module }: Props) {
 
               {activePrompt === "moderator" && (
                 <div>
-                  <label className="text-sm font-medium">Moderator Prompt</label>
+                  <label className="text-sm font-medium">
+                    Moderator Prompt
+                  </label>
                   <Textarea
                     value={formData.modulePrompt.moderator || ""}
                     onChange={(e) => handlePromptChange(e, "moderator")}
@@ -197,7 +199,9 @@ export function ModuleEditForm({ module }: Props) {
 
               {activePrompt === "assessment" && (
                 <div>
-                  <label className="text-sm font-medium">Assessment Prompt</label>
+                  <label className="text-sm font-medium">
+                    Assessment Prompt
+                  </label>
                   <Textarea
                     value={formData.modulePrompt.assessment}
                     onChange={(e) => handlePromptChange(e, "assessment")}
@@ -209,14 +213,18 @@ export function ModuleEditForm({ module }: Props) {
               {activePrompt === "character" && (
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium">Character Name</label>
+                    <label className="text-sm font-medium">
+                      Character Name
+                    </label>
                     <Input
                       value={formData.modulePrompt.characters[0]?.name || ""}
                       onChange={(e) => handleCharacterChange(e, "name")}
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Character Prompt</label>
+                    <label className="text-sm font-medium">
+                      Character Prompt
+                    </label>
                     <Textarea
                       value={formData.modulePrompt.characters[0]?.prompt || ""}
                       onChange={(e) => handleCharacterChange(e, "prompt")}
