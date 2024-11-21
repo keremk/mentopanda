@@ -5,6 +5,7 @@ import analyseTranscript from "@/app/actions/analyse-transcript";
 import { notFound } from "next/navigation";
 import { AssessmentContent } from "./assessment-content";
 import AssessmentLoading from "./loading";
+import { HistoryEntry } from "@/data/history";
 
 type Props = {
   params: {
@@ -12,17 +13,14 @@ type Props = {
   };
 };
 
-async function generateAssessment(historyEntry: {
-  id: number;
-  transcript: string | null;
-  assessmentText: string | null;
-}) {
+async function generateAssessment(historyEntry: HistoryEntry) {
   if (!historyEntry.transcript) 
     throw new Error("No transcript found for this assessment");
 
   const result = await analyseTranscript(
     historyEntry.transcript,
-    historyEntry.id
+    historyEntry.id,
+    historyEntry.moduleId
   );
   return result.assessment;
 }

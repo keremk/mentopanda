@@ -29,9 +29,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const moduleId = searchParams.get("moduleId");
     if (!moduleId) throw new Error("moduleId is required");
-
     const supabase = createClient();
-    const module = await getModuleById(supabase, moduleId);
+    const module = await getModuleById(supabase, parseInt(moduleId));
     if (!module) throw new Error("Module not found");
 
     const {

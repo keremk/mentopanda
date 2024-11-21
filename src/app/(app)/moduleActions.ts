@@ -15,7 +15,7 @@ export async function getModulesByTrainingIdAction(trainingId: string) {
   return await getModulesByTrainingId(supabase, trainingId);
 }
 
-export async function getModuleByIdAction(moduleId: string) {
+export async function getModuleByIdAction(moduleId: number) {
   const supabase = createClient();
   return await getModuleById(supabase, moduleId);
 }

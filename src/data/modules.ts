@@ -36,7 +36,7 @@ export type ModuleSummary = {
 
 export async function getModuleById(
   supabase: SupabaseClient,
-  moduleId: string
+  moduleId: number
 ): Promise<Module | null> {
   const { data: module, error } = await supabase
     .from("modules")

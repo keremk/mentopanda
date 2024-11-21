@@ -3,6 +3,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 export type HistoryEntry = {
   id: number;
+  moduleId: number;
   moduleTitle: string;
   trainingTitle: string;
   recordingUrl: string | null;
@@ -76,6 +77,7 @@ export async function getTrainingHistory(
 
   return historyData.map((entry: any) => ({
     id: entry.id,
+    moduleId: entry.module_id,
     moduleTitle: entry.modules?.title,
     trainingTitle: entry.modules?.trainings?.title,
     recordingUrl: entry.recording_url,
@@ -169,6 +171,7 @@ export async function getHistoryEntry(
 
   return {
     id: data.id,
+    moduleId: data.module_id,
     moduleTitle: (data.modules as any)?.title ?? null, // Disconnect from Supabase expected schema vs. what we get back, so I am doing this here
     trainingTitle: (data.modules as any)?.trainings?.title ?? null,
     recordingUrl: data.recording_url,
