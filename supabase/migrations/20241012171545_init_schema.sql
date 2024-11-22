@@ -82,6 +82,7 @@ create table if not exists "history" (
 	"user_id" uuid default auth.uid() not null references profiles (id) on delete cascade,
 	"transcript" text,
 	"recording_url" text,
+	"assessment_created" boolean default false not null,
 	"assessment_text" text,
 	"assessment_score" integer,
 	"started_at" timestamp default now() not null,

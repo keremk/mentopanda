@@ -13,6 +13,7 @@ import { useState } from "react";
 type Props = {
   assessment: string;
   transcript?: string | null;
+  score?: number | null;
 };
 
 export function AssessmentContent({ assessment, transcript }: Props) {

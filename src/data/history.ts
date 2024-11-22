@@ -10,6 +10,7 @@ export type HistoryEntry = {
   transcript: string | null;
   assessmentText: string | null;
   assessmentScore: number | null;
+  assessmentCreated: boolean;
   completedAt: Date | null;
   startedAt: Date;
   attemptNumber: number;
@@ -21,6 +22,7 @@ export type UpdateHistoryEntry = {
   transcript?: string | null;
   assessmentText?: string | null;
   assessmentScore?: number | null;
+  assessmentCreated?: boolean;
   completedAt?: Date | null;
 };
 
@@ -84,6 +86,7 @@ export async function getTrainingHistory(
     transcript: entry.transcript,
     assessmentText: entry.assessment_text,
     assessmentScore: entry.assessment_score,
+    assessmentCreated: entry.assessment_created,
     completedAt: entry.completed_at ? new Date(entry.completed_at) : null,
     startedAt: new Date(entry.started_at),
     attemptNumber: moduleAttempts.get(entry.module_id) || 1,
@@ -126,6 +129,7 @@ export async function updateHistoryEntry(
       transcript: updates.transcript,
       assessment_text: updates.assessmentText,
       assessment_score: updates.assessmentScore,
+      assessment_created: updates.assessmentCreated,
       completed_at: updates.completedAt?.toISOString(),
     })
     .eq("id", id)
@@ -149,6 +153,7 @@ export async function getHistoryEntry(
       recording_url,
       transcript,
       assessment_score,
+      assessment_created,
       completed_at,
       started_at,
       module_id,
@@ -178,6 +183,7 @@ export async function getHistoryEntry(
     transcript: data.transcript,
     assessmentText: data.assessment_text,
     assessmentScore: data.assessment_score,
+    assessmentCreated: data.assessment_created,
     completedAt: data.completed_at ? new Date(data.completed_at) : null,
     startedAt: new Date(data.started_at),
     attemptNumber: 1, // Note: We don't calculate attempt number for single entries

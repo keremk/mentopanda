@@ -59,6 +59,7 @@ export default async function analyseTranscript(
     id: historyEntryId,
     assessmentText: assessment,
     assessmentScore: score,
+    assessmentCreated: true,
   });
 
   return { assessment: assessment, score: score };

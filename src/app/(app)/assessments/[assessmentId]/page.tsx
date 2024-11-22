@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getHistoryEntryAction } from "../../historyActions";
 import analyseTranscript from "@/app/actions/analyse-transcript";
 import { notFound } from "next/navigation";
@@ -13,16 +12,27 @@ type Props = {
   };
 };
 
-async function generateAssessment(historyEntry: HistoryEntry) {
-  if (!historyEntry.transcript) 
+async function AssessmentGenerator({
+  historyEntry,
+}: {
+  historyEntry: HistoryEntry;
+}) {
+  if (!historyEntry.transcript)
     throw new Error("No transcript found for this assessment");
 
-  const result = await analyseTranscript(
+  const { assessment, score } = await analyseTranscript(
     historyEntry.transcript,
     historyEntry.id,
     historyEntry.moduleId
   );
-  return result.assessment;
+
+  return (
+    <AssessmentContent
+      assessment={assessment}
+      transcript={historyEntry.transcript}
+      score={score}
+    />
+  );
 }
 
 export default async function AssessmentPage({ params }: Props) {
@@ -33,21 +43,18 @@ export default async function AssessmentPage({ params }: Props) {
   if (!historyEntry) notFound();
 
   // If assessment already exists, display it
-  if (historyEntry.assessmentText) 
+  if (historyEntry.assessmentCreated && historyEntry.assessmentText) 
     return (
       <AssessmentContent 
         assessment={historyEntry.assessmentText}
         transcript={historyEntry.transcript}
+        score={historyEntry.assessmentScore}
       />
     );
 
-  // If no assessment exists yet, generate it
   return (
     <Suspense fallback={<AssessmentLoading />}>
-      <AssessmentContent
-        assessment={await generateAssessment(historyEntry)}
-        transcript={historyEntry.transcript}
-      />
+      <AssessmentGenerator historyEntry={historyEntry} />
     </Suspense>
   );
 }
