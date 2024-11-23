@@ -84,9 +84,11 @@ create table if not exists "history" (
 	"recording_url" text,
 	"assessment_created" boolean default false not null,
 	"assessment_text" text,
+	"practice_no" integer default 1 not null,
 	"assessment_score" integer,
 	"started_at" timestamp default now() not null,
-	"completed_at" timestamp
+	"completed_at" timestamp, 
+	CONSTRAINT unique_practice UNIQUE(user_id, module_id, practice_no)
 );
 
 -- Indexes
