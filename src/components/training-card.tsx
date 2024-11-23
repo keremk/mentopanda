@@ -29,8 +29,8 @@ export function TrainingCard({
   const fallbackImage = "/placeholder.svg?height=200&width=300";
 
   return (
-    <Card className="w-full h-[350px] flex flex-col">
-      <CardHeader className="p-0 relative aspect-video">
+    <Card className="w-full min-h-[400px] flex flex-col">
+      <CardHeader className="p-0 relative h-[200px]">
         <Image
           src={imageUrl || fallbackImage}
           alt={`Cover image for ${title}`}
@@ -39,16 +39,16 @@ export function TrainingCard({
         />
       </CardHeader>
       <CardContent className="p-4 flex-grow">
-        <CardTitle className="text-xl font-bold line-clamp-2 mb-2">
+        <CardTitle className="text-xl font-bold line-clamp-2 mb-3">
           {title}
         </CardTitle>
         {tagline && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
             {tagline}
           </p>
         )}
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex justify-between">
+      <CardFooter className="p-4 pt-0 flex justify-between mt-auto">
         <EnrollmentButton 
           trainingId={id} 
           className="flex-1 mr-2" 

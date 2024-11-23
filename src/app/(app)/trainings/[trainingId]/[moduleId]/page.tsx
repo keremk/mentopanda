@@ -1,5 +1,6 @@
 import { getTrainingWithProgressAction } from "@/app/(app)/trainingActions";
 import { SimulationContainer } from "@/components/simulation-container";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { redirect } from "next/navigation";
 
@@ -24,12 +25,13 @@ export default async function Page({ params: { trainingId, moduleId } }: Props) 
       <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle>{training.title}</CardTitle>
-          <CardDescription>{training.tagline}</CardDescription>
+          <CardDescription>{currentModule.title}</CardDescription>
         </CardHeader>
         <CardContent>
-          <h2 className="text-lg font-semibold mb-2">{currentModule.title}</h2>
           {currentModule.instructions && (
-            <p className="mb-4">{currentModule.instructions}</p>
+            <div className="mb-4">
+              <MarkdownRenderer content={currentModule.instructions} />
+            </div>
           )}
           
           <SimulationContainer 

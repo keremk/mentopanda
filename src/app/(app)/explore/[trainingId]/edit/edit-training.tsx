@@ -17,6 +17,7 @@ import {
 } from "@/app/(app)/moduleActions";
 import { PlusIcon, TrashIcon, PencilIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { MarkdownEditor } from "@/components/markdown-editor";
 
 type Props = {
   training: Training;
@@ -128,11 +129,10 @@ export function EditTrainingForm({ training, modules }: Props) {
         <TabsContent value="description" className="space-y-4 mt-4">
           <div>
             <label className="text-sm font-medium">Description</label>
-            <Textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              rows={8}
+            <MarkdownEditor
+              content={formData.description}
+              onChange={(markdown) => setFormData((prev) => ({ ...prev, description: markdown }))}
+              className="min-h-[300px]"
             />
           </div>
         </TabsContent>

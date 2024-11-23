@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { EnrollmentButton } from "@/components/enrollment-button";
 import { getTrainingByIdAction } from "@/app/(app)/trainingActions";
 import { Pencil } from "lucide-react";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 
 function YouTubeEmbed({ url }: { url: string }) {
   const videoId = url.split("v=")[1];
@@ -38,7 +39,7 @@ export default async function TrainingDetailsPage({
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="absolute top-0 right-0 p-4 z-10">
-        <EnrollmentButton trainingId={training.id} />
+        <EnrollmentButton className="mr-4" trainingId={training.id} />
         <Button asChild variant="outline">
           <Link
             href={`/explore/${training.id}/edit`}
@@ -50,23 +51,23 @@ export default async function TrainingDetailsPage({
         </Button>
       </div>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{training.title}</h1>
-        <p className="text-xl text-gray-600 mb-4">{training.tagline}</p>
-        <div className="aspect-video relative mb-4">
-          <Image
-            src={training.imageUrl}
-            alt={training.title}
-            layout="fill"
-            objectFit="cover"
-            className="rounded-lg"
-          />
+      <div className="md:flex md:gap-8 mb-8">
+        <div className="flex-1">
+          <div className="md:float-right md:ml-8 md:mb-4 w-full md:w-[45%] mb-6">
+            <div className="aspect-video relative">
+              <Image
+                src={training.imageUrl}
+                alt={training.title}
+                layout="fill"
+                objectFit="cover"
+                className="rounded-lg"
+              />
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold mb-1">{training.title}</h1>
+          <p className="text-xl text-gray-600 mb-6">{training.tagline}</p>
+          <MarkdownRenderer content={training.description} />
         </div>
-      </div>
-
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Training Description</h2>
-        <p className="text-gray-700">{training.description}</p>
       </div>
 
       {training.previewUrl && (

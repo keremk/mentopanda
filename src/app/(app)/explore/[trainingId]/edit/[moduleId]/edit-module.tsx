@@ -10,6 +10,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Module } from "@/data/modules";
 import { updateModuleAction } from "@/app/(app)/moduleActions";
 import { UpdateModuleInput } from "@/data/modules";
+import { MarkdownEditor } from "@/components/markdown-editor";
 
 type Props = {
   module: Module;
@@ -38,7 +39,21 @@ export function ModuleEditForm({ module }: Props) {
 
   useEffect(() => {
     const updateData = async () => {
-      if (JSON.stringify(debouncedFormData) !== JSON.stringify(module)) {
+      const hasChanges =
+        debouncedFormData.title !== module.title ||
+        debouncedFormData.instructions !== module.instructions ||
+        debouncedFormData.videoUrl !== module.videoUrl ||
+        debouncedFormData.audioUrl !== module.audioUrl ||
+        debouncedFormData.modulePrompt.scenario !==
+          module.modulePrompt.scenario ||
+        debouncedFormData.modulePrompt.assessment !==
+          module.modulePrompt.assessment ||
+        debouncedFormData.modulePrompt.moderator !==
+          module.modulePrompt.moderator ||
+        JSON.stringify(debouncedFormData.modulePrompt.characters) !==
+          JSON.stringify(module.modulePrompt.characters);
+
+      if (hasChanges) {
         await updateModuleAction(debouncedFormData);
       }
     };
@@ -80,13 +95,30 @@ export function ModuleEditForm({ module }: Props) {
     }));
   };
 
+  const handleBackClick = async () => {
+    // Check for unsaved changes
+    const hasChanges =
+      formData.title !== module.title ||
+      formData.instructions !== module.instructions ||
+      formData.videoUrl !== module.videoUrl ||
+      formData.audioUrl !== module.audioUrl ||
+      formData.modulePrompt.scenario !== module.modulePrompt.scenario ||
+      formData.modulePrompt.assessment !== module.modulePrompt.assessment ||
+      formData.modulePrompt.moderator !== module.modulePrompt.moderator ||
+      JSON.stringify(formData.modulePrompt.characters) !==
+        JSON.stringify(module.modulePrompt.characters);
+
+    if (hasChanges) {
+      await updateModuleAction(formData);
+    }
+
+    router.push(`/explore/${module.trainingId}/edit`);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 absolute top-0 right-0 p-4 z-10">
-        <Button
-          variant="outline"
-          onClick={() => router.push(`/explore/${module.trainingId}/edit`)}
-        >
+        <Button variant="outline" onClick={handleBackClick}>
           Back to Training
         </Button>
       </div>
@@ -109,13 +141,18 @@ export function ModuleEditForm({ module }: Props) {
           </div>
 
           <div>
-            <label className="text-sm font-medium">Instructions</label>
-            <Textarea
-              name="instructions"
-              value={formData.instructions || ""}
-              onChange={handleInputChange}
-              rows={8}
-            />
+            <label className="text-sm font-medium mb-2 block">
+              Instructions
+            </label>
+            <div className="border rounded-md">
+              <MarkdownEditor
+                content={formData.instructions || ""}
+                onChange={(value) =>
+                  setFormData((prev) => ({ ...prev, instructions: value }))
+                }
+                className="min-h-[300px]"
+              />
+            </div>
           </div>
         </TabsContent>
 
@@ -175,7 +212,6 @@ export function ModuleEditForm({ module }: Props) {
             <div className="col-span-3">
               {activePrompt === "scenario" && (
                 <div>
-                  <label className="text-sm font-medium">Scenario Prompt</label>
                   <Textarea
                     value={formData.modulePrompt.scenario}
                     onChange={(e) => handlePromptChange(e, "scenario")}
@@ -186,9 +222,6 @@ export function ModuleEditForm({ module }: Props) {
 
               {activePrompt === "moderator" && (
                 <div>
-                  <label className="text-sm font-medium">
-                    Moderator Prompt
-                  </label>
                   <Textarea
                     value={formData.modulePrompt.moderator || ""}
                     onChange={(e) => handlePromptChange(e, "moderator")}
@@ -199,9 +232,6 @@ export function ModuleEditForm({ module }: Props) {
 
               {activePrompt === "assessment" && (
                 <div>
-                  <label className="text-sm font-medium">
-                    Assessment Prompt
-                  </label>
                   <Textarea
                     value={formData.modulePrompt.assessment}
                     onChange={(e) => handlePromptChange(e, "assessment")}
@@ -213,18 +243,14 @@ export function ModuleEditForm({ module }: Props) {
               {activePrompt === "character" && (
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium">
-                      Character Name
-                    </label>
+                    <label className="text-sm font-medium">Name</label>
                     <Input
                       value={formData.modulePrompt.characters[0]?.name || ""}
                       onChange={(e) => handleCharacterChange(e, "name")}
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">
-                      Character Prompt
-                    </label>
+                    <label className="text-sm font-medium">Prompt</label>
                     <Textarea
                       value={formData.modulePrompt.characters[0]?.prompt || ""}
                       onChange={(e) => handleCharacterChange(e, "prompt")}
@@ -241,4 +267,4 @@ export function ModuleEditForm({ module }: Props) {
   );
 }
 
-export default ModuleEditForm; 
+export default ModuleEditForm;
