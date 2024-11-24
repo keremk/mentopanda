@@ -5,7 +5,7 @@ import { TrainingDetailsCard } from "@/components/training-details-card"
 import { useSearch } from "@/components/providers/search-provider"
 
 export default function TrainingPage() {
-  const { filteredTrainings, setFilteredTrainings, initialTrainings } = useSearch()
+  const { filteredTrainings, setFilteredTrainings } = useSearch()
 
   useEffect(() => {
     function handleTrainingsFiltered(event: CustomEvent<any>) {

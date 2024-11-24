@@ -2,13 +2,14 @@
 
 import { Button } from "@/components/ui/button"
 import { MessageSquare, PhoneOff } from 'lucide-react'
+import { Module } from "@/data/modules";
 
 type ChatSimulationProps = {
   onEndConversation: () => void;
-  prompt: string;
+  module: Module;
 }
 
-export function ChatSimulationComponent({ onEndConversation, prompt }: ChatSimulationProps) {
+export function ChatSimulationComponent({ onEndConversation, module }: ChatSimulationProps) {
   return (
     <div className="mt-4">
       <h3 className="text-lg font-semibold mb-2">Chat Conversation</h3>

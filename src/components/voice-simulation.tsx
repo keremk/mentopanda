@@ -39,8 +39,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useTranscriptSave } from "@/hooks/use-transcript-save";
+import { Module } from "@/data/modules";
+
 type VoiceSimulationProps = {
-  module: ModuleProgress;
+  module: Module;
   onEndCall: (historyEntryId: number) => void;
 };
 

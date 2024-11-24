@@ -7,14 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VoiceSimulationComponent } from "@/components/voice-simulation";
 import { ChatSimulationComponent } from "@/components/chat-simulation";
 import { useRouter } from "next/navigation";
-import type { ModuleProgress } from "@/data/trainings";
+import { Module } from "@/data/modules";
 
 type SimulationContainerProps = {
-  trainingId: string;
-  module: ModuleProgress;
+  module: Module;
 };
 
-export function SimulationContainer({ trainingId, module }: SimulationContainerProps) {
+export function SimulationContainer({ module }: SimulationContainerProps) {
   const [simulationStarted, setSimulationStarted] = useState(false);
   const [simulationType, setSimulationType] = useState<"voice" | "chat" | null>(null);
   const router = useRouter();
@@ -76,8 +75,8 @@ export function SimulationContainer({ trainingId, module }: SimulationContainerP
 
   return (
     <ChatSimulationComponent 
-      onEndConversation={() => router.push(`/trainings/${trainingId}`)}
-      prompt={module.prompt || ""}
+      onEndConversation={() => router.push(`/trainings/${module.trainingId}`)}
+      module={module}
     />
   );
 } 
