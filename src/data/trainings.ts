@@ -1,3 +1,4 @@
+import { ModuleSummary } from "./modules";
 import { getOrganizationId, getUserId, handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
 
@@ -8,10 +9,12 @@ export type Training = {
   description: string;
   imageUrl: string;
   isPublic: boolean;
+  createdBy: string | null;
   organizationId: string | null;
   previewUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  modules: ModuleSummary[];
 };
 
 export type ModuleProgress = {
@@ -70,40 +73,6 @@ type DbTraining = {
   modules: DbModule[];
 };
 
-export async function getTrainings(
-  supabase: SupabaseClient
-): Promise<Training[]> {
-  const organizationId = await getOrganizationId(supabase);
-
-  let query = supabase.from("trainings").select("*").or("is_public.eq.true");
-
-  // Add organization filter only if organizationId is not null
-  if (organizationId && organizationId !== 1) {
-    query = query.or(`organization_id.eq.${organizationId}`);
-  }
-
-  const { data: userTrainings, error: trainingsError } = await query;
-
-  if (trainingsError) {
-    handleError(trainingsError);
-  }
-
-  return (
-    userTrainings?.map((training) => ({
-      id: training.id,
-      title: training.title,
-      tagline: training.tagline,
-      description: training.description,
-      imageUrl: training.image_url,
-      isPublic: training.is_public,
-      organizationId: training.organization_id,
-      previewUrl: training.preview_url,
-      createdAt: training.created_at,
-      updatedAt: training.updated_at,
-    })) ?? []
-  );
-}
-
 export async function getTrainingById(
   supabase: SupabaseClient,
   trainingId: string
@@ -113,14 +82,18 @@ export async function getTrainingById(
   // Query the specific training
   let query = supabase
     .from("trainings")
-    .select("*")
-    .eq("id", trainingId)
-    .or("is_public.eq.true");
-
-  // Add organization filter only if organizationId is not null
-  if (organizationId && organizationId !== 1) {
-    query = query.or(`organization_id.eq.${organizationId}`);
-  }
+    .select(
+      `
+      *,
+      modules (
+        title,
+        id,
+        created_at,
+        updated_at
+      )
+      `
+    )
+    .eq("id", trainingId);
 
   const { data: training, error: trainingError } = await query.single();
 
@@ -139,10 +112,12 @@ export async function getTrainingById(
     description: training.description,
     imageUrl: training.image_url,
     isPublic: training.is_public,
+    createdBy: training.created_by,
     organizationId: training.organization_id,
     previewUrl: training.preview_url,
     createdAt: training.created_at,
     updatedAt: training.updated_at,
+    modules: training.modules,
   };
 }
 
@@ -250,7 +225,9 @@ export async function getTrainingsWithEnrollment(
       createdAt: training.created_at,
       updatedAt: training.updated_at,
       isEnrolled:
-        training.enrollments?.some((e: { user_id: string; }) => e.user_id === userId) ?? false,
+        training.enrollments?.some(
+          (e: { user_id: string }) => e.user_id === userId
+        ) ?? false,
     })) ?? []
   );
 }

@@ -2,14 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Training, UpdateTrainingInput } from "@/data/trainings";
-import { ModuleSummary } from "@/data/modules";
 import { updateTrainingAction } from "@/app/(app)/trainingActions";
 import {
   createModuleAction,
@@ -21,10 +19,9 @@ import { MarkdownEditor } from "@/components/markdown-editor";
 
 type Props = {
   training: Training;
-  modules: ModuleSummary[];
 };
 
-export function EditTrainingForm({ training, modules }: Props) {
+export function EditTrainingForm({ training }: Props) {
   const router = useRouter();
   const [formData, setFormData] = useState<UpdateTrainingInput>({
     id: training.id,
@@ -70,7 +67,7 @@ export function EditTrainingForm({ training, modules }: Props) {
       },
       videoUrl: null,
       audioUrl: null,
-      ordinal: modules.length,
+      ordinal: training.modules.length,
     });
     router.refresh();
   };
@@ -167,7 +164,7 @@ export function EditTrainingForm({ training, modules }: Props) {
           </div>
 
           <div className="space-y-2">
-            {modules.map((module) => (
+            {training.modules.map((module) => (
               <Card
                 key={module.id}
                 className="flex items-center justify-between p-4"
