@@ -102,6 +102,7 @@ async function createTrainingData() {
           description: training.description,
           image_url: training.image_url,
           is_public: training.is_public,
+          created_by: null, // TODO: Add created_by
           organization_id: training.organization_id,
           preview_url: training.preview_url,
         })

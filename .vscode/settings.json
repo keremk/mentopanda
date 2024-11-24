@@ -6,24 +6,34 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[sql]": {
-    "editor.defaultFormatter": "mtxr.sqltools"
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "mtxr.sqltools",
+    "editor.tabSize": 4
+  },
+  "files.associations": {
+    "*.sql": "sql",
+    "*.pgsql": "sql"
   },
   "editor.formatOnSave": true,
-  "deno.enablePaths": ["supabase/functions"],
-  "deno.lint": true,
-  "deno.unstable": [
-    "bare-node-builtins",
-    "byonm",
-    "sloppy-imports",
-    "unsafe-proto",
-    "webgpu",
-    "broadcast-channel",
-    "worker-options",
-    "cron",
-    "kv",
-    "ffi",
-    "fs",
-    "http",
-    "net"
-  ]
+  "sqltools.format": {
+    "keywordCase": "upper",
+    "identifierCase": "preserve",
+    "indentSize": 4,
+    "indentStyle": "standard",
+    "linesBetweenQueries": 2,
+    "maxColumnLength": 120,
+    "minifying": false,
+    "newLineBeforeCloseParen": false,
+    "newLineBeforeOpenParen": false,
+    "spacing": 1,
+    "expressionWidth": 120,
+    "expandCommaLists": false,
+    "expandBooleanExpressions": false,
+    "expandCaseStatements": true,
+    "expandBetweenConditions": false,
+    "expandInLists": false,
+    "breakJoinOnSections": false,
+    "allowShortTableAlias": true,
+    "commaPosition": "after"
+  }
 }

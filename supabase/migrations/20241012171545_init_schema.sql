@@ -8,29 +8,30 @@ create type "public"."app_permission" as enum(
 	'organization.admin' 
 );
 
-create type "public"."user_role" as enum('admin', 'manager', 'member');
+create type "public"."user_role" as enum('admin', 'manager', 'member', 'super_admin');
 
 -- Tables
 create table if not exists "organizations" (
 	"id" bigserial primary key not null,
 	"name" text,
 	"domain" text not null,
-	"created_at" timestamp default now() not null,
-	"updated_at" timestamp default now() not null
+	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 create table if not exists "profiles" (
 	"id" uuid primary key not null references auth.users (id) on delete cascade on update cascade,
 	"organization_id" bigint references organizations (id) on delete set default default 1 not null,
 	"user_role" "user_role" default 'member' not null,
-	"created_at" timestamp default now() not null,
-	"updated_at" timestamp default now() not null
+	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 create table if not exists "role_permissions" (
 	"role" "user_role" not null,
 	"permission" "app_permission" not null,
-	"created_at" timestamp default now() not null,
+	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 	constraint "role_permissions_role_permission_pk" primary key ("role", "permission")
 );
 
@@ -41,10 +42,11 @@ create table if not exists "trainings" (
 	"description" text,
 	"image_url" text,
 	"preview_url" text,
+	"created_by" uuid references profiles (id) on delete set null,
 	"is_public" boolean default true not null,
 	"organization_id" bigint references organizations (id) on delete cascade,
-	"created_at" timestamp default now() not null,
-	"updated_at" timestamp default now() not null
+	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 create table if not exists "modules" (
@@ -64,8 +66,8 @@ create table if not exists "modules" (
 	"moderator_prompt" text,
 	"video_url" text,
 	"audio_url" text,
-	"created_at" timestamp default now() not null,
-	"updated_at" timestamp default now() not null
+	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- https://x.com/dshukertjr/status/1851231477671079952 Sensible default for user_id
@@ -73,7 +75,8 @@ create table if not exists "enrollments" (
 	"id" bigserial primary key not null,
 	"training_id" bigint not null references trainings (id) on delete cascade,
 	"user_id" uuid default auth.uid() not null references profiles (id) on delete cascade,
-	"created_at" timestamp default now() not null
+	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 create table if not exists "history" (
@@ -86,8 +89,8 @@ create table if not exists "history" (
 	"assessment_text" text,
 	"practice_no" integer default 1 not null,
 	"assessment_score" integer,
-	"started_at" timestamp default now() not null,
-	"completed_at" timestamp, 
+	"started_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	"completed_at" TIMESTAMP WITH TIME ZONE, 
 	CONSTRAINT unique_practice UNIQUE(user_id, module_id, practice_no)
 );
 
