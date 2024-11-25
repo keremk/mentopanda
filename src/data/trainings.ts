@@ -1,5 +1,4 @@
-import { HistorySummary } from "./history";
-import { ModuleSummary } from "./modules";
+import { ModuleProgress, ModuleSummary } from "./modules";
 import { getOrganizationId, getUserId, handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
 
@@ -19,19 +18,6 @@ export type Training = TrainingSummary & {
   organizationId: string | null;
   previewUrl: string | null;
   modules: ModuleSummary[];
-};
-
-
-export type ModuleProgress = {
-  id: number;
-  title: string;
-  instructions: string | null;
-  prompt: string | null;
-  videoUrl: string | null;
-  audioUrl: string | null;
-  practiceCount: number;
-  lastScore: number | null;
-  history: HistorySummary[];
 };
 
 export type TrainingWithProgress = TrainingSummary & {
@@ -181,10 +167,6 @@ export async function getTrainingWithProgress(
       return {
         id: module.id,
         title: module.title,
-        instructions: module.instructions,
-        prompt: module.prompt,
-        videoUrl: module.video_url,
-        audioUrl: module.audio_url,
         practiceCount: history.length,
         lastScore: lastPractice?.assessment_score || null,
         history: history.map((h: any) => ({
