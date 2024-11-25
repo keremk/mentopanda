@@ -1,0 +1,76 @@
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { Search, PlayCircle, GripVertical } from "lucide-react";
+import { EnrollmentButton } from "@/components/enrollment-button";
+import { getEnrolledTrainingsAction } from "@/app/(app)/trainingActions";
+
+export async function EnrolledTrainingsList() {
+  const trainings = await getEnrolledTrainingsAction();
+
+  return (
+    <Card className="w-full h-full flex flex-col min-w-[550px]">
+      <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
+        <CardTitle className="text-2xl font-bold">Enrolled Trainings</CardTitle>
+        <div className="drag-handle cursor-move">
+          <GripVertical size={20} className="text-gray-400" />
+        </div>
+      </CardHeader>
+      <CardContent className="flex-grow overflow-auto">
+        <div className="space-y-4">
+          {trainings && trainings.length > 0 ? (
+            trainings.map((training) => (
+              <Card key={training.id} className="p-4">
+                <div className="flex flex-wrap gap-4 items-start">
+                  <div className="flex flex-grow basis-[300px] min-w-0 items-start">
+                    <div className="relative h-12 w-12 mr-4 flex-shrink-0">
+                      <Image
+                        src={training.imageUrl || "/placeholder.png"}
+                        alt={training.title}
+                        fill
+                        className="object-cover rounded"
+                        sizes="(max-width: 48px) 100vw, 48px"
+                      />
+                    </div>
+                    <div className="min-w-0 py-1">
+                      <h3 className="font-semibold break-words line-clamp-2">
+                        {training.title}
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+                    <Button variant="secondary" className="flex-shrink-0" asChild>
+                      <Link href={`/trainings/${training.id}`}>
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Train
+                      </Link>
+                    </Button>
+                    <EnrollmentButton
+                      trainingId={training.id}
+                      isEnrolled={true}
+                      className="flex-shrink-0"
+                      trainingTitle={training.title}
+                    />
+                  </div>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">
+                No trainings enrolled yet
+              </p>
+              <Link href="/explore">
+                <Button size="lg">
+                  <Search className="mr-2 h-5 w-4" />
+                  Explore Trainings
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

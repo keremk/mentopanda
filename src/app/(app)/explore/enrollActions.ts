@@ -3,7 +3,6 @@
 import { createClient } from "@/utils/supabase/server";
 import {
   enrollInTraining,
-  getEnrolledTrainings,
   isEnrolled,
   unenrollFromTraining,
 } from "@/data/enrollments";
@@ -21,9 +20,4 @@ export async function enrollInTrainingAction(trainingId: number) {
 export async function unenrollFromTrainingAction(trainingId: number) {
   const supabase = createClient();
   return await unenrollFromTraining(supabase, trainingId);
-}
-
-export async function getEnrolledTrainingsAction() {
-  const supabase = createClient();
-  return await getEnrolledTrainings(supabase);
 }

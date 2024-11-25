@@ -17,6 +17,15 @@ export type Training = {
   modules: ModuleSummary[];
 };
 
+export type TrainingSummary = {
+  id: number;
+  enrollmentId: number | null;
+  title: string;
+  tagline: string;
+  imageUrl: string;
+  createdAt: string;
+};
+
 export type ModuleProgress = {
   id: number;
   title: string;
@@ -75,7 +84,7 @@ type DbTraining = {
 
 export async function getTrainingById(
   supabase: SupabaseClient,
-  trainingId: string
+  trainingId: number
 ): Promise<Training | null> {
   const organizationId = await getOrganizationId(supabase);
 
@@ -119,6 +128,43 @@ export async function getTrainingById(
     updatedAt: training.updated_at,
     modules: training.modules,
   };
+}
+
+export async function getEnrolledTrainings(
+  supabase: SupabaseClient
+): Promise<TrainingSummary[]> {
+  const userId = await getUserId(supabase);
+
+  const { data, error } = await supabase
+    .from("enrollments")
+    .select(
+      `
+      id,
+      trainings (id, title, tagline, image_url),
+      created_at
+    `
+    )
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) handleError(error);
+
+  if (!data) return [];
+
+  /* 
+    Why am I using "any" type?
+    It's clear now that there's a mismatch between what TypeScript infers from the Supabase client and what's actually returned at runtime. 
+Given that trainings is indeed an object and not an array at runtime, we'll need to update our type definitions and the way we handle the data.
+  */
+
+  return data.map((enrollment: any) => ({
+    id: enrollment.trainings?.id,
+    enrollmentId: enrollment.id,
+    title: enrollment.trainings?.title ?? "",
+    tagline: enrollment.trainings?.tagline ?? "",
+    imageUrl: enrollment.trainings?.image_url ?? "",
+    createdAt: enrollment.created_at,
+  }));
 }
 
 export async function getTrainingWithProgress(

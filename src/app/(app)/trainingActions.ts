@@ -5,13 +5,19 @@ import {
   getTrainingById, 
   getTrainingWithProgress, 
   getTrainingsWithEnrollment,
+  getEnrolledTrainings,
   updateTraining,
   type UpdateTrainingInput,
 } from "@/data/trainings";
 
-export async function getTrainingByIdAction(trainingId: string) {
+export async function getTrainingByIdAction(trainingId: number) {
   const supabase = createClient();
   return await getTrainingById(supabase, trainingId);
+}
+
+export async function getEnrolledTrainingsAction() {
+  const supabase = createClient();
+  return await getEnrolledTrainings(supabase);
 }
 
 export async function getTrainingWithProgressAction(trainingId?: string) {

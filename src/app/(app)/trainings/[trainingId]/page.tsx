@@ -2,23 +2,23 @@ import { TrainingDetailsCard } from "@/components/training-details-card"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { CardSkeleton } from "@/components/ui/card-skeleton"
-import { getTrainingWithProgressAction } from "@/app/(app)/trainingActions"
+import { getTrainingByIdAction } from "@/app/(app)/trainingActions"
 
 type TrainingPageProps = {
   params: {
-    trainingId: string
+    trainingId: number
   }
 }
 
 export default async function TrainingPage({ params }: TrainingPageProps) {
-  const training = await getTrainingWithProgressAction(params.trainingId)
+  const training = await getTrainingByIdAction(params.trainingId)
   
   if (!training) notFound()
 
   return (
     <div className="container max-w-4xl py-6">
       <Suspense fallback={<CardSkeleton />}>
-        <TrainingDetailsCard training={training[0]} />
+        <TrainingDetailsCard training={training} />
       </Suspense>
     </div>
   )

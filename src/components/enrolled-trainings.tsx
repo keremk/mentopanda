@@ -2,23 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlayCircle, Search, GripVertical } from "lucide-react";
 import Link from "next/link";
-import { Enrollment } from "@/data/enrollments";
-import { getEnrolledTrainingsAction } from "@/app/(app)/explore/enrollActions";
+import { TrainingSummary } from "@/data/trainings";
+import { getEnrolledTrainingsAction } from "@/app/(app)/trainingActions";
 
 export async function EnrolledTrainings() {
-  let trainings: Enrollment[] = [];
-  let error = null;
-
-  try {
-    trainings = await getEnrolledTrainingsAction();
-  } catch (e) {
-    error = e;
-    console.error("Failed to fetch enrolled trainings:", e);
-  }
-
-  if (error) {
-    return <div>Error loading enrolled trainings. Please try again later.</div>;
-  }
+  const trainings = await getEnrolledTrainingsAction();
 
   return (
     <Card className="w-full h-full flex flex-col">
@@ -36,10 +24,10 @@ export async function EnrolledTrainings() {
                 key={training.id}
                 className="flex items-center justify-between p-4 bg-secondary rounded-lg"
               >
-                <span className="text-lg font-medium">{training.trainingTitle}</span>
+                <span className="text-lg font-medium">{training.title}</span>
                 <div>
                   <Button size="sm" className="mr-2" asChild>
-                    <Link href={`/training/${training.trainingId}`}>
+                    <Link href={`/trainings/${training.id}`}>
                       <PlayCircle className="mr-2 h-4 w-4" />
                       Start Training
                     </Link>

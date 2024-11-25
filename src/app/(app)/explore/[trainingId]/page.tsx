@@ -28,7 +28,7 @@ function YouTubeEmbed({ url }: { url: string }) {
 export default async function TrainingDetailsPage({
   params,
 }: {
-  params: { trainingId: string };
+  params: { trainingId: number };
 }) {
   const training = await getTrainingByIdAction(params.trainingId);
 

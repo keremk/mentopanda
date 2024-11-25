@@ -9,26 +9,34 @@ import {
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PlusCircle, MinusCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface EnrollmentButtonProps {
   trainingId: number;
   className?: string;
   isEnrolled?: boolean;
+  trainingTitle?: string;
 }
 
 export function EnrollmentButton({
   trainingId,
   className,
   isEnrolled: initialEnrollmentStatus,
+  trainingTitle,
 }: EnrollmentButtonProps) {
-  const [enrolled, setEnrolled] = useState(false);
+  const [enrolled, setEnrolled] = useState(initialEnrollmentStatus ?? false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    if (initialEnrollmentStatus !== undefined) {
-      setEnrolled(initialEnrollmentStatus);
-    } else {
+    if (initialEnrollmentStatus === undefined) {
       checkEnrollmentStatus();
     }
   }, [trainingId, initialEnrollmentStatus]);
@@ -56,22 +64,54 @@ export function EnrollmentButton({
       console.error("Failed to update enrollment:", error);
     } finally {
       setIsLoading(false);
+      setIsDialogOpen(false);
+    }
+  };
+
+  const handleClick = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (enrolled) {
+      setIsDialogOpen(true);
+    } else {
+      handleEnrollment();
     }
   };
 
   return (
-    <Button
-      variant={enrolled ? "destructive" : "default"}
-      onClick={handleEnrollment}
-      className={className}
-      disabled={isLoading}
-    >
-      {enrolled ? (
-        <MinusCircle className="mr-2 h-4 w-4" />
-      ) : (
-        <PlusCircle className="mr-2 h-4 w-4" />
-      )}
-      {enrolled ? "Unenroll" : "Enroll"}
-    </Button>
+    <>
+      <Button
+        variant={enrolled ? "destructive" : "default"}
+        onClick={handleClick}
+        className={className}
+        disabled={isLoading}
+      >
+        {enrolled ? (
+          <MinusCircle className="mr-2 h-4 w-4" />
+        ) : (
+          <PlusCircle className="mr-2 h-4 w-4" />
+        )}
+        {/* {enrolled ? "Unenroll" : "Enroll"} */}
+      </Button>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Unenrollment</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to unenroll from {trainingTitle}? This
+              action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={() => handleEnrollment()}>
+              Unenroll
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
