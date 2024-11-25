@@ -1,4 +1,3 @@
-import { getEnrolledTrainingsAction } from "../trainingActions"
 import { EnrolledTrainingsList } from "@/components/enrolled-trainings-list"
 
 export default async function TrainingPage() {

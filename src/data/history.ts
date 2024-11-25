@@ -13,7 +13,17 @@ export type HistoryEntry = {
   assessmentCreated: boolean;
   completedAt: Date | null;
   startedAt: Date;
-  attemptNumber: number;
+  practiceNumber: number;
+};
+
+export type HistorySummary = {
+  id: number;
+  moduleId: number;
+  moduleTitle: string;
+  assessmentScore: number | null;
+  practiceNumber: number;
+  startedAt: Date;
+  completedAt: Date | null;
 };
 
 export type UpdateHistoryEntry = {
@@ -41,6 +51,7 @@ export async function getTrainingHistory(
       recording_url,
       transcript,
       assessment_score,
+      practice_no,
       completed_at,
       started_at,
       module_id,
@@ -70,13 +81,6 @@ export async function getTrainingHistory(
 
   if (!historyData) return [];
 
-  // Get all attempts for each module to calculate attempt numbers
-  const moduleAttempts = new Map<number, number>();
-  historyData.forEach((entry: any) => {
-    const moduleId = entry.module_id;
-    moduleAttempts.set(moduleId, (moduleAttempts.get(moduleId) || 0) + 1);
-  });
-
   return historyData.map((entry: any) => ({
     id: entry.id,
     moduleId: entry.module_id,
@@ -89,7 +93,7 @@ export async function getTrainingHistory(
     assessmentCreated: entry.assessment_created,
     completedAt: entry.completed_at ? new Date(entry.completed_at) : null,
     startedAt: new Date(entry.started_at),
-    attemptNumber: moduleAttempts.get(entry.module_id) || 1,
+    practiceNumber: entry.practice_no,
   }));
 }
 
@@ -98,7 +102,6 @@ export async function createHistoryEntry(
   moduleId: number
 ): Promise<number> {
   const userId = await getUserId(supabase);
-  const organizationId = await getOrganizationId(supabase);
 
   const { data, error } = await supabase
     .from("history")
@@ -156,6 +159,7 @@ export async function getHistoryEntry(
       assessment_created,
       completed_at,
       started_at,
+      practice_no,
       module_id,
       modules (
         id,
@@ -186,6 +190,6 @@ export async function getHistoryEntry(
     assessmentCreated: data.assessment_created,
     completedAt: data.completed_at ? new Date(data.completed_at) : null,
     startedAt: new Date(data.started_at),
-    attemptNumber: 1, // Note: We don't calculate attempt number for single entries
+    practiceNumber: data.practice_no,
   };
 }

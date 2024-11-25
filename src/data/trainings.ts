@@ -1,30 +1,26 @@
+import { HistorySummary } from "./history";
 import { ModuleSummary } from "./modules";
 import { getOrganizationId, getUserId, handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
 
-export type Training = {
+export type TrainingSummary = {
   id: number;
   title: string;
   tagline: string;
-  description: string;
   imageUrl: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Training = TrainingSummary & {
+  description: string;
   isPublic: boolean;
   createdBy: string | null;
   organizationId: string | null;
   previewUrl: string | null;
-  createdAt: string;
-  updatedAt: string;
   modules: ModuleSummary[];
 };
 
-export type TrainingSummary = {
-  id: number;
-  enrollmentId: number | null;
-  title: string;
-  tagline: string;
-  imageUrl: string;
-  createdAt: string;
-};
 
 export type ModuleProgress = {
   id: number;
@@ -33,62 +29,27 @@ export type ModuleProgress = {
   prompt: string | null;
   videoUrl: string | null;
   audioUrl: string | null;
-  completed: boolean;
-  attempts: number;
+  practiceCount: number;
   lastScore: number | null;
+  history: HistorySummary[];
 };
 
-export type TrainingWithProgress = {
-  id: number;
-  title: string;
-  tagline: string;
+export type TrainingWithProgress = TrainingSummary & {
   description: string;
-  imageUrl: string;
   previewUrl: string | null;
   isPublic: boolean;
   organizationId: number | null;
   modules: ModuleProgress[];
 };
 
-export type TrainingWithEnrollment = Training & {
+export type TrainingWithEnrollment = TrainingSummary & {
   isEnrolled: boolean;
-};
-
-type DbModule = {
-  id: number;
-  training_id: number;
-  title: string;
-  instructions: string | null;
-  prompt: string | null;
-  video_url: string | null;
-  audio_url: string | null;
-  history: DbHistory[] | null;
-};
-
-type DbHistory = {
-  assessment_score: number | null;
-  completed_at: string | null;
-};
-
-type DbTraining = {
-  id: number;
-  title: string;
-  tagline: string;
-  description: string;
-  image_url: string;
-  preview_url: string | null;
-  is_public: boolean;
-  organization_id: number | null;
-  modules: DbModule[];
 };
 
 export async function getTrainingById(
   supabase: SupabaseClient,
   trainingId: number
 ): Promise<Training | null> {
-  const organizationId = await getOrganizationId(supabase);
-
-  // Query the specific training
   let query = supabase
     .from("trainings")
     .select(
@@ -124,8 +85,8 @@ export async function getTrainingById(
     createdBy: training.created_by,
     organizationId: training.organization_id,
     previewUrl: training.preview_url,
-    createdAt: training.created_at,
-    updatedAt: training.updated_at,
+    createdAt: new Date(training.created_at),
+    updatedAt: new Date(training.updated_at),
     modules: training.modules,
   };
 }
@@ -159,18 +120,18 @@ Given that trainings is indeed an object and not an array at runtime, we'll need
 
   return data.map((enrollment: any) => ({
     id: enrollment.trainings?.id,
-    enrollmentId: enrollment.id,
     title: enrollment.trainings?.title ?? "",
     tagline: enrollment.trainings?.tagline ?? "",
     imageUrl: enrollment.trainings?.image_url ?? "",
-    createdAt: enrollment.created_at,
+    createdAt: new Date(enrollment.trainings?.created_at),
+    updatedAt: new Date(enrollment.trainings?.updated_at),
   }));
 }
 
 export async function getTrainingWithProgress(
   supabase: SupabaseClient,
-  trainingId?: string
-): Promise<TrainingWithProgress[]> {
+  trainingId: number
+): Promise<TrainingWithProgress> {
   const userId = await getUserId(supabase);
 
   let query = supabase
@@ -181,7 +142,10 @@ export async function getTrainingWithProgress(
       modules (
         *,
         history (
+          id,
           assessment_score,
+          practice_no,
+          started_at,
           completed_at
         )
       ),
@@ -190,46 +154,49 @@ export async function getTrainingWithProgress(
       )
     `
     )
-    .eq("enrollments.user_id", userId);
+    .eq("enrollments.user_id", userId)
+    .eq("id", trainingId)
+    .single();
 
-  // Add training filter if specified
-  if (trainingId) {
-    query = query.eq("id", trainingId);
-  }
-
-  const { data: trainings, error } = await query;
+  const { data: training, error } = await query;
 
   if (error) handleError(error);
 
-  return (
-    (trainings as DbTraining[])?.map((training) => ({
-      id: training.id,
-      title: training.title,
-      tagline: training.tagline,
-      description: training.description,
-      imageUrl: training.image_url,
-      previewUrl: training.preview_url,
-      isPublic: training.is_public,
-      organizationId: training.organization_id,
-      modules: training.modules.map((module: DbModule) => {
-        const history =
-          module.history?.filter((h) => h.completed_at !== null) || [];
-        const lastAttempt = history[history.length - 1];
+  return {
+    id: training.id,
+    title: training.title,
+    tagline: training.tagline,
+    description: training.description,
+    imageUrl: training.image_url,
+    previewUrl: training.preview_url,
+    isPublic: training.is_public,
+    organizationId: training.organization_id,
+    createdAt: new Date(training.created_at),
+    updatedAt: new Date(training.updated_at),
+    modules: training.modules.map((module: any) => {
+      const history =
+        module.history?.filter((h: any) => h.completed_at !== null) || [];
+      const lastPractice = history[history.length - 1];
 
-        return {
-          id: module.id,
-          title: module.title,
-          instructions: module.instructions,
-          prompt: module.prompt,
-          videoUrl: module.video_url,
-          audioUrl: module.audio_url,
-          completed: history.some((h) => (h.assessment_score ?? 0) >= 70), // Handle null assessment_score
-          attempts: history.length,
-          lastScore: lastAttempt?.assessment_score || null,
-        };
-      }),
-    })) || []
-  );
+      return {
+        id: module.id,
+        title: module.title,
+        instructions: module.instructions,
+        prompt: module.prompt,
+        videoUrl: module.video_url,
+        audioUrl: module.audio_url,
+        practiceCount: history.length,
+        lastScore: lastPractice?.assessment_score || null,
+        history: history.map((h: any) => ({
+          id: h.id,
+          assessmentScore: h.assessment_score,
+          practiceNumber: h.practice_no,
+          startedAt: h.started_at,
+          completedAt: h.completed_at,
+        })),
+      };
+    }),
+  };
 }
 
 export async function getTrainingsWithEnrollment(
@@ -242,8 +209,16 @@ export async function getTrainingsWithEnrollment(
     .from("trainings")
     .select(
       `
-      *,
+      id,
+      title,
+      tagline,
+      image_url,
+      is_public,
+      organization_id,
+      created_at,
+      updated_at,
       enrollments!left (
+        id,
         user_id
       )
     `
@@ -263,13 +238,11 @@ export async function getTrainingsWithEnrollment(
       id: training.id,
       title: training.title,
       tagline: training.tagline,
-      description: training.description,
       imageUrl: training.image_url,
       isPublic: training.is_public,
       organizationId: training.organization_id,
-      previewUrl: training.preview_url,
-      createdAt: training.created_at,
-      updatedAt: training.updated_at,
+      createdAt: new Date(training.created_at),
+      updatedAt: new Date(training.updated_at),
       isEnrolled:
         training.enrollments?.some(
           (e: { user_id: string }) => e.user_id === userId
@@ -392,7 +365,9 @@ export async function updateTraining(
     isPublic: data[0].is_public,
     organizationId: data[0].organization_id,
     previewUrl: data[0].preview_url,
-    createdAt: data[0].created_at,
-    updatedAt: data[0].updated_at,
+    createdAt: new Date(data[0].created_at),
+    updatedAt: new Date(data[0].updated_at),
+    createdBy: data[0].created_by,
+    modules: data[0].modules,
   };
 }

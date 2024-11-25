@@ -90,7 +90,7 @@ export function EnrollmentButton({
         ) : (
           <PlusCircle className="mr-2 h-4 w-4" />
         )}
-        {/* {enrolled ? "Unenroll" : "Enroll"} */}
+        {enrolled ? "Leave" : "Join"}
       </Button>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -98,8 +98,7 @@ export function EnrollmentButton({
           <DialogHeader>
             <DialogTitle>Confirm Unenrollment</DialogTitle>
             <DialogDescription>
-              Are you sure you want to unenroll from {trainingTitle}? This
-              action cannot be undone.
+              Are you sure you want to leave this training? 
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end space-x-2">
@@ -107,7 +106,7 @@ export function EnrollmentButton({
               Cancel
             </Button>
             <Button variant="destructive" onClick={() => handleEnrollment()}>
-              Unenroll
+              Leave
             </Button>
           </div>
         </DialogContent>

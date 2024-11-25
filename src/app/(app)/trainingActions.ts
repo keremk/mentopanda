@@ -20,7 +20,7 @@ export async function getEnrolledTrainingsAction() {
   return await getEnrolledTrainings(supabase);
 }
 
-export async function getTrainingWithProgressAction(trainingId?: string) {
+export async function getTrainingWithProgressAction(trainingId: number) {
   const supabase = createClient();
   return await getTrainingWithProgress(supabase, trainingId);
 }

@@ -15,9 +15,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Badge } from "@/components/ui/badge"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import Image from "next/image"
 import Link from "next/link"
+import { format } from "date-fns"
 
 interface TrainingDetailsCardProps {
   training: TrainingWithProgress
@@ -25,9 +33,7 @@ interface TrainingDetailsCardProps {
 
 export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
   const getRandomModuleId = () => {
-    const incompleteModules = training.modules.filter((m) => !m.completed)
-    if (incompleteModules.length === 0) return null
-    return incompleteModules[Math.floor(Math.random() * incompleteModules.length)].id
+    return training.modules[Math.floor(Math.random() * training.modules.length)].id
   }
 
   const randomModuleId = getRandomModuleId()
@@ -70,42 +76,78 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
             </AccordionItem>
           </Accordion>
         )}
-        <Accordion type="single" collapsible>
-          <AccordionItem value="modules">
-            <AccordionTrigger>Modules</AccordionTrigger>
-            <AccordionContent>
-              {training.modules.map((module) => (
-                <div key={module.id} className="mb-4 p-4 border rounded">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-lg font-semibold">{module.title}</h4>
-                    <Badge variant={module.completed ? "success" : "secondary"}>
-                      {module.completed ? "Completed" : "In Progress"}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Attempts: {module.attempts}</span>
+
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold">Modules</h3>
+          {training.modules.map((module) => (
+            <div key={module.id} className="border rounded-lg p-4">
+              <div className="flex flex-col space-y-4">
+                {/* Module Header */}
+                <div className="flex justify-between items-center">
+                  <h4 className="text-lg font-semibold">{module.title}</h4>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-muted-foreground">
+                      Practices: {module.practiceCount}
+                    </span>
                     {module.lastScore !== null && (
-                      <span>Last Score: {module.lastScore}%</span>
+                      <span className="text-sm text-muted-foreground">
+                        Last Score: {module.lastScore}%
+                      </span>
                     )}
-                  </div>
-                  <div className="mt-2">
                     <Link href={`/trainings/${training.id}/${module.id}`}>
-                      <Button className="w-full sm:w-auto">Start Module</Button>
+                      <Button>Start Module</Button>
                     </Link>
-                    {module.lastScore !== null && (
-                      <Link
-                        href={`/assessment/${training.id}/${module.id}`}
-                        className="ml-2"
-                      >
-                        <Button variant="outline">View Assessment</Button>
-                      </Link>
-                    )}
                   </div>
                 </div>
-              ))}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+
+                {/* History Accordion */}
+                {module.history.length > 0 && (
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value="history">
+                      <AccordionTrigger>Practice History</AccordionTrigger>
+                      <AccordionContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Practice #</TableHead>
+                              <TableHead>Completed</TableHead>
+                              <TableHead>Score</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {[...module.history]
+                              .sort((a, b) => {
+                                if (!a.completedAt || !b.completedAt) return 0
+                                return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+                              })
+                              .map((practice) => (
+                                <TableRow key={practice.id}>
+                                  <TableCell>#{practice.practiceNumber}</TableCell>
+                                  <TableCell>
+                                    {practice.completedAt && 
+                                      format(new Date(practice.completedAt), 'MMM d, yyyy HH:mm')}
+                                  </TableCell>
+                                  <TableCell>{practice.assessmentScore}%</TableCell>
+                                  <TableCell className="text-right">
+                                    <Link href={`/assessments/${practice.id}`}>
+                                      <Button variant="outline" size="sm">
+                                        View Assessment
+                                      </Button>
+                                    </Link>
+                                  </TableCell>
+                                </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   )
