@@ -5,7 +5,7 @@ import {
   isEnrolledAction,
   enrollInTrainingAction,
   unenrollFromTrainingAction,
-} from "@/app/(app)/explore/enrollActions";
+} from "@/app/actions/enrollment-actions";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PlusCircle, MinusCircle } from "lucide-react";
@@ -98,7 +98,7 @@ export function EnrollmentButton({
           <DialogHeader>
             <DialogTitle>Confirm Unenrollment</DialogTitle>
             <DialogDescription>
-              Are you sure you want to leave this training? 
+              Are you sure you want to leave this training?
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end space-x-2">
