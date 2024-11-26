@@ -8,7 +8,6 @@ import {
   RoomAudioRenderer,
   VoiceAssistantControlBar,
   AgentState,
-  DisconnectButton,
 } from "@livekit/components-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MediaDeviceFailure } from "livekit-client";
@@ -16,16 +15,10 @@ import type { ConnectionDetails } from "@/app/livekit/connection-details/route";
 import { NoAgentNotification } from "@/components/no-agent-notification";
 import { CloseIcon } from "@/components/icons/close-icon";
 // import { useKrispNoiseFilter } from "@livekit/components-react/krisp";
-import type { ModuleProgress } from "@/data/trainings";
-import {
-  RoomEvent,
-  TranscriptionSegment,
-  RemoteParticipant,
-  ParticipantKind,
-} from "livekit-client";
 import { useRoomContext } from "@livekit/components-react";
-import { updateHistoryEntryAction } from "@/app/(app)/historyActions";
-import { createHistoryEntryAction } from "@/app/(app)/historyActions";
+import {
+  createHistoryEntryAction,
+} from "@/app/actions/history-actions";
 import { useTranscriptionHandler } from "@/hooks/use-transcription-handler";
 import {
   AlertDialog,

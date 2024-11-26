@@ -1,12 +1,15 @@
 "use server";
 
-import { updateHistoryEntryAction } from "../(app)/historyActions";
+import { updateHistoryEntryAction } from "@/app/actions/history-actions";
 import { generateObject, generateText } from "ai";
 import { getModuleByIdAction } from "@/app/(app)/moduleActions";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
-async function generateAssessment(transcript: string, assessmentPrompt: string) {
+async function generateAssessment(
+  transcript: string,
+  assessmentPrompt: string
+) {
   const systemPrompt = `
     You are an expert in assessing human communication skills. Below you will find the specific instructions for this assessment:\n
     ${assessmentPrompt}\n
@@ -35,7 +38,7 @@ async function calculateScore(assessment: string) {
 
   const result = await generateObject({
     model: openai("gpt-4o"),
-    schema, 
+    schema,
     system: systemPrompt,
     prompt: `Assessment text:\n${assessment}`,
   });
@@ -47,7 +50,7 @@ export default async function analyseTranscript(
   historyEntryId: number,
   moduleId: number
 ) {
-  const module = await getModuleByIdAction(moduleId);   
+  const module = await getModuleByIdAction(moduleId);
   if (!module) throw new Error("Module not found");
 
   const assessmentPrompt = module.modulePrompt.assessment;
@@ -64,5 +67,3 @@ export default async function analyseTranscript(
 
   return { assessment: assessment, score: score };
 }
-
-

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { updateHistoryEntryAction } from "@/app/(app)/historyActions";
+import { updateHistoryEntryAction } from "@/app/actions/history-actions";
 
 type TranscriptEntry = {
   participantName: string;

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getHistoryEntryAction } from "../../historyActions";
+import { getHistoryEntryAction } from "@/app/actions/history-actions";
 import analyseTranscript from "@/app/actions/analyse-transcript";
 import { notFound } from "next/navigation";
 import { AssessmentContent } from "./assessment-content";
@@ -43,9 +43,9 @@ export default async function AssessmentPage({ params }: Props) {
   if (!historyEntry) notFound();
 
   // If assessment already exists, display it
-  if (historyEntry.assessmentCreated && historyEntry.assessmentText) 
+  if (historyEntry.assessmentCreated && historyEntry.assessmentText)
     return (
-      <AssessmentContent 
+      <AssessmentContent
         assessment={historyEntry.assessmentText}
         transcript={historyEntry.transcript}
         score={historyEntry.assessmentScore}

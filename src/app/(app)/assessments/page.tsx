@@ -1,20 +1,20 @@
-import { getTrainingHistoryAction } from "../historyActions"
-import Link from "next/link"
+import { getTrainingHistoryAction } from "@/app/actions/history-actions";
+import Link from "next/link";
 
 export default async function AssessmentsPage() {
-  const history = await getTrainingHistoryAction(100)
+  const history = await getTrainingHistoryAction(100);
 
   return (
     <div className="container mx-auto p-6 space-y-8">
       <h1 className="text-2xl font-bold mb-6">Your Assessments</h1>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Assessment List Section */}
         <div className="bg-card rounded-lg p-6 shadow-sm">
           <h2 className="text-xl font-semibold mb-4">Assessment History</h2>
           <div className="space-y-4">
             {history.map((entry) => (
-              <Link 
+              <Link
                 key={entry.id}
                 href={`/assessments/${entry.id}`}
                 className="block p-4 rounded-md border border-border hover:bg-accent transition-colors"
@@ -23,15 +23,14 @@ export default async function AssessmentsPage() {
                   <div className="space-y-1">
                     <h3 className="font-medium">{entry.trainingTitle}</h3>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm text-muted-foreground">{entry.moduleTitle}</p>
-                      <span className="text-xs text-muted-foreground">
-                        (Attempt {entry.attemptNumber})
-                      </span>
+                      <p className="text-sm text-muted-foreground">
+                        {entry.moduleTitle}
+                      </p>
                     </div>
                   </div>
                   {entry.assessmentScore !== null && (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-primary/10 text-primary">
-                      Score: {entry.assessmentScore}%
+                      Score: {entry.assessmentScore}
                     </span>
                   )}
                 </div>
@@ -54,5 +53,5 @@ export default async function AssessmentsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

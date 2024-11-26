@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { BarChart2, GripVertical } from "lucide-react";
 import Link from "next/link";
-import { getTrainingHistoryAction } from "@/app/(app)/historyActions";
+import { getTrainingHistoryAction } from "@/app/actions/history-actions";
 import { format } from "date-fns";
 
 export async function TrainingHistory() {
