@@ -11,29 +11,10 @@ import {
 import { BarChart2, GripVertical } from "lucide-react";
 import Link from "next/link";
 import { getTrainingHistoryAction } from "@/app/(app)/historyActions";
-interface HistoryEntry {
-  id: number;
-  module_id: number;
-  moduleTitle: string;
-  trainingTitle: string;
-  started_at: Date;
-  completed_at: Date | null;
-  assessment_score: number | null;
-  assessment_text: string | null;
-}
+import { format } from "date-fns";
 
 export async function TrainingHistory() {
   const entries = await getTrainingHistoryAction(10);
-
-  function formatDate(date: Date) {
-    return date.toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
 
   return (
     <Card className="w-full h-full flex flex-col">
@@ -50,6 +31,7 @@ export async function TrainingHistory() {
               <TableHead>Session Title</TableHead>
               <TableHead>Training Title</TableHead>
               <TableHead>Date/Time Taken</TableHead>
+              <TableHead>Score</TableHead>
               <TableHead>Analysis</TableHead>
             </TableRow>
           </TableHeader>
@@ -58,9 +40,15 @@ export async function TrainingHistory() {
               <TableRow key={entry.id}>
                 <TableCell>{entry.moduleTitle}</TableCell>
                 <TableCell>{entry.trainingTitle}</TableCell>
-                <TableCell>{formatDate(entry.startedAt)}</TableCell>
                 <TableCell>
-                  <Link href={`/analysis/${entry.id}`} passHref>
+                  {entry.completedAt &&
+                    format(new Date(entry.completedAt), "MMM d, yyyy HH:mm")}
+                </TableCell>
+                <TableCell>
+                  {entry.assessmentScore ? `${entry.assessmentScore}%` : "N/A"}
+                </TableCell>
+                <TableCell>
+                  <Link href={`/assessments/${entry.id}`} passHref>
                     <Button variant="outline" size="sm">
                       <BarChart2 className="mr-2 h-4 w-4" />
                       Analysis
