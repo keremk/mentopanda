@@ -19,40 +19,92 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
   },
 });
 
-interface TestUser {
-  email: string;
-  password: string;
-  role: "admin" | "manager" | "member";
-  organization_id?: number;
-}
-
-async function createHistoryForUser(userId: string) {
-  for (const history of testData.history) {
-    try {
-      const { error: historyError } = await supabase
-        .from("history") // Updated from 'activities'
-        .insert({
+function generateRandomHistoryEntries(userId: string, moduleIds: number[]) {
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  
+  const entries = [];
+  let totalEntries = 0;
+  const maxEntries = 50;
+  
+  // Create array of dates from three months ago to now
+  const dates = [];
+  const currentDate = new Date();
+  for (let d = new Date(threeMonthsAgo); d <= currentDate; d.setDate(d.getDate() + 1)) {
+    dates.push(new Date(d));
+  }
+  
+  // Iterate through dates chronologically
+  for (const d of dates) {
+    // Randomly decide if this day will have entries (30% chance)
+    if (Math.random() < 0.3 && totalEntries < maxEntries) {
+      // Generate 1-3 entries for this day
+      const numEntries = Math.floor(Math.random() * 3) + 1;
+      
+      for (let i = 0; i < numEntries && totalEntries < maxEntries; i++) {
+        const moduleId = moduleIds[Math.floor(Math.random() * moduleIds.length)];
+        
+        const startedAt = new Date(d);
+        // Add random hours/minutes to spread entries throughout the day
+        startedAt.setHours(Math.floor(Math.random() * 14) + 8); // Between 8 AM and 10 PM
+        startedAt.setMinutes(Math.floor(Math.random() * 60));
+        
+        const completedAt = new Date(startedAt);
+        completedAt.setMinutes(completedAt.getMinutes() + Math.floor(Math.random() * 30) + 15); // 15-45 minutes later
+        
+        entries.push({
           user_id: userId,
-          module_id: history.module_id,
-          transcript: history.transcript,
-          recording_url: history.recording_url,
-          assessment_text: history.assessment_text,
-          assessment_score: history.assessment_score,
-          completed_at: history.completed ? new Date().toISOString() : null,
-          started_at: new Date(
-            Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)
-          ),
+          module_id: moduleId,
+          assessment_score: Math.floor(Math.random() * 5) + 1, // 1-5
+          started_at: startedAt.toISOString(),
+          completed_at: completedAt.toISOString()
         });
-
-      if (historyError) throw historyError;
-    } catch (error) {
-      console.error(`Error creating history entry for user ${userId}:`, error);
+        
+        totalEntries++;
+      }
     }
   }
+  
+  return entries;
+}
+
+async function createHistoryData(userId: string) {
+  // First, get all available module IDs
+  const { data: modules, error: moduleError } = await supabase
+    .from('modules')
+    .select('id');
+    
+  if (moduleError) {
+    console.error('Error fetching modules:', moduleError);
+    return;
+  }
+  
+  const moduleIds = modules.map(m => m.id);
+  if (moduleIds.length === 0) {
+    console.error('No modules found to create history entries');
+    return;
+  }
+  
+  const historyEntries = generateRandomHistoryEntries(userId, moduleIds);
+  
+  // Insert history entries in chunks to avoid rate limits
+  const chunkSize = 10;
+  for (let i = 0; i < historyEntries.length; i += chunkSize) {
+    const chunk = historyEntries.slice(i, i + chunkSize);
+    const { error: historyError } = await supabase
+      .from('history')
+      .insert(chunk);
+      
+    if (historyError) {
+      console.error(`Error inserting history entries chunk ${i}:`, historyError);
+    }
+  }
+  
+  console.log(`Created ${historyEntries.length} history entries for user ${userId}`);
 }
 
 async function createTestUsers() {
-  for (const user of testData.users) {
+  const users = testData.users.map(async (user) => {
     try {
       // Create user
       const { data: authData, error: authError } =
@@ -66,7 +118,7 @@ async function createTestUsers() {
 
       if (!authData.user) {
         console.error(`Failed to create user: ${user.email}`);
-        continue;
+        return null;
       }
 
       // Update user role directly in profiles table
@@ -78,19 +130,24 @@ async function createTestUsers() {
 
       if (profileError) throw profileError;
 
-      // Create activities for users
-      await createHistoryForUser(authData.user.id);
-
       console.log(
         `Created user: ${user.email} with role: ${user.role} and sample activities`
       );
+      return {
+        id: authData.user.id,
+        email: user.email,
+        role: user.role,
+        organization_id: organizationId,
+      }
     } catch (error) {
       console.error(`Error creating user ${user.email}:`, error);
     }
-  }
+  });
+
+  return users;
 }
 
-async function createTrainingData() {
+async function createTrainingData(userId: string) {
   for (const training of testData.trainings) {
     try {
       // Create training
@@ -102,7 +159,7 @@ async function createTrainingData() {
           description: training.description,
           image_url: training.image_url,
           is_public: training.is_public,
-          created_by: null, // TODO: Add created_by
+          created_by: userId,
           organization_id: training.organization_id,
           preview_url: training.preview_url,
         })
@@ -140,9 +197,21 @@ async function createTrainingData() {
   }
 }
 
+async function createTestData() {
+  const testUsers = await Promise.all(await createTestUsers());
+  const mainUser = testUsers?.find((user) => user?.email === "admin@codingventures.com");
 
-createTrainingData()
-  .then(() => createTestUsers())
+  if (!mainUser) {
+    console.error("Main user not found");
+    return;
+  }
+
+  await createTrainingData(mainUser.id);
+  await createHistoryData(mainUser.id);
+}
+
+
+createTestData()
   .then(() => console.log("Test data creation completed"))
   .catch((error) => console.error("Error in test data creation:", error))
   .finally(() => process.exit());
