@@ -7,6 +7,7 @@ import {
   updateHistoryEntry,
   getHistoryEntry,
   type UpdateHistoryEntry,
+  getTrainingHeatmapData,
 } from "@/data/history";
 
 export async function getTrainingHistoryAction(
@@ -31,4 +32,9 @@ export async function updateHistoryEntryAction(updates: UpdateHistoryEntry) {
 export async function getHistoryEntryAction(id: number) {
   const supabase = createClient();
   return await getHistoryEntry(supabase, id);
+}
+
+export async function getTrainingHeatmapDataAction() {
+  const supabase = createClient();
+  return await getTrainingHeatmapData(supabase);
 }

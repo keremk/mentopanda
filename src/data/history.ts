@@ -1,5 +1,6 @@
 import { getOrganizationId, getUserId, handleError } from "@/data/utils";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { format } from "date-fns";
 
 export type HistoryEntry = {
   id: number;
@@ -192,4 +193,30 @@ export async function getHistoryEntry(
     startedAt: new Date(data.started_at),
     practiceNumber: data.practice_no,
   };
+}
+
+export async function getTrainingHeatmapData(
+  supabase: SupabaseClient,
+): Promise<Record<string, number>> {
+  const userId = await getUserId(supabase);
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+  const { data, error } = await supabase
+    .from("history")
+    .select('started_at')
+    .eq("user_id", userId)
+    .gte('started_at', threeMonthsAgo.toISOString())
+    .order('started_at', { ascending: true });
+
+  if (error) handleError(error);
+  if (!data) return {};
+
+  // Group sessions by date
+  return data.reduce((acc: Record<string, number>, entry) => {
+    const date = new Date(entry.started_at);
+    const dateKey = format(date, 'yyyy-MM-dd');
+    acc[dateKey] = (acc[dateKey] || 0) + 1;
+    return acc;
+  }, {});
 }
