@@ -5,6 +5,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 export type Character = {
   name: string;
   prompt: string;
+  voice: string;
 };
 
 export type ModulePrompt = {
@@ -228,6 +229,7 @@ export function convertCharactersToFields(characters: Character[]) {
     (acc, i) => ({
       ...acc,
       [`character_name${i}`]: characters[i - 1]?.name ?? null,
+      [`character_voice${i}`]: characters[i - 1]?.voice ?? null,
       [`character_prompt${i}`]: characters[i - 1]?.prompt ?? null,
     }),
     {} as Record<string, string | null>
@@ -240,6 +242,7 @@ export function convertFieldsToCharacters(
   return Array.from({ length: 3 }, (_, i) => i + 1)
     .map((i) => ({
       name: fields[`character_name${i}`] as string,
+      voice: fields[`character_voice${i}`] as string,
       prompt: fields[`character_prompt${i}`] as string,
     }))
     .filter((char) => char.name && char.prompt);

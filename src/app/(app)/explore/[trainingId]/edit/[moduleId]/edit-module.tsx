@@ -11,6 +11,7 @@ import { Module } from "@/data/modules";
 import { updateModuleAction } from "@/app/(app)/moduleActions";
 import { UpdateModuleInput } from "@/data/modules";
 import { MarkdownEditor } from "@/components/markdown-editor";
+import { VoiceCombobox } from "@/components/voice-combobox";
 
 type Props = {
   module: Module;
@@ -29,7 +30,11 @@ export function ModuleEditForm({ module }: Props) {
       scenario: module.modulePrompt.scenario || "",
       assessment: module.modulePrompt.assessment || "",
       moderator: module.modulePrompt.moderator || "",
-      characters: module.modulePrompt.characters || [{ name: "", prompt: "" }],
+      characters: module.modulePrompt.characters || [{ 
+        name: "", 
+        prompt: "", 
+        voice: ""
+      }],
     },
     videoUrl: module.videoUrl,
     audioUrl: module.audioUrl,
@@ -83,7 +88,7 @@ export function ModuleEditForm({ module }: Props) {
 
   const handleCharacterChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    field: "name" | "prompt"
+    field: "name" | "prompt" | "voice"
   ) => {
     const { value } = e.target;
     setFormData((prev) => ({
@@ -247,6 +252,18 @@ export function ModuleEditForm({ module }: Props) {
                     <Input
                       value={formData.modulePrompt.characters[0]?.name || ""}
                       onChange={(e) => handleCharacterChange(e, "name")}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Voice</label>
+                    <VoiceCombobox
+                      value={formData.modulePrompt.characters[0]?.voice || ""}
+                      onChange={(value) => 
+                        handleCharacterChange(
+                          { target: { value } } as React.ChangeEvent<HTMLInputElement>,
+                          "voice"
+                        )
+                      }
                     />
                   </div>
                   <div>
