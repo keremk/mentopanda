@@ -10,7 +10,7 @@ export async function EnrolledTrainingsList() {
   const trainings = await getEnrolledTrainingsAction();
 
   return (
-    <Card className="w-full h-full flex flex-col min-w-[550px]">
+    <Card className="w-full h-full flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
         <CardTitle className="text-2xl font-bold">Enrolled Trainings</CardTitle>
         <div className="drag-handle cursor-move">
@@ -22,8 +22,8 @@ export async function EnrolledTrainingsList() {
           {trainings && trainings.length > 0 ? (
             trainings.map((training) => (
               <Card key={training.id} className="p-4">
-                <div className="flex flex-wrap gap-4 items-start">
-                  <div className="flex flex-grow basis-[300px] min-w-0 items-start">
+                <div className="flex gap-4 items-center min-w-0">
+                  <div className="flex min-w-0 items-center">
                     <div className="relative h-12 w-12 mr-4 flex-shrink-0">
                       <Image
                         src={training.imageUrl || "/placeholder.png"}
@@ -33,8 +33,8 @@ export async function EnrolledTrainingsList() {
                         sizes="(max-width: 48px) 100vw, 48px"
                       />
                     </div>
-                    <div className="min-w-0 py-1">
-                      <h3 className="font-semibold break-words line-clamp-2">
+                    <div className="min-w-0 max-w-[180px]">
+                      <h3 className="font-semibold break-words whitespace-pre-line truncate">
                         {training.title}
                       </h3>
                     </div>
