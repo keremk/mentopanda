@@ -41,6 +41,11 @@ export async function GET(request: Request) {
       user?.user_metadata.full_name || user?.email?.split("@")[0] || "User";
 
     const prompt = createPrompt(module.modulePrompt);
+    const voice = module.modulePrompt.characters[0]?.voice;
+    const config = {
+      voice: voice,
+      prompt: prompt,
+    }
 
     const roomName = `training_${module.trainingId}_module_${module.ordinal}`;
 
@@ -52,7 +57,7 @@ export async function GET(request: Request) {
     );
     await roomClient.createRoom({
       name: roomName,
-      metadata: JSON.stringify({ prompt }),
+      metadata: JSON.stringify({ config }),
     });
 
     const participantToken = await createParticipantToken(
