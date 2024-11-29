@@ -45,7 +45,7 @@ export async function TrainingHistory() {
                     format(new Date(entry.completedAt), "MMM d, yyyy HH:mm")}
                 </TableCell>
                 <TableCell>
-                  {entry.assessmentScore ? `${entry.assessmentScore}%` : "N/A"}
+                  {entry.assessmentScore ? `${entry.assessmentScore}` : "N/A"}
                 </TableCell>
                 <TableCell>
                   <Link href={`/assessments/${entry.id}`} passHref>

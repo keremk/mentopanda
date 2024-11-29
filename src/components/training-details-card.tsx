@@ -91,7 +91,7 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
                     </span>
                     {module.lastScore !== null && (
                       <span className="text-sm text-muted-foreground">
-                        Last Score: {module.lastScore}%
+                        Last Score: {module.lastScore}
                       </span>
                     )}
                     <Link href={`/trainings/${training.id}/${module.id}`}>
@@ -128,7 +128,7 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
                                     {practice.completedAt && 
                                       format(new Date(practice.completedAt), 'MMM d, yyyy HH:mm')}
                                   </TableCell>
-                                  <TableCell>{practice.assessmentScore}%</TableCell>
+                                  <TableCell>{practice.assessmentScore}</TableCell>
                                   <TableCell className="text-right">
                                     <Link href={`/assessments/${practice.id}`}>
                                       <Button variant="outline" size="sm">
