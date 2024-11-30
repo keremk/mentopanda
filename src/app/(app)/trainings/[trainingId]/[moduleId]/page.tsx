@@ -1,8 +1,8 @@
-import { SimulationContainer } from "@/components/simulation-container";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { notFound, redirect } from "next/navigation";
 import { getModuleByIdAction } from "@/app/(app)/moduleActions";
+import { VoiceSimulationComponent } from "@/components/voice-simulation";
 
 type Props = {
   params: {
@@ -26,8 +26,8 @@ export default async function Page({ params: { moduleId } }: Props) {
               <MarkdownRenderer content={currentModule.instructions} />
             </div>
           )}
-          
-          <SimulationContainer 
+
+          <VoiceSimulationComponent
             module={currentModule}
           />
         </CardContent>

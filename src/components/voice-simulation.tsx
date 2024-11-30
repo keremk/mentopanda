@@ -33,15 +33,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useTranscriptSave } from "@/hooks/use-transcript-save";
 import { Module } from "@/data/modules";
-
+import { useRouter } from "next/navigation";
 type VoiceSimulationProps = {
   module: Module;
-  onEndCall: (historyEntryId: number) => void;
 };
 
 export function VoiceSimulationComponent({
   module,
-  onEndCall,
 }: VoiceSimulationProps) {
   const [connectionDetails, updateConnectionDetails] = useState<
     ConnectionDetails | undefined
@@ -50,13 +48,18 @@ export function VoiceSimulationComponent({
   const [historyEntryId, setHistoryEntryId] = useState<number>();
   const [transcriptBuffer, setTranscriptBuffer] = useState<
     Array<{ participantName: string; text: string }>
-  >([]);
+    >([]);
+  const router = useRouter();
 
   const { saveAndComplete } = useTranscriptSave({
     historyEntryId,
     transcriptBuffer,
     saveInterval: 30000, // 30 seconds
   });
+
+  const onEndCall = useCallback((historyEntryId: number) => {
+    router.push(`/assessments/${historyEntryId}`);
+  }, [router]);
 
   const onConnectButtonClicked = useCallback(async () => {
     try {
