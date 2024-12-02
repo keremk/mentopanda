@@ -1,21 +1,6 @@
 "use client";
 
 import * as React from "react";
-import {
-  Home,
-  Search,
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-} from "lucide-react";
-
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import { NavTop } from "@/components/nav-top";
@@ -28,31 +13,33 @@ import {
 } from "@/components/ui/sidebar";
 import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { User } from "@supabase/supabase-js";
 import type { NavItem } from "@/types/nav";
+import getCurrentUserInfo, { User } from "@/data/user";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   navItems: NavItem[]
 }
 
 export function AppSidebar({ navItems, ...props }: AppSidebarProps) {
-  const [user, setUser] = useState<User | null>(null);
+  const [userInfo, setUserInfo] = useState<User>({
+    id: "",
+    email: "",
+    displayName: "User",
+    avatarUrl: "/placeholder.svg"
+  });
   const supabase = createClient();
-  useEffect(() => {
-    async function getUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-    }
-    getUser();
-  }, []);
 
-  const userInfo = {
-    name: user?.user_metadata.full_name || user?.email?.split("@")[0] || "User",
-    email: user?.email || "",
-    avatarUrl: user?.user_metadata.avatar_url || "/placeholder.svg",
-  };
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const user = await getCurrentUserInfo(supabase);
+        setUserInfo(user);
+      } catch (error) {
+        console.error('Failed to load user:', error);
+      }
+    }
+    loadUser();
+  }, []);
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -63,7 +50,11 @@ export function AppSidebar({ navItems, ...props }: AppSidebarProps) {
         <NavMain items={navItems} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={userInfo} />
+        <NavUser user={{
+          name: userInfo.displayName,
+          email: userInfo.email,
+          avatarUrl: userInfo.avatarUrl
+        }} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

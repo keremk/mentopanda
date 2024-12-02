@@ -7,6 +7,7 @@ import {
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { getModuleById, ModulePrompt } from "@/data/modules";
+import getCurrentUserInfo from "@/data/user";
 
 const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
@@ -29,16 +30,13 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const moduleId = searchParams.get("moduleId");
     if (!moduleId) throw new Error("moduleId is required");
+
     const supabase = createClient();
     const module = await getModuleById(supabase, parseInt(moduleId));
     if (!module) throw new Error("Module not found");
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error("User not found");
-    const participantIdentity =
-      user?.user_metadata.full_name || user?.email?.split("@")[0] || "User";
+    const userInfo = await getCurrentUserInfo(supabase);
+    const participantIdentity = userInfo.displayName;
 
     const prompt = createPrompt(module.modulePrompt);
     const voice = module.modulePrompt.characters[0]?.voice;
