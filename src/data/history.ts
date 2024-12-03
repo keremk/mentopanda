@@ -196,7 +196,7 @@ export async function getHistoryEntry(
 }
 
 export async function getTrainingHeatmapData(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient
 ): Promise<Record<string, number>> {
   const userId = await getUserId(supabase);
   const threeMonthsAgo = new Date();
@@ -204,10 +204,10 @@ export async function getTrainingHeatmapData(
 
   const { data, error } = await supabase
     .from("history")
-    .select('started_at')
+    .select("started_at")
     .eq("user_id", userId)
-    .gte('started_at', threeMonthsAgo.toISOString())
-    .order('started_at', { ascending: true });
+    .gte("started_at", threeMonthsAgo.toISOString())
+    .order("started_at", { ascending: true });
 
   if (error) handleError(error);
   if (!data) return {};
@@ -215,8 +215,13 @@ export async function getTrainingHeatmapData(
   // Group sessions by date
   return data.reduce((acc: Record<string, number>, entry) => {
     const date = new Date(entry.started_at);
-    const dateKey = format(date, 'yyyy-MM-dd');
+    const dateKey = format(date, "yyyy-MM-dd");
     acc[dateKey] = (acc[dateKey] || 0) + 1;
     return acc;
   }, {});
+}
+
+export async function deleteHistoryEntry(supabase: SupabaseClient, id: number) {
+  const userId = await getUserId(supabase);
+  await supabase.from("history").delete().eq("id", id).eq("user_id", userId);
 }
