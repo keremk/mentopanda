@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { notFound, redirect } from "next/navigation";
 import { getModuleByIdAction } from "@/app/(app)/moduleActions";
 import { VoiceSimulationComponent } from "@/components/voice-simulation";
+import CollapsibleBlock from "@/components/collapsible-block";
 
 type Props = {
   params: {
@@ -22,14 +23,14 @@ export default async function Page({ params: { moduleId } }: Props) {
         </CardHeader>
         <CardContent>
           {currentModule.instructions && (
-            <div className="mb-4">
-              <MarkdownRenderer content={currentModule.instructions} />
-            </div>
+            <CollapsibleBlock>
+              <div className="mb-4">
+                <MarkdownRenderer content={currentModule.instructions} />
+              </div>
+            </CollapsibleBlock>
           )}
 
-          <VoiceSimulationComponent
-            module={currentModule}
-          />
+          <VoiceSimulationComponent module={currentModule} />
         </CardContent>
       </Card>
     </div>
