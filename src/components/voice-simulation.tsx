@@ -143,13 +143,13 @@ function SimpleVoiceAssistant(props: {
   }, [state, props.onStateChange]);
 
   return (
-    <div className="h-[300px] max-w-[90vw] mx-auto flex flex-col gap-4">
+    <div className="h-[150px] w-[100px] max-w-[20vw] mx-auto flex flex-col gap-4">
       <BarVisualizer
         state={state}
         barCount={5}
         trackRef={audioTrack}
-        className="agent-visualizer"
-        options={{ minHeight: 24 }}
+        className="border-2 border-red-500 [&>.lk-audio-bar]:w-[5px] [&>.lk-audio-bar]:mx-[1px] [&.lk-audio-bar-visualizer]:gap-1"
+        options={{ minHeight: 10 }}
       />
       <TranscriptBox text={currentAgentText} />
     </div>

@@ -1,48 +1,45 @@
-import React from 'react'
-import { CardContent } from "@/components/ui/card"
-import { useVirtualizer } from '@tanstack/react-virtual'
+import React from "react";
+import { CardContent } from "@/components/ui/card";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-interface ChatBoxProps {
-  messages: ChatMessageProps[]
-}
+type ChatBoxProps = {
+  messages: ChatMessageProps[];
+};
 
 export const ChatBox = React.memo(({ messages }: ChatBoxProps) => {
-  const parentRef = React.useRef<HTMLDivElement>(null)
+  const parentRef = React.useRef<HTMLDivElement>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: messages.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 50,
     overscan: 5,
-  })
+  });
 
   React.useEffect(() => {
     if (parentRef.current) {
-      parentRef.current.scrollTop = parentRef.current.scrollHeight
+      parentRef.current.scrollTop = parentRef.current.scrollHeight;
     }
-  }, [messages])
+  }, [messages]);
 
   return (
-    <CardContent 
-      className="h-64 overflow-y-auto p-4" 
-      ref={parentRef}
-    >
+    <CardContent className="h-64 overflow-y-auto p-4" ref={parentRef}>
       <div
         style={{
           height: `${rowVirtualizer.getTotalSize()}px`,
-          width: '100%',
-          position: 'relative',
+          width: "100%",
+          position: "relative",
         }}
       >
         {rowVirtualizer.getVirtualItems().map((virtualItem) => (
           <div
             key={virtualItem.key}
             style={{
-              position: 'absolute',
+              position: "absolute",
               top: 0,
               left: 0,
-              width: '100%',
+              width: "100%",
               height: `${virtualItem.size}px`,
               transform: `translateY(${virtualItem.start}px)`,
             }}
@@ -52,19 +49,19 @@ export const ChatBox = React.memo(({ messages }: ChatBoxProps) => {
         ))}
       </div>
     </CardContent>
-  )
-})
+  );
+});
 
-ChatBox.displayName = 'ChatBox'
+ChatBox.displayName = "ChatBox";
 
-export interface ChatMessageProps {
+export type ChatMessageProps = {
   message: string;
   sender: {
     name: string;
     avatar: string;
   };
   isCurrentUser: boolean;
-}
+};
 
 export function ChatMessage({
   message,
