@@ -104,7 +104,7 @@ export default function LiveKitChat({ module }: LiveKitChatProps) {
   return (
     <div
       data-lk-theme="default"
-      className="h-full grid content-center bg-[var(--lk-bg)]"
+      className="h-full flex flex-col bg-[var(--lk-bg)]"
     >
       <LiveKitRoom
         token={connectionDetails?.participantToken}
@@ -114,7 +114,7 @@ export default function LiveKitChat({ module }: LiveKitChatProps) {
         video={false}
         onMediaDeviceFailure={onDeviceFailure}
         onDisconnected={handleDisconnect}
-        className="grid grid-rows-[2fr_1fr] items-center"
+        className="flex flex-col h-full"
       >
         <LiveKitContainer
           onStateChange={setAgentState}
@@ -159,13 +159,13 @@ function LiveKitContainer({
   }, [state, onStateChange]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <div className="container mx-auto py-8">
+    <div className="flex-1">
+      <div className="container mx-auto h-full py-4">
         <div className="flex flex-col gap-8">
           <ParticipantContainer
             participants={participants}
-            activeParticipant={participants[0]?.name ?? ""} //TODO: For now, we only have one participant
-            isInConversation={(state !== "disconnected")}
+            activeParticipant={participants[0]?.name ?? ""}
+            isInConversation={state !== "disconnected"}
           >
             <BarVisualizer
               state={state}
@@ -228,15 +228,15 @@ function ControlBar(props: {
   // }, []);
 
   return (
-    <div className="relative h-[100px]">
+    <div className="flex justify-center items-center h-24">
       <AnimatePresence>
         {props.agentState === "disconnected" && (
           <motion.button
-            initial={{ opacity: 0, top: 0 }}
+            initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, top: "-10px" }}
-            transition={{ duration: 1, ease: [0.09, 1.04, 0.245, 1.055] }}
-            className="uppercase absolute left-1/2 -translate-x-1/2 px-4 py-2 bg-white text-black rounded-md"
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="px-4 py-2 bg-white text-black rounded-md uppercase"
             onClick={props.onConnectButtonClicked}
           >
             Start a conversation
@@ -247,11 +247,11 @@ function ControlBar(props: {
         {props.agentState !== "disconnected" &&
           props.agentState !== "connecting" && (
             <motion.div
-              initial={{ opacity: 0, top: "10px" }}
-              animate={{ opacity: 1, top: 0 }}
-              exit={{ opacity: 0, top: "-10px" }}
-              transition={{ duration: 0.4, ease: [0.09, 1.04, 0.245, 1.055] }}
-              className="flex h-8 absolute left-1/2 -translate-x-1/2  justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex gap-2"
             >
               <VoiceAssistantControlBar controls={{ leave: false }} />
               <DisconnectAlertDialog onDisconnect={props.onDisconnect} />
