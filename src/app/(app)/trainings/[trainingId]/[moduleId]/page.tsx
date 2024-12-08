@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { getModuleByIdAction } from "@/app/(app)/moduleActions";
 import { VoiceSimulationComponent } from "@/components/voice-simulation";
 import CollapsibleBlock from "@/components/collapsible-block";
+import LiveKitChat from "@/components/livekit-chat";
 
 type Props = {
   params: {
@@ -29,8 +30,8 @@ export default async function Page({ params: { moduleId } }: Props) {
               </div>
             </CollapsibleBlock>
           )}
-
-          <VoiceSimulationComponent module={currentModule} />
+          <LiveKitChat module={currentModule} />
+          {/* <VoiceSimulationComponent module={currentModule} /> */}
         </CardContent>
       </Card>
     </div>
