@@ -7,18 +7,19 @@ export type User = {
   avatarUrl: string;
 };
 
-export default async function getCurrentUserInfo(
+export async function getCurrentUserInfo(
   supabase: SupabaseClient
 ): Promise<User> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not found");    
+  if (!user) throw new Error("User not found");
 
   return {
     id: user.id,
     email: user.email ?? "",
-    displayName: user.user_metadata.full_name || user.email?.split("@")[0] || "User",
+    displayName:
+      user.user_metadata.full_name || user.email?.split("@")[0] || "User",
     avatarUrl: user.user_metadata.avatar_url || "/placeholder.svg",
   };
 }

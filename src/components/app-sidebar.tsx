@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
@@ -11,35 +9,15 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
 import type { NavItem } from "@/types/nav";
-import getCurrentUserInfo, { User } from "@/data/user";
+import { getCurrentUserAction } from "@/app/actions/user-actions";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   navItems: NavItem[]
 }
 
-export function AppSidebar({ navItems, ...props }: AppSidebarProps) {
-  const [userInfo, setUserInfo] = useState<User>({
-    id: "",
-    email: "",
-    displayName: "User",
-    avatarUrl: "/placeholder.svg"
-  });
-  const supabase = createClient();
-
-  useEffect(() => {
-    async function loadUser() {
-      try {
-        const user = await getCurrentUserInfo(supabase);
-        setUserInfo(user);
-      } catch (error) {
-        console.error('Failed to load user:', error);
-      }
-    }
-    loadUser();
-  }, []);
+export async function AppSidebar({ navItems, ...props }: AppSidebarProps) {
+  const userInfo = await getCurrentUserAction();
 
   return (
     <Sidebar collapsible="icon" {...props}>
