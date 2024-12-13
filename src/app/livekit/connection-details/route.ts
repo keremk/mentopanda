@@ -5,9 +5,9 @@ import {
   RoomServiceClient,
 } from "livekit-server-sdk";
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
-import { getModuleById, ModulePrompt } from "@/data/modules";
-import getCurrentUserInfo from "@/data/user";
+import { ModulePrompt } from "@/data/modules";
+import { getModuleByIdAction } from "@/app/(app)/moduleActions";
+import { getCurrentUserAction } from "@/app/actions/user-actions";
 
 const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
@@ -30,12 +30,11 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const moduleId = searchParams.get("moduleId");
     if (!moduleId) throw new Error("moduleId is required");
-
-    const supabase = createClient();
-    const module = await getModuleById(supabase, parseInt(moduleId));
+    
+    const module = await getModuleByIdAction(parseInt(moduleId));
     if (!module) throw new Error("Module not found");
 
-    const userInfo = await getCurrentUserInfo(supabase);
+    const userInfo = await getCurrentUserAction();
     const participantIdentity = userInfo.displayName;
 
     const prompt = createPrompt(module.modulePrompt);
@@ -43,7 +42,7 @@ export async function GET(request: Request) {
     const config = {
       voice: voice,
       prompt: prompt,
-    }
+    };
 
     const roomName = `training_${module.trainingId}_module_${module.ordinal}`;
 
@@ -85,8 +84,14 @@ function createPrompt(modulePrompt: ModulePrompt) {
   let rolePlayInstruction =
     "You are a role-playing agent. You will be given a scenario. You should act as the character you are assigned to and play out the scenario as the best actor you can be. You should not deviate from the scenario.";
 
-  const yourName = modulePrompt.characters.length > 0 ? `Your name is ${modulePrompt.characters[0].name}.` : "";
-  const yourCharacter = modulePrompt.characters.length > 0 ? `Your character, traits are decribed as follows and you should act as them: ${modulePrompt.characters[0].prompt}.` : "";
+  const yourName =
+    modulePrompt.characters.length > 0
+      ? `Your name is ${modulePrompt.characters[0].name}.`
+      : "";
+  const yourCharacter =
+    modulePrompt.characters.length > 0
+      ? `Your character, traits are decribed as follows and you should act as them: ${modulePrompt.characters[0].prompt}.`
+      : "";
   const prompt = `
   Instructions: 
   ${rolePlayInstruction}

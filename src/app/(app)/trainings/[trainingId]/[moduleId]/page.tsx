@@ -2,9 +2,9 @@ import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { notFound, redirect } from "next/navigation";
 import { getModuleByIdAction } from "@/app/(app)/moduleActions";
-import { VoiceSimulationComponent } from "@/components/voice-simulation";
 import CollapsibleBlock from "@/components/collapsible-block";
 import LiveKitChat from "@/components/livekit-chat";
+import { getCurrentUserAction } from "@/app/actions/user-actions";
 
 type Props = {
   params: {
@@ -15,6 +15,8 @@ type Props = {
 export default async function Page({ params: { moduleId } }: Props) {
   const currentModule = await getModuleByIdAction(moduleId);
   if (!currentModule) notFound();
+
+  const currentUser = await getCurrentUserAction();
 
   return (
     <div className="container mx-auto py-8">
@@ -30,7 +32,7 @@ export default async function Page({ params: { moduleId } }: Props) {
               </div>
             </CollapsibleBlock>
           )}
-          <LiveKitChat module={currentModule} />
+          <LiveKitChat module={currentModule} currentUser={currentUser} />
           {/* <VoiceSimulationComponent module={currentModule} /> */}
         </CardContent>
       </Card>

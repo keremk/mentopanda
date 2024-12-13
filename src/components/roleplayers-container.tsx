@@ -1,22 +1,22 @@
 import { CharacterCard } from "@/components/character-card"
 import { ReactNode } from "react"
-import { Participant } from "@/types/chat-types";
+import { RolePlayer } from "@/types/chat-types";
 
 type ParticipantContainerProps = {
-  participants: Participant[]
-  activeParticipant: string
+  rolePlayers: RolePlayer[]
+  activeRolePlayer: string
   isInConversation: boolean
   children: ReactNode
 }
 
-export function ParticipantContainer({ 
-  participants, 
-  activeParticipant, 
+export function RolePlayersContainer({ 
+  rolePlayers, 
+  activeRolePlayer, 
   isInConversation, 
   children 
 }: ParticipantContainerProps) {
   const getGridClass = () => {
-    switch (participants.length) {
+    switch (rolePlayers.length) {
       case 1:
         return 'grid-cols-1'
       case 2:
@@ -30,14 +30,14 @@ export function ParticipantContainer({
   }
 
   return (
-    <div className={`flex justify-center ${participants.length > 2 ? 'items-start' : 'items-center'} min-h-[280px]`}>
+    <div className={`flex justify-center ${rolePlayers.length > 2 ? 'items-start' : 'items-center'} min-h-[280px]`}>
       <div className={`grid ${getGridClass()} gap-4 auto-rows-max content-start`}>
-        {participants.map((participant) => (
+        {rolePlayers.map((rolePlayer) => (
           <CharacterCard
-            key={participant.name}
-            name={participant.name}
-            avatarUrl={participant.avatarUrl}
-            isActive={participant.name === activeParticipant}
+            key={rolePlayer.name}
+            name={rolePlayer.name}
+            avatarUrl={rolePlayer.avatarUrl}
+            isActive={rolePlayer.name === activeRolePlayer}
             isInConversation={isInConversation}
           >
             {children}

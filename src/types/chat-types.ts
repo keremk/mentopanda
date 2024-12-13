@@ -1,11 +1,5 @@
-export type ChatMessage = {
-  content: string;
-  sender: Participant["name"];
-  timestamp: number;
-};
-
-export type Participant = {
+export type RolePlayer = {
   name: string;
-  role: "human" | "agent";
+  agentName: string;
   avatarUrl: string;
 };

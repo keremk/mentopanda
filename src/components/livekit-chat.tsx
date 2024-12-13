@@ -19,7 +19,7 @@ import { useState, useRef, useEffect } from "react";
 import { useTranscriptSave } from "@/hooks/use-transcript-save";
 import { createHistoryEntryAction } from "@/app/actions/history-actions";
 import { Button } from "@/components/ui/button";
-import { ParticipantContainer } from "@/components/participant-container";
+import { RolePlayersContainer } from "@/components/roleplayers-container";
 import { useTranscriptionHandler } from "@/hooks/use-transcription-handler";
 import {
   AlertDialog,
@@ -32,14 +32,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Participant } from "@/types/chat-types";
+import { RolePlayer } from "@/types/chat-types";
 import { CloseIcon } from "@/components/icons/close-icon";
+import { User } from "@/data/user";
 
 type LiveKitChatProps = {
   module: Module;
+  currentUser: User;
 };
 
-export default function LiveKitChat({ module }: LiveKitChatProps) {
+export default function LiveKitChat({ module, currentUser }: LiveKitChatProps) {
   const [connectionDetails, updateConnectionDetails] = useState<
     ConnectionDetails | undefined
   >(undefined);
@@ -92,13 +94,13 @@ export default function LiveKitChat({ module }: LiveKitChatProps) {
     onEndCall(historyEntryId ?? 0);
   }, [saveAndComplete, onEndCall]);
 
-  const participants = module.modulePrompt.characters.map(
+  const rolePlayers = module.modulePrompt.characters.map(
     (character) =>
       ({
         name: character.name,
-        role: "agent",
+        agentName: "agent",
         avatarUrl: `/avatars/${character.name}.jpg`,
-      } as Participant)
+      } as RolePlayer)
   );
 
   return (
@@ -119,7 +121,8 @@ export default function LiveKitChat({ module }: LiveKitChatProps) {
         <LiveKitContainer
           onStateChange={setAgentState}
           onTranscriptUpdate={setTranscriptBuffer}
-          participants={participants}
+          rolePlayers={rolePlayers}
+          currentUser={currentUser}
         />
         <ControlBar
           onConnectButtonClicked={onConnectButtonClicked}
@@ -137,17 +140,23 @@ type LiveKitContainerProps = {
   onTranscriptUpdate: (
     transcript: Array<{ participantName: string; text: string }>
   ) => void;
-  participants: Participant[];
+  rolePlayers: RolePlayer[];
+  currentUser: User;
 };
 
 function LiveKitContainer({
   onStateChange,
   onTranscriptUpdate,
-  participants,
+  rolePlayers,
+  currentUser,
 }: LiveKitContainerProps) {
   const { state, audioTrack } = useVoiceAssistant();
   const room = useRoomContext();
-  const { transcriptBuffer, currentAgentText } = useTranscriptionHandler(room);
+  const { transcriptBuffer, currentAgentText } = useTranscriptionHandler({
+    room,
+    rolePlayers,
+    currentUser,
+  });
 
   // Update parent component whenever transcriptBuffer changes
   useEffect(() => {
@@ -162,9 +171,9 @@ function LiveKitContainer({
     <div className="flex-1">
       <div className="container mx-auto h-full py-4">
         <div className="flex flex-col gap-8">
-          <ParticipantContainer
-            participants={participants}
-            activeParticipant={participants[0]?.name ?? ""}
+          <RolePlayersContainer
+            rolePlayers={rolePlayers}
+            activeRolePlayer={rolePlayers[0]?.name ?? ""}
             isInConversation={state !== "disconnected"}
           >
             <BarVisualizer
@@ -174,7 +183,7 @@ function LiveKitContainer({
               className="border-2 border-red-500 [&>.lk-audio-bar]:w-[5px] [&>.lk-audio-bar]:mx-[2px] [&.lk-audio-bar-visualizer]:gap-1"
               options={{ minHeight: 30 }}
             />
-          </ParticipantContainer>
+          </RolePlayersContainer>
 
           <div className="flex justify-center">
             <TranscriptBox text={currentAgentText} />

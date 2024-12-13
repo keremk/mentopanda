@@ -4,7 +4,10 @@ import {
   RoomEvent,
   TranscriptionSegment,
   ParticipantKind,
+  Participant as LiveKitParticipant,
 } from "livekit-client";
+import { RolePlayer } from "@/types/chat-types";
+import { User } from "@/data/user";
 
 type TranscriptEntry = {
   participantName: string;
@@ -17,25 +20,47 @@ type UseTranscriptionHandlerReturn = {
   currentAgentText: string;
 };
 
-export function useTranscriptionHandler(
-  room: Room | null
-): UseTranscriptionHandlerReturn {
+type UseTranscriptionHandlerProps = {
+  room: Room;
+  rolePlayers: RolePlayer[];
+  currentUser: User;
+};
+
+export function useTranscriptionHandler({
+  room,
+  rolePlayers,
+  currentUser,
+}: UseTranscriptionHandlerProps): UseTranscriptionHandlerReturn {
   const [transcriptBuffer, setTranscriptBuffer] = useState<TranscriptEntry[]>(
     []
   );
   const [currentAgentText, setCurrentAgentText] = useState<string>("");
 
   useEffect(() => {
-    if (!room) return;
-
     const updateTranscriptions = (
       segments: TranscriptionSegment[],
-      participant: any
+      participant: LiveKitParticipant | undefined
     ) => {
-      const isAgent = participant.kind === ParticipantKind.AGENT;
-      const participantId = participant?.identity || "Unknown";
+      // const isAgent = participant?.kind === ParticipantKind.AGENT;
+      const transcriptParticipantName = participant?.identity || "Unknown";
+      const isCurrentUser = transcriptParticipantName === currentUser.displayName;
 
-      if (isAgent) {
+      if (isCurrentUser) {
+        const participantName = currentUser.displayName;
+        segments.forEach((segment) => {
+          if (segment.final) {
+            setTranscriptBuffer((prev) => [
+              ...prev,
+              {
+                participantName: participantName,
+                text: segment.text,
+                timestamp: segment.firstReceivedTime,
+              },
+            ]);
+          }
+        });
+      } else {
+        const participantName = resolveAgentName(transcriptParticipantName, rolePlayers);
         segments.forEach((segment) => {
           if (!segment.final) {
             setCurrentAgentText(segment.text);
@@ -43,7 +68,7 @@ export function useTranscriptionHandler(
             setTranscriptBuffer((prev) => [
               ...prev,
               {
-                participantName: participantId,
+                participantName: participantName,
                 text: segment.text,
                 timestamp: segment.firstReceivedTime,
               },
@@ -51,20 +76,7 @@ export function useTranscriptionHandler(
             setCurrentAgentText("");
           }
         });
-      } else {
-        segments.forEach((segment) => {
-          if (segment.final) {
-            setTranscriptBuffer((prev) => [
-              ...prev,
-              {
-                participantName: participantId,
-                text: segment.text,
-                timestamp: segment.firstReceivedTime,
-              },
-            ]);
-          }
-        });
-      }
+      };
     };
 
     room.on(RoomEvent.TranscriptionReceived, updateTranscriptions);
@@ -75,3 +87,10 @@ export function useTranscriptionHandler(
 
   return { transcriptBuffer, currentAgentText };
 }
+
+function resolveAgentName(transcriptParticipantName: string, rolePlayers: RolePlayer[]) {
+  return rolePlayers.find(
+    (rolePlayer) => rolePlayer.agentName === transcriptParticipantName
+  )?.agentName ?? rolePlayers[0]?.agentName;
+}
+
