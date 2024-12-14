@@ -33,13 +33,16 @@ export function CharacterCard({
 
   return (
     <Card
-      className={`w-[200px] h-[280px] transition-all ${
-        isActive ? "ring-2 ring-primary" : ""
-      }`}
+      className={`w-[220px] h-[300px] transition-all duration-200 
+        hover:shadow-md ${
+          isActive 
+            ? "ring-2 ring-primary shadow-lg" 
+            : "hover:ring-1 hover:ring-primary/50"
+        }`}
     >
-      <CardContent className="h-full pt-6 px-4 pb-4 flex flex-col items-center justify-between">
+      <CardContent className="h-full pt-8 px-6 pb-6 flex flex-col items-center justify-between">
         <div className="w-full flex-1 flex flex-col items-center justify-center">
-          <div className="w-20 h-20 mb-3">
+          <div className="w-32 h-32 mb-4">
             <AnimatePresence>
               {showContent && (
                 <motion.div
@@ -48,9 +51,9 @@ export function CharacterCard({
                   exit={{ scale: 0, opacity: 0 }}
                   transition={{ type: "spring", stiffness: 260, damping: 20 }}
                 >
-                  <Avatar className="w-20 h-20">
+                  <Avatar className="w-32 h-32 border-2 border-background shadow-md">
                     <AvatarImage src={avatarUrl} alt={name} />
-                    <AvatarFallback>{name[0]}</AvatarFallback>
+                    <AvatarFallback className="text-2xl">{name[0]}</AvatarFallback>
                   </Avatar>
                 </motion.div>
               )}
@@ -59,7 +62,7 @@ export function CharacterCard({
           <AnimatePresence>
             {showContent && (
               <motion.h3
-                className="font-semibold text-lg text-center"
+                className="font-semibold text-lg text-center text-foreground/80"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
@@ -75,7 +78,7 @@ export function CharacterCard({
             )}
           </AnimatePresence>
         </div>
-        <div className="w-full mt-4 h-[40px] w-[90px] mx-auto flex flex-col gap-4">
+        <div className="w-full mt-4 h-[20px] w-[90px] mx-auto flex flex-col gap-4">
           {children}
         </div>
       </CardContent>

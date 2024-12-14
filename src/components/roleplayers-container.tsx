@@ -20,18 +20,18 @@ export function RolePlayersContainer({
       case 1:
         return 'grid-cols-1'
       case 2:
-        return 'grid-cols-2'
+        return 'grid-cols-2 gap-8'
       case 3:
       case 4:
-        return 'grid-cols-2 md:grid-cols-4'
+        return 'grid-cols-2 md:grid-cols-4 gap-6'
       default:
         return 'grid-cols-1'
     }
   }
 
   return (
-    <div className={`flex justify-center ${rolePlayers.length > 2 ? 'items-start' : 'items-center'} min-h-[280px]`}>
-      <div className={`grid ${getGridClass()} gap-4 auto-rows-max content-start`}>
+    <div className={`flex justify-center ${rolePlayers.length > 2 ? 'items-start' : 'items-center'} min-h-[300px]`}>
+      <div className={`grid ${getGridClass()} auto-rows-max content-start`}>
         {rolePlayers.map((rolePlayer) => (
           <CharacterCard
             key={rolePlayer.name}

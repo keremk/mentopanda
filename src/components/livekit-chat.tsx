@@ -168,9 +168,9 @@ function LiveKitContainer({
   }, [state, onStateChange]);
 
   return (
-    <div className="flex-1">
-      <div className="container mx-auto h-full py-4">
-        <div className="flex flex-col gap-8">
+    <div className="flex-1 px-4 py-8 md:px-8">
+      <div className="max-w-7xl mx-auto h-full">
+        <div className="flex flex-col gap-12">
           <RolePlayersContainer
             rolePlayers={rolePlayers}
             activeRolePlayer={rolePlayers[0]?.name ?? ""}
@@ -178,10 +178,10 @@ function LiveKitContainer({
           >
             <BarVisualizer
               state={state}
-              barCount={5}
+              barCount={7}
               trackRef={audioTrack}
-              className="border-2 border-red-500 [&>.lk-audio-bar]:w-[5px] [&>.lk-audio-bar]:mx-[2px] [&.lk-audio-bar-visualizer]:gap-1"
-              options={{ minHeight: 30 }}
+              className="[&>.lk-audio-bar]:w-[4px] [&>.lk-audio-bar]:mx-[2px] [&.lk-audio-bar-visualizer]:gap-1"
+              options={{ minHeight: 4 }}
             />
           </RolePlayersContainer>
 
@@ -206,16 +206,18 @@ export function TranscriptBox({ text }: { text: string }) {
   }, [text]);
 
   return (
-    <div className="relative w-full h-12 flex items-center justify-center">
+    <div className="relative w-full h-14 flex items-center justify-center">
       <div
         ref={scrollContainerRef}
-        className="fixed-size w-[500px] h-10 overflow-x-auto whitespace-nowrap 
-          bg-[var(--lk-bg)] rounded-lg flex items-center px-4
+        className="fixed-size w-full max-w-[600px] h-12 overflow-x-auto whitespace-nowrap 
+          bg-background/50 backdrop-blur-sm border rounded-xl flex items-center px-6
+          shadow-sm transition-all duration-200
           scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none]
-          [&::-webkit-scrollbar]:hidden"
+          [&::-webkit-scrollbar]:hidden
+          hover:bg-background/60"
       >
-        <div ref={textRef} className="flex-shrink-0 w-fit ">
-          {text || "Waiting for agent response..."}
+        <div ref={textRef} className="flex-shrink-0 w-fit text-foreground/80">
+          {text || "Waiting to start conversation..."}
         </div>
       </div>
     </div>
@@ -227,25 +229,17 @@ function ControlBar(props: {
   onDisconnect: () => Promise<void>;
   agentState: AgentState;
 }) {
-  /**
-   * Use Krisp background noise reduction when available.
-   * Note: This is only available on Scale plan, see {@link https://livekit.io/pricing | LiveKit Pricing} for more details.
-   */
-  // const krisp = useKrispNoiseFilter();
-  // useEffect(() => {
-  //   krisp.setNoiseFilterEnabled(true);
-  // }, []);
-
   return (
-    <div className="flex justify-center items-center h-24">
+    <div className="flex justify-center items-center h-28 bg-background/50 backdrop-blur-sm border-t">
       <AnimatePresence>
         {props.agentState === "disconnected" && (
           <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.3 }}
-            className="px-4 py-2 bg-white text-black rounded-md uppercase"
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-xl 
+              font-medium shadow-sm hover:opacity-90 transition-all"
             onClick={props.onConnectButtonClicked}
           >
             Start a conversation
@@ -253,19 +247,18 @@ function ControlBar(props: {
         )}
       </AnimatePresence>
       <AnimatePresence>
-        {props.agentState !== "disconnected" &&
-          props.agentState !== "connecting" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="flex gap-2"
-            >
-              <VoiceAssistantControlBar controls={{ leave: false }} />
-              <DisconnectAlertDialog onDisconnect={props.onDisconnect} />
-            </motion.div>
-          )}
+        {props.agentState !== "disconnected" && props.agentState !== "connecting" && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3 }}
+            className="flex gap-3"
+          >
+            <VoiceAssistantControlBar controls={{ leave: false }} />
+            <DisconnectAlertDialog onDisconnect={props.onDisconnect} />
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
