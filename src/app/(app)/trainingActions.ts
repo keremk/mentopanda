@@ -1,14 +1,16 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { 
-  getTrainingById, 
-  getTrainingWithProgress, 
+import {
+  getTrainingById,
+  getTrainingWithProgress,
   getTrainingsWithEnrollment,
   getEnrolledTrainings,
   updateTraining,
+  createTraining,
   type UpdateTrainingInput,
 } from "@/data/trainings";
+import { redirect } from "next/navigation";
 
 export async function getTrainingByIdAction(trainingId: number) {
   const supabase = createClient();
@@ -35,3 +37,16 @@ export async function updateTrainingAction(training: UpdateTrainingInput) {
   return await updateTraining(supabase, training);
 }
 
+export async function createTrainingAction() {
+  const supabase = createClient();
+  const training = await createTraining(supabase, {
+    title: "New Training",
+    tagline: "Training description goes here",
+    description: "",
+    imageUrl: "/course-images/meetings.jpg", // default image
+    previewUrl: null,
+    isPublic: false,
+  });
+
+  redirect(`/explore/${training.id}/edit`);
+}

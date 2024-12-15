@@ -233,14 +233,17 @@ export async function getTrainingsWithEnrollment(
   );
 }
 
-export type UpdateTrainingInput = {
-  id: number;
+export type BaseTrainingInput = {
   title: string;
   tagline: string;
   description: string;
   imageUrl: string;
   previewUrl: string | null;
   isPublic: boolean;
+};
+
+export type UpdateTrainingInput = BaseTrainingInput & {
+  id: number;
 };
 
 export async function updateTraining(
@@ -351,5 +354,46 @@ export async function updateTraining(
     updatedAt: new Date(data[0].updated_at),
     createdBy: data[0].created_by,
     modules: data[0].modules,
+  };
+}
+
+export async function createTraining(
+  supabase: SupabaseClient,
+  training: BaseTrainingInput
+): Promise<Training> {
+  const userId = await getUserId(supabase);
+  const organizationId = await getOrganizationId(supabase);
+
+  const { data, error } = await supabase
+    .from("trainings")
+    .insert({
+      title: training.title,
+      tagline: training.tagline,
+      description: training.description,
+      image_url: training.imageUrl,
+      preview_url: training.previewUrl,
+      is_public: training.isPublic,
+      created_by: userId,
+      organization_id: organizationId,
+    })
+    .select()
+    .single();
+
+  if (error) handleError(error);
+  if (!data) throw new Error("Failed to create training");
+
+  return {
+    id: data.id,
+    title: data.title,
+    tagline: data.tagline,
+    description: data.description,
+    imageUrl: data.image_url,
+    isPublic: data.is_public,
+    organizationId: data.organization_id,
+    previewUrl: data.preview_url,
+    createdAt: new Date(data.created_at),
+    updatedAt: new Date(data.updated_at),
+    createdBy: data.created_by,
+    modules: [],
   };
 }
