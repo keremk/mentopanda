@@ -78,7 +78,7 @@ export function CharacterCard({
             )}
           </AnimatePresence>
         </div>
-        <div className="w-full mt-4 h-[20px] w-[90px] mx-auto flex flex-col gap-4">
+        <div className="mt-4 h-[20px] w-[90px] mx-auto flex flex-col gap-4">
           {children}
         </div>
       </CardContent>
