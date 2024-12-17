@@ -37,7 +37,7 @@ export async function updateTrainingAction(training: UpdateTrainingInput) {
   return await updateTraining(supabase, training);
 }
 
-export async function createTrainingAction() {
+export async function createTrainingAction(formData: FormData) {
   const supabase = createClient();
   const training = await createTraining(supabase, {
     title: "New Training",
