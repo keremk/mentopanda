@@ -397,3 +397,27 @@ export async function createTraining(
     modules: [],
   };
 }
+
+export async function deleteTraining(
+  supabase: SupabaseClient,
+  trainingId: number
+): Promise<void> {
+  // First verify the user has access to this training
+  const userId = await getUserId(supabase);
+  const { data: training } = await supabase
+    .from("trainings")
+    .select("created_by")
+    .eq("id", trainingId)
+    .single();
+
+  if (!training || training.created_by !== userId) {
+    throw new Error("Unauthorized to delete this training");
+  }
+
+  const { error } = await supabase
+    .from("trainings")
+    .delete()
+    .eq("id", trainingId);
+
+  if (error) handleError(error);
+}

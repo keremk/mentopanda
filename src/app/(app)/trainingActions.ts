@@ -9,8 +9,10 @@ import {
   updateTraining,
   createTraining,
   type UpdateTrainingInput,
+  deleteTraining,
 } from "@/data/trainings";
 import { redirect } from "next/navigation";
+import { getUserId } from "@/data/utils";
 
 export async function getTrainingByIdAction(trainingId: number) {
   const supabase = createClient();
@@ -49,4 +51,10 @@ export async function createTrainingAction(formData: FormData) {
   });
 
   redirect(`/explore/${training.id}/edit`);
+}
+
+export async function deleteTrainingAction(trainingId: number) {
+  const supabase = createClient();
+  await deleteTraining(supabase, trainingId);
+  redirect("/explore");
 }

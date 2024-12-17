@@ -6,6 +6,8 @@ import { EnrollmentButton } from "@/components/enrollment-button";
 import { getTrainingByIdAction } from "@/app/(app)/trainingActions";
 import { Pencil } from "lucide-react";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { createClient } from "@/utils/supabase/server";
+import { getCurrentUserInfo } from "@/data/user";
 
 function YouTubeEmbed({ url }: { url: string }) {
   const videoId = url.split("v=")[1];
@@ -31,6 +33,8 @@ export default async function TrainingDetailsPage({
   params: { trainingId: number };
 }) {
   const training = await getTrainingByIdAction(params.trainingId);
+  const supabase = createClient();
+  const user = await getCurrentUserInfo(supabase);
 
   if (!training) {
     notFound();
@@ -40,15 +44,17 @@ export default async function TrainingDetailsPage({
     <div className="container mx-auto px-4 py-8">
       <div className="absolute top-0 right-0 p-4 z-10">
         <EnrollmentButton className="mr-4" trainingId={training.id} />
-        <Button asChild variant="outline">
-          <Link
-            href={`/explore/${training.id}/edit`}
-            className="flex items-center"
-          >
-            <Pencil className="mr-2 h-4 w-4" />
-            Edit
-          </Link>
-        </Button>
+        {user.id === training.createdBy && (
+          <Button asChild variant="outline">
+            <Link
+              href={`/explore/${training.id}/edit`}
+              className="flex items-center"
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="md:flex md:gap-8 mb-8">
