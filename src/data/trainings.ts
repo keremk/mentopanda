@@ -187,10 +187,8 @@ export async function getTrainingsWithEnrollment(
   const userId = await getUserId(supabase);
   const organizationId = await getOrganizationId(supabase);
 
-  let query = supabase
-    .from("trainings")
-    .select(
-      `
+  let query = supabase.from("trainings").select(
+    `
       id,
       title,
       tagline,
@@ -204,12 +202,15 @@ export async function getTrainingsWithEnrollment(
         user_id
       )
     `
-    )
-    .or("is_public.eq.true");
+  );
 
+  // Build filter conditions
+  const conditions = ["is_public.eq.true"];
   if (organizationId && organizationId !== 1) {
-    query = query.or(`organization_id.eq.${organizationId}`);
+    conditions.push(`organization_id.eq.${organizationId}`);
   }
+
+  query.or(conditions.join(","));
 
   const { data: trainings, error } = await query;
 
