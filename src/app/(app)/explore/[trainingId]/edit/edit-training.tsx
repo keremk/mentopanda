@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useUser } from "@/hooks/useUser";
+import { useUser } from "@/hooks/use-user";
 
 type Props = {
   training: Training;
