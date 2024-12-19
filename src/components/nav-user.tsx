@@ -94,29 +94,29 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
+              <DropdownMenuItem className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
                 Upgrade to Pro
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
+              <DropdownMenuItem className="flex items-center gap-2">
+                <BadgeCheck className="h-4 w-4" />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
+              <DropdownMenuItem className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
+              <DropdownMenuItem className="flex items-center gap-2">
+                <Bell className="h-4 w-4" />
                 Notifications
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={handleLogout}>
-              <LogOut />
+            <DropdownMenuItem className="flex items-center gap-2" onSelect={handleLogout}>
+              <LogOut className="h-4 w-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
