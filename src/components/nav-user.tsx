@@ -37,7 +37,7 @@ export function NavUser({
     avatarUrl: string;
   };
 }) {
-  const { isMobile } = useSidebar();
+  const { isMobile, collapsed } = useSidebar();
   const router = useRouter();
   const handleLogout = async () => {
     try {
@@ -76,9 +76,10 @@ export function NavUser({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
-            align="end"
-            sideOffset={4}
+            side={isMobile ? "bottom" : collapsed ? "right" : "top"}
+            align={collapsed ? "end" : "start"}
+            sideOffset={collapsed ? 4 : 8}
+            alignOffset={collapsed ? 0 : 12}
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
