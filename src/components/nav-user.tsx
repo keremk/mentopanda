@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export function NavUser({
   user,
@@ -103,13 +104,17 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="flex items-center gap-2">
-                <BadgeCheck className="h-4 w-4" />
-                Account
+              <DropdownMenuItem asChild className="flex items-center gap-2">
+                <Link href="/settings/account">
+                  <BadgeCheck className="h-4 w-4" />
+                  Account
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                Billing
+              <DropdownMenuItem asChild className="flex items-center gap-2">
+                <Link href="/settings/billing">
+                  <CreditCard className="h-4 w-4" />
+                  Billing
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="flex items-center gap-2">
                 <Bell className="h-4 w-4" />

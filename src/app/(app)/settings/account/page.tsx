@@ -11,7 +11,7 @@ export default function GeneralSettingsPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>General Settings</CardTitle>
+          <CardTitle>Account Settings</CardTitle>
           <CardDescription>
             Manage your general account settings and preferences
           </CardDescription>

@@ -34,20 +34,12 @@ export const navItems: NavItem[] = [
     iconKey: "settings",
     items: [
       {
-        title: "General",
-        url: "/settings/general",
-      },
-      {
-        title: "Team",
-        url: "/settings/team",
+        title: "Account",
+        url: "/settings/account",
       },
       {
         title: "Billing",
         url: "/settings/billing",
-      },
-      {
-        title: "Limits",
-        url: "/settings/limits",
       },
     ],
   },
@@ -72,7 +64,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <Suspense fallback={<SidebarSkeleton />}>
-        {/* @ts-expect-error Async Server Component */}
         <AppSidebar navItems={navItems} />
       </Suspense>
       <SidebarInset>
