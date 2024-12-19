@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useDebounce } from "@/hooks/use-debounce";
 import { Training, UpdateTrainingInput } from "@/data/trainings";
 import { updateTrainingAction } from "@/app/(app)/trainingActions";
 import {
