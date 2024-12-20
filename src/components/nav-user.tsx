@@ -116,10 +116,6 @@ export function NavUser({
                   Billing
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                Notifications
-              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="flex items-center gap-2" onSelect={handleLogout}>

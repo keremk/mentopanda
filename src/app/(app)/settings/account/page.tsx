@@ -5,8 +5,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getCurrentUserAction } from "@/app/actions/user-actions";
 
-export default function GeneralSettingsPage() {
+export default async function AccountSettingsPage() {
+  const user = await getCurrentUserAction();
   return (
     <div className="space-y-6">
       <Card>

@@ -5,5 +5,5 @@ import { getCurrentUserInfo } from "@/data/user";
 
 export async function getCurrentUserAction() {
   const supabase = createClient();
-  return await getCurrentUserInfo(supabase);
+  return await getCurrentUserInfo({ supabase });
 }
