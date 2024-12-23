@@ -51,20 +51,22 @@ export function AccountForm({ user }: AccountFormProps) {
         </Avatar>
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
           <DialogTrigger asChild>
-            <Button type="button" variant="outline" className="mt-4">
+            <Button type="button" variant="outline" size="sm">
               Change Avatar
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-[480px] p-0 gap-0">
+            <DialogHeader className="p-6 pb-4">
               <DialogTitle>Upload Avatar</DialogTitle>
             </DialogHeader>
-            <ImageUpload
-              bucket="avatars"
-              folder="user-avatars"
-              onUploadComplete={handleUploadComplete}
-              allowedFileTypes={["image/jpeg", "image/png", "image/webp"]}
-            />
+            <div className="px-6 pb-6 pt-0">
+              <ImageUpload
+                bucket="avatars"
+                folder="user-avatars"
+                onUploadComplete={handleUploadComplete}
+                allowedFileTypes={["image/jpeg", "image/png", "image/webp"]}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       </div>
