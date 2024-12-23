@@ -13,7 +13,7 @@ export default async function AccountSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="max-w-2xl mx-auto my-8">
         <CardHeader>
           <CardTitle>Account Settings</CardTitle>
           <CardDescription>
