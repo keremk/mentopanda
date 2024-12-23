@@ -34,7 +34,7 @@ export default async function TrainingDetailsPage({
 }) {
   const training = await getTrainingByIdAction(params.trainingId);
   const supabase = createClient();
-  const user = await getCurrentUserInfo(supabase);
+  const user = await getCurrentUserInfo({ supabase });
 
   if (!training) {
     notFound();

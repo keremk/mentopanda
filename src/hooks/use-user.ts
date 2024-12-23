@@ -12,7 +12,7 @@ export function useUser() {
     const fetchUser = async () => {
       try {
         const supabase = createClient();
-        const userInfo = await getCurrentUserInfo(supabase);
+        const userInfo = await getCurrentUserInfo({ supabase });
         setUser(userInfo);
       } catch (error) {
         setUser(null);

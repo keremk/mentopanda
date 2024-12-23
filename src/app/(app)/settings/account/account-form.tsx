@@ -5,8 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { updateProfileAction } from "@/app/actions/user-actions";
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import type { User } from "@/data/user";
+import { ImageUpload } from "@/components/image-upload";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type AccountFormProps = {
   user: User;
@@ -14,6 +22,8 @@ type AccountFormProps = {
 
 export function AccountForm({ user }: AccountFormProps) {
   const [isPending, startTransition] = useTransition();
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
 
   async function handleSubmit(formData: FormData) {
     startTransition(async () => {
@@ -24,19 +34,39 @@ export function AccountForm({ user }: AccountFormProps) {
     });
   }
 
+  function handleUploadComplete(url: string) {
+    setAvatarUrl(url);
+    setIsUploadOpen(false);
+  }
+
   return (
     <form action={handleSubmit}>
       {/* Avatar Section */}
       <div className="flex items-start space-x-4">
         <Avatar className="h-20 w-20">
-          <AvatarImage src={user.avatarUrl} alt={user.displayName} />
+          <AvatarImage src={avatarUrl} alt={user.displayName} />
           <AvatarFallback>
             {user.displayName.slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <Button type="button" variant="outline" className="mt-4">
-          Change Avatar
-        </Button>
+        <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+          <DialogTrigger asChild>
+            <Button type="button" variant="outline" className="mt-4">
+              Change Avatar
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Upload Avatar</DialogTitle>
+            </DialogHeader>
+            <ImageUpload
+              bucket="avatars"
+              folder="user-avatars"
+              onUploadComplete={handleUploadComplete}
+              allowedFileTypes={["image/jpeg", "image/png", "image/webp"]}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Display Name Field */}
