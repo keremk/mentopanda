@@ -93,3 +93,26 @@ export async function updateUserProfile({
   // Return updated user info
   return await getCurrentUserInfo({ supabase, includeOrgInfo: true });
 }
+
+export async function updateUserAvatar({
+  supabase,
+  avatarUrl,
+}: {
+  supabase: SupabaseClient;
+  avatarUrl: string;
+}): Promise<User> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not found");
+
+  // Update avatar URL in auth.users metadata
+  const { error: updateAuthError } = await supabase.auth.updateUser({
+    data: { avatar_url: avatarUrl },
+  });
+
+  if (updateAuthError) throw new Error("Failed to update avatar");
+
+  // Return updated user info
+  return await getCurrentUserInfo({ supabase });
+}

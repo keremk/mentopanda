@@ -98,7 +98,7 @@ export const useUppyWithSupabase = ({
             console.error("Failed to get public URL");
             return;
           }
-
+          console.log("publicUrl", publicUrl);
           onUploadComplete(publicUrl);
         });
     };
