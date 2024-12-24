@@ -5,7 +5,7 @@ create type "public"."app_permission" as enum(
 	'enrollment.manage',
 	'user.select',
 	'user.admin',
-	'organization.admin' 
+	'organization.admin'
 );
 
 create type "public"."user_role" as enum('admin', 'manager', 'member', 'super_admin');
@@ -21,10 +21,11 @@ create table if not exists "organizations" (
 
 create table if not exists "profiles" (
 	"id" uuid primary key not null references auth.users (id) on delete cascade on update cascade,
-	"organization_id" bigint references organizations (id) on delete set default default 1 not null,
-	"user_role" "user_role" default 'member' not null,
-	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	"organization_id" bigint references organizations (id) on delete
+	set default default 1 not null,
+		"user_role" "user_role" default 'member' not null,
+		"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 create table if not exists "role_permissions" (
@@ -42,11 +43,12 @@ create table if not exists "trainings" (
 	"description" text,
 	"image_url" text,
 	"preview_url" text,
-	"created_by" uuid references profiles (id) on delete set null,
-	"is_public" boolean default true not null,
-	"organization_id" bigint references organizations (id) on delete cascade,
-	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	"created_by" uuid references profiles (id) on delete
+	set null,
+		"is_public" boolean default true not null,
+		"organization_id" bigint references organizations (id) on delete cascade,
+		"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 create table if not exists "modules" (
@@ -73,6 +75,28 @@ create table if not exists "modules" (
 	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+create table if not exists "characters" (
+	"id" bigserial primary key not null,
+	"name" text not null,
+	"ai_description" text not null,
+	"prompt" text,
+	"avatar_url" text,
+	"organization_id" bigint references organizations (id) on delete cascade,
+	"is_public" boolean default true not null,
+	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+create table if not exists "modules_characters" (
+	"module_id" bigint not null references modules (id) on delete cascade,
+	"character_id" bigint not null references characters (id) on delete cascade,
+	"ordinal" integer not null default 0,
+	"prompt" text,
+	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	constraint "modules_characters_module_id_character_id_pk" primary key ("module_id", "character_id")
+);
+
 -- https://x.com/dshukertjr/status/1851231477671079952 Sensible default for user_id
 create table if not exists "enrollments" (
 	"id" bigserial primary key not null,
@@ -84,17 +108,18 @@ create table if not exists "enrollments" (
 
 create table if not exists "history" (
 	"id" bigserial primary key not null,
-	"module_id" bigint references modules (id) on delete set null,
-	"user_id" uuid default auth.uid() not null references profiles (id) on delete cascade,
-	"transcript" text,
-	"recording_url" text,
-	"assessment_created" boolean default false not null,
-	"assessment_text" text,
-	"practice_no" integer default 1 not null,
-	"assessment_score" integer,
-	"started_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-	"completed_at" TIMESTAMP WITH TIME ZONE, 
-	CONSTRAINT unique_practice UNIQUE(user_id, module_id, practice_no)
+	"module_id" bigint references modules (id) on delete
+	set null,
+		"user_id" uuid default auth.uid() not null references profiles (id) on delete cascade,
+		"transcript" text,
+		"recording_url" text,
+		"assessment_created" boolean default false not null,
+		"assessment_text" text,
+		"practice_no" integer default 1 not null,
+		"assessment_score" integer,
+		"started_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		"completed_at" TIMESTAMP WITH TIME ZONE,
+		CONSTRAINT unique_practice UNIQUE(user_id, module_id, practice_no)
 );
 
 -- Indexes
@@ -129,3 +154,7 @@ alter table role_permissions enable row level security;
 alter table modules enable row level security;
 
 alter table history enable row level security;
+
+alter table characters enable row level security;
+
+alter table modules_characters enable row level security;
