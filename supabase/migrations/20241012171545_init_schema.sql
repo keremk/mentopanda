@@ -78,8 +78,9 @@ create table if not exists "modules" (
 create table if not exists "characters" (
 	"id" bigserial primary key not null,
 	"name" text not null,
-	"ai_description" text not null,
-	"prompt" text,
+	"voice" text,
+	"ai_description" text,
+	"description" text,
 	"avatar_url" text,
 	"organization_id" bigint references organizations (id) on delete cascade,
 	"is_public" boolean default true not null,
