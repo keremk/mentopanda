@@ -22,85 +22,97 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
 function generateRandomHistoryEntries(userId: string, moduleIds: number[]) {
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-  
+
   const entries = [];
   let totalEntries = 0;
   const maxEntries = 50;
-  
+
   // Create array of dates from three months ago to now
   const dates = [];
   const currentDate = new Date();
-  for (let d = new Date(threeMonthsAgo); d <= currentDate; d.setDate(d.getDate() + 1)) {
+  for (
+    let d = new Date(threeMonthsAgo);
+    d <= currentDate;
+    d.setDate(d.getDate() + 1)
+  ) {
     dates.push(new Date(d));
   }
-  
+
   // Iterate through dates chronologically
   for (const d of dates) {
     // Randomly decide if this day will have entries (30% chance)
     if (Math.random() < 0.3 && totalEntries < maxEntries) {
       // Generate 1-3 entries for this day
       const numEntries = Math.floor(Math.random() * 3) + 1;
-      
+
       for (let i = 0; i < numEntries && totalEntries < maxEntries; i++) {
-        const moduleId = moduleIds[Math.floor(Math.random() * moduleIds.length)];
-        
+        const moduleId =
+          moduleIds[Math.floor(Math.random() * moduleIds.length)];
+
         const startedAt = new Date(d);
         // Add random hours/minutes to spread entries throughout the day
         startedAt.setHours(Math.floor(Math.random() * 14) + 8); // Between 8 AM and 10 PM
         startedAt.setMinutes(Math.floor(Math.random() * 60));
-        
+
         const completedAt = new Date(startedAt);
-        completedAt.setMinutes(completedAt.getMinutes() + Math.floor(Math.random() * 30) + 15); // 15-45 minutes later
-        
+        completedAt.setMinutes(
+          completedAt.getMinutes() + Math.floor(Math.random() * 30) + 15
+        ); // 15-45 minutes later
+
         entries.push({
           user_id: userId,
           module_id: moduleId,
           assessment_score: Math.floor(Math.random() * 5) + 1, // 1-5
           started_at: startedAt.toISOString(),
-          completed_at: completedAt.toISOString()
+          completed_at: completedAt.toISOString(),
         });
-        
+
         totalEntries++;
       }
     }
   }
-  
+
   return entries;
 }
 
 async function createHistoryData(userId: string) {
   // First, get all available module IDs
   const { data: modules, error: moduleError } = await supabase
-    .from('modules')
-    .select('id');
-    
+    .from("modules")
+    .select("id");
+
   if (moduleError) {
-    console.error('Error fetching modules:', moduleError);
+    console.error("Error fetching modules:", moduleError);
     return;
   }
-  
-  const moduleIds = modules.map(m => m.id);
+
+  const moduleIds = modules.map((m) => m.id);
   if (moduleIds.length === 0) {
-    console.error('No modules found to create history entries');
+    console.error("No modules found to create history entries");
     return;
   }
-  
+
   const historyEntries = generateRandomHistoryEntries(userId, moduleIds);
-  
+
   // Insert history entries in chunks to avoid rate limits
   const chunkSize = 10;
   for (let i = 0; i < historyEntries.length; i += chunkSize) {
     const chunk = historyEntries.slice(i, i + chunkSize);
     const { error: historyError } = await supabase
-      .from('history')
+      .from("history")
       .insert(chunk);
-      
+
     if (historyError) {
-      console.error(`Error inserting history entries chunk ${i}:`, historyError);
+      console.error(
+        `Error inserting history entries chunk ${i}:`,
+        historyError
+      );
     }
   }
-  
-  console.log(`Created ${historyEntries.length} history entries for user ${userId}`);
+
+  console.log(
+    `Created ${historyEntries.length} history entries for user ${userId}`
+  );
 }
 
 async function createTestUsers() {
@@ -138,7 +150,7 @@ async function createTestUsers() {
         email: user.email,
         role: user.role,
         organization_id: organizationId,
-      }
+      };
     } catch (error) {
       console.error(`Error creating user ${user.email}:`, error);
     }
@@ -197,19 +209,69 @@ async function createTrainingData(userId: string) {
   }
 }
 
+async function createCharactersData(userId: string) {
+  try {
+    // Create characters
+    for (const character of testData.characters) {
+      const { data: characterData, error: characterError } = await supabase
+        .from("characters")
+        .insert({
+          name: character.name,
+          ai_description: character.ai_description,
+          description: character.description,
+          avatar_url: character.avatar_url,
+          organization_id: character.organization_id,
+          is_public: character.is_public,
+          created_by: userId,
+          voice: character.voice,
+          ai_model: character.ai_model,
+        })
+        .select()
+        .single();
+
+      if (characterError) throw characterError;
+      if (!characterData) throw new Error("No character data returned");
+
+      console.log(`Created character: ${character.name}`);
+    }
+
+    // Create modules_characters associations
+    for (const moduleChar of testData.modules_characters) {
+      const { error: moduleCharError } = await supabase
+        .from("modules_characters")
+        .insert({
+          module_id: moduleChar.module_id,
+          character_id: moduleChar.character_id,
+          ordinal: moduleChar.ordinal,
+          prompt: moduleChar.prompt,
+        });
+
+      if (moduleCharError) throw moduleCharError;
+      console.log(
+        `Created module-character association for module ${moduleChar.module_id}`
+      );
+    }
+  } catch (error) {
+    console.error("Error creating characters:", error);
+  }
+}
+
 async function createTestData() {
   const testUsers = await Promise.all(await createTestUsers());
-  const mainUser = testUsers?.find((user) => user?.email === "admin@codingventures.com");
+  const mainUser = testUsers?.find(
+    (user) => user?.email === "admin@codingventures.com"
+  );
 
   if (!mainUser) {
     console.error("Main user not found");
     return;
   }
 
+  // Pass userId to createCharactersData
   await createTrainingData(mainUser.id);
+  await createCharactersData(mainUser.id);
   await createHistoryData(mainUser.id);
 }
-
 
 createTestData()
   .then(() => console.log("Test data creation completed"))

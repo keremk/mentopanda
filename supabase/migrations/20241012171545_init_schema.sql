@@ -80,12 +80,15 @@ create table if not exists "characters" (
 	"name" text not null,
 	"voice" text,
 	"ai_description" text,
+	"ai_model" text,
 	"description" text,
 	"avatar_url" text,
 	"organization_id" bigint references organizations (id) on delete cascade,
 	"is_public" boolean default true not null,
-	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	"created_by" uuid references profiles (id) on delete
+	set null,
+		"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 create table if not exists "modules_characters" (
