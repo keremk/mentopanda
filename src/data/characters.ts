@@ -2,7 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
 
 export type CharacterSummary = {
-  id: string;
+  id: number;
   name: string;
   avatarUrl: string | null;
 };
