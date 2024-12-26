@@ -1,7 +1,7 @@
 "use client"
 
 import { ChevronRight, type LucideIcon } from "lucide-react"
-import { Home, Search, BookOpen, Settings2, PieChart } from "lucide-react"
+import { Home, Search, BookOpen, Settings2, PieChart, Users } from "lucide-react"
 import { usePathname } from "next/navigation"
 import {
   Collapsible,
@@ -24,6 +24,7 @@ const iconMap: Record<string, LucideIcon> = {
   home: Home,
   search: Search,
   book: BookOpen,
+  characters: Users,
   settings: Settings2,
   piechart: PieChart,
 }

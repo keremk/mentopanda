@@ -24,6 +24,11 @@ export const navItems: NavItem[] = [
     iconKey: "search",
   },
   {
+    title: "Characters",
+    url: "/characters",
+    iconKey: "characters",
+  },
+  {
     title: "Trainings",
     url: "/trainings",
     iconKey: "book",

@@ -8,7 +8,7 @@ type CharacterListProps = {
 
 export function CharacterList({ characters }: CharacterListProps) {
   return (
-    <ScrollArea className="h-[calc(100vh-4rem)] w-80 border-r">
+    <ScrollArea className="h-[calc(100vh-4rem)] w-60 border-r">
       <div className="space-y-1 p-2">
         {characters.map((character) => (
           <div
