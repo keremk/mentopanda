@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidateTag } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { getCharacters } from "@/data/characters";
 import { getCharacterDetails } from "@/data/characters";
@@ -20,5 +21,11 @@ export async function updateCharacterAction(
   data: UpdateCharacterInput
 ) {
   const supabase = createClient();
-  return await updateCharacter(supabase, characterId, data);
+  const result = await updateCharacter(supabase, characterId, data);
+
+  // Revalidate only the affected data
+  revalidateTag("characters");
+  revalidateTag(`character-${characterId}`);
+
+  return result;
 }

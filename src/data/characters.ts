@@ -16,7 +16,6 @@ export async function getCharacters(
     .order("name");
 
   if (error) handleError(error);
-
   if (!data) return [];
 
   return data.map((character) => ({
