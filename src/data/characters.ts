@@ -2,24 +2,28 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
 
 export type AIModel = "gpt-4o-realtime" | "gemini-2.0-flash-exp";
+export type Voice = {
+  name: string;
+  sampleUrl: string | null;
+};
 
-export const voices = {
+export const voices: Record<AIModel, Voice[]> = {
   "gpt-4o-realtime": [
-    "Alloy",
-    "Ash",
-    "Ballad",
-    "Coral",
-    "Echo",
-    "Sage",
-    "Shimmer",
-    "Verse"
+    { name: "Alloy", sampleUrl: null },
+    { name: "Ash", sampleUrl: null },
+    { name: "Ballad", sampleUrl: null },
+    { name: "Coral", sampleUrl: null },
+    { name: "Echo", sampleUrl: null },
+    { name: "Sage", sampleUrl: null },
+    { name: "Shimmer", sampleUrl: null },
+    { name: "Verse", sampleUrl: null },
   ],
   "gemini-2.0-flash-exp": [
-    "Aoede",
-    "Fenrir",
-    "Kore",
-    "Charon",
-    "Puck"
+    { name: "Aoede", sampleUrl: "/voices/Aoede.wav" },
+    { name: "Fenrir", sampleUrl: "/voices/Fenrir.wav" },
+    { name: "Kore", sampleUrl: "/voices/Kore.wav" },
+    { name: "Charon", sampleUrl: "/voices/Charon.wav" },
+    { name: "Puck", sampleUrl: "/voices/Puck.wav" },
   ],
 };
 
