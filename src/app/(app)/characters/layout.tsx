@@ -1,5 +1,5 @@
 import { getCharactersAction } from "@/app/actions/character-actions";
-import { CharacterList } from "@/app/components/characters/character-list";
+import { CharacterList } from "@/components/character-list";
 
 export default async function CharactersLayout({
   children,

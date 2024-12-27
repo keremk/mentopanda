@@ -1,6 +1,28 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
 
+export type AIModel = "gpt-4o-realtime" | "gemini-2.0-flash-exp";
+
+export const voices = {
+  "gpt-4o-realtime": [
+    "Alloy",
+    "Ash",
+    "Ballad",
+    "Coral",
+    "Echo",
+    "Sage",
+    "Shimmer",
+    "Verse"
+  ],
+  "gemini-2.0-flash-exp": [
+    "Aoede",
+    "Fenrir",
+    "Kore",
+    "Charon",
+    "Puck"
+  ],
+};
+
 export type CharacterSummary = {
   id: number;
   name: string;

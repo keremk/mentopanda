@@ -1,5 +1,5 @@
 import { getCharacterDetailsAction } from "@/app/actions/character-actions";
-import { CharacterDetailsView } from "@/app/components/characters/character-details";
+import { CharacterDetailsView } from "@/components/character-details";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import Link from "next/link";
