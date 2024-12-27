@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -16,6 +17,7 @@ import type { CharacterDetails, UpdateCharacterInput } from "@/data/characters";
 import { updateCharacterAction } from "@/app/actions/character-actions";
 import { CharacterVoiceSelect } from "@/components/character-voice-select";
 import { AIModel, voices } from "@/data/characters";
+import { MarkdownEditor } from "@/components/markdown-editor";
 
 const AI_MODELS = Object.keys(voices) as AIModel[];
 
@@ -29,17 +31,27 @@ export function EditCharacterForm({ character }: Props) {
     name: character.name,
     voice: character.voice,
     aiModel: (character.aiModel as AIModel) || "gpt-4o-realtime",
+    aiDescription: character.aiDescription || "",
+    description: character.description || "",
   });
+  const [hasChanges, setHasChanges] = useState(false);
 
   const debouncedFormData = useDebounce(formData, 1000);
 
   useEffect(() => {
+    const isChanged =
+      formData.name !== character.name ||
+      formData.voice !== character.voice ||
+      formData.aiModel !== character.aiModel ||
+      formData.aiDescription !== character.aiDescription ||
+      formData.description !== character.description;
+
+    setHasChanges(isChanged);
+  }, [formData, character]);
+
+  useEffect(() => {
     const updateData = async () => {
-      if (
-        debouncedFormData.name !== character.name ||
-        debouncedFormData.voice !== character.voice ||
-        debouncedFormData.aiModel !== character.aiModel
-      ) {
+      if (hasChanges) {
         try {
           await updateCharacterAction(character.id, {
             ...debouncedFormData,
@@ -52,7 +64,7 @@ export function EditCharacterForm({ character }: Props) {
       }
     };
     updateData();
-  }, [debouncedFormData, character, router]);
+  }, [debouncedFormData, hasChanges, character.id, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -72,11 +84,7 @@ export function EditCharacterForm({ character }: Props) {
   };
 
   const handleSaveAndExit = async () => {
-    if (
-      formData.name !== character.name ||
-      formData.voice !== character.voice ||
-      formData.aiModel !== character.aiModel
-    ) {
+    if (hasChanges) {
       try {
         await updateCharacterAction(character.id, {
           ...formData,
@@ -110,7 +118,10 @@ export function EditCharacterForm({ character }: Props) {
 
         <div>
           <label className="text-sm font-medium">AI Model</label>
-          <Select value={formData.aiModel} onValueChange={handleModelChange}>
+          <Select
+            value={formData.aiModel || undefined}
+            onValueChange={handleModelChange}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select AI model" />
             </SelectTrigger>
@@ -132,6 +143,33 @@ export function EditCharacterForm({ character }: Props) {
             aiModel={formData.aiModel as AIModel}
           />
         </div>
+
+        <Tabs defaultValue="ai-description" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="ai-description">AI Description</TabsTrigger>
+            <TabsTrigger value="description">Description</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="ai-description" className="space-y-4 mt-4">
+            <MarkdownEditor
+              content={formData.aiDescription || ""}
+              onChange={(markdown) =>
+                setFormData((prev) => ({ ...prev, aiDescription: markdown }))
+              }
+              className="min-h-[300px]"
+            />
+          </TabsContent>
+
+          <TabsContent value="description" className="space-y-4 mt-4">
+            <MarkdownEditor
+              content={formData.description || ""}
+              onChange={(markdown) =>
+                setFormData((prev) => ({ ...prev, description: markdown }))
+              }
+              className="min-h-[300px]"
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
