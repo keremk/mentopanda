@@ -107,7 +107,9 @@ export function EditCharacterForm({ character }: Props) {
   async function handleAvatarUpload(url: string) {
     setIsAvatarUpdating(true);
     try {
-      const response = await updateCharacterAvatarAction(character.id, { avatarUrl: url });
+      const response = await updateCharacterAvatarAction(character.id, {
+        avatarUrl: url,
+      });
       if (response.success) {
         setAvatarUrl(url);
         router.refresh();
@@ -133,10 +135,7 @@ export function EditCharacterForm({ character }: Props) {
         <div className="grid grid-cols-[200px_1fr] gap-16">
           <div className="space-y-4 flex flex-col items-center">
             <Avatar className="h-[200px] w-[200px]">
-              <AvatarImage
-                src={avatarUrl || undefined}
-                alt={character.name}
-              />
+              <AvatarImage src={avatarUrl || undefined} alt={character.name} />
               <AvatarFallback className="text-4xl">
                 <ImageIcon className="h-20 w-20 text-muted-foreground" />
               </AvatarFallback>
@@ -149,7 +148,6 @@ export function EditCharacterForm({ character }: Props) {
               dialogTitle="Upload Character Image"
               buttonVariant="outline"
               buttonSize="default"
-              className="w-full"
             />
           </div>
 
