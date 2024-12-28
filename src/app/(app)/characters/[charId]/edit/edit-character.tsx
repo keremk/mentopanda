@@ -20,6 +20,8 @@ import { CharacterVoiceSelect } from "@/components/character-voice-select";
 import { AIModel, voices } from "@/data/characters";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { ImageIcon } from "lucide-react";
+import { ImageUploadButton } from "@/components/image-upload-button";
+import { updateCharacterAvatarAction } from "@/app/actions/character-actions";
 
 const AI_MODELS = Object.keys(voices) as AIModel[];
 
@@ -37,6 +39,8 @@ export function EditCharacterForm({ character }: Props) {
     description: character.description || "",
   });
   const [hasChanges, setHasChanges] = useState(false);
+  const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(character.avatarUrl);
 
   const debouncedFormData = useDebounce(formData, 1000);
 
@@ -100,6 +104,23 @@ export function EditCharacterForm({ character }: Props) {
     router.push(`/characters/${character.id}`);
   };
 
+  async function handleAvatarUpload(url: string) {
+    setIsAvatarUpdating(true);
+    try {
+      const response = await updateCharacterAvatarAction(character.id, { avatarUrl: url });
+      if (response.success) {
+        setAvatarUrl(url);
+        router.refresh();
+      } else {
+        console.error("Failed to update avatar:", response.error);
+      }
+    } catch (error) {
+      console.error("Error updating avatar:", error);
+    } finally {
+      setIsAvatarUpdating(false);
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 absolute top-0 right-0 p-4 z-10">
@@ -113,16 +134,23 @@ export function EditCharacterForm({ character }: Props) {
           <div className="space-y-4 flex flex-col items-center">
             <Avatar className="h-[200px] w-[200px]">
               <AvatarImage
-                src={character.avatarUrl || undefined}
+                src={avatarUrl || undefined}
                 alt={character.name}
               />
               <AvatarFallback className="text-4xl">
                 <ImageIcon className="h-20 w-20 text-muted-foreground" />
               </AvatarFallback>
             </Avatar>
-            <Button variant="outline" className="w-full">
-              Upload Image
-            </Button>
+            <ImageUploadButton
+              bucket="avatars"
+              folder="character-avatars"
+              onUploadComplete={handleAvatarUpload}
+              buttonText={isAvatarUpdating ? "Uploading..." : "Upload Image"}
+              dialogTitle="Upload Character Image"
+              buttonVariant="outline"
+              buttonSize="default"
+              className="w-full"
+            />
           </div>
 
           <div className="space-y-4">
