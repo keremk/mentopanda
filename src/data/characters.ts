@@ -256,3 +256,15 @@ export async function createCharacter(
     updatedAt: new Date(newCharacter.updated_at),
   };
 }
+
+export async function deleteCharacter(
+  supabase: SupabaseClient,
+  characterId: number
+): Promise<void> {
+  const { error } = await supabase
+    .from("characters")
+    .delete()
+    .eq("id", characterId);
+
+  if (error) handleError(error);
+}

@@ -8,6 +8,7 @@ import { updateCharacter, type UpdateCharacterInput } from "@/data/characters";
 import { z } from "zod";
 import { updateCharacterAvatar } from "@/data/characters";
 import { createCharacter, type CreateCharacterInput } from "@/data/characters";
+import { deleteCharacter } from "@/data/characters";
 
 export async function getCharactersAction() {
   const supabase = createClient();
@@ -86,5 +87,23 @@ export async function createCharacterAction(data: CreateCharacterInput) {
       return { success: false, error: "Invalid character data" };
     }
     return { success: false, error: "Failed to create character" };
+  }
+}
+
+export async function deleteCharacterAction(characterId: number) {
+  try {
+    const supabase = createClient();
+    await deleteCharacter(supabase, characterId);
+
+    // Revalidate the characters list
+    revalidateTag("characters");
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to delete character",
+    };
   }
 }

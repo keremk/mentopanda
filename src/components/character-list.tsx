@@ -18,7 +18,10 @@ import { Input } from "@/components/ui/input";
 import { PlusCircle, Trash2 } from "lucide-react";
 import type { CharacterSummary } from "@/data/characters";
 import { useRouter, useParams } from "next/navigation";
-import { createCharacterAction } from "@/app/actions/character-actions";
+import {
+  createCharacterAction,
+  deleteCharacterAction,
+} from "@/app/actions/character-actions";
 
 type CharacterListProps = {
   characters: CharacterSummary[];
@@ -30,6 +33,7 @@ export function CharacterList({ characters }: CharacterListProps) {
   const currentCharId = params.charId;
   const [newCharacterName, setNewCharacterName] = useState("");
   const createDialogCloseRef = useRef<HTMLButtonElement>(null);
+  const deleteDialogCloseRef = useRef<HTMLButtonElement>(null);
 
   const selectedCharacterData = characters.find(
     (c) => c.id.toString() === currentCharId
@@ -45,9 +49,9 @@ export function CharacterList({ characters }: CharacterListProps) {
 
   async function handleCreateCharacter() {
     if (!newCharacterName.trim()) return;
-    
+
     const result = await createCharacterAction({ name: newCharacterName });
-    
+
     if (result.success) {
       setNewCharacterName("");
       router.refresh();
@@ -58,6 +62,21 @@ export function CharacterList({ characters }: CharacterListProps) {
     } else {
       // TODO: Show error toast
       console.error("Failed to create character:", result.error);
+    }
+  }
+
+  async function handleDeleteCharacter() {
+    if (!currentCharId) return;
+
+    const result = await deleteCharacterAction(Number(currentCharId));
+
+    if (result.success) {
+      deleteDialogCloseRef.current?.click();
+      router.refresh();
+      router.push("/characters");
+    } else {
+      // TODO: Show error toast
+      console.error("Failed to delete character:", result.error);
     }
   }
 
@@ -148,15 +167,13 @@ export function CharacterList({ characters }: CharacterListProps) {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <DialogClose asChild>
+              <DialogClose ref={deleteDialogCloseRef} asChild>
                 <Button variant="secondary">Cancel</Button>
               </DialogClose>
               <Button
                 variant="destructive"
-                onClick={() => {
-                  // TODO: Implement character removal
-                  router.push("/characters");
-                }}
+                onClick={handleDeleteCharacter}
+                disabled={!currentCharId}
               >
                 Remove
               </Button>
