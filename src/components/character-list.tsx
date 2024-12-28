@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { PlusCircle, Trash2 } from "lucide-react";
 import type { CharacterSummary } from "@/data/characters";
 import { useRouter, useParams } from "next/navigation";
+import { createCharacterAction } from "@/app/actions/character-actions";
 
 type CharacterListProps = {
   characters: CharacterSummary[];
@@ -28,6 +29,7 @@ export function CharacterList({ characters }: CharacterListProps) {
   const params = useParams();
   const currentCharId = params.charId;
   const [newCharacterName, setNewCharacterName] = useState("");
+  const createDialogCloseRef = useRef<HTMLButtonElement>(null);
 
   const selectedCharacterData = characters.find(
     (c) => c.id.toString() === currentCharId
@@ -40,6 +42,24 @@ export function CharacterList({ characters }: CharacterListProps) {
     selectedCharacterData,
     match: characters.find((c) => c.id.toString() === currentCharId)?.id,
   });
+
+  async function handleCreateCharacter() {
+    if (!newCharacterName.trim()) return;
+    
+    const result = await createCharacterAction({ name: newCharacterName });
+    
+    if (result.success) {
+      setNewCharacterName("");
+      router.refresh();
+      // Close the dialog
+      createDialogCloseRef.current?.click();
+      // Navigate to the new character's edit page
+      router.push(`/characters/${result.data?.id}/edit`);
+    } else {
+      // TODO: Show error toast
+      console.error("Failed to create character:", result.error);
+    }
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] w-60 border-r">
@@ -93,14 +113,12 @@ export function CharacterList({ characters }: CharacterListProps) {
               className="my-4"
             />
             <DialogFooter>
-              <DialogClose asChild>
+              <DialogClose ref={createDialogCloseRef} asChild>
                 <Button variant="secondary">Cancel</Button>
               </DialogClose>
               <Button
-                onClick={() => {
-                  // TODO: Implement character creation
-                  setNewCharacterName("");
-                }}
+                onClick={handleCreateCharacter}
+                disabled={!newCharacterName.trim()}
               >
                 Create
               </Button>

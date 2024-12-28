@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
+import { getUserId, getOrganizationId } from "./utils";
 
 export type AIModel = "gpt-4o-realtime" | "gemini-2.0-flash-exp";
 export type Voice = {
@@ -196,4 +197,62 @@ export async function updateCharacterAvatar({
   if (!data) throw new Error("Failed to update character avatar");
 
   return data.avatar_url;
+}
+
+export type CreateCharacterInput = {
+  name: string;
+};
+
+export async function createCharacter(
+  supabase: SupabaseClient,
+  data: CreateCharacterInput
+): Promise<CharacterDetails> {
+  const userId = await getUserId(supabase);
+  const organizationId = await getOrganizationId(supabase);
+
+  if (!organizationId)
+    throw new Error("User must belong to an organization to create characters");
+
+  const { data: newCharacter, error } = await supabase
+    .from("characters")
+    .insert({
+      name: data.name,
+      organization_id: organizationId,
+      created_by: userId,
+    })
+    .select(
+      `
+      id,
+      name,
+      voice,
+      ai_description,
+      ai_model,
+      description,
+      avatar_url,
+      organization_id,
+      is_public,
+      created_by,
+      created_at,
+      updated_at
+      `
+    )
+    .single();
+
+  if (error) handleError(error);
+  if (!newCharacter) throw new Error("Failed to create character");
+
+  return {
+    id: newCharacter.id,
+    name: newCharacter.name,
+    voice: newCharacter.voice,
+    aiDescription: newCharacter.ai_description,
+    aiModel: newCharacter.ai_model,
+    description: newCharacter.description,
+    avatarUrl: newCharacter.avatar_url,
+    organizationId: newCharacter.organization_id,
+    isPublic: newCharacter.is_public,
+    createdBy: newCharacter.created_by,
+    createdAt: new Date(newCharacter.created_at),
+    updatedAt: new Date(newCharacter.updated_at),
+  };
 }

@@ -7,6 +7,7 @@ import { getCharacterDetails } from "@/data/characters";
 import { updateCharacter, type UpdateCharacterInput } from "@/data/characters";
 import { z } from "zod";
 import { updateCharacterAvatar } from "@/data/characters";
+import { createCharacter, type CreateCharacterInput } from "@/data/characters";
 
 export async function getCharactersAction() {
   const supabase = createClient();
@@ -61,5 +62,29 @@ export async function updateCharacterAvatarAction(
       return { success: false, error: "Invalid avatar URL" };
     }
     return { success: false, error: "Failed to update character avatar" };
+  }
+}
+
+const createCharacterSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+});
+
+export async function createCharacterAction(data: CreateCharacterInput) {
+  try {
+    // Validate input
+    const validated = createCharacterSchema.parse(data);
+
+    const supabase = createClient();
+    const character = await createCharacter(supabase, validated);
+
+    // Revalidate the characters list
+    revalidateTag("characters");
+
+    return { success: true, data: character };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: "Invalid character data" };
+    }
+    return { success: false, error: "Failed to create character" };
   }
 }
