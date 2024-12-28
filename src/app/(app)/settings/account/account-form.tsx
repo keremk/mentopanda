@@ -10,14 +10,7 @@ import {
 } from "@/app/actions/user-actions";
 import { useTransition, useState } from "react";
 import type { User } from "@/data/user";
-import { ImageUpload } from "@/components/image-upload";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { ImageUploadButton } from "@/components/image-upload-button";
 
 type AccountFormProps = {
   user: User;
@@ -25,7 +18,6 @@ type AccountFormProps = {
 
 export function AccountForm({ user }: AccountFormProps) {
   const [isPending, startTransition] = useTransition();
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
 
@@ -38,17 +30,12 @@ export function AccountForm({ user }: AccountFormProps) {
     });
   }
 
-  async function handleUploadComplete(url: string) {
+  async function handleAvatarUpload(url: string) {
     setIsAvatarUpdating(true);
     try {
       const response = await updateAvatarAction({ avatarUrl: url });
-      if (response.success) {
-        setAvatarUrl(url);
-        setIsUploadOpen(false);
-      } else {
-        // You might want to show an error toast here
-        console.error("Failed to update avatar:", response.error);
-      }
+      if (response.success) setAvatarUrl(url);
+      else console.error("Failed to update avatar:", response.error);
     } catch (error) {
       console.error("Error updating avatar:", error);
     } finally {
@@ -66,31 +53,15 @@ export function AccountForm({ user }: AccountFormProps) {
             {user.displayName.slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-          <DialogTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={isAvatarUpdating}
-            >
-              {isAvatarUpdating ? "Updating..." : "Change Avatar"}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[480px] p-0 gap-0">
-            <DialogHeader className="p-6 pb-4">
-              <DialogTitle>Upload Avatar</DialogTitle>
-            </DialogHeader>
-            <div className="px-6 pb-6 pt-0">
-              <ImageUpload
-                bucket="avatars"
-                folder="user-avatars"
-                onUploadComplete={handleUploadComplete}
-                allowedFileTypes={["image/jpeg", "image/png", "image/webp"]}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ImageUploadButton
+          bucket="avatars"
+          folder="user-avatars"
+          onUploadComplete={handleAvatarUpload}
+          buttonText={isAvatarUpdating ? "Updating..." : "Change Avatar"}
+          dialogTitle="Upload Avatar"
+          buttonVariant="outline"
+          buttonSize="sm"
+        />
       </div>
 
       {/* Form Fields */}
