@@ -172,3 +172,28 @@ export async function updateCharacter(
     updatedAt: new Date(updatedData.updated_at),
   };
 }
+
+export async function updateCharacterAvatar({
+  supabase,
+  characterId,
+  avatarUrl,
+}: {
+  supabase: SupabaseClient;
+  characterId: number;
+  avatarUrl: string;
+}): Promise<string> {
+  const { data, error } = await supabase
+    .from("characters")
+    .update({
+      avatar_url: avatarUrl,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", characterId)
+    .select("avatar_url")
+    .single();
+
+  if (error) handleError(error);
+  if (!data) throw new Error("Failed to update character avatar");
+
+  return data.avatar_url;
+}

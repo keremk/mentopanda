@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -18,6 +19,7 @@ import { updateCharacterAction } from "@/app/actions/character-actions";
 import { CharacterVoiceSelect } from "@/components/character-voice-select";
 import { AIModel, voices } from "@/data/characters";
 import { MarkdownEditor } from "@/components/markdown-editor";
+import { ImageIcon } from "lucide-react";
 
 const AI_MODELS = Object.keys(voices) as AIModel[];
 
@@ -106,42 +108,61 @@ export function EditCharacterForm({ character }: Props) {
         </Button>
       </div>
 
-      <div className="space-y-4 mt-4">
-        <div>
-          <label className="text-sm font-medium">Name</label>
-          <Input
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-          />
-        </div>
+      <div className="space-y-8">
+        <div className="grid grid-cols-[200px_1fr] gap-16">
+          <div className="space-y-4 flex flex-col items-center">
+            <Avatar className="h-[200px] w-[200px]">
+              <AvatarImage
+                src={character.avatarUrl || undefined}
+                alt={character.name}
+              />
+              <AvatarFallback className="text-4xl">
+                <ImageIcon className="h-20 w-20 text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
+            <Button variant="outline" className="w-full">
+              Upload Image
+            </Button>
+          </div>
 
-        <div>
-          <label className="text-sm font-medium">AI Model</label>
-          <Select
-            value={formData.aiModel || undefined}
-            onValueChange={handleModelChange}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select AI model" />
-            </SelectTrigger>
-            <SelectContent>
-              {AI_MODELS.map((model) => (
-                <SelectItem key={model} value={model}>
-                  {model}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Name</label>
+              <Input
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+              />
+            </div>
 
-        <div>
-          <label className="text-sm font-medium">Voice</label>
-          <CharacterVoiceSelect
-            value={formData.voice || undefined}
-            onValueChange={handleVoiceChange}
-            aiModel={formData.aiModel as AIModel}
-          />
+            <div>
+              <label className="text-sm font-medium">AI Model</label>
+              <Select
+                value={formData.aiModel || undefined}
+                onValueChange={handleModelChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select AI model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AI_MODELS.map((model) => (
+                    <SelectItem key={model} value={model}>
+                      {model}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Voice</label>
+              <CharacterVoiceSelect
+                value={formData.voice || undefined}
+                onValueChange={handleVoiceChange}
+                aiModel={formData.aiModel as AIModel}
+              />
+            </div>
+          </div>
         </div>
 
         <Tabs defaultValue="ai-description" className="w-full">

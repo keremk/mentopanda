@@ -5,6 +5,8 @@ import { createClient } from "@/utils/supabase/server";
 import { getCharacters } from "@/data/characters";
 import { getCharacterDetails } from "@/data/characters";
 import { updateCharacter, type UpdateCharacterInput } from "@/data/characters";
+import { z } from "zod";
+import { updateCharacterAvatar } from "@/data/characters";
 
 export async function getCharactersAction() {
   const supabase = createClient();
@@ -28,4 +30,36 @@ export async function updateCharacterAction(
   revalidateTag(`character-${characterId}`);
 
   return result;
+}
+
+const updateAvatarSchema = z.object({
+  avatarUrl: z.string().url(),
+});
+
+export async function updateCharacterAvatarAction(
+  characterId: number,
+  data: { avatarUrl: string }
+) {
+  try {
+    // Validate input
+    const validated = updateAvatarSchema.parse(data);
+
+    const supabase = createClient();
+    const avatarUrl = await updateCharacterAvatar({
+      supabase,
+      characterId,
+      avatarUrl: validated.avatarUrl,
+    });
+
+    // Revalidate the character data
+    revalidateTag("characters");
+    revalidateTag(`character-${characterId}`);
+
+    return { success: true, data: { avatarUrl } };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: "Invalid avatar URL" };
+    }
+    return { success: false, error: "Failed to update character avatar" };
+  }
 }
