@@ -30,14 +30,14 @@ export function ModuleEditForm({ module }: Props) {
       scenario: module.modulePrompt.scenario || "",
       assessment: module.modulePrompt.assessment || "",
       moderator: module.modulePrompt.moderator || "",
-      characters: module.modulePrompt.characters || [{ 
-        name: "", 
-        prompt: "", 
-        voice: ""
-      }],
+      characters: module.modulePrompt.characters || [
+        {
+          name: "",
+          prompt: "",
+          voice: "",
+        },
+      ],
     },
-    videoUrl: module.videoUrl,
-    audioUrl: module.audioUrl,
   });
 
   const debouncedFormData = useDebounce(formData, 1000);
@@ -47,8 +47,6 @@ export function ModuleEditForm({ module }: Props) {
       const hasChanges =
         debouncedFormData.title !== module.title ||
         debouncedFormData.instructions !== module.instructions ||
-        debouncedFormData.videoUrl !== module.videoUrl ||
-        debouncedFormData.audioUrl !== module.audioUrl ||
         debouncedFormData.modulePrompt.scenario !==
           module.modulePrompt.scenario ||
         debouncedFormData.modulePrompt.assessment !==
@@ -101,12 +99,9 @@ export function ModuleEditForm({ module }: Props) {
   };
 
   const handleBackClick = async () => {
-    // Check for unsaved changes
     const hasChanges =
       formData.title !== module.title ||
       formData.instructions !== module.instructions ||
-      formData.videoUrl !== module.videoUrl ||
-      formData.audioUrl !== module.audioUrl ||
       formData.modulePrompt.scenario !== module.modulePrompt.scenario ||
       formData.modulePrompt.assessment !== module.modulePrompt.assessment ||
       formData.modulePrompt.moderator !== module.modulePrompt.moderator ||
@@ -129,10 +124,9 @@ export function ModuleEditForm({ module }: Props) {
       </div>
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="media">Media</TabsTrigger>
-          <TabsTrigger value="prompts">Prompts</TabsTrigger>
+          <TabsTrigger value="ai-instructions">AI Instructions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4 mt-4">
@@ -161,27 +155,7 @@ export function ModuleEditForm({ module }: Props) {
           </div>
         </TabsContent>
 
-        <TabsContent value="media" className="space-y-4 mt-4">
-          <div>
-            <label className="text-sm font-medium">Video URL</label>
-            <Input
-              name="videoUrl"
-              value={formData.videoUrl || ""}
-              onChange={handleInputChange}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Audio URL</label>
-            <Input
-              name="audioUrl"
-              value={formData.audioUrl || ""}
-              onChange={handleInputChange}
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="prompts" className="mt-4">
+        <TabsContent value="ai-instructions" className="mt-4">
           <div className="grid grid-cols-4 gap-4">
             <div className="space-y-2">
               <Button
@@ -258,9 +232,11 @@ export function ModuleEditForm({ module }: Props) {
                     <label className="text-sm font-medium">Voice</label>
                     <VoiceCombobox
                       value={formData.modulePrompt.characters[0]?.voice || ""}
-                      onChange={(value) => 
+                      onChange={(value) =>
                         handleCharacterChange(
-                          { target: { value } } as React.ChangeEvent<HTMLInputElement>,
+                          {
+                            target: { value },
+                          } as React.ChangeEvent<HTMLInputElement>,
                           "voice"
                         )
                       }

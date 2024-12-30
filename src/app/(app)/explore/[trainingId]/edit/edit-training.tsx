@@ -81,8 +81,6 @@ export function EditTrainingForm({ training }: Props) {
         moderator: null,
         characters: [],
       },
-      videoUrl: null,
-      audioUrl: null,
       ordinal: training.modules.length,
     });
     router.refresh();

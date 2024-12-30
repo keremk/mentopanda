@@ -27,8 +27,6 @@ export type Module = ModuleSummary & {
   instructions: string | null;
   ordinal: number;
   modulePrompt: ModulePrompt;
-  videoUrl: string | null;
-  audioUrl: string | null;
 };
 
 export type ModuleProgress = ModuleSummary & {
@@ -70,8 +68,6 @@ export async function getModuleById(
     instructions: module.instructions,
     ordinal: module.ordinal,
     modulePrompt: modulePrompt,
-    videoUrl: module.video_url,
-    audioUrl: module.audio_url,
     createdAt: new Date(module.created_at),
     updatedAt: new Date(module.updated_at),
   };
@@ -109,8 +105,6 @@ export type UpdateModuleInput = {
   instructions: string | null;
   ordinal: number;
   modulePrompt: ModulePrompt;
-  videoUrl: string | null;
-  audioUrl: string | null;
 };
 
 export async function updateModule(
@@ -130,8 +124,6 @@ export async function updateModule(
       assessment_prompt: module.modulePrompt.assessment,
       moderator_prompt: module.modulePrompt.moderator,
       ...characterFields,
-      video_url: module.videoUrl,
-      audio_url: module.audioUrl,
       updated_at: new Date().toISOString(),
     })
     .eq("id", module.id)
@@ -154,8 +146,6 @@ export async function updateModule(
     instructions: data[0].instructions,
     ordinal: data[0].ordinal,
     modulePrompt: modulePrompt,
-    videoUrl: data[0].video_url,
-    audioUrl: data[0].audio_url,
     createdAt: new Date(data[0].created_at),
     updatedAt: new Date(data[0].updated_at),
   };
@@ -180,8 +170,6 @@ export async function createModule(
       assessment_prompt: module.modulePrompt.assessment,
       moderator_prompt: module.modulePrompt.moderator,
       ...characterFields,
-      video_url: module.videoUrl,
-      audio_url: module.audioUrl,
     })
     .select()
     .single();
@@ -203,8 +191,6 @@ export async function createModule(
     instructions: data.instructions,
     ordinal: data.ordinal,
     modulePrompt: modulePrompt,
-    videoUrl: data.video_url,
-    audioUrl: data.audio_url,
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at),
   };
