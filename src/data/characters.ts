@@ -268,3 +268,42 @@ export async function deleteCharacter(
 
   if (error) handleError(error);
 }
+
+export type ModuleCharacterInput = {
+  moduleId: number;
+  characterId: number;
+  ordinal: number;
+  prompt?: string | null;
+};
+
+export async function addCharacterToModule(
+  supabase: SupabaseClient,
+  data: ModuleCharacterInput
+): Promise<void> {
+  const { error } = await supabase.from("modules_characters").insert({
+    module_id: data.moduleId,
+    character_id: data.characterId,
+    ordinal: data.ordinal,
+    prompt: data.prompt,
+    updated_at: new Date().toISOString(),
+  });
+
+  if (error) handleError(error);
+}
+
+export type RemoveCharacterFromModuleInput = {
+  moduleId: number;
+  characterId: number;
+};
+
+export async function removeCharacterFromModule(
+  supabase: SupabaseClient,
+  data: RemoveCharacterFromModuleInput
+): Promise<void> {
+  const { error } = await supabase.from("modules_characters").delete().match({
+    module_id: data.moduleId,
+    character_id: data.characterId,
+  });
+
+  if (error) handleError(error);
+}

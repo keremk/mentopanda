@@ -7,6 +7,8 @@ import {
   createModule,
   deleteModule,
   UpdateModuleInput,
+  getModuleById2,
+  type Module2,
 } from "@/data/modules";
 import { createClient } from "@/utils/supabase/server";
 
@@ -36,4 +38,11 @@ export async function createModuleAction(
 export async function deleteModuleAction(moduleId: number, trainingId: number) {
   const supabase = createClient();
   return await deleteModule(supabase, moduleId, trainingId);
+}
+
+export async function getModuleByIdAction2(
+  moduleId: number
+): Promise<Module2 | null> {
+  const supabase = createClient();
+  return await getModuleById2(supabase, moduleId);
 }

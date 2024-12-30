@@ -35,6 +35,28 @@ export type ModuleProgress = ModuleSummary & {
   history: HistorySummary[];
 };
 
+export type ModuleCharacter = {
+  id: number;
+  name: string;
+  voice: string | null;
+  aiDescription: string | null;
+  aiModel: string | null;
+  description: string | null;
+  avatarUrl: string | null;
+  prompt: string | null;
+  ordinal: number;
+};
+
+export type Module2 = Omit<ModuleSummary, "trainingId"> & {
+  trainingId: number;
+  instructions: string | null;
+  ordinal: number;
+  scenarioPrompt: string | null;
+  assessmentPrompt: string | null;
+  moderatorPrompt: string | null;
+  characters: ModuleCharacter[];
+};
+
 export async function getModuleById(
   supabase: SupabaseClient,
   moduleId: number
@@ -232,4 +254,67 @@ export function convertFieldsToCharacters(
       prompt: fields[`character_prompt${i}`] as string,
     }))
     .filter((char) => char.name && char.prompt);
+}
+
+export async function getModuleById2(
+  supabase: SupabaseClient,
+  moduleId: number
+): Promise<Module2 | null> {
+  const { data: module, error } = await supabase
+    .from("modules")
+    .select(
+      `
+      *,
+      modules_characters!inner (
+        ordinal,
+        prompt,
+        characters (
+          id,
+          name,
+          voice,
+          ai_description,
+          ai_model,
+          description,
+          avatar_url
+        )
+      )
+    `
+    )
+    .eq("id", moduleId)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") return null;
+    handleError(error);
+  }
+
+  if (!module) return null;
+
+  const characters: ModuleCharacter[] = module.modules_characters
+    .map((mc: any) => ({
+      id: mc.characters.id,
+      name: mc.characters.name,
+      voice: mc.characters.voice,
+      aiDescription: mc.characters.ai_description,
+      aiModel: mc.characters.ai_model,
+      description: mc.characters.description,
+      avatarUrl: mc.characters.avatar_url,
+      prompt: mc.prompt,
+      ordinal: mc.ordinal,
+    }))
+    .sort((a: ModuleCharacter, b: ModuleCharacter) => a.ordinal - b.ordinal);
+
+  return {
+    id: module.id,
+    title: module.title,
+    trainingId: module.training_id,
+    instructions: module.instructions,
+    ordinal: module.ordinal,
+    scenarioPrompt: module.scenario_prompt,
+    assessmentPrompt: module.assessment_prompt,
+    moderatorPrompt: module.moderator_prompt,
+    characters,
+    createdAt: new Date(module.created_at),
+    updatedAt: new Date(module.updated_at),
+  };
 }

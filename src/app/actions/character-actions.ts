@@ -9,6 +9,14 @@ import { z } from "zod";
 import { updateCharacterAvatar } from "@/data/characters";
 import { createCharacter, type CreateCharacterInput } from "@/data/characters";
 import { deleteCharacter } from "@/data/characters";
+import {
+  addCharacterToModule,
+  type ModuleCharacterInput,
+} from "@/data/characters";
+import {
+  removeCharacterFromModule,
+  type RemoveCharacterFromModuleInput,
+} from "@/data/characters";
 
 export async function getCharactersAction() {
   const supabase = createClient();
@@ -104,6 +112,72 @@ export async function deleteCharacterAction(characterId: number) {
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to delete character",
+    };
+  }
+}
+
+const addCharacterToModuleSchema = z.object({
+  moduleId: z.number(),
+  characterId: z.number(),
+  ordinal: z.number(),
+  prompt: z.string().nullable().optional(),
+});
+
+export async function addCharacterToModuleAction(data: ModuleCharacterInput) {
+  try {
+    // Validate input
+    const validated = addCharacterToModuleSchema.parse(data);
+
+    const supabase = createClient();
+    await addCharacterToModule(supabase, validated);
+
+    // Revalidate the module data
+    revalidateTag(`module-${data.moduleId}`);
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: "Invalid input data" };
+    }
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to add character to module",
+    };
+  }
+}
+
+const removeCharacterFromModuleSchema = z.object({
+  moduleId: z.number(),
+  characterId: z.number(),
+});
+
+export async function removeCharacterFromModuleAction(
+  data: RemoveCharacterFromModuleInput
+) {
+  try {
+    // Validate input
+    const validated = removeCharacterFromModuleSchema.parse(data);
+
+    const supabase = createClient();
+    await removeCharacterFromModule(supabase, validated);
+
+    // Revalidate the module data
+    revalidateTag(`module-${data.moduleId}`);
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: "Invalid input data" };
+    }
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to remove character from module",
     };
   }
 }
