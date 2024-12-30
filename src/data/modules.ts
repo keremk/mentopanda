@@ -1,18 +1,18 @@
 import { HistorySummary } from "./history";
 import { handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { CharacterDetails } from "./characters";
 
-export type Character = {
-  name: string;
+export type ModuleCharacter = CharacterDetails & {
   prompt: string;
-  voice: string;
+  ordinal: number;
 };
 
 export type ModulePrompt = {
   scenario: string;
   assessment: string;
   moderator: string | null;
-  characters: Character[];
+  characters: ModuleCharacter[];
 };
 
 export type ModuleSummary = {
@@ -35,28 +35,6 @@ export type ModuleProgress = ModuleSummary & {
   history: HistorySummary[];
 };
 
-export type ModuleCharacter = {
-  id: number;
-  name: string;
-  voice: string | null;
-  aiDescription: string | null;
-  aiModel: string | null;
-  description: string | null;
-  avatarUrl: string | null;
-  prompt: string | null;
-  ordinal: number;
-};
-
-export type Module2 = Omit<ModuleSummary, "trainingId"> & {
-  trainingId: number;
-  instructions: string | null;
-  ordinal: number;
-  scenarioPrompt: string | null;
-  assessmentPrompt: string | null;
-  moderatorPrompt: string | null;
-  characters: ModuleCharacter[];
-};
-
 export async function getModuleById(
   supabase: SupabaseClient,
   moduleId: number
@@ -74,13 +52,11 @@ export async function getModuleById(
 
   if (!module) return null;
 
-  const characters: Character[] = convertFieldsToCharacters(module);
-
   const modulePrompt: ModulePrompt = {
     scenario: module.scenario_prompt,
     assessment: module.assessment_prompt,
     moderator: module.moderator_prompt,
-    characters: characters,
+    characters: [],
   };
 
   return {
@@ -133,9 +109,6 @@ export async function updateModule(
   supabase: SupabaseClient,
   module: UpdateModuleInput
 ): Promise<Module> {
-  const characterFields = convertCharactersToFields(
-    module.modulePrompt.characters
-  );
 
   const { data, error } = await supabase
     .from("modules")
@@ -145,7 +118,6 @@ export async function updateModule(
       scenario_prompt: module.modulePrompt.scenario,
       assessment_prompt: module.modulePrompt.assessment,
       moderator_prompt: module.modulePrompt.moderator,
-      ...characterFields,
       updated_at: new Date().toISOString(),
     })
     .eq("id", module.id)
@@ -158,7 +130,7 @@ export async function updateModule(
     scenario: data[0].scenario_prompt,
     assessment: data[0].assessment_prompt,
     moderator: data[0].moderator_prompt,
-    characters: convertFieldsToCharacters(data[0]),
+    characters: [],
   };
 
   return {
@@ -178,9 +150,6 @@ export async function createModule(
   trainingId: number,
   module: Omit<UpdateModuleInput, "id" | "trainingId">
 ): Promise<Module> {
-  const characterFields = convertCharactersToFields(
-    module.modulePrompt.characters
-  );
 
   const { data, error } = await supabase
     .from("modules")
@@ -191,7 +160,6 @@ export async function createModule(
       scenario_prompt: module.modulePrompt.scenario,
       assessment_prompt: module.modulePrompt.assessment,
       moderator_prompt: module.modulePrompt.moderator,
-      ...characterFields,
     })
     .select()
     .single();
@@ -203,7 +171,7 @@ export async function createModule(
     scenario: data.scenario_prompt,
     assessment: data.assessment_prompt,
     moderator: data.moderator_prompt,
-    characters: convertFieldsToCharacters(data),
+    characters: [],
   };
 
   return {
@@ -232,34 +200,10 @@ export async function deleteModule(
   if (error) handleError(error);
 }
 
-export function convertCharactersToFields(characters: Character[]) {
-  return Array.from({ length: 3 }, (_, i) => i + 1).reduce(
-    (acc, i) => ({
-      ...acc,
-      [`character_name${i}`]: characters[i - 1]?.name ?? null,
-      [`character_voice${i}`]: characters[i - 1]?.voice ?? null,
-      [`character_prompt${i}`]: characters[i - 1]?.prompt ?? null,
-    }),
-    {} as Record<string, string | null>
-  );
-}
-
-export function convertFieldsToCharacters(
-  fields: Record<string, any>
-): Character[] {
-  return Array.from({ length: 3 }, (_, i) => i + 1)
-    .map((i) => ({
-      name: fields[`character_name${i}`] as string,
-      voice: fields[`character_voice${i}`] as string,
-      prompt: fields[`character_prompt${i}`] as string,
-    }))
-    .filter((char) => char.name && char.prompt);
-}
-
 export async function getModuleById2(
   supabase: SupabaseClient,
   moduleId: number
-): Promise<Module2 | null> {
+): Promise<Module | null> {
   const { data: module, error } = await supabase
     .from("modules")
     .select(
@@ -304,16 +248,20 @@ export async function getModuleById2(
     }))
     .sort((a: ModuleCharacter, b: ModuleCharacter) => a.ordinal - b.ordinal);
 
+  const modulePrompt: ModulePrompt = {
+    scenario: module.scenario_prompt,
+    assessment: module.assessment_prompt,
+    moderator: module.moderator_prompt,
+    characters: characters,
+  };
+
   return {
     id: module.id,
     title: module.title,
     trainingId: module.training_id,
     instructions: module.instructions,
     ordinal: module.ordinal,
-    scenarioPrompt: module.scenario_prompt,
-    assessmentPrompt: module.assessment_prompt,
-    moderatorPrompt: module.moderator_prompt,
-    characters,
+    modulePrompt: modulePrompt,
     createdAt: new Date(module.created_at),
     updatedAt: new Date(module.updated_at),
   };
