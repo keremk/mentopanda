@@ -1,7 +1,7 @@
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { notFound, redirect } from "next/navigation";
-import { getModuleByIdAction } from "@/app/(app)/moduleActions";
+import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
 import CollapsibleBlock from "@/components/collapsible-block";
 import LiveKitChat from "@/components/livekit-chat";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
@@ -13,7 +13,7 @@ type Props = {
 };
 
 export default async function Page({ params: { moduleId } }: Props) {
-  const currentModule = await getModuleByIdAction(moduleId);
+  const currentModule = await getModuleByIdAction2(moduleId);
   if (!currentModule) notFound();
 
   const currentUser = await getCurrentUserAction();

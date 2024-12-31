@@ -8,18 +8,13 @@ import {
   deleteModule,
   UpdateModuleInput,
   getModuleById2,
-  type Module2,
+  Module,
 } from "@/data/modules";
 import { createClient } from "@/utils/supabase/server";
 
 export async function getModulesByTrainingIdAction(trainingId: string) {
   const supabase = createClient();
   return await getModulesByTrainingId(supabase, trainingId);
-}
-
-export async function getModuleByIdAction(moduleId: number) {
-  const supabase = createClient();
-  return await getModuleById(supabase, moduleId);
 }
 
 export async function updateModuleAction(module: UpdateModuleInput) {
@@ -42,7 +37,7 @@ export async function deleteModuleAction(moduleId: number, trainingId: number) {
 
 export async function getModuleByIdAction2(
   moduleId: number
-): Promise<Module2 | null> {
+): Promise<Module | null> {
   const supabase = createClient();
   return await getModuleById2(supabase, moduleId);
 }

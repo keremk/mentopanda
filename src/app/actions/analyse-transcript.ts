@@ -2,7 +2,7 @@
 
 import { updateHistoryEntryAction } from "@/app/actions/history-actions";
 import { generateObject, generateText } from "ai";
-import { getModuleByIdAction } from "@/app/(app)/moduleActions";
+import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -50,7 +50,7 @@ export default async function analyseTranscript(
   historyEntryId: number,
   moduleId: number
 ) {
-  const module = await getModuleByIdAction(moduleId);
+  const module = await getModuleByIdAction2(moduleId);
   if (!module) throw new Error("Module not found");
 
   const assessmentPrompt = module.modulePrompt.assessment;

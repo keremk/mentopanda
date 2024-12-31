@@ -6,7 +6,7 @@ import {
 } from "livekit-server-sdk";
 import { NextResponse } from "next/server";
 import { ModulePrompt } from "@/data/modules";
-import { getModuleByIdAction } from "@/app/(app)/moduleActions";
+import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 
 const API_KEY = process.env.LIVEKIT_API_KEY;
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     const moduleId = searchParams.get("moduleId");
     if (!moduleId) throw new Error("moduleId is required");
     
-    const module = await getModuleByIdAction(parseInt(moduleId));
+    const module = await getModuleByIdAction2(parseInt(moduleId));
     if (!module) throw new Error("Module not found");
 
     const userInfo = await getCurrentUserAction();
