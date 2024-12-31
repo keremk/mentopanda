@@ -12,6 +12,7 @@ import { updateModuleAction } from "@/app/(app)/moduleActions";
 import { UpdateModuleInput } from "@/data/modules";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { VoiceCombobox } from "@/components/voice-combobox";
+import { CharacterSelect } from "@/components/character-select";
 
 type Props = {
   module: Module;
@@ -41,6 +42,10 @@ export function ModuleEditForm({ module }: Props) {
   });
 
   const debouncedFormData = useDebounce(formData, 1000);
+
+  const [selectedCharacterId, setSelectedCharacterId] = useState<
+    number | undefined
+  >();
 
   useEffect(() => {
     const updateData = async () => {
@@ -179,13 +184,14 @@ export function ModuleEditForm({ module }: Props) {
               >
                 Assessment
               </Button>
-              <Button
-                variant={activePrompt === "character" ? "default" : "outline"}
-                className="w-full justify-start"
-                onClick={() => setActivePrompt("character")}
-              >
-                Character
-              </Button>
+              <CharacterSelect
+                characters={module.modulePrompt.characters}
+                selectedCharacterId={selectedCharacterId}
+                onSelectCharacter={(id) => {
+                  setSelectedCharacterId(id);
+                  setActivePrompt("character");
+                }}
+              />
             </div>
 
             <div className="col-span-3">
@@ -219,19 +225,27 @@ export function ModuleEditForm({ module }: Props) {
                 </div>
               )}
 
-              {activePrompt === "character" && (
+              {activePrompt === "character" && selectedCharacterId && (
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium">Name</label>
                     <Input
-                      value={formData.modulePrompt.characters[0]?.name || ""}
+                      value={
+                        formData.modulePrompt.characters.find(
+                          (c) => c.id === selectedCharacterId
+                        )?.name || ""
+                      }
                       onChange={(e) => handleCharacterChange(e, "name")}
                     />
                   </div>
                   <div>
                     <label className="text-sm font-medium">Voice</label>
                     <VoiceCombobox
-                      value={formData.modulePrompt.characters[0]?.voice || ""}
+                      value={
+                        formData.modulePrompt.characters.find(
+                          (c) => c.id === selectedCharacterId
+                        )?.voice || ""
+                      }
                       onChange={(value) =>
                         handleCharacterChange(
                           {
@@ -245,7 +259,11 @@ export function ModuleEditForm({ module }: Props) {
                   <div>
                     <label className="text-sm font-medium">Prompt</label>
                     <Textarea
-                      value={formData.modulePrompt.characters[0]?.prompt || ""}
+                      value={
+                        formData.modulePrompt.characters.find(
+                          (c) => c.id === selectedCharacterId
+                        )?.prompt || ""
+                      }
                       onChange={(e) => handleCharacterChange(e, "prompt")}
                       rows={10}
                     />
