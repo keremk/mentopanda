@@ -185,11 +185,15 @@ export function ModuleEditForm({ module }: Props) {
                 Assessment
               </Button>
               <CharacterSelect
+                moduleId={module.id}
                 characters={module.modulePrompt.characters}
                 selectedCharacterId={selectedCharacterId}
                 onSelectCharacter={(id) => {
                   setSelectedCharacterId(id);
                   setActivePrompt("character");
+                }}
+                onUpdate={() => {
+                  router.refresh();
                 }}
               />
             </div>
