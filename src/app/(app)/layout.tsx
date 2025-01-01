@@ -19,7 +19,7 @@ export const navItems: NavItem[] = [
     iconKey: "home",
   },
   {
-    title: "Explore",
+    title: "Trainings",
     url: "/explore",
     iconKey: "search",
   },
@@ -29,24 +29,14 @@ export const navItems: NavItem[] = [
     iconKey: "characters",
   },
   {
-    title: "Trainings",
+    title: "Enrollments",
     url: "/trainings",
     iconKey: "book",
   },
   {
     title: "Settings",
-    url: "#",
+    url: "/settings/account",
     iconKey: "settings",
-    items: [
-      {
-        title: "Account",
-        url: "/settings/account",
-      },
-      {
-        title: "Billing",
-        url: "/settings/billing",
-      },
-    ],
   },
 ];
 

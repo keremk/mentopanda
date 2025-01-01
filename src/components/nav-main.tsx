@@ -1,7 +1,7 @@
 "use client"
 
 import { ChevronRight, type LucideIcon } from "lucide-react"
-import { Home, Search, BookOpen, Settings2, PieChart, Users } from "lucide-react"
+import { Home, Search, BookOpen, Settings2, PieChart, Users, GraduationCap } from "lucide-react"
 import { usePathname } from "next/navigation"
 import {
   Collapsible,
@@ -22,8 +22,8 @@ import type { NavItem } from "@/types/nav"
 // Icon mapping on the client side
 const iconMap: Record<string, LucideIcon> = {
   home: Home,
-  search: Search,
-  book: BookOpen,
+  search: BookOpen,
+  book: GraduationCap,
   characters: Users,
   settings: Settings2,
   piechart: PieChart,
