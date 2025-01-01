@@ -81,7 +81,7 @@ export function CharacterList({ characters }: CharacterListProps) {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] w-60 border-r">
+    <div className="flex flex-col h-full w-60 border-r">
       <ScrollArea className="flex-1">
         <div className="space-y-1 p-2">
           {characters.map((character) => (
