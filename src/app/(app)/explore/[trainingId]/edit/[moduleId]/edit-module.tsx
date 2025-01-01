@@ -13,6 +13,8 @@ import { UpdateModuleInput } from "@/data/modules";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { VoiceCombobox } from "@/components/voice-combobox";
 import { CharacterSelect } from "@/components/character-select";
+import { updateModuleCharacterPromptAction } from "@/app/actions/modules-characters-actions";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 type Props = {
   module: Module;
@@ -46,6 +48,52 @@ export function ModuleEditForm({ module }: Props) {
   const [selectedCharacterId, setSelectedCharacterId] = useState<
     number | undefined
   >();
+
+  const [characterPrompts, setCharacterPrompts] = useState<
+    Record<number, string>
+  >({});
+  const debouncedCharacterPrompts = useDebounce(characterPrompts, 1000);
+
+  useEffect(() => {
+    const initialPrompts = module.modulePrompt.characters.reduce(
+      (acc, char) => ({
+        ...acc,
+        [char.id]: char.prompt || "",
+      }),
+      {}
+    );
+    setCharacterPrompts(initialPrompts);
+  }, [module.id]);
+
+  useEffect(() => {
+    const updateCharacterPrompt = async () => {
+      if (!selectedCharacterId) return;
+
+      const newPrompt = debouncedCharacterPrompts[selectedCharacterId];
+      if (newPrompt === undefined) return;
+
+      const result = await updateModuleCharacterPromptAction({
+        moduleId: module.id,
+        characterId: selectedCharacterId,
+        prompt: newPrompt,
+      });
+
+      if (!result.success) {
+        console.error(result.error);
+      }
+    };
+
+    updateCharacterPrompt();
+  }, [debouncedCharacterPrompts, selectedCharacterId, module.id]);
+
+  const handleCharacterPromptChange = (value: string) => {
+    if (!selectedCharacterId) return;
+
+    setCharacterPrompts((prev) => ({
+      ...prev,
+      [selectedCharacterId]: value,
+    }));
+  };
 
   useEffect(() => {
     const updateData = async () => {
@@ -231,44 +279,39 @@ export function ModuleEditForm({ module }: Props) {
 
               {activePrompt === "character" && selectedCharacterId && (
                 <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Name</label>
-                    <Input
-                      value={
-                        formData.modulePrompt.characters.find(
+                  <div className="flex items-center space-x-4 mb-6">
+                    <Avatar>
+                      <AvatarImage
+                        src={
+                          module.modulePrompt.characters.find(
+                            (c) => c.id === selectedCharacterId
+                          )?.avatarUrl || undefined
+                        }
+                      />
+                      <AvatarFallback>
+                        {module.modulePrompt.characters
+                          .find((c) => c.id === selectedCharacterId)
+                          ?.name?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <h3 className="text-lg font-medium">
+                      {
+                        module.modulePrompt.characters.find(
                           (c) => c.id === selectedCharacterId
-                        )?.name || ""
+                        )?.name
                       }
-                      onChange={(e) => handleCharacterChange(e, "name")}
-                    />
+                    </h3>
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Voice</label>
-                    <VoiceCombobox
-                      value={
-                        formData.modulePrompt.characters.find(
-                          (c) => c.id === selectedCharacterId
-                        )?.voice || ""
-                      }
-                      onChange={(value) =>
-                        handleCharacterChange(
-                          {
-                            target: { value },
-                          } as React.ChangeEvent<HTMLInputElement>,
-                          "voice"
-                        )
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Prompt</label>
+                    <label className="text-sm font-medium">
+                      Character Prompt
+                    </label>
                     <Textarea
-                      value={
-                        formData.modulePrompt.characters.find(
-                          (c) => c.id === selectedCharacterId
-                        )?.prompt || ""
+                      value={characterPrompts[selectedCharacterId!] ?? ""}
+                      onChange={(e) =>
+                        handleCharacterPromptChange(e.target.value)
                       }
-                      onChange={(e) => handleCharacterChange(e, "prompt")}
+                      placeholder="Enter the character's prompt..."
                       rows={10}
                     />
                   </div>
