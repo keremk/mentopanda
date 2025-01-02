@@ -6,7 +6,7 @@ import { Search, PlayCircle, GripVertical } from "lucide-react";
 import { EnrollmentButton } from "@/components/enrollment-button";
 import { getEnrolledTrainingsAction } from "@/app/(app)/trainingActions";
 
-export async function EnrolledTrainingsList() {
+export async function EnrolledTrainingsCard() {
   const trainings = await getEnrolledTrainingsAction();
 
   return (
