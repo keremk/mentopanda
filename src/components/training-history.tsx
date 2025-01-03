@@ -1,5 +1,4 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -8,10 +7,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BarChart2, GripVertical } from "lucide-react";
-import Link from "next/link";
+import { GripVertical } from "lucide-react";
 import { getTrainingHistoryAction } from "@/app/actions/history-actions";
 import { format } from "date-fns";
+import { TrainingHistoryRow } from "@/components/training-history-row";
 
 export async function TrainingHistory() {
   const entries = await getTrainingHistoryAction(10);
@@ -31,31 +30,18 @@ export async function TrainingHistory() {
               <TableHead>Session Title</TableHead>
               <TableHead>Training Title</TableHead>
               <TableHead>Date/Time Taken</TableHead>
-              <TableHead>Score</TableHead>
-              <TableHead>Analysis</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {entries.map((entry) => (
-              <TableRow key={entry.id}>
+              <TrainingHistoryRow key={entry.id} id={entry.id}>
                 <TableCell>{entry.moduleTitle}</TableCell>
                 <TableCell>{entry.trainingTitle}</TableCell>
                 <TableCell>
                   {entry.completedAt &&
                     format(new Date(entry.completedAt), "MMM d, yyyy HH:mm")}
                 </TableCell>
-                <TableCell>
-                  {entry.assessmentScore ? `${entry.assessmentScore}` : "N/A"}
-                </TableCell>
-                <TableCell>
-                  <Link href={`/assessments/${entry.id}`} passHref>
-                    <Button variant="outline" size="sm">
-                      <BarChart2 className="mr-2 h-4 w-4" />
-                      Analysis
-                    </Button>
-                  </Link>
-                </TableCell>
-              </TableRow>
+              </TrainingHistoryRow>
             ))}
           </TableBody>
         </Table>
