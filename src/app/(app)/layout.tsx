@@ -30,7 +30,7 @@ export const navItems: NavItem[] = [
   },
   {
     title: "Enrollments",
-    url: "/trainings",
+    url: "/enrollments",
     iconKey: "book",
   },
   {

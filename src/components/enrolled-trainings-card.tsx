@@ -41,7 +41,7 @@ export async function EnrolledTrainingsCard() {
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                     <Button variant="secondary" className="flex-shrink-0" asChild>
-                      <Link href={`/trainings/${training.id}`}>
+                      <Link href={`/enrollments/${training.id}`}>
                         <PlayCircle className="mr-2 h-4 w-4" />
                         Train
                       </Link>

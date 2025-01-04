@@ -38,7 +38,7 @@ export function EnrolledTrainingsList({
           {trainings.map((training) => (
             <Link
               key={training.id}
-              href={`/trainings/${training.id}`}
+              href={`/enrollments/${training.id}`}
               className={`flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors
                 ${
                   training.id.toString() === selectedTrainingId
