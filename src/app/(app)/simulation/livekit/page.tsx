@@ -1,6 +1,6 @@
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
 import CollapsibleBlock from "@/components/collapsible-block";
 import LiveKitChat from "@/components/livekit-chat";
@@ -33,7 +33,6 @@ export default async function Page({ params: { moduleId } }: Props) {
             </CollapsibleBlock>
           )}
           <LiveKitChat module={currentModule} currentUser={currentUser} />
-          {/* <VoiceSimulationComponent module={currentModule} /> */}
         </CardContent>
       </Card>
     </div>

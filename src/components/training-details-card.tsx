@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import { TrainingWithProgress } from "@/data/trainings"
-import { Button } from "@/components/ui/button"
+import { TrainingWithProgress } from "@/data/trainings";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
+} from "@/components/ui/accordion";
 import {
   Table,
   TableBody,
@@ -22,21 +22,23 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import Image from "next/image"
-import Link from "next/link"
-import { format } from "date-fns"
+} from "@/components/ui/table";
+import Image from "next/image";
+import Link from "next/link";
+import { format } from "date-fns";
 
 interface TrainingDetailsCardProps {
-  training: TrainingWithProgress
+  training: TrainingWithProgress;
 }
 
 export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
   const getRandomModuleId = () => {
-    return training.modules[Math.floor(Math.random() * training.modules.length)].id
-  }
+    return training.modules[Math.floor(Math.random() * training.modules.length)]
+      .id;
+  };
 
-  const randomModuleId = getRandomModuleId()
+  const randomModuleId = getRandomModuleId();
+  const provider = "livekit";
 
   return (
     <Card>
@@ -50,16 +52,20 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
             className="rounded-lg"
           />
           {randomModuleId ? (
-            <Link href={`/trainings/${training.id}/${randomModuleId}`}>
+            <Link href={`/simulation/${provider}/${randomModuleId}`}>
               <Button className="w-full">Start Random Module</Button>
             </Link>
           ) : (
-            <Button disabled className="w-full">All Modules Completed</Button>
+            <Button disabled className="w-full">
+              All Modules Completed
+            </Button>
           )}
         </div>
         <div>
           <CardTitle>{training.title}</CardTitle>
-          <CardDescription className="my-4">{training.description}</CardDescription>
+          <CardDescription className="my-4">
+            {training.description}
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent>
@@ -82,7 +88,6 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
           {training.modules.map((module) => (
             <div key={module.id} className="border rounded-lg p-4">
               <div className="flex flex-col space-y-4">
-                {/* Module Header */}
                 <div className="flex justify-between items-center">
                   <h4 className="text-lg font-semibold">{module.title}</h4>
                   <div className="flex items-center gap-4">
@@ -94,13 +99,12 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
                         Last Score: {module.lastScore}
                       </span>
                     )}
-                    <Link href={`/trainings/${training.id}/${module.id}`}>
+                    <Link href={`/simulation/${provider}/${module.id}`}>
                       <Button>Start Module</Button>
                     </Link>
                   </div>
                 </div>
 
-                {/* History Accordion */}
                 {module.history.length > 0 && (
                   <Accordion type="single" collapsible>
                     <AccordionItem value="history">
@@ -112,23 +116,35 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
                               <TableHead>Practice #</TableHead>
                               <TableHead>Completed</TableHead>
                               <TableHead>Score</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
+                              <TableHead className="text-right">
+                                Actions
+                              </TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {[...module.history]
                               .sort((a, b) => {
-                                if (!a.completedAt || !b.completedAt) return 0
-                                return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+                                if (!a.completedAt || !b.completedAt) return 0;
+                                return (
+                                  new Date(b.completedAt).getTime() -
+                                  new Date(a.completedAt).getTime()
+                                );
                               })
                               .map((practice) => (
                                 <TableRow key={practice.id}>
-                                  <TableCell>#{practice.practiceNumber}</TableCell>
                                   <TableCell>
-                                    {practice.completedAt && 
-                                      format(new Date(practice.completedAt), 'MMM d, yyyy HH:mm')}
+                                    #{practice.practiceNumber}
                                   </TableCell>
-                                  <TableCell>{practice.assessmentScore}</TableCell>
+                                  <TableCell>
+                                    {practice.completedAt &&
+                                      format(
+                                        new Date(practice.completedAt),
+                                        "MMM d, yyyy HH:mm"
+                                      )}
+                                  </TableCell>
+                                  <TableCell>
+                                    {practice.assessmentScore}
+                                  </TableCell>
                                   <TableCell className="text-right">
                                     <Link href={`/assessments/${practice.id}`}>
                                       <Button variant="outline" size="sm">
@@ -137,7 +153,7 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
                                     </Link>
                                   </TableCell>
                                 </TableRow>
-                            ))}
+                              ))}
                           </TableBody>
                         </Table>
                       </AccordionContent>
@@ -150,5 +166,5 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
