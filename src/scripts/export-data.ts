@@ -49,8 +49,6 @@ type ExportData = {
       ordinal: number;
       scenario_prompt: string | null;
       assessment_prompt: string | null;
-      character_name1: string | null;
-      character_prompt1: string | null;
       moderator_prompt: string | null;
       video_url: string | null;
       audio_url: string | null;
@@ -105,8 +103,6 @@ async function exportData(outputFile: string) {
           ordinal,
           scenario_prompt,
           assessment_prompt,
-          character_name1,
-          character_prompt1,
           moderator_prompt,
           video_url,
           audio_url

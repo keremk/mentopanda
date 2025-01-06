@@ -190,8 +190,6 @@ async function createTrainingData(userId: string) {
           ordinal: module.ordinal,
           scenario_prompt: module.scenario_prompt,
           assessment_prompt: module.assessment_prompt,
-          character_name1: module.character_name1,
-          character_prompt1: module.character_prompt1,
           moderator_prompt: module.moderator_prompt,
           video_url: module.video_url,
           audio_url: module.audio_url,
