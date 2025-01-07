@@ -17,11 +17,12 @@ import { useDebounce } from "@/hooks/use-debounce";
 import type { CharacterDetails, UpdateCharacterInput } from "@/data/characters";
 import { updateCharacterAction } from "@/app/actions/character-actions";
 import { CharacterVoiceSelect } from "@/components/character-voice-select";
-import { AIModel, voices } from "@/data/characters";
+import { voices } from "@/data/characters";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { ImageIcon } from "lucide-react";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import { updateCharacterAvatarAction } from "@/app/actions/character-actions";
+import { AIModel } from "@/types/models";
 
 const AI_MODELS = Object.keys(voices) as AIModel[];
 

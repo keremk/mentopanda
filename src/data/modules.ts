@@ -2,6 +2,7 @@ import { HistorySummary } from "./history";
 import { handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { CharacterDetails } from "./characters";
+import { AIModel, AI_MODELS, aiModelSchema } from "@/types/models";
 
 export type ModuleCharacter = CharacterDetails & {
   prompt: string;
@@ -9,6 +10,7 @@ export type ModuleCharacter = CharacterDetails & {
 };
 
 export type ModulePrompt = {
+  aiModel: AIModel;
   scenario: string;
   assessment: string;
   moderator: string | null;
@@ -52,7 +54,10 @@ export async function getModuleById(
 
   if (!module) return null;
 
+  const aiModel = aiModelSchema.parse(module.ai_model) as AIModel;
+
   const modulePrompt: ModulePrompt = {
+    aiModel: aiModel,
     scenario: module.scenario_prompt,
     assessment: module.assessment_prompt,
     moderator: module.moderator_prompt,
@@ -109,12 +114,16 @@ export async function updateModule(
   supabase: SupabaseClient,
   module: UpdateModuleInput
 ): Promise<Module> {
+  const aiModel = aiModelSchema.parse(
+    module.modulePrompt.aiModel || AI_MODELS.OPENAI_REALTIME
+  ) as AIModel;
 
   const { data, error } = await supabase
     .from("modules")
     .update({
       title: module.title,
       instructions: module.instructions,
+      ai_model: aiModel,
       scenario_prompt: module.modulePrompt.scenario,
       assessment_prompt: module.modulePrompt.assessment,
       moderator_prompt: module.modulePrompt.moderator,
@@ -126,7 +135,10 @@ export async function updateModule(
   if (error) handleError(error);
   if (!data || data.length === 0) throw new Error("Module not found");
 
+  const newAiModel = aiModelSchema.parse(data[0].ai_model) as AIModel;
+
   const modulePrompt: ModulePrompt = {
+    aiModel: newAiModel,
     scenario: data[0].scenario_prompt,
     assessment: data[0].assessment_prompt,
     moderator: data[0].moderator_prompt,
@@ -150,6 +162,9 @@ export async function createModule(
   trainingId: number,
   module: Omit<UpdateModuleInput, "id" | "trainingId">
 ): Promise<Module> {
+  const aiModel = aiModelSchema.parse(
+    module.modulePrompt.aiModel || AI_MODELS.OPENAI_REALTIME
+  ) as AIModel;
 
   const { data, error } = await supabase
     .from("modules")
@@ -157,6 +172,7 @@ export async function createModule(
       training_id: trainingId,
       title: module.title,
       instructions: module.instructions,
+      ai_model: aiModel,
       scenario_prompt: module.modulePrompt.scenario,
       assessment_prompt: module.modulePrompt.assessment,
       moderator_prompt: module.modulePrompt.moderator,
@@ -167,7 +183,10 @@ export async function createModule(
   if (error) handleError(error);
   if (!data) throw new Error("Failed to create module");
 
+  const newAiModel = aiModelSchema.parse(data.ai_model) as AIModel;
+
   const modulePrompt: ModulePrompt = {
+    aiModel: newAiModel,
     scenario: data.scenario_prompt,
     assessment: data.assessment_prompt,
     moderator: data.moderator_prompt,
@@ -240,7 +259,7 @@ export async function getModuleById2(
       name: mc.characters.name,
       voice: mc.characters.voice,
       aiDescription: mc.characters.ai_description,
-      aiModel: mc.characters.ai_model,
+      aiModel: aiModelSchema.parse(mc.characters.ai_model) as AIModel,
       description: mc.characters.description,
       avatarUrl: mc.characters.avatar_url,
       prompt: mc.prompt,
@@ -248,7 +267,10 @@ export async function getModuleById2(
     }))
     .sort((a: ModuleCharacter, b: ModuleCharacter) => a.ordinal - b.ordinal);
 
+  const aiModel = aiModelSchema.parse(module.ai_model) as AIModel;
+
   const modulePrompt: ModulePrompt = {
+    aiModel: aiModel,
     scenario: module.scenario_prompt,
     assessment: module.assessment_prompt,
     moderator: module.moderator_prompt,

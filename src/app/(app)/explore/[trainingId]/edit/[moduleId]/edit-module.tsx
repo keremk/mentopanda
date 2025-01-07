@@ -11,10 +11,18 @@ import { Module } from "@/data/modules";
 import { updateModuleAction } from "@/app/(app)/moduleActions";
 import { UpdateModuleInput } from "@/data/modules";
 import { MarkdownEditor } from "@/components/markdown-editor";
-import { VoiceCombobox } from "@/components/voice-combobox";
 import { CharacterSelect } from "@/components/character-select";
 import { updateModuleCharacterPromptAction } from "@/app/actions/modules-characters-actions";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { AI_MODELS } from "@/types/models";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { AIModel } from "@/types/models";
 
 type Props = {
   module: Module;
@@ -30,6 +38,7 @@ export function ModuleEditForm({ module }: Props) {
     title: module.title,
     instructions: module.instructions,
     modulePrompt: {
+      aiModel: module.modulePrompt.aiModel || AI_MODELS.OPENAI_REALTIME,
       scenario: module.modulePrompt.scenario || "",
       assessment: module.modulePrompt.assessment || "",
       moderator: module.modulePrompt.moderator || "",
@@ -53,6 +62,8 @@ export function ModuleEditForm({ module }: Props) {
     Record<number, string>
   >({});
   const debouncedCharacterPrompts = useDebounce(characterPrompts, 1000);
+
+  const [lastSavedModule, setLastSavedModule] = useState(module);
 
   useEffect(() => {
     const initialPrompts = module.modulePrompt.characters.reduce(
@@ -98,23 +109,32 @@ export function ModuleEditForm({ module }: Props) {
   useEffect(() => {
     const updateData = async () => {
       const hasChanges =
-        debouncedFormData.title !== module.title ||
-        debouncedFormData.instructions !== module.instructions ||
+        debouncedFormData.title !== lastSavedModule.title ||
+        debouncedFormData.instructions !== lastSavedModule.instructions ||
         debouncedFormData.modulePrompt.scenario !==
-          module.modulePrompt.scenario ||
+          lastSavedModule.modulePrompt.scenario ||
         debouncedFormData.modulePrompt.assessment !==
-          module.modulePrompt.assessment ||
+          lastSavedModule.modulePrompt.assessment ||
         debouncedFormData.modulePrompt.moderator !==
-          module.modulePrompt.moderator ||
+          lastSavedModule.modulePrompt.moderator ||
+        debouncedFormData.modulePrompt.aiModel !==
+          lastSavedModule.modulePrompt.aiModel ||
         JSON.stringify(debouncedFormData.modulePrompt.characters) !==
-          JSON.stringify(module.modulePrompt.characters);
+          JSON.stringify(lastSavedModule.modulePrompt.characters);
 
       if (hasChanges) {
-        await updateModuleAction(debouncedFormData);
+        const updatedModule = await updateModuleAction(debouncedFormData);
+        setLastSavedModule({
+          ...updatedModule,
+          modulePrompt: {
+            ...updatedModule.modulePrompt,
+            characters: lastSavedModule.modulePrompt.characters,
+          },
+        });
       }
     };
     updateData();
-  }, [debouncedFormData, module]);
+  }, [debouncedFormData]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -153,16 +173,27 @@ export function ModuleEditForm({ module }: Props) {
 
   const handleBackClick = async () => {
     const hasChanges =
-      formData.title !== module.title ||
-      formData.instructions !== module.instructions ||
-      formData.modulePrompt.scenario !== module.modulePrompt.scenario ||
-      formData.modulePrompt.assessment !== module.modulePrompt.assessment ||
-      formData.modulePrompt.moderator !== module.modulePrompt.moderator ||
+      formData.title !== lastSavedModule.title ||
+      formData.instructions !== lastSavedModule.instructions ||
+      formData.modulePrompt.scenario !==
+        lastSavedModule.modulePrompt.scenario ||
+      formData.modulePrompt.assessment !==
+        lastSavedModule.modulePrompt.assessment ||
+      formData.modulePrompt.moderator !==
+        lastSavedModule.modulePrompt.moderator ||
+      formData.modulePrompt.aiModel !== lastSavedModule.modulePrompt.aiModel ||
       JSON.stringify(formData.modulePrompt.characters) !==
-        JSON.stringify(module.modulePrompt.characters);
+        JSON.stringify(lastSavedModule.modulePrompt.characters);
 
     if (hasChanges) {
-      await updateModuleAction(formData);
+      const updatedModule = await updateModuleAction(formData);
+      setLastSavedModule({
+        ...updatedModule,
+        modulePrompt: {
+          ...updatedModule.modulePrompt,
+          characters: lastSavedModule.modulePrompt.characters,
+        },
+      });
     }
 
     router.push(`/explore/${module.trainingId}/edit`);
@@ -190,6 +221,33 @@ export function ModuleEditForm({ module }: Props) {
               value={formData.title}
               onChange={handleInputChange}
             />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium">AI Model</label>
+            <Select
+              value={formData.modulePrompt.aiModel}
+              onValueChange={(value: AIModel) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  modulePrompt: {
+                    ...prev.modulePrompt,
+                    aiModel: value,
+                  },
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select AI model" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(AI_MODELS).map((model) => (
+                  <SelectItem key={model} value={model}>
+                    {model}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -234,6 +292,7 @@ export function ModuleEditForm({ module }: Props) {
               </Button>
               <CharacterSelect
                 moduleId={module.id}
+                aiModel={module.modulePrompt.aiModel}
                 characters={module.modulePrompt.characters}
                 selectedCharacterId={selectedCharacterId}
                 onSelectCharacter={(id) => {

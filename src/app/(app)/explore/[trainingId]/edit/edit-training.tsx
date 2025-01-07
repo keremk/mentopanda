@@ -31,6 +31,7 @@ import {
 import { useUser } from "@/hooks/use-user";
 import { cn } from "@/lib/utils";
 import { ImageUploadButton } from "@/components/image-upload-button";
+import { AI_MODELS } from "@/types/models";
 
 type Props = {
   training: Training;
@@ -76,6 +77,7 @@ export function EditTrainingForm({ training }: Props) {
       title: "New Module",
       instructions: null,
       modulePrompt: {
+        aiModel: AI_MODELS.OPENAI_REALTIME,
         scenario: "",
         assessment: "",
         moderator: null,

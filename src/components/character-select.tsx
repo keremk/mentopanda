@@ -29,9 +29,11 @@ import { getCharactersAction } from "@/app/actions/character-actions";
 import { addCharacterToModuleAction } from "@/app/actions/character-actions";
 import { removeCharacterFromModuleAction } from "@/app/actions/character-actions";
 import { CharacterSummary } from "@/data/characters";
+import { AIModel } from "@/types/models";
 
 type Props = {
   moduleId: number;
+  aiModel: AIModel;
   characters: ModuleCharacter[];
   selectedCharacterId?: number;
   onSelectCharacter: (characterId: number) => void;
@@ -40,6 +42,7 @@ type Props = {
 
 export function CharacterSelect({
   moduleId,
+  aiModel,
   characters,
   selectedCharacterId,
   onSelectCharacter,
@@ -50,13 +53,23 @@ export function CharacterSelect({
     CharacterSummary[]
   >([]);
 
+  // Filter characters that match the AI model
+  const filteredCharacters = characters.filter(
+    (char) => char.aiModel === aiModel
+  );
+
+  // Update the available characters filtering
   useEffect(() => {
     async function fetchCharacters() {
       const characters = await getCharactersAction();
-      setAvailableCharacters(characters);
+      // Filter available characters by AI model
+      const filteredAvailable = characters.filter(
+        (char) => char.aiModel === aiModel
+      );
+      setAvailableCharacters(filteredAvailable);
     }
     fetchCharacters();
-  }, []);
+  }, [aiModel]); // Add aiModel as dependency
 
   const getInitials = (name: string) => {
     return name
@@ -96,7 +109,7 @@ export function CharacterSelect({
       <h3 className="text-sm font-medium ml-4 my-4">Characters</h3>
       <ScrollArea className="h-[400px] w-full rounded-md border p-4">
         <div className="space-y-4">
-          {characters.map((character) => (
+          {filteredCharacters.map((character) => (
             <div
               key={character.id}
               className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer hover:bg-accent ${
@@ -136,7 +149,8 @@ export function CharacterSelect({
                 {availableCharacters
                   .filter(
                     (char) =>
-                      !characters.some((existing) => existing.id === char.id)
+                      !characters.some((existing) => existing.id === char.id) &&
+                      char.aiModel === aiModel
                   )
                   .map((character) => (
                     <div

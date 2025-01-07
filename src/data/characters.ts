@@ -1,15 +1,15 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
 import { getUserId, getOrganizationId } from "./utils";
+import { AIModel, AI_MODELS, aiModelSchema } from "@/types/models";
 
-export type AIModel = "gpt-4o-realtime" | "gemini-2.0-flash-exp";
 export type Voice = {
   name: string;
   sampleUrl: string | null;
 };
 
 export const voices: Record<AIModel, Voice[]> = {
-  "gpt-4o-realtime": [
+  [AI_MODELS.OPENAI_REALTIME]: [
     { name: "Alloy", sampleUrl: null },
     { name: "Ash", sampleUrl: null },
     { name: "Ballad", sampleUrl: null },
@@ -19,7 +19,7 @@ export const voices: Record<AIModel, Voice[]> = {
     { name: "Shimmer", sampleUrl: null },
     { name: "Verse", sampleUrl: null },
   ],
-  "gemini-2.0-flash-exp": [
+  [AI_MODELS.GEMINI_FLASH]: [
     { name: "Aoede", sampleUrl: "/voices/Aoede.wav" },
     { name: "Fenrir", sampleUrl: "/voices/Fenrir.wav" },
     { name: "Kore", sampleUrl: "/voices/Kore.wav" },
@@ -32,6 +32,7 @@ export type CharacterSummary = {
   id: number;
   name: string;
   avatarUrl: string | null;
+  aiModel: AIModel;
 };
 
 export async function getCharacters(
@@ -39,23 +40,27 @@ export async function getCharacters(
 ): Promise<CharacterSummary[]> {
   const { data, error } = await supabase
     .from("characters")
-    .select("id, name, avatar_url")
+    .select("id, name, avatar_url, ai_model")
     .order("name");
 
   if (error) handleError(error);
   if (!data) return [];
 
-  return data.map((character) => ({
-    id: character.id,
-    name: character.name,
-    avatarUrl: character.avatar_url,
-  }));
+  return data.map((character) => {
+    const aiModel = aiModelSchema.parse(character.ai_model) as AIModel;
+
+    return {
+      id: character.id,
+      name: character.name,
+      avatarUrl: character.avatar_url,
+      aiModel: aiModel,
+    };
+  });
 }
 
 export type CharacterDetails = CharacterSummary & {
   voice: string | null;
   aiDescription: string | null;
-  aiModel: string | null;
   description: string | null;
   organizationId: number;
   isPublic: boolean;
@@ -93,12 +98,14 @@ export async function getCharacterDetails(
 
   if (!data) return null;
 
+  const aiModel = aiModelSchema.parse(data.ai_model) as AIModel;
+
   return {
     id: data.id,
     name: data.name,
     voice: data.voice,
     aiDescription: data.ai_description,
-    aiModel: data.ai_model,
+    aiModel: aiModel,
     description: data.description,
     avatarUrl: data.avatar_url,
     organizationId: data.organization_id,
@@ -113,7 +120,7 @@ export type UpdateCharacterInput = {
   name?: string;
   voice?: string | null;
   aiDescription?: string | null;
-  aiModel?: string | null;
+  aiModel: AIModel;
   description?: string | null;
   avatarUrl?: string | null;
   isPublic?: boolean;
@@ -158,12 +165,14 @@ export async function updateCharacter(
   if (error) handleError(error);
   if (!updatedData) throw new Error("Failed to update character");
 
+  const aiModel = aiModelSchema.parse(updatedData.ai_model) as AIModel;
+
   return {
     id: updatedData.id,
     name: updatedData.name,
     voice: updatedData.voice,
     aiDescription: updatedData.ai_description,
-    aiModel: updatedData.ai_model,
+    aiModel: aiModel,
     description: updatedData.description,
     avatarUrl: updatedData.avatar_url,
     organizationId: updatedData.organization_id,
@@ -218,6 +227,7 @@ export async function createCharacter(
     .insert({
       name: data.name,
       organization_id: organizationId,
+      ai_model: AI_MODELS.OPENAI_REALTIME, // default to gpt-4o-realtime for now
       created_by: userId,
     })
     .select(
@@ -241,12 +251,14 @@ export async function createCharacter(
   if (error) handleError(error);
   if (!newCharacter) throw new Error("Failed to create character");
 
+  const aiModel = aiModelSchema.parse(newCharacter.ai_model) as AIModel;
+
   return {
     id: newCharacter.id,
     name: newCharacter.name,
     voice: newCharacter.voice,
     aiDescription: newCharacter.ai_description,
-    aiModel: newCharacter.ai_model,
+    aiModel: aiModel,
     description: newCharacter.description,
     avatarUrl: newCharacter.avatar_url,
     organizationId: newCharacter.organization_id,
