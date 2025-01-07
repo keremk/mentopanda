@@ -57,6 +57,7 @@ create table if not exists "modules" (
 	"title" text not null,
 	"instructions" text,
 	"ordinal" integer not null default 0,
+	"ai_model" text,
 	"scenario_prompt" text,
 	"assessment_prompt" text,
 	"moderator_prompt" text,

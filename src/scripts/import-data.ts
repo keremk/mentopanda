@@ -188,6 +188,7 @@ async function createTrainingData(userId: string) {
           title: module.title,
           instructions: module.instructions,
           ordinal: module.ordinal,
+          ai_model: module.ai_model,
           scenario_prompt: module.scenario_prompt,
           assessment_prompt: module.assessment_prompt,
           moderator_prompt: module.moderator_prompt,

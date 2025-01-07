@@ -47,6 +47,7 @@ type ExportData = {
       title: string;
       instructions: string | null;
       ordinal: number;
+      ai_model: string | null;
       scenario_prompt: string | null;
       assessment_prompt: string | null;
       moderator_prompt: string | null;
@@ -101,6 +102,7 @@ async function exportData(outputFile: string) {
           title,
           instructions,
           ordinal,
+          ai_model,
           scenario_prompt,
           assessment_prompt,
           moderator_prompt,
