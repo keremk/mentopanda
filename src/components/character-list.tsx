@@ -100,7 +100,7 @@ export function CharacterList({ characters }: CharacterListProps) {
                   alt={character.name}
                 />
                 <AvatarFallback>
-                  {character.name[0].toUpperCase()}
+                  {character.name[0]?.toUpperCase() ?? "?"}
                 </AvatarFallback>
               </Avatar>
               <span className="text-sm font-medium">{character.name}</span>

@@ -17,7 +17,7 @@ export function CharacterDetailsView({ character }: CharacterDetailsViewProps) {
             alt={character.name}
           />
           <AvatarFallback className="text-2xl">
-            {character.name[0].toUpperCase()}
+            {character.name[0]?.toUpperCase() ?? "?"}
           </AvatarFallback>
         </Avatar>
 
