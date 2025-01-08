@@ -5,14 +5,15 @@ import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
 import CollapsibleBlock from "@/components/collapsible-block";
 import LiveKitChat from "@/components/livekit-chat";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
-
+import { AI_MODELS } from "@/types/models";
 type Props = {
   params: {
-    moduleId: number;
+    moduleId: string;
   };
 };
 
-export default async function Page({ params: { moduleId } }: Props) {
+export default async function Page({ params }: Props) {
+  const moduleId = parseInt(params.moduleId, 10);
   const currentModule = await getModuleByIdAction2(moduleId);
   if (!currentModule) notFound();
 
@@ -32,7 +33,9 @@ export default async function Page({ params: { moduleId } }: Props) {
               </div>
             </CollapsibleBlock>
           )}
-          <LiveKitChat module={currentModule} currentUser={currentUser} />
+          {currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI_REALTIME && (
+            <LiveKitChat module={currentModule} currentUser={currentUser} />
+          )}
         </CardContent>
       </Card>
     </div>

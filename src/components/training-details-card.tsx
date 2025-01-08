@@ -38,7 +38,6 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
   };
 
   const randomModuleId = getRandomModuleId();
-  const provider = "livekit";
 
   return (
     <Card>
@@ -52,7 +51,7 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
             className="rounded-lg"
           />
           {randomModuleId ? (
-            <Link href={`/simulation/${provider}/${randomModuleId}`}>
+            <Link href={`/simulation/${randomModuleId}`}>
               <Button className="w-full">Start Random Module</Button>
             </Link>
           ) : (
@@ -99,7 +98,7 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
                         Last Score: {module.lastScore}
                       </span>
                     )}
-                    <Link href={`/simulation/${provider}/${module.id}`}>
+                    <Link href={`/simulation/${module.id}`}>
                       <Button>Start Module</Button>
                     </Link>
                   </div>
