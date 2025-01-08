@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const AI_MODELS = {
-  OPENAI_REALTIME: "gpt-4o-realtime",
+  OPENAI_REALTIME: "gpt-4o-realtime-preview-2024-12-17",
   GEMINI_FLASH: "gemini-2.0-flash-exp",
 } as const;
 
