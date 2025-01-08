@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { PlayIcon, ChevronDownIcon, CheckIcon } from "lucide-react";
-import { AIModel, voices as voicesByModel } from "@/data/characters";
+import { AIModel, VOICES } from "@/types/models";
 import * as Portal from "@radix-ui/react-portal";
 import { cn } from "@/lib/utils";
 
@@ -108,7 +108,7 @@ export function CharacterVoiceSelect({
     }
   }
 
-  const voices = voicesByModel[aiModel];
+  const voices = VOICES[aiModel];
   const selectedVoice = voices.find((v) => v.name === value);
 
   return (

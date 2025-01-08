@@ -3,31 +3,6 @@ import { handleError } from "./utils";
 import { getUserId, getOrganizationId } from "./utils";
 import { AIModel, AI_MODELS, aiModelSchema } from "@/types/models";
 
-export type Voice = {
-  name: string;
-  sampleUrl: string | null;
-};
-
-export const voices: Record<AIModel, Voice[]> = {
-  [AI_MODELS.OPENAI_REALTIME]: [
-    { name: "Alloy", sampleUrl: null },
-    { name: "Ash", sampleUrl: null },
-    { name: "Ballad", sampleUrl: null },
-    { name: "Coral", sampleUrl: null },
-    { name: "Echo", sampleUrl: null },
-    { name: "Sage", sampleUrl: null },
-    { name: "Shimmer", sampleUrl: null },
-    { name: "Verse", sampleUrl: null },
-  ],
-  [AI_MODELS.GEMINI_FLASH]: [
-    { name: "Aoede", sampleUrl: "/voices/Aoede.wav" },
-    { name: "Fenrir", sampleUrl: "/voices/Fenrir.wav" },
-    { name: "Kore", sampleUrl: "/voices/Kore.wav" },
-    { name: "Charon", sampleUrl: "/voices/Charon.wav" },
-    { name: "Puck", sampleUrl: "/voices/Puck.wav" },
-  ],
-};
-
 export type CharacterSummary = {
   id: number;
   name: string;
@@ -227,7 +202,7 @@ export async function createCharacter(
     .insert({
       name: data.name,
       organization_id: organizationId,
-      ai_model: AI_MODELS.OPENAI_REALTIME, // default to gpt-4o-realtime for now
+      ai_model: AI_MODELS.OPENAI, // default to OPENAI for now
       created_by: userId,
     })
     .select(

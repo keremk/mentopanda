@@ -33,7 +33,7 @@ export default async function Page({ params }: Props) {
               </div>
             </CollapsibleBlock>
           )}
-          {currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI_REALTIME && (
+          {currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI && (
             <LiveKitChat module={currentModule} currentUser={currentUser} />
           )}
         </CardContent>

@@ -38,7 +38,7 @@ export function ModuleEditForm({ module }: Props) {
     title: module.title,
     instructions: module.instructions,
     modulePrompt: {
-      aiModel: module.modulePrompt.aiModel || AI_MODELS.OPENAI_REALTIME,
+      aiModel: module.modulePrompt.aiModel || AI_MODELS.OPENAI,
       scenario: module.modulePrompt.scenario || "",
       assessment: module.modulePrompt.assessment || "",
       moderator: module.modulePrompt.moderator || "",

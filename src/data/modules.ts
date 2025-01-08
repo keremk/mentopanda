@@ -115,7 +115,7 @@ export async function updateModule(
   module: UpdateModuleInput
 ): Promise<Module> {
   const aiModel = aiModelSchema.parse(
-    module.modulePrompt.aiModel || AI_MODELS.OPENAI_REALTIME
+    module.modulePrompt.aiModel || AI_MODELS.OPENAI
   ) as AIModel;
 
   const { data, error } = await supabase
@@ -163,7 +163,7 @@ export async function createModule(
   module: Omit<UpdateModuleInput, "id" | "trainingId">
 ): Promise<Module> {
   const aiModel = aiModelSchema.parse(
-    module.modulePrompt.aiModel || AI_MODELS.OPENAI_REALTIME
+    module.modulePrompt.aiModel || AI_MODELS.OPENAI
   ) as AIModel;
 
   const { data, error } = await supabase

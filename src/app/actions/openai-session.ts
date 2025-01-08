@@ -1,6 +1,6 @@
 "use server";
 
-import { AI_MODELS } from "@/types/models";
+import { CURRENT_MODEL_NAMES } from "@/types/models";
 
 type GetSpeechTokenParams = {
   apiKey?: string;
@@ -22,7 +22,7 @@ export async function getSpeechToken({ apiKey, voice }: GetSpeechTokenParams) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: AI_MODELS.OPENAI_REALTIME,
+          model: CURRENT_MODEL_NAMES.OPENAI,
           voice,
         }),
       }

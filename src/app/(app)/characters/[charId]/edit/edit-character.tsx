@@ -17,14 +17,11 @@ import { useDebounce } from "@/hooks/use-debounce";
 import type { CharacterDetails, UpdateCharacterInput } from "@/data/characters";
 import { updateCharacterAction } from "@/app/actions/character-actions";
 import { CharacterVoiceSelect } from "@/components/character-voice-select";
-import { voices } from "@/data/characters";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { ImageIcon } from "lucide-react";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import { updateCharacterAvatarAction } from "@/app/actions/character-actions";
-import { AIModel } from "@/types/models";
-
-const AI_MODELS = Object.keys(voices) as AIModel[];
+import { AIModel, AI_MODELS } from "@/types/models";
 
 type Props = {
   character: CharacterDetails;
@@ -35,7 +32,7 @@ export function EditCharacterForm({ character }: Props) {
   const [formData, setFormData] = useState<UpdateCharacterInput>({
     name: character.name,
     voice: character.voice,
-    aiModel: (character.aiModel as AIModel) || "gpt-4o-realtime",
+    aiModel: character.aiModel || AI_MODELS.OPENAI,
     aiDescription: character.aiDescription || "",
     description: character.description || "",
   });
@@ -172,7 +169,7 @@ export function EditCharacterForm({ character }: Props) {
                   <SelectValue placeholder="Select AI model" />
                 </SelectTrigger>
                 <SelectContent>
-                  {AI_MODELS.map((model) => (
+                  {Object.values(AI_MODELS).map((model) => (
                     <SelectItem key={model} value={model}>
                       {model}
                     </SelectItem>
