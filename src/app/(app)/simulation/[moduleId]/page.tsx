@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { notFound } from "next/navigation";
 import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
 import CollapsibleBlock from "@/components/collapsible-block";
-import LiveKitChat from "@/components/livekit-chat";
+import OpenAIChat from "@/components/openai-chat";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 import { AI_MODELS } from "@/types/models";
 type Props = {
@@ -34,7 +34,7 @@ export default async function Page({ params }: Props) {
             </CollapsibleBlock>
           )}
           {currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI && (
-            <LiveKitChat module={currentModule} currentUser={currentUser} />
+            <OpenAIChat module={currentModule} currentUser={currentUser} />
           )}
         </CardContent>
       </Card>
