@@ -35,7 +35,7 @@ export function useAudioStream({
     // Establish a data channel for additional communication if needed
     const dataChannel = connection.createDataChannel("provider-data");
     dataChannel.addEventListener("message", (e) => {
-      console.log("Data Channel Message:", e.data);
+      // console.log("Data Channel Message:", e.data);
     });
 
     // Add the local microphone tracks to the connection

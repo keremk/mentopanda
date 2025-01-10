@@ -9,6 +9,9 @@ import { getSpeechToken } from "@/app/actions/openai-session";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic, MicOff, Phone, PhoneOff } from "lucide-react";
+import AudioVisualiser from "@/components/audio-visualiser";
+import { RolePlayersContainer } from "@/components/roleplayers-container";
+import { RolePlayer } from "@/types/chat-types";
 
 type ChatProps = {
   module: Module;
@@ -54,14 +57,29 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
       setIsConversationActive(true);
     }
   };
+  const rolePlayers = module.modulePrompt.characters.map(
+    (character) =>
+      ({
+        name: character.name,
+        agentName: "agent",
+        avatarUrl: `/avatars/${character.name}.jpg`,
+      } as RolePlayer)
+  );
 
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-center">Voice Chat Controls</CardTitle>
+        <CardTitle className="text-center">Voice Chat</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <audio ref={audioRef} className="hidden" />
+        <RolePlayersContainer
+          rolePlayers={rolePlayers}
+          activeRolePlayer={rolePlayers[0]?.name ?? ""}
+          isInConversation={isConversationActive}
+        >
+          <AudioVisualiser audioRef={audioRef} />
+        </RolePlayersContainer>
         <div className="flex justify-center gap-4">
           <Button
             size="lg"
