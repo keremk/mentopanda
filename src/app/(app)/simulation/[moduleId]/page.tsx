@@ -26,15 +26,15 @@ export default async function Page({ params }: Props) {
           <CardTitle>{currentModule.title}</CardTitle>
         </CardHeader>
         <CardContent>
+          {currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI && (
+            <OpenAIChat module={currentModule} currentUser={currentUser} />
+          )}
           {currentModule.instructions && (
             <CollapsibleBlock>
               <div className="mb-4">
                 <MarkdownRenderer content={currentModule.instructions} />
               </div>
             </CollapsibleBlock>
-          )}
-          {currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI && (
-            <OpenAIChat module={currentModule} currentUser={currentUser} />
           )}
         </CardContent>
       </Card>
