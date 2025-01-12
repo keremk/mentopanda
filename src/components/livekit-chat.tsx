@@ -100,7 +100,7 @@ export default function LiveKitChat({ module, currentUser }: LiveKitChatProps) {
       ({
         name: character.name,
         agentName: "agent",
-        avatarUrl: `/avatars/${character.name}.jpg`,
+        avatarUrl: character.avatarUrl,
       } as RolePlayer)
   );
 

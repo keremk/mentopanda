@@ -3,3 +3,8 @@ export type RolePlayer = {
   agentName: string;
   avatarUrl: string;
 };
+
+export type TranscriptEntry = {
+  participantName: string;
+  text: string;
+};

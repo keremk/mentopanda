@@ -1,18 +1,25 @@
 "use server";
 
-import { CURRENT_MODEL_NAMES } from "@/types/models";
+import { CURRENT_MODEL_NAMES, DEFAULT_VOICE } from "@/types/models";
 
-type GetSpeechTokenParams = {
+type CreateOpenAISessionParams = {
   apiKey?: string;
   voice?: string;
+  instructions?: string;
 };
 
-export async function getSpeechToken({ apiKey, voice }: GetSpeechTokenParams) {
+export async function createOpenAISession({
+  apiKey,
+  voice,
+  instructions,
+}: CreateOpenAISessionParams) {
   try {
     const finalApiKey = apiKey || process.env.OPENAI_API_KEY;
 
     if (!finalApiKey) throw new Error("OpenAI API key is required");
 
+    const finalVoice = (voice || DEFAULT_VOICE).toLowerCase();
+    console.log(finalVoice);
     const response = await fetch(
       "https://api.openai.com/v1/realtime/sessions",
       {
@@ -23,20 +30,24 @@ export async function getSpeechToken({ apiKey, voice }: GetSpeechTokenParams) {
         },
         body: JSON.stringify({
           model: CURRENT_MODEL_NAMES.OPENAI,
-          voice,
+          voice: finalVoice,
+          input_audio_transcription: {
+            model: "whisper-1",
+          },
+          instructions,
         }),
       }
     );
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Failed to get speech token");
+      throw new Error(error.message || "Failed to create OpenAI session with token");
     }
 
-    const token = await response.json();
-    return { token };
+    const session = await response.json();
+    return { session };
   } catch (error) {
-    console.error("Error getting OpenAI speech token:", error);
-    throw new Error("Failed to get speech token");
+    console.error("Error creating OpenAI session:", error);
+    throw new Error("Failed to create OpenAI session");
   }
 }

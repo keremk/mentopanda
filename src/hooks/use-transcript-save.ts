@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { updateHistoryEntryAction } from "@/app/actions/history-actions";
-
-type TranscriptEntry = {
-  participantName: string;
-  text: string;
-};
+import { TranscriptEntry } from "@/types/chat-types";
 
 type UseTranscriptSaveProps = {
   historyEntryId?: number;
