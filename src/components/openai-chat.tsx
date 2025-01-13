@@ -14,10 +14,12 @@ import { RolePlayersContainer } from "@/components/roleplayers-container";
 import { RolePlayer } from "@/types/chat-types";
 import { useDataChannel } from "@/hooks/use-data-channel";
 import { ModulePrompt } from "@/data/modules";
-import { DEFAULT_VOICE } from "@/types/models";
-import { createHistoryEntryAction } from "@/app/actions/history-actions";
+import { DEFAULT_VOICE, CURRENT_MODEL_NAMES } from "@/types/models";
+import { createHistoryEntryAction, deleteHistoryEntryAction } from "@/app/actions/history-actions";
 import { TranscriptEntry } from "@/types/chat-types";
 import { useTranscriptSave } from "@/hooks/use-transcript-save";
+import { EndChatDialog } from "@/components/end-chat-dialog";
+import { useRouter } from "next/navigation";
 
 type ChatProps = {
   module: Module;
@@ -53,7 +55,6 @@ function createPrompt(modulePrompt: ModulePrompt) {
 export default function OpenAIChat({ module, currentUser }: ChatProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isConversationActive, setIsConversationActive] = useState(false);
-  const [transcript, setTranscript] = useState<string>("");
   const [historyEntryId, setHistoryEntryId] = useState<number>();
   const [history, setHistory] = useState<TranscriptEntry[]>([]);
   const { saveTranscript, saveAndComplete } = useTranscriptSave({
@@ -61,6 +62,9 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
     transcriptBuffer: history,
     saveInterval: 20000,
   });
+  const [showEndDialog, setShowEndDialog] = useState(false);
+  const router = useRouter();
+
 
   const {
     startMicrophone,
@@ -72,10 +76,8 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   } = useMicrophone();
 
   const providerUrl = "https://api.openai.com/v1/realtime";
-  const model = "gpt-4o-realtime-preview-2024-12-17";
+  const model = CURRENT_MODEL_NAMES.OPENAI;
 
-  console.log(createPrompt(module.modulePrompt));
-  console.log(module.modulePrompt.characters[0]?.voice);
   const tokenFetcher = async () => {
     const { session } = await createOpenAISession({
       instructions: createPrompt(module.modulePrompt),
@@ -109,10 +111,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
 
   const handleToggleConversation = async () => {
     if (isConversationActive) {
-      disconnect();
-      stopMicrophone();
-      setIsConversationActive(false);
-      await saveAndComplete();
+      setShowEndDialog(true);
     } else {
       const micStream = await startMicrophone();
       const connection = await connect(micStream);
@@ -123,20 +122,42 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
       setIsConversationActive(true);
     }
   };
-  const rolePlayers = module.modulePrompt.characters.map(
-    (character) =>
-      ({
-        name: character.name,
-        agentName: "agent",
-        avatarUrl: `/avatars/${character.name}.jpg`,
-      } as RolePlayer)
+
+  const handleEndWithoutSaving = async () => {
+    disconnect();
+    stopMicrophone();
+    if (historyEntryId) {
+      await deleteHistoryEntryAction(historyEntryId);
+      setHistoryEntryId(undefined);
+    }
+    setIsConversationActive(false);
+    setShowEndDialog(false);
+  };
+
+  const handleEndAndSave = async () => {
+    disconnect();
+    stopMicrophone();
+    setIsConversationActive(false);
+    await saveAndComplete();
+    setShowEndDialog(false);
+    if (historyEntryId) {
+      router.push(`/assessments/${historyEntryId}`);
+    }
+  };
+
+  const rolePlayers: RolePlayer[] = module.modulePrompt.characters.map(
+    (character) => ({
+      name: character.name,
+      agentName: "agent",
+      avatarUrl: character.avatarUrl || "/placeholder.png",
+    })
   );
 
   return (
     <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
+      {/* <CardHeader>
         <CardTitle className="text-center">Voice Chat</CardTitle>
-      </CardHeader>
+      </CardHeader> */}
       <CardContent className="space-y-4">
         <audio ref={audioRef} className="hidden" />
         <RolePlayersContainer
@@ -186,6 +207,12 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
           </Button>
         </div>
       </CardContent>
+      <EndChatDialog
+        isOpen={showEndDialog}
+        onOpenChange={setShowEndDialog}
+        onEndChat={handleEndWithoutSaving}
+        onEndAndSave={handleEndAndSave}
+      />
     </Card>
   );
 }
