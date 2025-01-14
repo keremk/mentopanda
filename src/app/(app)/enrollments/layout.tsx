@@ -10,10 +10,7 @@ export default async function TrainingsLayout({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="w-full py-4 px-6 border-b">
-        <h1 className="text-2xl font-bold">My Enrollments</h1>
-      </div>
-      <div className="flex flex-1">
+      <div className="flex flex-1 border-t mt-5">
         <EnrolledTrainingsList trainings={trainings} />
         <div className="flex-1">{children}</div>
       </div>

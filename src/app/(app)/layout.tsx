@@ -10,6 +10,8 @@ import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import type { NavItem } from "@/types/nav";
 import { cookies } from "next/headers";
 import { Skeleton } from "@/components/ui/skeleton";
+import { headers } from "next/headers";
+import { PageTitle } from "@/components/page-title";
 
 // Define navigation structure without icons
 export const navItems: NavItem[] = [
@@ -63,9 +65,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </Suspense>
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4 flex-1">
+          <div className="flex items-center gap-2 px-4 flex-1 mt-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
+            <Suspense
+              fallback={
+                <div className="h-6 w-32 animate-pulse bg-muted rounded" />
+              }
+            >
+              <PageTitle />
+            </Suspense>
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
