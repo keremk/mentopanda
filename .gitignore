@@ -41,3 +41,4 @@ next-env.d.ts
 /src/scripts/test-data.json
 /foo.json
 /ui-mocks/
+.specstory/

@@ -41,7 +41,9 @@ export async function createOpenAISession({
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || "Failed to create OpenAI session with token");
+      throw new Error(
+        error.message || "Failed to create OpenAI session with token"
+      );
     }
 
     const session = await response.json();

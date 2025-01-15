@@ -15,11 +15,15 @@ import { RolePlayer } from "@/types/chat-types";
 import { useDataChannel } from "@/hooks/use-data-channel";
 import { ModulePrompt } from "@/data/modules";
 import { DEFAULT_VOICE, CURRENT_MODEL_NAMES } from "@/types/models";
-import { createHistoryEntryAction, deleteHistoryEntryAction } from "@/app/actions/history-actions";
+import {
+  createHistoryEntryAction,
+  deleteHistoryEntryAction,
+} from "@/app/actions/history-actions";
 import { TranscriptEntry } from "@/types/chat-types";
 import { useTranscriptSave } from "@/hooks/use-transcript-save";
 import { EndChatDialog } from "@/components/end-chat-dialog";
 import { useRouter } from "next/navigation";
+import { getStoredApiKey } from "@/utils/apikey";
 
 type ChatProps = {
   module: Module;
@@ -65,7 +69,6 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const router = useRouter();
 
-
   const {
     startMicrophone,
     stopMicrophone,
@@ -79,7 +82,9 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   const model = CURRENT_MODEL_NAMES.OPENAI;
 
   const tokenFetcher = async () => {
+    const storedApiKey = await getStoredApiKey();
     const { session } = await createOpenAISession({
+      apiKey: storedApiKey || undefined,
       instructions: createPrompt(module.modulePrompt),
       voice: module.modulePrompt.characters[0]?.voice || DEFAULT_VOICE,
     });
