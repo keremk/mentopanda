@@ -51,9 +51,9 @@ export function UnenrollButton({
 
       // Navigate to next training or main page
       if (nextTrainingId) {
-        router.push(`/trainings/${nextTrainingId}`);
+        router.push(`/enrollments/${nextTrainingId}`);
       } else {
-        router.push("/trainings");
+        router.push("/enrollments");
       }
 
       // Force a revalidation of the layout data
