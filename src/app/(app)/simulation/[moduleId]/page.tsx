@@ -38,24 +38,17 @@ export default async function Page({ params }: Props) {
   ]);
 
   return (
-    <div className="container mx-auto py-8">
-      <Card className="w-full max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle>{currentModule.title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI && (
-            <OpenAIChat module={currentModule} currentUser={currentUser} />
-          )}
-          {currentModule.instructions && (
-            <CollapsibleBlock>
-              <div className="mb-4">
-                <MarkdownRenderer content={currentModule.instructions} />
-              </div>
-            </CollapsibleBlock>
-          )}
-        </CardContent>
-      </Card>
+    <div className="container mx-auto py-8 w-full max-w-4xl">
+      {currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI && (
+        <OpenAIChat module={currentModule} currentUser={currentUser} />
+      )}
+      {currentModule.instructions && (
+        <CollapsibleBlock>
+          <div className="mb-4">
+            <MarkdownRenderer content={currentModule.instructions} />
+          </div>
+        </CollapsibleBlock>
+      )}
     </div>
   );
 }
