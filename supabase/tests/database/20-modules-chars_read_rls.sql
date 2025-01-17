@@ -33,14 +33,12 @@ VALUES (100, 100),
     -- public training module
     (101, 101);
 
-
 RESET role;
 
 -- Create test users
 SELECT tests.create_supabase_user('test.member.2', 'member', 2);
 
 SELECT tests.create_supabase_user('test.member.3', 'member', 3);
-
 
 -- Test 1: Anonymous user can see module-character associations for public training
 SELECT diag(
@@ -137,13 +135,14 @@ SELECT diag(
 -- Debug: Show visible module_characters for org 2 member
 SELECT diag(
         format(
-            'Org 2 member can see these module_characters: %s',
+            'Org 2 member can see these test module_characters: %s',
             (
                 SELECT string_agg(
                         module_id::text || '-' || character_id::text,
                         ', '
                     )
                 FROM modules_characters
+                WHERE module_id IN (100, 101)
             )
         )
     );
@@ -151,9 +150,10 @@ SELECT diag(
 SELECT results_eq(
         $$
         SELECT count(*)
-        FROM modules_characters $$,
+        FROM modules_characters
+        WHERE module_id IN (100, 101) $$,
             ARRAY [2::bigint],
-            'Org 2 member should see both public and private module-character associations'
+            'Org 2 member should see both test public and private module-character associations'
     );
 
 -- Test 4: Org 3 member can only see public module-character associations
