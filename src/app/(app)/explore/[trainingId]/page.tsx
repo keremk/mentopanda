@@ -6,8 +6,7 @@ import { EnrollmentButton } from "@/components/enrollment-button";
 import { getTrainingByIdAction } from "@/app/(app)/trainingActions";
 import { Pencil } from "lucide-react";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { createClient } from "@/utils/supabase/server";
-import { getCurrentUserInfo } from "@/data/user";
+import { getCurrentUserAction } from "@/app/actions/user-actions";
 
 function YouTubeEmbed({ url }: { url: string }) {
   const videoId = url.split("v=")[1];
@@ -33,8 +32,7 @@ export default async function TrainingDetailsPage({
   params: { trainingId: number };
 }) {
   const training = await getTrainingByIdAction(params.trainingId);
-  const supabase = createClient();
-  const user = await getCurrentUserInfo({ supabase });
+  const user = await getCurrentUserAction();
 
   if (!training) {
     notFound();

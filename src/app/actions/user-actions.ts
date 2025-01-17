@@ -17,11 +17,9 @@ const updateAvatarSchema = z.object({
   avatarUrl: z.string().url(),
 });
 
-export async function getCurrentUserAction({
-  includeOrgInfo = false,
-}: { includeOrgInfo?: boolean } = {}) {
+export async function getCurrentUserAction() {
   const supabase = createClient();
-  return await getCurrentUserInfo({ supabase, includeOrgInfo });
+  return await getCurrentUserInfo(supabase);
 }
 
 export async function updateProfileAction(data: {

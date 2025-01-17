@@ -10,6 +10,8 @@ create type "public"."app_permission" as enum(
 
 create type "public"."user_role" as enum('admin', 'manager', 'member', 'super_admin');
 
+create type "public"."pricing_plan" as enum('free', 'pro', 'team', 'enterprise');
+
 -- Tables
 create table if not exists "organizations" (
 	"id" bigserial primary key not null,
@@ -24,6 +26,7 @@ create table if not exists "profiles" (
 	"organization_id" bigint references organizations (id) on delete
 	set default default 1 not null,
 		"user_role" "user_role" default 'member' not null,
+		"pricing_plan" "pricing_plan" default 'free' not null,
 		"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 		"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

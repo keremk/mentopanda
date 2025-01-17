@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AccountSettingsPage() {
-  const user = await getCurrentUserAction({ includeOrgInfo: true });
+  const user = await getCurrentUserAction();
 
   return (
     <div className="space-y-6 border-t mt-5">

@@ -28,17 +28,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useUser } from "@/hooks/use-user";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import { AI_MODELS } from "@/types/models";
+import { User } from "@/data/user";
 
-type Props = {
+type EditTrainingFormProps = {
   training: Training;
+  user: User;
 };
 
-export function EditTrainingForm({ training }: Props) {
+export function EditTrainingForm({ training, user }: EditTrainingFormProps) {
   const router = useRouter();
-  const { user, isLoading } = useUser();
   const [formData, setFormData] = useState<UpdateTrainingInput>({
     id: training.id,
     title: training.title,
@@ -99,7 +99,7 @@ export function EditTrainingForm({ training }: Props) {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex gap-2">
-        {!isLoading && user?.id === training.createdBy && (
+        {user?.id === training.createdBy && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive">Delete Training</Button>
@@ -223,7 +223,7 @@ export function EditTrainingForm({ training }: Props) {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold">Modules</h2>
-              {!isLoading && user?.id === training.createdBy && (
+              {user?.id === training.createdBy && (
                 <Button onClick={handleAddModule}>
                   <PlusIcon className="h-5 w-5 mr-2" />
                   Add Module
@@ -238,7 +238,7 @@ export function EditTrainingForm({ training }: Props) {
                   className="flex items-center justify-between p-4"
                 >
                   <span className="text-foreground">{module.title}</span>
-                  {!isLoading && user?.id === training.createdBy && (
+                  {user?.id === training.createdBy && (
                     <div className="space-x-2">
                       <Button
                         variant="outline"
