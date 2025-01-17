@@ -1,5 +1,4 @@
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { notFound } from "next/navigation";
 import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
 import CollapsibleBlock from "@/components/collapsible-block";
@@ -7,6 +6,7 @@ import OpenAIChat from "@/components/openai-chat";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 import { AI_MODELS } from "@/types/models";
 import { Metadata } from "next";
+import { ApiKeyCheckDialog } from "@/components/api-key-check-dialog";
 
 type Props = {
   params: {
@@ -37,9 +37,18 @@ export default async function Page({ params }: Props) {
     getCurrentUserAction(),
   ]);
 
+  const isOpenAIModule =
+    currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI;
+  const isFreePlan = currentUser.pricingPlan === "free";
+
   return (
     <div className="container mx-auto py-8 w-full max-w-4xl">
-      {currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI && (
+      <ApiKeyCheckDialog
+        isOpenAIModule={isOpenAIModule}
+        isFreePlan={isFreePlan}
+      />
+
+      {isOpenAIModule && (
         <OpenAIChat module={currentModule} currentUser={currentUser} />
       )}
       {currentModule.instructions && (
