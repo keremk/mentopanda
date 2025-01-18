@@ -24,6 +24,7 @@ import { useTranscriptSave } from "@/hooks/use-transcript-save";
 import { EndChatDialog } from "@/components/end-chat-dialog";
 import { useRouter } from "next/navigation";
 import { getStoredApiKey } from "@/utils/apikey";
+import { CountdownBar } from "@/components/countdown-bar";
 
 type ChatProps = {
   module: Module;
@@ -68,6 +69,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   });
   const [showEndDialog, setShowEndDialog] = useState(false);
   const router = useRouter();
+  const [isTimeout, setIsTimeout] = useState(false);
 
   const {
     startMicrophone,
@@ -150,6 +152,13 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
     }
   };
 
+  const handleCountdownComplete = () => {
+    disconnect();
+    stopMicrophone();
+    setIsTimeout(true);
+    setShowEndDialog(true);
+  };
+
   const rolePlayers: RolePlayer[] = module.modulePrompt.characters.map(
     (character) => ({
       name: character.name,
@@ -160,9 +169,13 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
 
   return (
     <Card className="w-full max-w-md mx-auto">
-      {/* <CardHeader>
-        <CardTitle className="text-center">Voice Chat</CardTitle>
-      </CardHeader> */}
+      <CardHeader className="pb-0">
+        <CountdownBar
+          initialMinutes={0.1}
+          onCountdownComplete={handleCountdownComplete}
+          isActive={isConversationActive}
+        />
+      </CardHeader>
       <CardContent className="space-y-4">
         <audio ref={audioRef} className="hidden" />
         <RolePlayersContainer
@@ -217,6 +230,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
         onOpenChange={setShowEndDialog}
         onEndChat={handleEndWithoutSaving}
         onEndAndSave={handleEndAndSave}
+        isTimeout={isTimeout}
       />
     </Card>
   );

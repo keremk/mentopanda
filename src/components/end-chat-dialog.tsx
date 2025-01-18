@@ -15,6 +15,7 @@ type EndChatDialogProps = {
   onOpenChange: (open: boolean) => void;
   onEndChat: () => Promise<void>;
   onEndAndSave: () => Promise<void>;
+  isTimeout?: boolean;
 };
 
 export function EndChatDialog({
@@ -22,6 +23,7 @@ export function EndChatDialog({
   onOpenChange,
   onEndChat,
   onEndAndSave,
+  isTimeout = false,
 }: EndChatDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,18 +39,24 @@ export function EndChatDialog({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={isTimeout ? undefined : onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>End Conversation</DialogTitle>
+          <DialogTitle>
+            {isTimeout ? "Time's Up!" : "End Conversation"}
+          </DialogTitle>
           <DialogDescription>
-            Choose how you would like to end this conversation.
+            {isTimeout
+              ? "Your conversation time has ended."
+              : "Choose how you would like to end this conversation."}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3 mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel & Continue
-          </Button>
+          {!isTimeout && (
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel & Continue
+            </Button>
+          )}
           <Button
             variant="secondary"
             onClick={() => handleAction(onEndChat)}
