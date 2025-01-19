@@ -51,13 +51,6 @@ export default async function Page({ params }: Props) {
       {isOpenAIModule && (
         <OpenAIChat module={currentModule} currentUser={currentUser} />
       )}
-      {currentModule.instructions && (
-        <CollapsibleBlock>
-          <div className="mb-4">
-            <MarkdownRenderer content={currentModule.instructions} />
-          </div>
-        </CollapsibleBlock>
-      )}
     </div>
   );
 }
