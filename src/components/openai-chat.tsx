@@ -25,6 +25,7 @@ import { EndChatDialog } from "@/components/end-chat-dialog";
 import { useRouter } from "next/navigation";
 import { getStoredApiKey } from "@/utils/apikey";
 import { CountdownBar } from "@/components/countdown-bar";
+import { ChatTextEntry } from "@/components/chat-text-entry";
 
 type ChatProps = {
   module: Module;
@@ -167,6 +168,10 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
     })
   );
 
+  const handleSendMessage = (message: string) => {
+    addUserTranscript(message);
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="pb-0">
@@ -176,7 +181,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
           isActive={isConversationActive}
         />
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pb-6">
         <audio ref={audioRef} className="hidden" />
         <RolePlayersContainer
           rolePlayers={rolePlayers}
@@ -224,6 +229,11 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
             )}
           </Button>
         </div>
+
+        <ChatTextEntry
+          onSendMessage={handleSendMessage}
+          isEnabled={isConversationActive}
+        />
       </CardContent>
       <EndChatDialog
         isOpen={showEndDialog}
