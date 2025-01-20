@@ -28,6 +28,7 @@ import { CountdownBar } from "@/components/countdown-bar";
 import { ChatTextEntry } from "@/components/chat-text-entry";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { TranscriptDisplay } from "@/components/transcript-display";
 
 type ChatProps = {
   module: Module;
@@ -140,6 +141,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
       await deleteHistoryEntryAction(historyEntryId);
       setHistoryEntryId(undefined);
     }
+    setHistory([]);
     setIsConversationActive(false);
     setShowEndDialog(false);
   };
@@ -268,9 +270,13 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
         <TabsContent value="transcript" className="mt-4">
           <Card>
             <CardContent className="pt-6">
-              <p className="text-muted-foreground text-sm">
-                Transcript will be displayed here...
-              </p>
+              {history.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  Transcript will be displayed here...
+                </p>
+              ) : (
+                <TranscriptDisplay transcript={history} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
