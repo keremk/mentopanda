@@ -62,7 +62,6 @@ function generateRandomHistoryEntries(userId: string, moduleIds: number[]) {
         entries.push({
           user_id: userId,
           module_id: moduleId,
-          assessment_score: Math.floor(Math.random() * 5) + 1, // 1-5
           started_at: startedAt.toISOString(),
           completed_at: completedAt.toISOString(),
         });

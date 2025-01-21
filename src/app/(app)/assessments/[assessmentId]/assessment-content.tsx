@@ -14,18 +14,14 @@ import { MarkdownRenderer } from "@/components/markdown-renderer";
 type Props = {
   assessment: string;
   transcript?: string | null;
-  score?: number | null;
 };
 
-export function AssessmentContent({ assessment, transcript, score }: Props) {
+export function AssessmentContent({ assessment, transcript }: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="container mx-auto py-8">
       <Card className="w-full max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle>Score: {score}</CardTitle>
-        </CardHeader>
         <CardContent className="space-y-6">
           <MarkdownRenderer content={assessment} />
 

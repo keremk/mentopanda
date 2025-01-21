@@ -1,38 +1,32 @@
 import { getOrganizationId, getUserId, handleError } from "@/data/utils";
+import { TranscriptEntry } from "@/types/chat-types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
-
-export type HistoryEntry = {
-  id: number;
-  moduleId: number;
-  moduleTitle: string;
-  trainingTitle: string;
-  recordingUrl: string | null;
-  transcript: string | null;
-  assessmentText: string | null;
-  assessmentScore: number | null;
-  assessmentCreated: boolean;
-  completedAt: Date | null;
-  startedAt: Date;
-  practiceNumber: number;
-};
 
 export type HistorySummary = {
   id: number;
   moduleId: number;
   moduleTitle: string;
-  assessmentScore: number | null;
+  trainingTitle: string;
   practiceNumber: number;
+  assessmentCreated: boolean;
   startedAt: Date;
   completedAt: Date | null;
+};
+
+export type HistoryEntry = HistorySummary & {
+  recordingUrl: string | null;
+  transcriptText: string | null;
+  transcript: TranscriptEntry[];
+  assessmentText: string | null;
 };
 
 export type UpdateHistoryEntry = {
   id: number;
   recordingUrl?: string | null;
-  transcript?: string | null;
+  transcript?: TranscriptEntry[] | null;
+  transcriptText?: string | null;
   assessmentText?: string | null;
-  assessmentScore?: number | null;
   assessmentCreated?: boolean;
   completedAt?: Date | null;
 };
@@ -41,21 +35,18 @@ export async function getTrainingHistory(
   supabase: SupabaseClient,
   limit: number,
   completedOnly: boolean = false
-): Promise<HistoryEntry[]> {
+): Promise<HistorySummary[]> {
   const userId = await getUserId(supabase);
   let query = supabase
     .from("history")
     .select(
       `
       id,
-      assessment_text,
-      recording_url,
-      transcript,
-      assessment_score,
       practice_no,
       completed_at,
       started_at,
       module_id,
+      assessment_created,
       modules (
         id,
         title,
@@ -76,8 +67,6 @@ export async function getTrainingHistory(
 
   const { data: historyData, error: historyError } = await query;
 
-  // console.log(userId);
-  // console.log(historyData);
   if (historyError) handleError(historyError);
 
   if (!historyData) return [];
@@ -87,10 +76,6 @@ export async function getTrainingHistory(
     moduleId: entry.module_id,
     moduleTitle: entry.modules?.title,
     trainingTitle: entry.modules?.trainings?.title,
-    recordingUrl: entry.recording_url,
-    transcript: entry.transcript,
-    assessmentText: entry.assessment_text,
-    assessmentScore: entry.assessment_score,
     assessmentCreated: entry.assessment_created,
     completedAt: entry.completed_at ? new Date(entry.completed_at) : null,
     startedAt: new Date(entry.started_at),
@@ -126,18 +111,22 @@ export async function updateHistoryEntry(
 ): Promise<void> {
   const userId = await getUserId(supabase);
 
+  const transcriptJson = updates.transcript
+    ? JSON.stringify(updates.transcript)
+    : undefined;
+
   const { error } = await supabase
     .from("history")
     .update({
       recording_url: updates.recordingUrl,
-      transcript: updates.transcript,
+      transcript_text: updates.transcriptText,
+      transcript_json: transcriptJson,
       assessment_text: updates.assessmentText,
-      assessment_score: updates.assessmentScore,
       assessment_created: updates.assessmentCreated,
       completed_at: updates.completedAt?.toISOString(),
     })
     .eq("id", id)
-    .eq("user_id", userId); // Security: ensure user owns this entry
+    .eq("user_id", userId) // Security: ensure user owns this entry
 
   if (error) handleError(error);
 }
@@ -155,8 +144,8 @@ export async function getHistoryEntry(
       id,
       assessment_text,
       recording_url,
-      transcript,
-      assessment_score,
+      transcript_text,
+      transcript_json,
       assessment_created,
       completed_at,
       started_at,
@@ -179,15 +168,19 @@ export async function getHistoryEntry(
   if (!data) return null;
   if (error) handleError(error);
 
+  const transcript = data.transcript_json
+    ? JSON.parse(data.transcript_json)
+    : null;
+
   return {
     id: data.id,
     moduleId: data.module_id,
     moduleTitle: (data.modules as any)?.title ?? null, // Disconnect from Supabase expected schema vs. what we get back, so I am doing this here
     trainingTitle: (data.modules as any)?.trainings?.title ?? null,
     recordingUrl: data.recording_url,
-    transcript: data.transcript,
+    transcriptText: data.transcript_text,
+    transcript: transcript,
     assessmentText: data.assessment_text,
-    assessmentScore: data.assessment_score,
     assessmentCreated: data.assessment_created,
     completedAt: data.completed_at ? new Date(data.completed_at) : null,
     startedAt: new Date(data.started_at),

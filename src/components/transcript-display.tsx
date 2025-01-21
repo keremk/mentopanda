@@ -28,7 +28,7 @@ export function TranscriptDisplay({ transcript }: TranscriptDisplayProps) {
               key={index}
               className={cn(
                 "flex",
-                entry.participantName === "user"
+                entry.role === "user"
                   ? "justify-end"
                   : "justify-start"
               )}
@@ -36,7 +36,7 @@ export function TranscriptDisplay({ transcript }: TranscriptDisplayProps) {
               <div
                 className={cn(
                   "rounded-lg px-4 py-2 max-w-[80%] shadow-sm",
-                  entry.participantName === "user"
+                  entry.role === "user"
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted"
                 )}

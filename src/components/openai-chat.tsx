@@ -74,6 +74,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const router = useRouter();
   const [isTimeout, setIsTimeout] = useState(false);
+  const HARD_TIMEOUT_MINUTES = 2;
 
   const {
     startMicrophone,
@@ -104,18 +105,35 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
     audioRef,
   });
 
+  const formattedTimestamp = () => {
+    return new Date().toLocaleTimeString([], {
+      hour12: true,
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
+
   const addUserTranscript = (transcript: string) => {
-    setHistory((prevHistory) => [
-      ...prevHistory,
-      { participantName: "user", text: transcript },
-    ]);
+    const transcriptEntry: TranscriptEntry = {
+      participantName: currentUser.displayName,
+      text: transcript,
+      role: "user",
+      timestamp: formattedTimestamp(),
+      createdAtMs: Date.now(),
+    };
+    setHistory((prevHistory) => [...prevHistory, transcriptEntry]);
   };
 
   const addAgentTranscript = (transcript: string) => {
-    setHistory((prevHistory) => [
-      ...prevHistory,
-      { participantName: "agent", text: transcript },
-    ]);
+    const transcriptEntry: TranscriptEntry = {
+      participantName: module.modulePrompt.characters[0].name,
+      text: transcript,
+      role: "agent",
+      timestamp: formattedTimestamp(),
+      createdAtMs: Date.now(),
+    };
+    setHistory((prevHistory) => [...prevHistory, transcriptEntry]);
   };
 
   useDataChannel(dataChannel, addUserTranscript, addAgentTranscript);
@@ -181,7 +199,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="pb-0">
           <CountdownBar
-            initialMinutes={0.1}
+            initialMinutes={HARD_TIMEOUT_MINUTES}
             onCountdownComplete={handleCountdownComplete}
             isActive={isConversationActive}
           />

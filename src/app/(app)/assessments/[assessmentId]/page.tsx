@@ -21,11 +21,11 @@ async function AssessmentGenerator({
 }: {
   historyEntry: HistoryEntry;
 }) {
-  if (!historyEntry.transcript)
+  if (!historyEntry.transcriptText)
     throw new Error("No transcript found for this assessment");
 
-  const { assessment, score } = await analyseTranscript(
-    historyEntry.transcript,
+  const { assessment } = await analyseTranscript(
+    historyEntry.transcriptText,
     historyEntry.id,
     historyEntry.moduleId
   );
@@ -33,8 +33,7 @@ async function AssessmentGenerator({
   return (
     <AssessmentContent
       assessment={assessment}
-      transcript={historyEntry.transcript}
-      score={score}
+      transcript={historyEntry.transcriptText}
     />
   );
 }
@@ -78,8 +77,7 @@ export default async function AssessmentPage({ params }: Props) {
     return (
       <AssessmentContent
         assessment={historyEntry.assessmentText}
-        transcript={historyEntry.transcript}
-        score={historyEntry.assessmentScore}
+        transcript={historyEntry.transcriptText}
       />
     );
 

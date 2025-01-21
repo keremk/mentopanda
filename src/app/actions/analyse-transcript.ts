@@ -26,25 +26,6 @@ async function generateAssessment(
   return result.text;
 }
 
-async function calculateScore(assessment: string) {
-  const systemPrompt = `
-    Based on the provided assessment, calculate a score between 1 and 5.
-    1 is the lowest score and 5 is the highest score. 5 is a perfect score, so not to be given lightly.
-  `;
-
-  const schema = z.object({
-    score: z.number().min(1).max(5),
-  });
-
-  const result = await generateObject({
-    model: openai("gpt-4o"),
-    schema,
-    system: systemPrompt,
-    prompt: `Assessment text:\n${assessment}`,
-  });
-  return result.object.score;
-}
-
 export default async function analyseTranscript(
   transcript: string,
   historyEntryId: number,
@@ -55,15 +36,13 @@ export default async function analyseTranscript(
 
   const assessmentPrompt = module.modulePrompt.assessment;
   const assessment = await generateAssessment(transcript, assessmentPrompt);
-  const score = await calculateScore(assessment);
 
   // Save the assessment
   await updateHistoryEntryAction({
     id: historyEntryId,
     assessmentText: assessment,
-    assessmentScore: score,
     assessmentCreated: true,
   });
 
-  return { assessment: assessment, score: score };
+  return { assessment: assessment };
 }

@@ -110,12 +110,12 @@ create table if not exists "history" (
 	"module_id" bigint references modules (id) on delete
 	set null,
 		"user_id" uuid default auth.uid() not null references profiles (id) on delete cascade,
-		"transcript" text,
+		"transcript_text" text,
+		"transcript_json" jsonb,
 		"recording_url" text,
 		"assessment_created" boolean default false not null,
 		"assessment_text" text,
 		"practice_no" integer default 1 not null,
-		"assessment_score" integer,
 		"started_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 		"completed_at" TIMESTAMP WITH TIME ZONE,
 		CONSTRAINT unique_practice UNIQUE(user_id, module_id, practice_no)

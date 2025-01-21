@@ -34,7 +34,7 @@ SELECT is(
 SELECT diag ('Test 1: First practice should get number 1');
 SELECT lives_ok(
     $$
-    INSERT INTO history (user_id, module_id, transcript)
+    INSERT INTO history (user_id, module_id, transcript_text)
     VALUES (
         tests.get_supabase_uid('test.member.200'),
         3000,
@@ -71,7 +71,7 @@ SELECT is(
 SELECT diag ('Test 2: Second practice should get number 2');
 SELECT lives_ok(
     $$
-    INSERT INTO history (user_id, module_id, transcript)
+    INSERT INTO history (user_id, module_id, transcript_text)
     VALUES (
         tests.get_supabase_uid('test.member.200'),
         3000,

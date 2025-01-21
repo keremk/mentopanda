@@ -32,7 +32,8 @@ export function useTranscriptSave({
       try {
         await updateHistoryEntryAction({
           id: historyEntryId,
-          transcript: formattedTranscript,
+          transcript: transcriptBuffer,
+          transcriptText: formattedTranscript,
           ...(isComplete ? { completedAt: new Date() } : {}),
         });
         lastSavedTranscript.current = formattedTranscript;
