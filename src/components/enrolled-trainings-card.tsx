@@ -10,7 +10,7 @@ export async function EnrolledTrainingsCard() {
   const trainings = await getEnrolledTrainingsAction();
 
   return (
-    <Card className="w-full h-[360px] flex flex-col">
+    <Card className="w-full h-[310px] flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
         <CardTitle className="text-2xl font-bold">Enrolled Trainings</CardTitle>
         <div className="drag-handle cursor-move">
