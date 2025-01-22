@@ -10,14 +10,14 @@ export async function EnrolledTrainingsCard() {
   const trainings = await getEnrolledTrainingsAction();
 
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-[360px] flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
         <CardTitle className="text-2xl font-bold">Enrolled Trainings</CardTitle>
         <div className="drag-handle cursor-move">
           <GripVertical size={20} className="text-gray-400" />
         </div>
       </CardHeader>
-      <CardContent className="flex-grow overflow-auto">
+      <CardContent className="h-[calc(100%-73px)] overflow-y-auto">
         <div className="space-y-4">
           {trainings && trainings.length > 0 ? (
             trainings.map((training) => (
@@ -40,7 +40,11 @@ export async function EnrolledTrainingsCard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
-                    <Button variant="secondary" className="flex-shrink-0" asChild>
+                    <Button
+                      variant="secondary"
+                      className="flex-shrink-0"
+                      asChild
+                    >
                       <Link href={`/enrollments/${training.id}`}>
                         <PlayCircle className="mr-2 h-4 w-4" />
                         Train
