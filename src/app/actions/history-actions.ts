@@ -12,11 +12,31 @@ import {
 } from "@/data/history";
 
 export async function getTrainingHistoryAction(
-  limit: number,
+  page: number = 1,
+  pageSize: number = 10,
   completedOnly: boolean = false
 ) {
   const supabase = createClient();
-  return await getTrainingHistory(supabase, limit, completedOnly);
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize - 1;
+
+  // Get total count for pagination
+  const { count } = await supabase
+    .from("history")
+    .select("*", { count: "exact", head: true });
+
+  const entries = await getTrainingHistory(
+    supabase,
+    pageSize,
+    completedOnly,
+    start
+  );
+
+  return {
+    entries,
+    totalPages: Math.ceil((count || 0) / pageSize),
+    currentPage: page,
+  };
 }
 
 export async function createHistoryEntryAction(moduleId: number) {

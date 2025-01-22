@@ -34,7 +34,8 @@ export type UpdateHistoryEntry = {
 export async function getTrainingHistory(
   supabase: SupabaseClient,
   limit: number,
-  completedOnly: boolean = false
+  completedOnly: boolean = false,
+  start: number = 0
 ): Promise<HistorySummary[]> {
   const userId = await getUserId(supabase);
   let query = supabase
@@ -59,7 +60,7 @@ export async function getTrainingHistory(
     )
     .eq("user_id", userId)
     .order("started_at", { ascending: false })
-    .limit(limit);
+    .range(start, start + limit - 1);
 
   if (completedOnly) {
     query = query.not("completed_at", "is", null);
@@ -126,7 +127,7 @@ export async function updateHistoryEntry(
       completed_at: updates.completedAt?.toISOString(),
     })
     .eq("id", id)
-    .eq("user_id", userId) // Security: ensure user owns this entry
+    .eq("user_id", userId); // Security: ensure user owns this entry
 
   if (error) handleError(error);
 }
