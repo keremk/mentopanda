@@ -51,6 +51,7 @@ export async function EnrolledTrainingsCard() {
                       </Link>
                     </Button>
                     <EnrollmentButton
+                      key={`enrollment-${training.id}`}
                       trainingId={training.id}
                       isEnrolled={true}
                       className="flex-shrink-0"
