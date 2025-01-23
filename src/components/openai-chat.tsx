@@ -29,6 +29,7 @@ import { ChatTextEntry } from "@/components/chat-text-entry";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { TranscriptDisplay } from "@/components/transcript-display";
+import { useOpenAIRealtime } from "@/hooks/use-openai-realtime";
 
 type ChatProps = {
   module: Module;
@@ -85,25 +86,25 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
     microphoneStream,
   } = useMicrophone();
 
-  const providerUrl = "https://api.openai.com/v1/realtime";
-  const model = CURRENT_MODEL_NAMES.OPENAI;
+  // const providerUrl = "https://api.openai.com/v1/realtime";
+  // const model = CURRENT_MODEL_NAMES.OPENAI;
 
-  const tokenFetcher = async () => {
-    const storedApiKey = await getStoredApiKey();
-    const { session } = await createOpenAISession({
-      apiKey: storedApiKey || undefined,
-      instructions: createPrompt(module.modulePrompt),
-      voice: module.modulePrompt.characters[0]?.voice || DEFAULT_VOICE,
-    });
-    return session.client_secret.value;
-  };
+  // const tokenFetcher = async () => {
+  //   const storedApiKey = await getStoredApiKey();
+  //   const { session } = await createOpenAISession({
+  //     apiKey: storedApiKey || undefined,
+  //     instructions: createPrompt(module.modulePrompt),
+  //     voice: module.modulePrompt.characters[0]?.voice || DEFAULT_VOICE,
+  //   });
+  //   return session.client_secret.value;
+  // };
 
-  const { connect, disconnect, dataChannel } = useAudioStream({
-    model,
-    providerUrl,
-    tokenFetcher,
-    audioRef,
-  });
+  // const { connect, disconnect, dataChannel } = useAudioStream({
+  //   model,
+  //   providerUrl,
+  //   tokenFetcher,
+  //   audioRef,
+  // });
 
   const formattedTimestamp = () => {
     return new Date().toLocaleTimeString([], {
@@ -114,29 +115,55 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
     });
   };
 
-  const addUserTranscript = (transcript: string) => {
+  const addTranscript = (transcript: string, role: "user" | "agent") => {
     const transcriptEntry: TranscriptEntry = {
-      participantName: currentUser.displayName,
+      participantName:
+        role === "user"
+          ? currentUser.displayName
+          : module.modulePrompt.characters[0].name,
       text: transcript,
-      role: "user",
+      role: role,
       timestamp: formattedTimestamp(),
       createdAtMs: Date.now(),
     };
     setHistory((prevHistory) => [...prevHistory, transcriptEntry]);
   };
 
-  const addAgentTranscript = (transcript: string) => {
-    const transcriptEntry: TranscriptEntry = {
-      participantName: module.modulePrompt.characters[0].name,
-      text: transcript,
-      role: "agent",
-      timestamp: formattedTimestamp(),
-      createdAtMs: Date.now(),
-    };
-    setHistory((prevHistory) => [...prevHistory, transcriptEntry]);
+  const removeLastTranscript = () => {
+    setHistory((prevHistory) => prevHistory.slice(0, -1));
   };
 
-  useDataChannel(dataChannel, addUserTranscript, addAgentTranscript);
+  // const addUserTranscript = (transcript: string) => {
+  //   const transcriptEntry: TranscriptEntry = {
+  //     participantName: currentUser.displayName,
+  //     text: transcript,
+  //     role: "user",
+  //     timestamp: formattedTimestamp(),
+  //     createdAtMs: Date.now(),
+  //   };
+  //   setHistory((prevHistory) => [...prevHistory, transcriptEntry]);
+  // };
+
+  // const addAgentTranscript = (transcript: string) => {
+  //   const transcriptEntry: TranscriptEntry = {
+  //     participantName: module.modulePrompt.characters[0].name,
+  //     text: transcript,
+  //     role: "agent",
+  //     timestamp: formattedTimestamp(),
+  //     createdAtMs: Date.now(),
+  //   };
+  //   setHistory((prevHistory) => [...prevHistory, transcriptEntry]);
+  // };
+
+  // useDataChannel(dataChannel, addUserTranscript, addAgentTranscript);
+
+  const { connect, disconnect, sendTextMessage } = useOpenAIRealtime({
+    instructions: createPrompt(module.modulePrompt),
+    voice: module.modulePrompt.characters[0]?.voice || DEFAULT_VOICE,
+    audioRef,
+    onTranscript: addTranscript,
+    onRemoveLastTranscript: removeLastTranscript,
+  });
 
   const handleToggleConversation = async () => {
     if (isConversationActive) {
@@ -191,7 +218,8 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   );
 
   const handleSendMessage = (message: string) => {
-    addUserTranscript(message);
+    sendTextMessage(message);
+    addTranscript(message, "user");
   };
 
   return (
