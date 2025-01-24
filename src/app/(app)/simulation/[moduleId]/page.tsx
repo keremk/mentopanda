@@ -7,6 +7,7 @@ import { getCurrentUserAction } from "@/app/actions/user-actions";
 import { AI_MODELS } from "@/types/models";
 import { Metadata } from "next";
 import { ApiKeyCheckDialog } from "@/components/api-key-check-dialog";
+import { TranscriptProvider } from "@/contexts/transcript";
 
 type Props = {
   params: {
@@ -49,7 +50,9 @@ export default async function Page({ params }: Props) {
       />
 
       {isOpenAIModule && (
-        <OpenAIChat module={currentModule} currentUser={currentUser} />
+        <TranscriptProvider>
+          <OpenAIChat module={currentModule} currentUser={currentUser} />
+        </TranscriptProvider>
       )}
     </div>
   );

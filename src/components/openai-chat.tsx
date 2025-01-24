@@ -30,6 +30,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { TranscriptDisplay } from "@/components/transcript-display";
 import { useOpenAIRealtime } from "@/hooks/use-openai-realtime";
+import { useTranscript } from "@/contexts/transcript";
+import { v4 as uuidv4 } from "uuid";
 
 type ChatProps = {
   module: Module;
@@ -66,10 +68,12 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isConversationActive, setIsConversationActive] = useState(false);
   const [historyEntryId, setHistoryEntryId] = useState<number>();
-  const [history, setHistory] = useState<TranscriptEntry[]>([]);
+  const { transcriptEntries, clearTranscript, addTranscriptMessage } =
+    useTranscript();
+  // const [history, setHistory] = useState<TranscriptEntry[]>([]);
   const { saveTranscript, saveAndComplete } = useTranscriptSave({
     historyEntryId,
-    transcriptBuffer: history,
+    transcriptBuffer: transcriptEntries,
     saveInterval: 20000,
   });
   const [showEndDialog, setShowEndDialog] = useState(false);
@@ -106,32 +110,32 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   //   audioRef,
   // });
 
-  const formattedTimestamp = () => {
-    return new Date().toLocaleTimeString([], {
-      hour12: true,
-      hour: "numeric",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  };
+  // const formattedTimestamp = () => {
+  //   return new Date().toLocaleTimeString([], {
+  //     hour12: true,
+  //     hour: "numeric",
+  //     minute: "2-digit",
+  //     second: "2-digit",
+  //   });
+  // };
 
-  const addTranscript = (transcript: string, role: "user" | "agent") => {
-    const transcriptEntry: TranscriptEntry = {
-      participantName:
-        role === "user"
-          ? currentUser.displayName
-          : module.modulePrompt.characters[0].name,
-      text: transcript,
-      role: role,
-      timestamp: formattedTimestamp(),
-      createdAtMs: Date.now(),
-    };
-    setHistory((prevHistory) => [...prevHistory, transcriptEntry]);
-  };
+  // const addTranscript = (transcript: string, role: "user" | "agent") => {
+  //   const transcriptEntry: TranscriptEntry = {
+  //     participantName:
+  //       role === "user"
+  //         ? currentUser.displayName
+  //         : module.modulePrompt.characters[0].name,
+  //     text: transcript,
+  //     role: role,
+  //     timestamp: formattedTimestamp(),
+  //     createdAtMs: Date.now(),
+  //   };
+  //   setHistory((prevHistory) => [...prevHistory, transcriptEntry]);
+  // };
 
-  const removeLastTranscript = () => {
-    setHistory((prevHistory) => prevHistory.slice(0, -1));
-  };
+  // const removeLastTranscript = () => {
+  //   setHistory((prevHistory) => prevHistory.slice(0, -1));
+  // };
 
   // const addUserTranscript = (transcript: string) => {
   //   const transcriptEntry: TranscriptEntry = {
@@ -161,8 +165,6 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
     instructions: createPrompt(module.modulePrompt),
     voice: module.modulePrompt.characters[0]?.voice || DEFAULT_VOICE,
     audioRef,
-    onTranscript: addTranscript,
-    onRemoveLastTranscript: removeLastTranscript,
   });
 
   const handleToggleConversation = async () => {
@@ -186,7 +188,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
       await deleteHistoryEntryAction(historyEntryId);
       setHistoryEntryId(undefined);
     }
-    setHistory([]);
+    clearTranscript();
     setIsConversationActive(false);
     setShowEndDialog(false);
   };
@@ -219,7 +221,9 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
 
   const handleSendMessage = (message: string) => {
     sendTextMessage(message);
-    addTranscript(message, "user");
+    const id = uuidv4().slice(0, 32);
+    addTranscriptMessage(id, "user", "user", message);
+    // addTranscript(message, "user");
   };
 
   return (
@@ -316,13 +320,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
         <TabsContent value="transcript" className="mt-4">
           <Card>
             <CardContent className="pt-6">
-              {history.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
-                  Transcript will be displayed here...
-                </p>
-              ) : (
-                <TranscriptDisplay transcript={history} />
-              )}
+              <TranscriptDisplay transcriptEntries={transcriptEntries} />
             </CardContent>
           </Card>
         </TabsContent>

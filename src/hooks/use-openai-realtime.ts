@@ -2,14 +2,48 @@ import { CURRENT_MODEL_NAMES } from "@/types/models";
 import { getStoredApiKey } from "@/utils/apikey";
 import { createOpenAISession } from "@/app/actions/openai-session";
 import { useRef } from "react";
-
+import { useTranscript } from "@/contexts/transcript";
 export type OpenAIRealtimeProps = {
   instructions: string;
   voice: string;
   audioRef: React.RefObject<HTMLAudioElement>;
-  onTranscript: (transcript: string, role: "user" | "agent") => void;
-  onRemoveLastTranscript: () => void;
 };
+
+export type ServerEvent = {
+  type: string;
+  event_id?: string;
+  item_id?: string;
+  transcript?: string;
+  delta?: string;
+  session?: {
+    id?: string;
+  };
+  item?: {
+    id?: string;
+    object?: string;
+    type?: string;
+    status?: string;
+    name?: string;
+    arguments?: string;
+    role?: "user" | "assistant";
+    content?: {
+      type?: string;
+      transcript?: string | null;
+      text?: string;
+    }[];
+  };
+  response?: {
+    output?: {
+      type?: string;
+      name?: string;
+      arguments?: any;
+      call_id?: string;
+    }[];
+    status_details?: {
+      error?: any;
+    };
+  };
+}
 
 type DataChannelMessage =
   | { type: "session.created" }
@@ -26,13 +60,12 @@ export function useOpenAIRealtime({
   instructions,
   voice,
   audioRef,
-  onTranscript,
-  onRemoveLastTranscript,
 }: OpenAIRealtimeProps) {
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const providerUrl = "https://api.openai.com/v1/realtime";
   const model = CURRENT_MODEL_NAMES.OPENAI;
+  const { addTranscriptMessage, updateTranscriptEntryStatus, updateTranscriptMessage } = useTranscript();
 
   const tokenFetcher = async () => {
     const storedApiKey = await getStoredApiKey();
@@ -70,24 +103,39 @@ export function useOpenAIRealtime({
 
   const handleMessage = (event: MessageEvent) => {
     try {
-      const data = JSON.parse(event.data) as DataChannelMessage;
-      console.log("Data Channel Message:", data);
+      const serverEvent = JSON.parse(event.data) as ServerEvent;
+      console.log("Data Channel Message:", serverEvent);
 
-      switch (data.type) {
+      switch (serverEvent.type) {
         case "session.created":
           // For some reason, the model needs to be set after the session is created
           setAudioTranscriptionModel("whisper-1");
           break;
 
-        case "conversation.item.input_audio_transcription.completed":
-          console.log("Transcript:", data.transcript);
-          onTranscript(data.transcript, "user");
+        case "conversation.item.input_audio_transcription.completed": {
+          console.log("Transcript:", serverEvent.transcript);
+          const entryId = serverEvent.item_id;
+          const finalTranscript =
+            !serverEvent.transcript || serverEvent.transcript === "\n"
+              ? "[inaudible]"
+              : serverEvent.transcript;
+          if (entryId) {
+            addTranscriptMessage(entryId, "user", "user", finalTranscript);
+          }
+          // onTranscript(data.transcript, "user");
           break;
+        }
 
-        case "response.audio_transcript.done":
-          console.log("Agent Transcript:", data.transcript);
-          onTranscript(data.transcript, "agent");
+        case "response.audio_transcript.done": {
+          console.log("Agent Transcript:", serverEvent.transcript);
+          const entryId = serverEvent.item_id;
+          const finalTranscript = serverEvent.transcript || "";
+          if (entryId) {
+            addTranscriptMessage(entryId, "agent", "agent", finalTranscript);
+          }
+          // onTranscript(data.transcript, "agent");
           break;
+        }
       }
     } catch (error) {
       console.error("Failed to parse data channel message:", error);

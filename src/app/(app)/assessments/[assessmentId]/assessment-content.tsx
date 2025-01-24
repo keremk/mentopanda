@@ -21,7 +21,7 @@ export function AssessmentContent({ assessment, transcript }: Props) {
         </TabsContent>
         <TabsContent value="transcript" className="mt-6">
           {transcript ? (
-            <TranscriptDisplay transcript={transcript} />
+            <TranscriptDisplay transcriptEntries={transcript} />
           ) : (
             <p className="text-muted-foreground">No transcript available</p>
           )}
