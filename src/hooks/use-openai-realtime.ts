@@ -43,18 +43,7 @@ export type ServerEvent = {
       error?: any;
     };
   };
-}
-
-type DataChannelMessage =
-  | { type: "session.created" }
-  | {
-      type: "conversation.item.input_audio_transcription.completed";
-      transcript: string;
-    }
-  | {
-      type: "response.audio_transcript.done";
-      transcript: string;
-    };
+};
 
 export function useOpenAIRealtime({
   instructions,
@@ -65,7 +54,11 @@ export function useOpenAIRealtime({
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const providerUrl = "https://api.openai.com/v1/realtime";
   const model = CURRENT_MODEL_NAMES.OPENAI;
-  const { addTranscriptMessage, updateTranscriptEntryStatus, updateTranscriptMessage } = useTranscript();
+  const {
+    addTranscriptMessage,
+    updateTranscriptEntryStatus,
+    updateTranscriptMessage,
+  } = useTranscript();
 
   const tokenFetcher = async () => {
     const storedApiKey = await getStoredApiKey();
@@ -91,15 +84,31 @@ export function useOpenAIRealtime({
     }
   };
 
-  const setAudioTranscriptionModel = (model: string) => {
+  const updateSession = () => {
+    sendClientEvent({ type: "input_audio_buffer.clear" });
+
+    const turnDetection = {
+      type: "server_vad",
+      threshold: 0.5,
+      prefix_padding_ms: 300,
+      silence_duration_ms: 200,
+      create_response: true,
+    };
+
     const updateEvent = {
       type: "session.update",
       session: {
-        input_audio_transcription: { model },
+        modalities: ["text", "audio"],
+        instructions,
+        input_audio_format: "pcm16",
+        output_audio_format: "pcm16",
+        input_audio_transcription: { model: "whisper-1" },
+        turn_detection: turnDetection,
       },
     };
+
     sendClientEvent(updateEvent);
-  }
+  };
 
   const handleMessage = (event: MessageEvent) => {
     try {
@@ -109,7 +118,7 @@ export function useOpenAIRealtime({
       switch (serverEvent.type) {
         case "session.created":
           // For some reason, the model needs to be set after the session is created
-          setAudioTranscriptionModel("whisper-1");
+          updateSession();
           break;
 
         case "conversation.item.input_audio_transcription.completed": {
@@ -122,7 +131,6 @@ export function useOpenAIRealtime({
           if (entryId) {
             addTranscriptMessage(entryId, "user", "user", finalTranscript);
           }
-          // onTranscript(data.transcript, "user");
           break;
         }
 
@@ -133,7 +141,6 @@ export function useOpenAIRealtime({
           if (entryId) {
             addTranscriptMessage(entryId, "agent", "agent", finalTranscript);
           }
-          // onTranscript(data.transcript, "agent");
           break;
         }
       }
@@ -218,16 +225,14 @@ export function useOpenAIRealtime({
   }
 
   async function sendTextMessage(text: string) {
-     sendClientEvent(
-       {
-         type: "conversation.item.create",
-         item: {
-           type: "message",
-           role: "user",
-           content: [{ type: "input_text", text: text.trim() }],
-         },
-       }
-     );
+    sendClientEvent({
+      type: "conversation.item.create",
+      item: {
+        type: "message",
+        role: "user",
+        content: [{ type: "input_text", text: text.trim() }],
+      },
+    });
 
     sendClientEvent({ type: "response.create" });
   }
