@@ -77,7 +77,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </Suspense>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4">
+        <div className="flex flex-1 flex-col gap-4 p-1">
           <main className="flex-1">{children}</main>
         </div>
       </SidebarInset>

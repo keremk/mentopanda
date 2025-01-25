@@ -148,104 +148,111 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   };
 
   return (
-    <div className="space-y-4">
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader className="pb-0">
-          <CountdownBar
-            initialMinutes={HARD_TIMEOUT_MINUTES}
-            onCountdownComplete={handleCountdownComplete}
-            isActive={isConversationActive}
+    <div className="grid lg:grid-cols-[max-content,1fr] grid-cols-1 gap-4 lg:gap-4 h-[calc(100vh-4rem)] grid-rows-[auto,1fr] lg:grid-rows-1 p-4">
+      <div className="mx-auto lg:mx-0">
+        <Card className="w-[448px] max-w-full">
+          <CardHeader className="pb-0">
+            <CountdownBar
+              initialMinutes={HARD_TIMEOUT_MINUTES}
+              onCountdownComplete={handleCountdownComplete}
+              isActive={isConversationActive}
+            />
+          </CardHeader>
+          <CardContent className="space-y-4 pb-6">
+            <audio ref={audioRef} className="hidden" />
+            <RolePlayersContainer
+              rolePlayers={rolePlayers}
+              activeRolePlayer={rolePlayers[0]?.name ?? ""}
+              isInConversation={isConversationActive}
+            >
+              <AudioVisualiser audioRef={audioRef} />
+            </RolePlayersContainer>
+            <div className="flex justify-center gap-4">
+              <Button
+                size="lg"
+                variant={isConversationActive ? "destructive" : "default"}
+                onClick={handleToggleConversation}
+                className="w-48"
+              >
+                {isConversationActive ? (
+                  <span className="flex items-center">
+                    <PhoneOff className="mr-2 h-4 w-4" />
+                    End Conversation
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <Phone className="mr-2 h-4 w-4 text-green-500" />
+                    Start Conversation
+                  </span>
+                )}
+              </Button>
+
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={isMuted ? unmuteMicrophone : muteMicrophone}
+                className="w-48"
+              >
+                {isMuted ? (
+                  <>
+                    <MicOff className="mr-2 h-4 w-4" />
+                    Unmute Mic
+                  </>
+                ) : (
+                  <>
+                    <Mic className="mr-2 h-4 w-4" />
+                    Mute Mic
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <ChatTextEntry
+              onSendMessage={handleSendMessage}
+              isEnabled={isConversationActive}
+            />
+          </CardContent>
+          <EndChatDialog
+            isOpen={showEndDialog}
+            onOpenChange={setShowEndDialog}
+            onEndChat={handleEndWithoutSaving}
+            onEndAndSave={handleEndAndSave}
+            isTimeout={isTimeout}
           />
-        </CardHeader>
-        <CardContent className="space-y-4 pb-6">
-          <audio ref={audioRef} className="hidden" />
-          <RolePlayersContainer
-            rolePlayers={rolePlayers}
-            activeRolePlayer={rolePlayers[0]?.name ?? ""}
-            isInConversation={isConversationActive}
+        </Card>
+      </div>
+
+      <div className="h-full overflow-hidden">
+        <Tabs defaultValue="transcript" className="h-full flex flex-col">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="instructions">Instructions</TabsTrigger>
+            <TabsTrigger value="transcript">Transcript</TabsTrigger>
+          </TabsList>
+          <TabsContent
+            value="instructions"
+            className="flex-1 mt-4 overflow-auto"
           >
-            <AudioVisualiser audioRef={audioRef} />
-          </RolePlayersContainer>
-          <div className="flex justify-center gap-4">
-            <Button
-              size="lg"
-              variant={isConversationActive ? "destructive" : "default"}
-              onClick={handleToggleConversation}
-              className="w-48"
-            >
-              {isConversationActive ? (
-                <span className="flex items-center">
-                  <PhoneOff className="mr-2 h-4 w-4" />
-                  End Conversation
-                </span>
-              ) : (
-                <span className="flex items-center">
-                  <Phone className="mr-2 h-4 w-4 text-green-500" />
-                  Start Conversation
-                </span>
-              )}
-            </Button>
-
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={isMuted ? unmuteMicrophone : muteMicrophone}
-              className="w-48"
-            >
-              {isMuted ? (
-                <>
-                  <MicOff className="mr-2 h-4 w-4" />
-                  Unmute Mic
-                </>
-              ) : (
-                <>
-                  <Mic className="mr-2 h-4 w-4" />
-                  Mute Mic
-                </>
-              )}
-            </Button>
-          </div>
-
-          <ChatTextEntry
-            onSendMessage={handleSendMessage}
-            isEnabled={isConversationActive}
-          />
-        </CardContent>
-        <EndChatDialog
-          isOpen={showEndDialog}
-          onOpenChange={setShowEndDialog}
-          onEndChat={handleEndWithoutSaving}
-          onEndAndSave={handleEndAndSave}
-          isTimeout={isTimeout}
-        />
-      </Card>
-
-      <Tabs defaultValue="transcript" className="w-full max-w-4xl mx-auto">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="instructions">Instructions</TabsTrigger>
-          <TabsTrigger value="transcript">Transcript</TabsTrigger>
-        </TabsList>
-        <TabsContent value="instructions" className="mt-4">
-          <Card>
-            <CardContent className="pt-6">
-              {module.instructions ? (
-                <MarkdownRenderer content={module.instructions} />
-              ) : (
-                <p className="text-muted-foreground text-sm">
-                  No instructions available.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="transcript" className="mt-4">
-          <Card>
-            <CardContent className="pt-6 h-[400px]">
-              <TranscriptDisplay transcriptEntries={transcriptEntries} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            <Card className="h-full">
+              <CardContent className="pt-6">
+                {module.instructions ? (
+                  <MarkdownRenderer content={module.instructions} />
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    No instructions available.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="transcript" className="flex-1 mt-4 overflow-auto">
+            <Card className="h-full">
+              <CardContent className="pt-6">
+                <TranscriptDisplay transcriptEntries={transcriptEntries} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

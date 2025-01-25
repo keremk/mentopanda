@@ -43,7 +43,7 @@ export default async function Page({ params }: Props) {
   const isFreePlan = currentUser.pricingPlan === "free";
 
   return (
-    <div className="container mx-auto py-8 w-full max-w-4xl">
+    <div className="container mx-auto w-full">
       <ApiKeyCheckDialog
         isOpenAIModule={isOpenAIModule}
         isFreePlan={isFreePlan}
