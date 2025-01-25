@@ -165,6 +165,8 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
     instructions: createPrompt(module.modulePrompt),
     voice: module.modulePrompt.characters[0]?.voice || DEFAULT_VOICE,
     audioRef,
+    userName: currentUser.displayName,
+    agentName: module.modulePrompt.characters[0]?.name || "agent",
   });
 
   const handleToggleConversation = async () => {

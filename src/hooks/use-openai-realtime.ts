@@ -7,6 +7,8 @@ export type OpenAIRealtimeProps = {
   instructions: string;
   voice: string;
   audioRef: React.RefObject<HTMLAudioElement>;
+  userName: string;
+  agentName: string;
 };
 
 export type ServerEvent = {
@@ -49,12 +51,15 @@ export function useOpenAIRealtime({
   instructions,
   voice,
   audioRef,
+  userName,
+  agentName,  
 }: OpenAIRealtimeProps) {
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const providerUrl = "https://api.openai.com/v1/realtime";
   const model = CURRENT_MODEL_NAMES.OPENAI;
   const {
+    transcriptEntries,
     addTranscriptMessage,
     updateTranscriptEntryStatus,
     updateTranscriptMessage,
@@ -117,29 +122,68 @@ export function useOpenAIRealtime({
 
       switch (serverEvent.type) {
         case "session.created":
-          // For some reason, the model needs to be set after the session is created
           updateSession();
           break;
 
+        case "conversation.item.created": {
+          let text =
+            serverEvent.item?.content?.[0]?.text ||
+            serverEvent.item?.content?.[0]?.transcript ||
+            "";
+
+          const role = serverEvent.item?.role === "user" ? "user" : "agent";
+          const entryId = serverEvent.item?.id;
+          const name = role === "user" ? userName : agentName;
+          if (
+            entryId &&
+            transcriptEntries.some((entry) => entry.id === entryId)
+          ) {
+            break;
+          }
+
+          if (entryId) {
+            if (role === "user" && !text) {
+              text = "[Transcribing...]";
+            }
+            addTranscriptMessage(entryId, name, role, text);
+          }
+          break;
+        }
+
         case "conversation.item.input_audio_transcription.completed": {
-          console.log("Transcript:", serverEvent.transcript);
           const entryId = serverEvent.item_id;
           const finalTranscript =
             !serverEvent.transcript || serverEvent.transcript === "\n"
               ? "[inaudible]"
               : serverEvent.transcript;
           if (entryId) {
-            addTranscriptMessage(entryId, "user", "user", finalTranscript);
+            updateTranscriptMessage(entryId, finalTranscript, false);
+          }
+          break;
+        }
+
+        case "response.audio_transcript.delta": {
+          const entryId = serverEvent.item_id;
+          const deltaText = serverEvent.delta || "";
+          if (entryId) {
+            updateTranscriptMessage(entryId, deltaText, true);
           }
           break;
         }
 
         case "response.audio_transcript.done": {
-          console.log("Agent Transcript:", serverEvent.transcript);
           const entryId = serverEvent.item_id;
           const finalTranscript = serverEvent.transcript || "";
           if (entryId) {
-            addTranscriptMessage(entryId, "agent", "agent", finalTranscript);
+            updateTranscriptMessage(entryId, finalTranscript, false);
+          }
+          break;
+        }
+          
+        case "response.output_item.done": {
+          const entryId = serverEvent.item?.id;
+          if (entryId) {
+            updateTranscriptEntryStatus(entryId, "DONE");
           }
           break;
         }
