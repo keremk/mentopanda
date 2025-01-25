@@ -224,7 +224,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   const handleSendMessage = (message: string) => {
     sendTextMessage(message);
     const id = uuidv4().slice(0, 32);
-    addTranscriptMessage(id, "user", "user", message);
+    // addTranscriptMessage(id, "user", "user", message);
     // addTranscript(message, "user");
   };
 
@@ -321,7 +321,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
         </TabsContent>
         <TabsContent value="transcript" className="mt-4">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 h-[400px]">
               <TranscriptDisplay transcriptEntries={transcriptEntries} />
             </CardContent>
           </Card>

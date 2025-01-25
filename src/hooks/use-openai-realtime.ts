@@ -115,10 +115,36 @@ export function useOpenAIRealtime({
     sendClientEvent(updateEvent);
   };
 
+  const cancelAssistantSpeech = async () => {
+    const mostRecentAgentMessage = [...transcriptEntries]
+      .reverse()
+      .find((entry) => entry.role === "agent");
+
+    if (!mostRecentAgentMessage) {
+      console.warn("can't cancel, no recent assistant message found");
+      console.log(transcriptEntries);
+      return;
+    }
+    if (mostRecentAgentMessage.status === "DONE") {
+      console.log("No truncation needed, message is DONE");
+      return;
+    }
+
+    sendClientEvent({
+      type: "conversation.item.truncate",
+      item_id: mostRecentAgentMessage?.id,
+      content_index: 0,
+      audio_end_ms: Date.now() - mostRecentAgentMessage.createdAtMs,
+    });
+    sendClientEvent(
+      { type: "response.cancel" },
+    );
+  };
+
   const handleMessage = (event: MessageEvent) => {
     try {
       const serverEvent = JSON.parse(event.data) as ServerEvent;
-      console.log("Data Channel Message:", serverEvent);
+      // console.log("Data Channel Message:", serverEvent);
 
       switch (serverEvent.type) {
         case "session.created":
@@ -269,6 +295,8 @@ export function useOpenAIRealtime({
   }
 
   async function sendTextMessage(text: string) {
+    await cancelAssistantSpeech();
+
     sendClientEvent({
       type: "conversation.item.create",
       item: {
