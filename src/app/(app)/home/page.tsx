@@ -1,5 +1,4 @@
 import { TrainingSessionsHeatmap } from "@/components/training-sessions-heatmap";
-import { generateMockHeatmapData } from "@/lib/mock-data";
 import { TrainingHistory } from "@/components/training-history";
 import { EnrolledTrainingsCard } from "@/components/enrolled-trainings-card";
 import { Metadata } from "next";

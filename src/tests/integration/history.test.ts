@@ -87,7 +87,6 @@ describe("History Integration Tests", () => {
       id: testHistoryId,
       moduleTitle: "Test Module",
       trainingTitle: "Test Training",
-      assessmentScore: 85,
       assessmentText: "Test assessment",
       completedAt: expect.any(Date),
       startedAt: expect.any(Date)

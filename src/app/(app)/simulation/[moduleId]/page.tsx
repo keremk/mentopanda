@@ -1,7 +1,6 @@
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { notFound } from "next/navigation";
 import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
-import CollapsibleBlock from "@/components/collapsible-block";
 import OpenAIChat from "@/components/openai-chat";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 import { AI_MODELS } from "@/types/models";

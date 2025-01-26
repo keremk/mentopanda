@@ -6,12 +6,11 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import type { NavItem } from "@/types/nav";
 import { cookies } from "next/headers";
 import { Skeleton } from "@/components/ui/skeleton";
-import { headers } from "next/headers";
 import { PageTitle } from "@/components/page-title";
+import type { HTMLAttributes } from "react";
 
 // Define navigation structure without icons
 export const navItems: NavItem[] = [
