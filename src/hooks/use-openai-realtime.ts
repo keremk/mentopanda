@@ -1,5 +1,5 @@
 import { CURRENT_MODEL_NAMES } from "@/types/models";
-import { getStoredApiKey } from "@/utils/apikey";
+import { getStoredApiKey } from "@/lib/apikey";
 import { createOpenAISession } from "@/app/actions/openai-session";
 import { useRef } from "react";
 import { useTranscript } from "@/contexts/transcript";

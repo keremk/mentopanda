@@ -11,7 +11,7 @@ import {
 import { useTransition, useState, useEffect } from "react";
 import type { User } from "@/data/user";
 import { ImageUploadButton } from "@/components/image-upload-button";
-import { getStoredApiKey, storeApiKey, removeApiKey } from "@/utils/apikey";
+import { getStoredApiKey, storeApiKey, removeApiKey } from "@/lib/apikey";
 
 type AccountFormProps = {
   user: User;

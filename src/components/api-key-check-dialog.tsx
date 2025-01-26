@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import Link from "next/link";
-import { hasStoredApiKey } from "@/utils/apikey";
+import { hasStoredApiKey } from "@/lib/apikey";
 
 type ApiKeyCheckDialogProps = {
   isOpenAIModule: boolean;
