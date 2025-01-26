@@ -48,7 +48,6 @@ describe("History Integration Tests", () => {
         user_id: testUserId,
         module_id: testModuleId,
         started_at: new Date().toISOString(),
-        assessment_score: 85,
         assessment_text: "Test assessment",
         completed_at: new Date().toISOString()
       })

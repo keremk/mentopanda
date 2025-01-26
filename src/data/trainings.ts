@@ -129,7 +129,6 @@ export async function getTrainingWithProgress(
         *,
         history (
           id,
-          assessment_score,
           practice_no,
           started_at,
           completed_at
@@ -168,10 +167,8 @@ export async function getTrainingWithProgress(
         id: module.id,
         title: module.title,
         practiceCount: history.length,
-        lastScore: lastPractice?.assessment_score || null,
         history: history.map((h: any) => ({
           id: h.id,
-          assessmentScore: h.assessment_score,
           practiceNumber: h.practice_no,
           startedAt: h.started_at,
           completedAt: h.completed_at,

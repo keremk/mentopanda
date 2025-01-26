@@ -31,7 +31,6 @@ type ExportData = {
     transcript: string | null;
     recording_url: string | null;
     assessment_text: string | null;
-    assessment_score: number | null;
     module_id: number;
     completed: boolean;
   }[];
@@ -120,7 +119,6 @@ async function exportData(outputFile: string) {
         transcript: h.transcript,
         recording_url: h.recording_url,
         assessment_text: h.assessment_text,
-        assessment_score: h.assessment_score,
         module_id: h.module_id!,
         completed: h.completed_at !== null,
       })),

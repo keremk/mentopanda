@@ -33,7 +33,6 @@ export type Module = ModuleSummary & {
 
 export type ModuleProgress = ModuleSummary & {
   practiceCount: number;
-  lastScore: number | null;
   history: HistorySummary[];
 };
 

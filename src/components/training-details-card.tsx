@@ -93,11 +93,6 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
                     <span className="text-sm text-muted-foreground">
                       Practices: {module.practiceCount}
                     </span>
-                    {module.lastScore !== null && (
-                      <span className="text-sm text-muted-foreground">
-                        Last Score: {module.lastScore}
-                      </span>
-                    )}
                     <Link href={`/simulation/${module.id}`}>
                       <Button>Start Module</Button>
                     </Link>
@@ -114,7 +109,6 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
                             <TableRow>
                               <TableHead>Practice #</TableHead>
                               <TableHead>Completed</TableHead>
-                              <TableHead>Score</TableHead>
                               <TableHead className="text-right">
                                 Actions
                               </TableHead>
@@ -140,9 +134,6 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
                                         new Date(practice.completedAt),
                                         "MMM d, yyyy HH:mm"
                                       )}
-                                  </TableCell>
-                                  <TableCell>
-                                    {practice.assessmentScore}
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <Link href={`/assessments/${practice.id}`}>
