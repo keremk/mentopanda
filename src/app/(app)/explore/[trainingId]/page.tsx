@@ -26,11 +26,12 @@ function YouTubeEmbed({ url }: { url: string }) {
   );
 }
 
-export default async function TrainingDetailsPage({
-  params,
-}: {
-  params: { trainingId: number };
-}) {
+export default async function TrainingDetailsPage(
+  props: {
+    params: Promise<{ trainingId: number }>;
+  }
+) {
+  const params = await props.params;
   const training = await getTrainingByIdAction(params.trainingId);
   const user = await getCurrentUserAction();
 

@@ -15,32 +15,32 @@ import { redirect } from "next/navigation";
 import { getUserId } from "@/data/utils";
 
 export async function getTrainingByIdAction(trainingId: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await getTrainingById(supabase, trainingId);
 }
 
 export async function getEnrolledTrainingsAction() {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await getEnrolledTrainings(supabase);
 }
 
 export async function getTrainingWithProgressAction(trainingId: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await getTrainingWithProgress(supabase, trainingId);
 }
 
 export async function getTrainingsWithEnrollmentAction() {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await getTrainingsWithEnrollment(supabase);
 }
 
 export async function updateTrainingAction(training: UpdateTrainingInput) {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await updateTraining(supabase, training);
 }
 
 export async function createTrainingAction(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const training = await createTraining(supabase, {
     title: "New Training",
     tagline: "Training description goes here",
@@ -54,7 +54,7 @@ export async function createTrainingAction(formData: FormData) {
 }
 
 export async function deleteTrainingAction(trainingId: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   await deleteTraining(supabase, trainingId);
   redirect("/explore");
 }

@@ -5,14 +5,15 @@ import { CardSkeleton } from "@/components/ui/card-skeleton"
 import { getTrainingWithProgressAction } from "@/app/(app)/trainingActions"
 
 type TrainingPageProps = {
-  params: {
+  params: Promise<{
     trainingId: number
-  }
+  }>
 }
 
-export default async function TrainingPage({ params }: TrainingPageProps) {
+export default async function TrainingPage(props: TrainingPageProps) {
+  const params = await props.params;
   const training = await getTrainingWithProgressAction(params.trainingId)
-  
+
   if (!training) notFound()
 
   return (

@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import GitHubIcon from "@/components/icons/github";
 
-export default function LoginPage({
-  searchParams,
-}: {
-  searchParams: { message: string; mode?: 'signin' | 'signup' };
-}) {
+export default async function LoginPage(
+  props: {
+    searchParams: Promise<{ message: string; mode?: 'signin' | 'signup' }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const isSignUp = searchParams.mode === 'signup';
 
   return (

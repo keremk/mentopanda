@@ -11,7 +11,7 @@ export async function updateModuleCharacterPromptAction(
   data: UpdateModuleCharacterPromptInput
 ) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     await updateModuleCharacterPrompt(supabase, data);
 
     // Revalidate the module data

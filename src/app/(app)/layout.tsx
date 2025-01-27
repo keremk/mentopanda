@@ -51,9 +51,9 @@ function SidebarSkeleton() {
   );
 }
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Read cookie server-side
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const sidebarState = cookieStore.get("sidebar:state");
   const defaultOpen = sidebarState ? sidebarState.value === "true" : true;
 

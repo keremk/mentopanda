@@ -9,9 +9,9 @@ import { ApiKeyCheckDialog } from "@/components/api-key-check-dialog";
 import { TranscriptProvider } from "@/contexts/transcript";
 
 type Props = {
-  params: {
+  params: Promise<{
     moduleId: string;
-  };
+  }>;
 };
 
 // Helper function to avoid code duplication
@@ -21,7 +21,8 @@ async function getModule(moduleId: number) {
   return module;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   const moduleId = parseInt(params.moduleId, 10);
   const currentModule = await getModule(moduleId);
 
@@ -30,7 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function Page({ params }: Props) {
+export default async function Page(props: Props) {
+  const params = await props.params;
   const moduleId = parseInt(params.moduleId, 10);
   const [currentModule, currentUser] = await Promise.all([
     getModule(moduleId),

@@ -5,11 +5,12 @@ import { Pencil } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default async function CharacterPage({
-  params,
-}: {
-  params: { charId: string };
-}) {
+export default async function CharacterPage(
+  props: {
+    params: Promise<{ charId: string }>;
+  }
+) {
+  const params = await props.params;
   const character = await getCharacterDetailsAction(params.charId);
 
   if (!character) notFound();

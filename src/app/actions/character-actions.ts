@@ -19,12 +19,12 @@ import {
 } from "@/data/characters";
 
 export async function getCharactersAction() {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await getCharacters(supabase);
 }
 
 export async function getCharacterDetailsAction(characterId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await getCharacterDetails(supabase, characterId);
 }
 
@@ -32,7 +32,7 @@ export async function updateCharacterAction(
   characterId: number,
   data: UpdateCharacterInput
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const result = await updateCharacter(supabase, characterId, data);
 
   // Revalidate only the affected data
@@ -54,7 +54,7 @@ export async function updateCharacterAvatarAction(
     // Validate input
     const validated = updateAvatarSchema.parse(data);
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const avatarUrl = await updateCharacterAvatar({
       supabase,
       characterId,
@@ -83,7 +83,7 @@ export async function createCharacterAction(data: CreateCharacterInput) {
     // Validate input
     const validated = createCharacterSchema.parse(data);
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const character = await createCharacter(supabase, validated);
 
     // Revalidate the characters list
@@ -100,7 +100,7 @@ export async function createCharacterAction(data: CreateCharacterInput) {
 
 export async function deleteCharacterAction(characterId: number) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     await deleteCharacter(supabase, characterId);
 
     // Revalidate the characters list
@@ -128,7 +128,7 @@ export async function addCharacterToModuleAction(data: ModuleCharacterInput) {
     // Validate input
     const validated = addCharacterToModuleSchema.parse(data);
 
-    const supabase = createClient();
+    const supabase = await createClient();
     await addCharacterToModule(supabase, validated);
 
     // Revalidate the module data
@@ -161,7 +161,7 @@ export async function removeCharacterFromModuleAction(
     // Validate input
     const validated = removeCharacterFromModuleSchema.parse(data);
 
-    const supabase = createClient();
+    const supabase = await createClient();
     await removeCharacterFromModule(supabase, validated);
 
     // Revalidate the module data

@@ -16,7 +16,7 @@ export async function getTrainingHistoryAction(
   pageSize: number = 10,
   completedOnly: boolean = false
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const start = (page - 1) * pageSize;
   const end = start + pageSize - 1;
 
@@ -40,27 +40,27 @@ export async function getTrainingHistoryAction(
 }
 
 export async function createHistoryEntryAction(moduleId: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await createHistoryEntry(supabase, moduleId);
 }
 
 export async function updateHistoryEntryAction(updates: UpdateHistoryEntry) {
-  const supabase = createClient();
+  const supabase = await createClient();
   await updateHistoryEntry(supabase, updates);
   return { success: true };
 }
 
 export async function getHistoryEntryAction(id: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await getHistoryEntry(supabase, id);
 }
 
 export async function getTrainingHeatmapDataAction() {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await getTrainingHeatmapData(supabase);
 }
 
 export async function deleteHistoryEntryAction(id: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await deleteHistoryEntry(supabase, id);
 }

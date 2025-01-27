@@ -23,7 +23,7 @@ export async function login(formData: FormData) {
     );
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword(
     validatedFields.data
@@ -49,7 +49,7 @@ export async function signup(formData: FormData) {
     );
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signUp(validatedFields.data);
 
@@ -79,7 +79,7 @@ export async function githubSignIn() {
   Supabase Studio in local does not have this UI, so you need to use config.toml file.
   */ 
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const redirectUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
   console.log("Providing redirect URL as such: ", redirectUrl);

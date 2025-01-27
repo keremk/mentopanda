@@ -13,7 +13,7 @@ import {
 } from "@/data/trainings";
 
 export async function getTrainingByIdAction(trainingId: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await getTrainingById(supabase, trainingId);
 }
 ```

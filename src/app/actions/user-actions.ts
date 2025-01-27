@@ -18,7 +18,7 @@ const updateAvatarSchema = z.object({
 });
 
 export async function getCurrentUserAction() {
-  const supabase = createClient();
+  const supabase = await createClient();
   return await getCurrentUserInfo(supabase);
 }
 
@@ -30,7 +30,7 @@ export async function updateProfileAction(data: {
     // Validate input
     const validated = updateProfileSchema.parse(data);
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const updatedUser = await updateUserProfile({
       supabase,
       displayName: validated.displayName,
@@ -51,7 +51,7 @@ export async function updateAvatarAction(data: { avatarUrl: string }) {
     // Validate input
     const validated = updateAvatarSchema.parse(data);
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const updatedUser = await updateUserAvatar({
       supabase,
       avatarUrl: validated.avatarUrl,

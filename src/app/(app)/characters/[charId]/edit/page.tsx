@@ -7,11 +7,12 @@ export const metadata: Metadata = {
   title: "Edit Character",
 };
 
-export default async function EditCharacterPage({
-  params,
-}: {
-  params: { charId: string };
-}) {
+export default async function EditCharacterPage(
+  props: {
+    params: Promise<{ charId: string }>;
+  }
+) {
+  const params = await props.params;
   const character = await getCharacterDetailsAction(params.charId);
 
   if (!character) {

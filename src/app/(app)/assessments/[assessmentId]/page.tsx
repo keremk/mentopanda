@@ -19,9 +19,9 @@ import { ArrowLeft } from "lucide-react";
 import { XCircle } from "lucide-react";
 
 type Props = {
-  params: {
+  params: Promise<{
     assessmentId: string;
-  };
+  }>;
 };
 
 async function AssessmentGenerator({
@@ -46,7 +46,8 @@ async function AssessmentGenerator({
   );
 }
 
-export default async function AssessmentPage({ params }: Props) {
+export default async function AssessmentPage(props: Props) {
+  const params = await props.params;
   const historyId = parseInt(params.assessmentId);
   if (isNaN(historyId)) notFound();
 
