@@ -62,9 +62,8 @@ export default async function TrainingDetailsPage({
               <Image
                 src={training.imageUrl}
                 alt={training.title}
-                layout="fill"
-                objectFit="cover"
-                className="rounded-lg"
+                fill
+                className="rounded-lg object-cover"
               />
             </div>
           </div>

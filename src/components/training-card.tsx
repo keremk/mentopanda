@@ -34,8 +34,10 @@ export function TrainingCard({
         <Image
           src={imageUrl || fallbackImage}
           alt={`Cover image for ${title}`}
-          layout="fill"
-          objectFit="cover"
+          fill
+          className="object-cover"
+          // layout="fill"
+          // objectFit="cover"
         />
       </CardHeader>
       <CardContent className="p-4 flex-grow">
