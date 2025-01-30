@@ -30,19 +30,17 @@ export async function TrainingSessionsHeatmap() {
   const dayLabels = ["Mon", "", "Wed", "", "Fri", "", ""];
 
   const getColor = (count: number) => {
-    if (count === 0) return "bg-gray-900";
-    if (count === 1) return "bg-blue-900";
-    if (count === 2) return "bg-blue-600";
-    if (count === 3) return "bg-blue-400";
-    return "bg-blue-300";
+    if (count === 0) return "bg-gray-100 dark:bg-gray-900";
+    if (count === 1) return "bg-blue-200 dark:bg-blue-900";
+    if (count === 2) return "bg-blue-300 dark:bg-blue-600";
+    if (count === 3) return "bg-blue-400 dark:bg-blue-400";
+    return "bg-blue-500 dark:bg-blue-300";
   };
 
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
-        <CardTitle>
-          Training Heatmap
-        </CardTitle>
+        <CardTitle>Training Heatmap</CardTitle>
         <div className="drag-handle cursor-move">
           <GripVertical size={20} className="text-gray-400" />
         </div>
@@ -82,9 +80,9 @@ export async function TrainingSessionsHeatmap() {
                 <div className="mt-2 flex text-sm text-gray-500">
                   {weeks.map((week, index) => {
                     const firstDayOfWeek = week[0];
-                    
+
                     // Count how many weeks are in this month
-                    const weeksInMonth = weeks.filter((w) => 
+                    const weeksInMonth = weeks.filter((w) =>
                       isSameMonth(w[0], firstDayOfWeek)
                     ).length;
 
