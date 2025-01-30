@@ -10,10 +10,17 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { LayoutGrid, Workflow } from "lucide-react";
+import { LayoutGrid, Menu, Workflow } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Image from "next/image";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const features = [
   {
@@ -49,15 +56,23 @@ export function Header() {
     }
   };
 
-  const ListItem = ({ className, title, description, icon, ...props }: any) => {
+  const ListItem = ({
+    className,
+    title,
+    description,
+    icon,
+    onClick,
+    ...props
+  }: any) => {
     return (
       <li>
         <NavigationMenuLink asChild>
           <a
             className={cn(
-              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer",
               className
             )}
+            onClick={onClick}
             {...props}
           >
             <div className="flex items-center gap-2 mb-1">
@@ -73,6 +88,41 @@ export function Header() {
     );
   };
 
+  const MobileNavigation = () => (
+    <div className="flex flex-col space-y-6 -mx-6 mt-6">
+      <Button
+        variant="ghost"
+        className="w-full justify-start px-6"
+        onClick={() => scrollToSection("features")}
+      >
+        Features
+      </Button>
+      <Button
+        variant="ghost"
+        className="w-full justify-start px-6"
+        onClick={() => scrollToSection("solutions")}
+      >
+        Solutions
+      </Button>
+      <Button
+        variant="ghost"
+        className="w-full justify-start px-6"
+        onClick={() => scrollToSection("pricing")}
+      >
+        Pricing
+      </Button>
+      <Button variant="ghost" className="w-full justify-start px-6" asChild>
+        <Link href="/blog">Blog</Link>
+      </Button>
+      <div className="px-6 pt-6 border-t">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">Theme</span>
+          <ThemeToggle />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <header className="fixed top-0 w-full bg-background/80 backdrop-blur-sm z-50 border-b px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto flex h-16 items-center justify-between">
@@ -87,24 +137,40 @@ export function Header() {
           <span className="font-semibold text-xl">MentoPanda</span>
         </Link>
         <div className="flex items-center gap-4">
-          <NavigationMenu>
+          <NavigationMenu className="hidden lg:block">
             <NavigationMenuList>
               <NavigationMenuItem>
-                <NavigationMenuTrigger>Features</NavigationMenuTrigger>
+                <NavigationMenuTrigger
+                  onClick={() => scrollToSection("features")}
+                >
+                  Features
+                </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid w-[400px] gap-3 p-4">
                     {features.map((feature, index) => (
-                      <ListItem key={index} {...feature} />
+                      <ListItem
+                        key={index}
+                        {...feature}
+                        onClick={() => scrollToSection("features")}
+                      />
                     ))}
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <NavigationMenuTrigger>Solutions</NavigationMenuTrigger>
+                <NavigationMenuTrigger
+                  onClick={() => scrollToSection("solutions")}
+                >
+                  Solutions
+                </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid w-[400px] gap-3 p-4">
                     {solutions.map((solution, index) => (
-                      <ListItem key={index} {...solution} />
+                      <ListItem
+                        key={index}
+                        {...solution}
+                        onClick={() => scrollToSection("solutions")}
+                      />
                     ))}
                   </ul>
                 </NavigationMenuContent>
@@ -126,13 +192,36 @@ export function Header() {
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
-          <ThemeToggle />
-          <Button variant="outline" asChild>
-            <Link href="/login?mode=signin">Login</Link>
-          </Button>
-          <Button className="bg-red-500 hover:bg-red-600" asChild>
-            <Link href="/login?mode=signup">Get Started</Link>
-          </Button>
+          <div className="hidden lg:flex items-center gap-4">
+            <ThemeToggle />
+            <Button variant="outline" asChild>
+              <Link href="/login?mode=signin">Login</Link>
+            </Button>
+            <Button className="bg-red-500 hover:bg-red-600" asChild>
+              <Link href="/login?mode=signup">Get Started</Link>
+            </Button>
+          </div>
+          <div className="lg:hidden flex items-center gap-4">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/login?mode=signin">Login</Link>
+            </Button>
+            <Button size="sm" className="bg-red-500 hover:bg-red-600" asChild>
+              <Link href="/login?mode=signup">Get Started</Link>
+            </Button>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[220px]">
+                <SheetHeader className="mb-2">
+                  <SheetTitle className="text-left">MentoPanda</SheetTitle>
+                </SheetHeader>
+                <MobileNavigation />
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
     </header>
