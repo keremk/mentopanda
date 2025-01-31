@@ -227,7 +227,7 @@ export async function getModuleById2(
     .select(
       `
       *,
-      modules_characters!inner (
+      modules_characters (
         ordinal,
         prompt,
         characters (
@@ -246,13 +246,14 @@ export async function getModuleById2(
     .single();
 
   if (error) {
+    console.log("Error", error);
     if (error.code === "PGRST116") return null;
     handleError(error);
   }
 
   if (!module) return null;
 
-  const characters: ModuleCharacter[] = module.modules_characters
+  const characters: ModuleCharacter[] = (module.modules_characters || [])
     .map((mc: any) => ({
       id: mc.characters.id,
       name: mc.characters.name,
