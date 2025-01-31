@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  images: {
+    domains: [
+      ...(process.env.NODE_ENV === "development"
+        ? ["localhost", "127.0.0.1"]
+        : []),
+      "*.supabase.co",
+    ],
+  },
   headers: async () => {
     console.log("NODE_ENV:", process.env.NODE_ENV);
 
