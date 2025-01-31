@@ -21,7 +21,6 @@ import {
 import { GripVertical } from "lucide-react";
 import { getTrainingHistoryAction } from "@/app/actions/history-actions";
 import { format } from "date-fns";
-import { TrainingHistoryRow } from "@/components/training-history-row";
 import { useCallback, useEffect, useState } from "react";
 import { HistorySummary } from "@/data/history";
 
@@ -132,5 +131,24 @@ export function TrainingHistory() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function TrainingHistoryRow({
+  id,
+  children,
+}: {
+  id: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <TableRow
+      className="cursor-pointer hover:bg-muted/50"
+      onClick={() => {
+        window.location.href = `/assessments/${id}`;
+      }}
+    >
+      {children}
+    </TableRow>
   );
 }

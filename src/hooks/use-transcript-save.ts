@@ -28,7 +28,19 @@ export function useTranscriptSave({
       const formattedTranscript = formatTranscript(transcriptBuffer);
 
       // Only save if transcript has changed
-      if (formattedTranscript === lastSavedTranscript.current) return;
+      if (formattedTranscript === lastSavedTranscript.current) {
+        if (isComplete) {
+          try {
+            await updateHistoryEntryAction({
+              id: historyEntryId,
+              completedAt: new Date(),
+            });
+          } catch (error) {
+            console.error("Failed to save the completed transcript:", error);
+          }
+        }
+        return;
+      }
       try {
         await updateHistoryEntryAction({
           id: historyEntryId,

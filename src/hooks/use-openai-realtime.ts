@@ -6,7 +6,7 @@ import { useTranscript } from "@/contexts/transcript";
 export type OpenAIRealtimeProps = {
   instructions: string;
   voice: string;
-  audioRef: React.RefObject<HTMLAudioElement>;
+  audioRef: React.RefObject<HTMLAudioElement> | null;
   userName: string;
   agentName: string;
 };
@@ -242,7 +242,7 @@ export function useOpenAIRealtime({
     peerConnectionRef.current = connection;
 
     // Setup remote audio playback
-    const audioElement = audioRef.current;
+    const audioElement = audioRef?.current;
     if (audioElement) {
       audioElement.autoplay = true;
       connection.ontrack = (event) => {
@@ -288,7 +288,7 @@ export function useOpenAIRealtime({
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
     }
-    if (audioRef.current) {
+    if (audioRef && audioRef.current) {
       audioRef.current.srcObject = null;
     }
     dataChannelRef.current = null;
