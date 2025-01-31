@@ -196,14 +196,6 @@ export function EditTrainingForm({ training, user }: EditTrainingFormProps) {
                   placeholder="Enter video URL"
                 />
               </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={formData.isPublic}
-                  onCheckedChange={handleSwitchChange}
-                />
-                <label className="text-sm font-medium">Public</label>
-              </div>
             </div>
           </div>
 
