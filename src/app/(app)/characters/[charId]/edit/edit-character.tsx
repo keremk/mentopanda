@@ -159,7 +159,7 @@ export function EditCharacterForm({ character }: Props) {
               />
             </div>
 
-            <div>
+            {/* <div>
               <label className="text-sm font-medium">AI Model</label>
               <Select
                 value={formData.aiModel || undefined}
@@ -176,7 +176,7 @@ export function EditCharacterForm({ character }: Props) {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
 
             <div>
               <label className="text-sm font-medium">Voice</label>

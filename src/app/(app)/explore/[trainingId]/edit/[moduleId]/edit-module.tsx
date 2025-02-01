@@ -223,7 +223,7 @@ export function ModuleEditForm({ module }: Props) {
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="text-sm font-medium">AI Model</label>
             <Select
               value={formData.modulePrompt.aiModel}
@@ -248,7 +248,7 @@ export function ModuleEditForm({ module }: Props) {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
 
           <div>
             <label className="text-sm font-medium mb-2 block">
