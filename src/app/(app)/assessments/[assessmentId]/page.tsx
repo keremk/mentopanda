@@ -1,11 +1,9 @@
 import { Suspense } from "react";
 import {
-  deleteHistoryEntryAction,
   getHistoryEntryAction,
 } from "@/app/actions/history-actions";
 import analyseTranscript from "@/app/actions/analyse-transcript";
 import { notFound } from "next/navigation";
-import { AssessmentContent } from "./assessment-content";
 import AssessmentLoading from "./loading";
 import { HistoryEntry } from "@/data/history";
 import {
@@ -17,6 +15,10 @@ import {
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { XCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TranscriptDisplay } from "@/components/transcript-display";
+import { TranscriptEntry } from "@/types/chat-types";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 
 type Props = {
   params: Promise<{
@@ -24,6 +26,31 @@ type Props = {
   }>;
 };
 
+// The helper function produces the common tabs layout.
+function PageLayout(assessment: string, transcript?: TranscriptEntry[]) {
+  return (
+    <div className="container mx-auto py-2">
+      <Tabs defaultValue="assessment" className="w-full max-w-4xl mx-auto">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="assessment">Assessment</TabsTrigger>
+          <TabsTrigger value="transcript">Transcript</TabsTrigger>
+        </TabsList>
+        <TabsContent value="assessment" className="mt-6">
+          <MarkdownRenderer content={assessment} className="mt-6" />;
+        </TabsContent>
+        <TabsContent value="transcript" className="mt-6">
+          {transcript ? (
+            <TranscriptDisplay transcriptEntries={transcript} />
+          ) : (
+            <p className="text-muted-foreground">No transcript available</p>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+// When an assessment hasn't been created yet, generate it and render the tabs.
 async function AssessmentGenerator({
   historyEntry,
 }: {
@@ -38,17 +65,12 @@ async function AssessmentGenerator({
     historyEntry.moduleId
   );
 
-  return (
-    <AssessmentContent
-      assessment={assessment}
-      transcript={historyEntry.transcript}
-    />
-  );
+  return PageLayout(assessment, historyEntry.transcript);
 }
 
 export default async function AssessmentPage(props: Props) {
-  const params = await props.params;
-  const historyId = parseInt(params.assessmentId);
+  const { assessmentId } = await props.params;
+  const historyId = parseInt(assessmentId);
   if (isNaN(historyId)) notFound();
 
   const historyEntry = await getHistoryEntryAction(historyId);
@@ -80,15 +102,12 @@ export default async function AssessmentPage(props: Props) {
     );
   }
 
-  // If assessment already exists, display it
-  if (historyEntry.assessmentCreated && historyEntry.assessmentText)
-    return (
-      <AssessmentContent
-        assessment={historyEntry.assessmentText}
-        transcript={historyEntry.transcript}
-      />
-    );
+  // If the assessment already exists, render the tabs using the assessment text.
+  if (historyEntry.assessmentCreated && historyEntry.assessmentText) {
+    return PageLayout(historyEntry.assessmentText, historyEntry.transcript);
+  }
 
+  // Otherwise, generate the assessment and display the tabs.
   return (
     <Suspense fallback={<AssessmentLoading />}>
       <AssessmentGenerator historyEntry={historyEntry} />

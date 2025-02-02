@@ -1,7 +1,7 @@
 "use server";
 
 import { updateHistoryEntryAction } from "@/app/actions/history-actions";
-import { generateObject, generateText } from "ai";
+import { generateText } from "ai";
 import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
