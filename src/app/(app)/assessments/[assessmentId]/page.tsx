@@ -1,11 +1,6 @@
 import { Suspense } from "react";
-import {
-  getHistoryEntryAction,
-} from "@/app/actions/history-actions";
-import analyseTranscript from "@/app/actions/analyse-transcript";
+import { getHistoryEntryAction } from "@/app/actions/history-actions";
 import { notFound } from "next/navigation";
-import AssessmentLoading from "./loading";
-import { HistoryEntry } from "@/data/history";
 import {
   Card,
   CardHeader,
@@ -17,56 +12,13 @@ import { ArrowLeft } from "lucide-react";
 import { XCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TranscriptDisplay } from "@/components/transcript-display";
-import { TranscriptEntry } from "@/types/chat-types";
-import { MarkdownRenderer } from "@/components/markdown-renderer";
+import AssessmentContent from "./assessment-content";
 
 type Props = {
   params: Promise<{
     assessmentId: string;
   }>;
 };
-
-// The helper function produces the common tabs layout.
-function PageLayout(assessment: string, transcript?: TranscriptEntry[]) {
-  return (
-    <div className="container mx-auto py-2">
-      <Tabs defaultValue="assessment" className="w-full max-w-4xl mx-auto">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="assessment">Assessment</TabsTrigger>
-          <TabsTrigger value="transcript">Transcript</TabsTrigger>
-        </TabsList>
-        <TabsContent value="assessment" className="mt-6">
-          <MarkdownRenderer content={assessment} className="mt-6" />;
-        </TabsContent>
-        <TabsContent value="transcript" className="mt-6">
-          {transcript ? (
-            <TranscriptDisplay transcriptEntries={transcript} />
-          ) : (
-            <p className="text-muted-foreground">No transcript available</p>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
-
-// When an assessment hasn't been created yet, generate it and render the tabs.
-async function AssessmentGenerator({
-  historyEntry,
-}: {
-  historyEntry: HistoryEntry;
-}) {
-  if (!historyEntry.transcriptText)
-    throw new Error("No transcript found for this assessment");
-
-  const { assessment } = await analyseTranscript(
-    historyEntry.transcriptText,
-    historyEntry.id,
-    historyEntry.moduleId
-  );
-
-  return PageLayout(assessment, historyEntry.transcript);
-}
 
 export default async function AssessmentPage(props: Props) {
   const { assessmentId } = await props.params;
@@ -102,15 +54,31 @@ export default async function AssessmentPage(props: Props) {
     );
   }
 
-  // If the assessment already exists, render the tabs using the assessment text.
-  if (historyEntry.assessmentCreated && historyEntry.assessmentText) {
-    return PageLayout(historyEntry.assessmentText, historyEntry.transcript);
-  }
-
-  // Otherwise, generate the assessment and display the tabs.
   return (
-    <Suspense fallback={<AssessmentLoading />}>
-      <AssessmentGenerator historyEntry={historyEntry} />
-    </Suspense>
+    <div className="container mx-auto py-2">
+      <Tabs defaultValue="assessment" className="w-full max-w-4xl mx-auto">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="assessment">Assessment</TabsTrigger>
+          <TabsTrigger value="transcript">Transcript</TabsTrigger>
+        </TabsList>
+        <TabsContent value="assessment" className="mt-6">
+          <Suspense key={historyEntry.assessmentCreated?.toString()}>
+            <AssessmentContent
+              moduleId={historyEntry.moduleId}
+              entryId={historyEntry.id}
+              assessmentText={historyEntry.assessmentText || undefined}
+              assessmentCreated={historyEntry.assessmentCreated}
+            />
+          </Suspense>
+        </TabsContent>
+        <TabsContent value="transcript" className="mt-6">
+          {historyEntry.transcript ? (
+            <TranscriptDisplay transcriptEntries={historyEntry.transcript} />
+          ) : (
+            <p className="text-muted-foreground">No transcript available</p>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
