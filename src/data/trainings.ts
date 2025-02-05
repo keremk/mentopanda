@@ -36,7 +36,7 @@ export async function getTrainingById(
   supabase: SupabaseClient,
   trainingId: number
 ): Promise<Training | null> {
-  let query = supabase
+  const query = supabase
     .from("trainings")
     .select(
       `
@@ -104,6 +104,7 @@ export async function getEnrolledTrainings(
 Given that trainings is indeed an object and not an array at runtime, we'll need to update our type definitions and the way we handle the data.
   */
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   return data.map((enrollment: any) => ({
     id: enrollment.trainings?.id,
     title: enrollment.trainings?.title ?? "",
@@ -112,6 +113,7 @@ Given that trainings is indeed an object and not an array at runtime, we'll need
     createdAt: new Date(enrollment.trainings?.created_at),
     updatedAt: new Date(enrollment.trainings?.updated_at),
   }));
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
 export async function getTrainingWithProgress(
@@ -120,7 +122,7 @@ export async function getTrainingWithProgress(
 ): Promise<TrainingWithProgress> {
   const userId = await getUserId(supabase);
 
-  let query = supabase
+  const query = supabase
     .from("trainings")
     .select(
       `
@@ -147,6 +149,7 @@ export async function getTrainingWithProgress(
 
   if (error) handleError(error);
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   return {
     id: training.id,
     title: training.title,
@@ -161,7 +164,6 @@ export async function getTrainingWithProgress(
     modules: training.modules.map((module: any) => {
       const history =
         module.history?.filter((h: any) => h.completed_at !== null) || [];
-      const lastPractice = history[history.length - 1];
 
       return {
         id: module.id,
@@ -176,6 +178,7 @@ export async function getTrainingWithProgress(
       };
     }),
   };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
 export async function getTrainingsWithEnrollment(
@@ -184,7 +187,7 @@ export async function getTrainingsWithEnrollment(
   const userId = await getUserId(supabase);
   const organizationId = await getOrganizationId(supabase);
 
-  let query = supabase.from("trainings").select(
+  const query = supabase.from("trainings").select(
     `
       id,
       title,

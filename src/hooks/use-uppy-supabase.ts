@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { Uppy } from "@uppy/core";
 import Tus from "@uppy/tus";
@@ -8,12 +8,14 @@ type UppySupabaseOptions = {
   bucketName: string;
   folderName: string;
   onUploadComplete: (url: string) => void;
+  allowedFileTypes?: string[];
 };
 
 export const useUppyWithSupabase = ({
   bucketName,
   folderName,
   onUploadComplete,
+  allowedFileTypes,
 }: UppySupabaseOptions) => {
   // Initialize Uppy instance only once
   // const [uppy] = useState(() => new Uppy());
@@ -29,6 +31,11 @@ export const useUppyWithSupabase = ({
     console.log("process.env.NODE_ENV", process.env.NODE_ENV);
     uppyRef.current = new Uppy({
       debug: process.env.NODE_ENV === "development",
+      restrictions: {
+        maxFileSize: 10 * 1024 * 1024, // 10MB
+        maxNumberOfFiles: 1,
+        allowedFileTypes: allowedFileTypes,
+      },
     });
   }
 
@@ -115,7 +122,7 @@ export const useUppyWithSupabase = ({
         uppy.removePlugin(existing);
       }
     };
-  }, [uppy, bucketName, folderName, onUploadComplete]);
+  }, [uppy, bucketName, folderName, onUploadComplete, supabase.auth, supabase.storage]);
 
   // Return the configured Uppy instance
   return uppy;

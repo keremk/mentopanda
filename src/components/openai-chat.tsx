@@ -2,16 +2,16 @@
 
 import { Module } from "@/data/modules";
 import { User } from "@/data/user";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import { useMicrophone } from "@/hooks/use-microphone";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Mic, MicOff, Phone, PhoneOff } from "lucide-react";
 import AudioVisualiser from "@/components/audio-visualiser";
 import { RolePlayersContainer } from "@/components/roleplayers-container";
 import { RolePlayer } from "@/types/chat-types";
 import { ModulePrompt } from "@/data/modules";
-import { DEFAULT_VOICE, CURRENT_MODEL_NAMES } from "@/types/models";
+import { DEFAULT_VOICE } from "@/types/models";
 import {
   createHistoryEntryAction,
   deleteHistoryEntryAction,
@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation";
 import { CountdownBar } from "@/components/countdown-bar";
 import { ChatTextEntry } from "@/components/chat-text-entry";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { TranscriptDisplay } from "@/components/transcript-display";
 import { useOpenAIRealtime } from "@/hooks/use-openai-realtime";
 import { useTranscript } from "@/contexts/transcript";
@@ -33,7 +33,7 @@ type ChatProps = {
 };
 
 function createPrompt(modulePrompt: ModulePrompt) {
-  let rolePlayInstruction =
+  const rolePlayInstruction =
     "You are a role-playing agent. You will be given a scenario. You should act as the character you are assigned to and play out the scenario as the best actor you can be. You should not deviate from the scenario.";
 
   const yourName =
@@ -59,12 +59,13 @@ function createPrompt(modulePrompt: ModulePrompt) {
 }
 
 export default function OpenAIChat({ module, currentUser }: ChatProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(
+    null
+  ) as React.RefObject<HTMLAudioElement>;
   const [isConversationActive, setIsConversationActive] = useState(false);
   const [historyEntryId, setHistoryEntryId] = useState<number>();
-  const { transcriptEntries, clearTranscript, addTranscriptMessage } =
-    useTranscript();
-  const { saveTranscript, saveAndComplete } = useTranscriptSave({
+  const { transcriptEntries, clearTranscript } = useTranscript();
+  const { saveAndComplete } = useTranscriptSave({
     historyEntryId,
     transcriptBuffer: transcriptEntries,
     saveInterval: 20000,
@@ -80,7 +81,6 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
     muteMicrophone,
     unmuteMicrophone,
     isMuted,
-    microphoneStream,
   } = useMicrophone();
 
   const { connect, disconnect, sendTextMessage } = useOpenAIRealtime({
@@ -96,7 +96,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
       setShowEndDialog(true);
     } else {
       const micStream = await startMicrophone();
-      const connection = await connect(micStream);
+      await connect(micStream);
 
       const newHistoryEntryId = await createHistoryEntryAction(module.id);
       setHistoryEntryId(newHistoryEntryId);
@@ -235,7 +235,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
             <Card className="h-full">
               <CardContent className="pt-6">
                 {module.instructions ? (
-                  <MarkdownRenderer content={module.instructions} />
+                  <MemoizedMarkdown content={module.instructions} />
                 ) : (
                   <p className="text-muted-foreground text-sm">
                     No instructions available.

@@ -25,6 +25,7 @@ export function ImageUpload({
     bucketName: bucket,
     folderName: folder,
     onUploadComplete,
+    allowedFileTypes,
   });
 
   return (

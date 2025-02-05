@@ -1,9 +1,5 @@
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { HeroSection } from "@/app/hero-section";
-import { Footer } from "@/components/footer";
+import { Footer } from "@/app/footer";
 import { Header } from "@/app/header";
 import { ProblemSection } from "@/app/problem-section";
 import { SolutionSection } from "@/app/solution-section";

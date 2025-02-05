@@ -9,14 +9,13 @@ export const metadata: Metadata = {
   title: "Trainings Catalog",
 };
 
-// TODO: Use the new Form component when upgrading to Next.js 15, this will remove the need for the action={createTrainingAction as unknown as string}
 export default async function ExplorePage() {
   const trainings = await getTrainingsWithEnrollmentAction();
 
   return (
     <div className="p-4">
       <div className="absolute top-0 right-0 p-4 z-10">
-        <form action={createTrainingAction as unknown as string}>
+        <form action={createTrainingAction}>
           <Button type="submit" variant="outline" className="flex items-center">
             <Plus className="mr-2 h-4 w-4" />
             Create Training

@@ -3,7 +3,7 @@ import { getUserId, handleError } from "./utils";
 
 export interface Enrollment {
   id: number;
-  trainingTitle: String;
+  trainingTitle: string;
   trainingId: number;
   tagline: string;
   imageUrl: string;

@@ -56,6 +56,14 @@ export function Header() {
     }
   };
 
+  type ListItemProps = {
+    className?: string;
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    onClick?: () => void;
+  } & React.HTMLAttributes<HTMLAnchorElement>;
+
   const ListItem = ({
     className,
     title,
@@ -63,7 +71,7 @@ export function Header() {
     icon,
     onClick,
     ...props
-  }: any) => {
+  }: ListItemProps) => {
     return (
       <li>
         <NavigationMenuLink asChild>

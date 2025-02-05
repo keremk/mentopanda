@@ -4,7 +4,6 @@ import React, {
   createContext,
   useContext,
   useState,
-  FC,
   PropsWithChildren,
 } from "react";
 import { TranscriptEntry } from "@/types/chat-types";

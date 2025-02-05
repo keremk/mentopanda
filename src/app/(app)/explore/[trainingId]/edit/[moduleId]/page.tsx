@@ -8,8 +8,8 @@ export default async function EditModulePage(
   }
 ) {
   const params = await props.params;
-  const module = await getModuleByIdAction2(params.moduleId);
-  if (!module) notFound();
+  const trainingModule = await getModuleByIdAction2(params.moduleId);
+  if (!trainingModule) notFound();
 
-  return <ModuleEditForm module={module} />;
+  return <ModuleEditForm module={trainingModule} />;
 }

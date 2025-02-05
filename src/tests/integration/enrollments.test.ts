@@ -3,6 +3,7 @@ import { Enrollment } from "@/data/enrollments";
 import { getEnrolledTrainings } from "@/data/trainings";
 import { setupTestClient } from "@/tests/utils/test-client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("Enrollment Integration Tests", () => {
   let testUserId: string;
   let testTrainingId: number;
@@ -105,3 +106,4 @@ describe("Enrollment Integration Tests", () => {
     }
   });
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */

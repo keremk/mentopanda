@@ -112,7 +112,7 @@ async function exportData(outputFile: string) {
 
     if (trainingsError) throw trainingsError;
 
-    // Transform the data to match the export format
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     const exportData: ExportData = {
       users,
       history: history.map((h) => ({
@@ -133,8 +133,8 @@ async function exportData(outputFile: string) {
         modules: t.modules.sort((a: any, b: any) => a.ordinal - b.ordinal),
       })),
     };
-
-    // Write to file
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+  
     const outputPath = path.resolve(process.cwd(), outputFile);
     await fs.promises.writeFile(
       outputPath,

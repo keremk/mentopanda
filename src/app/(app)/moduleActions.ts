@@ -1,7 +1,6 @@
 "use server";
 
 import {
-  getModuleById,
   getModulesByTrainingId,
   updateModule,
   createModule,

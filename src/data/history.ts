@@ -73,8 +73,7 @@ export async function getTrainingHistory(
   if (historyError) handleError(historyError);
   if (!historyData || historyData.length === 0) return { data: [], count: 0 };
 
-  // Extract count from first row and remove it from the data
-
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const data = historyData.map((entry: any) => ({
     id: entry.id,
     moduleId: entry.module_id,
@@ -85,7 +84,7 @@ export async function getTrainingHistory(
     startedAt: new Date(entry.started_at),
     practiceNumber: entry.practice_no,
   }));
-
+  /* eslint-enable @typescript-eslint/no-explicit-any */
   return { data, count: count ?? 0 };
 }
 
@@ -178,6 +177,7 @@ export async function getHistoryEntry(
     ? JSON.parse(data.transcript_json)
     : null;
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   return {
     id: data.id,
     moduleId: data.module_id,

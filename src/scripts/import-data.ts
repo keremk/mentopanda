@@ -181,18 +181,18 @@ async function createTrainingData(userId: string) {
       if (!trainingData) throw new Error("No training data returned");
 
       // Create modules for this training
-      for (const module of training.modules) {
+      for (const moduleItem of training.modules) {
         const { error: moduleError } = await supabase.from("modules").insert({
           training_id: trainingData.id,
-          title: module.title,
-          instructions: module.instructions,
-          ordinal: module.ordinal,
-          ai_model: module.ai_model,
-          scenario_prompt: module.scenario_prompt,
-          assessment_prompt: module.assessment_prompt,
-          moderator_prompt: module.moderator_prompt,
-          video_url: module.video_url,
-          audio_url: module.audio_url,
+          title: moduleItem.title,
+          instructions: moduleItem.instructions,
+          ordinal: moduleItem.ordinal,
+          ai_model: moduleItem.ai_model,
+          scenario_prompt: moduleItem.scenario_prompt,
+          assessment_prompt: moduleItem.assessment_prompt,
+          moderator_prompt: moduleItem.moderator_prompt,
+          video_url: moduleItem.video_url,
+          audio_url: moduleItem.audio_url,
         });
 
         if (moduleError) throw moduleError;

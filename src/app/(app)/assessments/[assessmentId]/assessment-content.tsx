@@ -66,12 +66,10 @@ export default function AssessmentContent({
     <div className="prose space-y-2">
       {isAssessmentCreated ? (
         <MemoizedMarkdown
-          id={`assessment-${entryId}`}
           content={currentAssessmentText || ""}
         />
       ) : (
         <MemoizedMarkdown
-          id={`assessment-${entryId}`}
           content={streamedContent}
         />
       )}

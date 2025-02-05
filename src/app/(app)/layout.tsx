@@ -10,7 +10,6 @@ import type { NavItem } from "@/types/nav";
 import { cookies } from "next/headers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageTitle } from "@/components/page-title";
-import type { HTMLAttributes } from "react";
 
 // Define navigation structure without icons
 export const navItems: NavItem[] = [

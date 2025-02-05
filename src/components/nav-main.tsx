@@ -1,7 +1,7 @@
 "use client"
 
 import { ChevronRight, type LucideIcon } from "lucide-react"
-import { Home, Search, BookOpen, Settings2, PieChart, Users, GraduationCap } from "lucide-react"
+import { Home, BookOpen, Settings2, PieChart, Users, GraduationCap } from "lucide-react"
 import { usePathname } from "next/navigation"
 import {
   Collapsible,

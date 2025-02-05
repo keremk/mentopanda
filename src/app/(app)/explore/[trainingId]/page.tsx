@@ -5,8 +5,8 @@ import { notFound } from "next/navigation";
 import { EnrollmentButton } from "@/components/enrollment-button";
 import { getTrainingByIdAction } from "@/app/(app)/trainingActions";
 import { Pencil } from "lucide-react";
-import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
+import { MemoizedMarkdown } from "@/components/memoized-markdown";
 
 function YouTubeEmbed({ url }: { url: string }) {
   const videoId = url.split("v=")[1];
@@ -70,7 +70,7 @@ export default async function TrainingDetailsPage(
           </div>
           <h1 className="text-3xl font-bold mb-1">{training.title}</h1>
           <p className="text-xl text-gray-600 mb-6">{training.tagline}</p>
-          <MarkdownRenderer content={training.description} />
+          <MemoizedMarkdown content={training.description} />
         </div>
       </div>
 

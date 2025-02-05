@@ -253,6 +253,7 @@ export async function getModuleById2(
 
   if (!module) return null;
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const characters: ModuleCharacter[] = (module.modules_characters || [])
     .map((mc: any) => ({
       id: mc.characters.id,
@@ -266,7 +267,7 @@ export async function getModuleById2(
       ordinal: mc.ordinal,
     }))
     .sort((a: ModuleCharacter, b: ModuleCharacter) => a.ordinal - b.ordinal);
-
+  /* eslint-enable @typescript-eslint/no-explicit-any */
   const aiModel = aiModelSchema.parse(module.ai_model) as AIModel;
 
   const modulePrompt: ModulePrompt = {

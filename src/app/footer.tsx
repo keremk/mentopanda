@@ -1,10 +1,5 @@
 import Link from "next/link";
-import {
-  SiGithub,
-  SiDiscord,
-  SiX,
-  SiLinkedin,
-} from "@icons-pack/react-simple-icons";
+import { SiGithub, SiDiscord, SiX } from "@icons-pack/react-simple-icons";
 
 export function Footer() {
   return (
@@ -60,14 +55,6 @@ export function Footer() {
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
             >
               <SiX size={24} />
-            </a>
-            <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-            >
-              {/* <SiLinkedin size={24} /> */}
             </a>
           </div>
         </div>

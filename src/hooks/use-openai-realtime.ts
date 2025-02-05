@@ -11,6 +11,7 @@ export type OpenAIRealtimeProps = {
   agentName: string;
 };
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type ServerEvent = {
   type: string;
   event_id?: string;
@@ -46,6 +47,7 @@ export type ServerEvent = {
     };
   };
 };
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export function useOpenAIRealtime({
   instructions,
@@ -75,6 +77,7 @@ export function useOpenAIRealtime({
     return session.client_secret.value;
   };
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const sendClientEvent = (eventObj: any) => {
     if (
       dataChannelRef.current &&
@@ -88,7 +91,8 @@ export function useOpenAIRealtime({
       );
     }
   };
-
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  
   const updateSession = () => {
     sendClientEvent({ type: "input_audio_buffer.clear" });
 

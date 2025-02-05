@@ -55,7 +55,6 @@ export async function EnrolledTrainingsCard() {
                       trainingId={training.id}
                       isEnrolled={true}
                       className="flex-shrink-0"
-                      trainingTitle={training.title}
                     />
                   </div>
                 </div>

@@ -2,13 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
@@ -79,13 +79,13 @@ export function EditCharacterForm({ character }: Props) {
     setFormData((prev) => ({ ...prev, voice }));
   };
 
-  const handleModelChange = (value: AIModel) => {
-    setFormData((prev) => ({
-      ...prev,
-      aiModel: value,
-      voice: null,
-    }));
-  };
+  // const handleModelChange = (value: AIModel) => {
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     aiModel: value,
+  //     voice: null,
+  //   }));
+  // };
 
   const handleSaveAndExit = async () => {
     if (hasChanges) {

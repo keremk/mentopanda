@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -31,6 +30,7 @@ import {
 import { ImageUploadButton } from "@/components/image-upload-button";
 import { AI_MODELS } from "@/types/models";
 import { User } from "@/data/user";
+import Image from "next/image";
 
 type EditTrainingFormProps = {
   training: Training;
@@ -67,12 +67,8 @@ export function EditTrainingForm({ training, user }: EditTrainingFormProps) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSwitchChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, isPublic: checked }));
-  };
-
   const handleAddModule = async () => {
-    const newModule = await createModuleAction(training.id, {
+    await createModuleAction(training.id, {
       title: "New Module",
       instructions: null,
       modulePrompt: {
@@ -143,10 +139,13 @@ export function EditTrainingForm({ training, user }: EditTrainingFormProps) {
             <div className="space-y-4">
               <div className="aspect-video w-full relative bg-muted rounded-lg overflow-hidden">
                 {formData.imageUrl ? (
-                  <img
+                  <Image
                     src={formData.imageUrl}
                     alt={formData.title}
-                    className="object-cover w-full h-full"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">

@@ -66,10 +66,8 @@ const MemoizedMarkdownBlock = memo(function MemoizedMarkdownBlock({
 
 export const MemoizedMarkdown = memo(function MemoizedMarkdown({
   content,
-  id,
 }: {
   content: string;
-  id: string;
 }) {
   // Only parse new content after it's been stable for 100ms
   const blocks = useMemo(() => parseMarkdownIntoBlocks(content), [content]);

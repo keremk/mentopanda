@@ -12,7 +12,6 @@ import {
   deleteTraining,
 } from "@/data/trainings";
 import { redirect } from "next/navigation";
-import { getUserId } from "@/data/utils";
 
 export async function getTrainingByIdAction(trainingId: number) {
   const supabase = await createClient();
@@ -39,7 +38,7 @@ export async function updateTrainingAction(training: UpdateTrainingInput) {
   return await updateTraining(supabase, training);
 }
 
-export async function createTrainingAction(formData: FormData) {
+export async function createTrainingAction() {
   const supabase = await createClient();
   const training = await createTraining(supabase, {
     title: "New Training",

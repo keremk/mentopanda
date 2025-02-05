@@ -15,14 +15,14 @@ import { CharacterSelect } from "@/components/character-select";
 import { updateModuleCharacterPromptAction } from "@/app/actions/modules-characters-actions";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { AI_MODELS } from "@/types/models";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { AIModel } from "@/types/models";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
+// import { AIModel } from "@/types/models";
 
 type Props = {
   module: Module;
@@ -74,7 +74,7 @@ export function ModuleEditForm({ module }: Props) {
       {}
     );
     setCharacterPrompts(initialPrompts);
-  }, [module.id]);
+  }, [module.id, module.modulePrompt.characters]);
 
   useEffect(() => {
     const updateCharacterPrompt = async () => {
@@ -112,15 +112,15 @@ export function ModuleEditForm({ module }: Props) {
         debouncedFormData.title !== lastSavedModule.title ||
         debouncedFormData.instructions !== lastSavedModule.instructions ||
         debouncedFormData.modulePrompt.scenario !==
-          lastSavedModule.modulePrompt.scenario ||
+        lastSavedModule.modulePrompt.scenario ||
         debouncedFormData.modulePrompt.assessment !==
-          lastSavedModule.modulePrompt.assessment ||
+        lastSavedModule.modulePrompt.assessment ||
         debouncedFormData.modulePrompt.moderator !==
-          lastSavedModule.modulePrompt.moderator ||
+        lastSavedModule.modulePrompt.moderator ||
         debouncedFormData.modulePrompt.aiModel !==
-          lastSavedModule.modulePrompt.aiModel ||
+        lastSavedModule.modulePrompt.aiModel ||
         JSON.stringify(debouncedFormData.modulePrompt.characters) !==
-          JSON.stringify(lastSavedModule.modulePrompt.characters);
+        JSON.stringify(lastSavedModule.modulePrompt.characters);
 
       if (hasChanges) {
         const updatedModule = await updateModuleAction(debouncedFormData);
@@ -134,7 +134,7 @@ export function ModuleEditForm({ module }: Props) {
       }
     };
     updateData();
-  }, [debouncedFormData]);
+  }, [debouncedFormData, lastSavedModule]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -157,19 +157,19 @@ export function ModuleEditForm({ module }: Props) {
     }));
   };
 
-  const handleCharacterChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    field: "name" | "prompt" | "voice"
-  ) => {
-    const { value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      modulePrompt: {
-        ...prev.modulePrompt,
-        characters: [{ ...prev.modulePrompt.characters[0], [field]: value }],
-      },
-    }));
-  };
+  // const handleCharacterChange = (
+  //   e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  //   field: "name" | "prompt" | "voice"
+  // ) => {
+  //   const { value } = e.target;
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     modulePrompt: {
+  //       ...prev.modulePrompt,
+  //       characters: [{ ...prev.modulePrompt.characters[0], [field]: value }],
+  //     },
+  //   }));
+  // };
 
   const handleBackClick = async () => {
     const hasChanges =

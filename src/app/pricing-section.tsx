@@ -111,7 +111,7 @@ export function PricingSection() {
         <div className="text-center mb-8">
           <div className="text-red-500 font-medium mb-4">PRICING</div>
           <h2 className="text-4xl font-bold mb-8">
-            Choose the plan that's right for you
+            Choose the plan that is right for you
           </h2>
 
           <div className="flex items-center justify-center gap-4 mb-8">
@@ -135,7 +135,7 @@ export function PricingSection() {
 
         {/* Desktop Layout */}
         <div className="hidden md:grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {pricingTiers.map((tier, index) => (
+          {pricingTiers.map((tier) => (
             <PricingCard key={tier.name} tier={tier} isYearly={isYearly} />
           ))}
         </div>

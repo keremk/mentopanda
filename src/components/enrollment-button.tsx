@@ -21,14 +21,12 @@ interface EnrollmentButtonProps {
   trainingId: number;
   className?: string;
   isEnrolled?: boolean;
-  trainingTitle?: string;
 }
 
 export function EnrollmentButton({
   trainingId,
   className,
   isEnrolled: initialEnrollmentStatus,
-  trainingTitle,
 }: EnrollmentButtonProps) {
   const [enrolled, setEnrolled] = useState(initialEnrollmentStatus ?? false);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,19 +34,19 @@ export function EnrollmentButton({
   const router = useRouter();
 
   useEffect(() => {
+    const checkEnrollmentStatus = async () => {
+      try {
+        const status = await isEnrolledAction(trainingId);
+        setEnrolled(status);
+      } catch (error) {
+        console.error("Failed to check enrollment status:", error);
+      }
+    };
+
     if (initialEnrollmentStatus === undefined) {
       checkEnrollmentStatus();
     }
   }, [trainingId, initialEnrollmentStatus]);
-
-  const checkEnrollmentStatus = async () => {
-    try {
-      const status = await isEnrolledAction(trainingId);
-      setEnrolled(status);
-    } catch (error) {
-      console.error("Failed to check enrollment status:", error);
-    }
-  };
 
   const handleEnrollment = async () => {
     setIsLoading(true);

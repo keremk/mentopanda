@@ -1,4 +1,3 @@
-import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { notFound } from "next/navigation";
 import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
 import OpenAIChat from "@/components/openai-chat";
@@ -16,9 +15,9 @@ type Props = {
 
 // Helper function to avoid code duplication
 async function getModule(moduleId: number) {
-  const module = await getModuleByIdAction2(moduleId);
-  if (!module) notFound();
-  return module;
+  const currentModule = await getModuleByIdAction2(moduleId);
+  if (!currentModule) notFound();
+  return currentModule;
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {

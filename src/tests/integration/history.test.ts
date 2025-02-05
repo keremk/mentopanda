@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { HistoryEntry, getHistoryEntry } from "@/data/history";
 import { setupTestClient } from "@/tests/utils/test-client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("History Integration Tests", () => {
   let testUserId: string;
   let testTrainingId: number;
@@ -117,3 +118,4 @@ describe("History Integration Tests", () => {
     expect(historyEntry).toBeNull();
   });
 });
+/* eslint-enable @typescript-eslint/no-explicit-any */
