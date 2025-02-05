@@ -18,14 +18,8 @@ export async function getTrainingHistoryAction(
 ) {
   const supabase = await createClient();
   const start = (page - 1) * pageSize;
-  const end = start + pageSize - 1;
 
-  // Get total count for pagination
-  const { count } = await supabase
-    .from("history")
-    .select("*", { count: "exact", head: true });
-
-  const entries = await getTrainingHistory(
+  const { data: entries, count } = await getTrainingHistory(
     supabase,
     pageSize,
     completedOnly,

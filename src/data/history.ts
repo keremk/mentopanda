@@ -1,7 +1,8 @@
-import { getOrganizationId, getUserId, handleError } from "@/data/utils";
+import { getUserId, handleError } from "@/data/utils";
 import { TranscriptEntry } from "@/types/chat-types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
+import { Database } from "@/types/supabase";
 
 export type HistorySummary = {
   id: number;
@@ -32,11 +33,11 @@ export type UpdateHistoryEntry = {
 };
 
 export async function getTrainingHistory(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   limit: number,
   completedOnly: boolean = false,
   start: number = 0
-): Promise<HistorySummary[]> {
+): Promise<{ data: HistorySummary[]; count: number }> {
   const userId = await getUserId(supabase);
   let query = supabase
     .from("history")
@@ -56,7 +57,8 @@ export async function getTrainingHistory(
           title
         )
       )
-    `
+    `,
+      { count: "estimated" }
     )
     .eq("user_id", userId)
     .order("started_at", { ascending: false })
@@ -66,13 +68,14 @@ export async function getTrainingHistory(
     query = query.not("completed_at", "is", null);
   }
 
-  const { data: historyData, error: historyError } = await query;
+  const { data: historyData, error: historyError, count } = await query;
 
   if (historyError) handleError(historyError);
+  if (!historyData || historyData.length === 0) return { data: [], count: 0 };
 
-  if (!historyData) return [];
+  // Extract count from first row and remove it from the data
 
-  return historyData.map((entry: any) => ({
+  const data = historyData.map((entry: any) => ({
     id: entry.id,
     moduleId: entry.module_id,
     moduleTitle: entry.modules?.title,
@@ -82,6 +85,8 @@ export async function getTrainingHistory(
     startedAt: new Date(entry.started_at),
     practiceNumber: entry.practice_no,
   }));
+
+  return { data, count: count ?? 0 };
 }
 
 export async function createHistoryEntry(
