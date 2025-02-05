@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import testData from "./test-data.json";
+import { join } from "path";
+import fs from "fs/promises";
 
 dotenv.config({ path: ".env.local" });
 
@@ -114,8 +115,8 @@ async function createHistoryData(userId: string) {
   );
 }
 
-async function createTestUsers() {
-  const users = testData.users.map(async (user) => {
+async function createTestUsers(testData: any) {
+  const users = testData.users.map(async (user: any) => {
     try {
       // Create user
       const { data: authData, error: authError } =
@@ -158,7 +159,7 @@ async function createTestUsers() {
   return users;
 }
 
-async function createTrainingData(userId: string) {
+async function createTrainingData(userId: string, testData: any) {
   for (const training of testData.trainings) {
     try {
       // Create training
@@ -207,7 +208,7 @@ async function createTrainingData(userId: string) {
   }
 }
 
-async function createCharactersData(userId: string) {
+async function createCharactersData(userId: string, testData: any) {
   try {
     // Create characters
     for (const character of testData.characters) {
@@ -254,8 +255,25 @@ async function createCharactersData(userId: string) {
   }
 }
 
+async function loadTestData(filePath?: string) {
+  try {
+    const defaultPath = join(__dirname, "test-data.json");
+    const targetPath = filePath || defaultPath;
+
+    const fileContent = await fs.readFile(targetPath, "utf-8");
+    return JSON.parse(fileContent);
+  } catch (error) {
+    console.error("Error loading test data:", error);
+    process.exit(1);
+  }
+}
+
 async function createTestData() {
-  const testUsers = await Promise.all(await createTestUsers());
+  // Get file path from command line args if provided
+  const providedPath = process.argv[2];
+  const testData = await loadTestData(providedPath);
+
+  const testUsers = await Promise.all(await createTestUsers(testData));
   const mainUser = testUsers?.find(
     (user) => user?.email === "admin@codingventures.com"
   );
@@ -265,10 +283,20 @@ async function createTestData() {
     return;
   }
 
-  // Pass userId to createCharactersData
-  await createTrainingData(mainUser.id);
-  await createCharactersData(mainUser.id);
+  await createTrainingData(mainUser.id, testData);
+  await createCharactersData(mainUser.id, testData);
   await createHistoryData(mainUser.id);
+}
+
+// Add help text if --help flag is provided
+if (process.argv.includes("--help")) {
+  console.log(`
+Usage: ts-node import-data.ts [path-to-test-data.json]
+
+If no path is provided, the script will use the default test data file at:
+${join(__dirname, "test-data.json")}
+  `);
+  process.exit(0);
 }
 
 createTestData()
