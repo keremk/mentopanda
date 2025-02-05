@@ -115,8 +115,63 @@ async function createHistoryData(userId: string) {
   );
 }
 
-async function createTestUsers(testData: any) {
-  const users = testData.users.map(async (user: any) => {
+type TestUser = {
+  email: string;
+  password: string;
+  role: string;
+  organization_id?: number;
+};
+
+type TestModule = {
+  title: string;
+  instructions: string;
+  ordinal: number;
+  ai_model: string;
+  scenario_prompt: string;
+  assessment_prompt: string;
+  moderator_prompt: string;
+  video_url?: string;
+  audio_url?: string;
+};
+
+type TestTraining = {
+  title: string;
+  tagline: string;
+  description: string;
+  image_url: string;
+  is_public: boolean;
+  organization_id: number;
+  preview_url?: string;
+  modules: TestModule[];
+};
+
+type TestCharacter = {
+  name: string;
+  ai_description: string;
+  description: string;
+  avatar_url: string;
+  organization_id: number;
+  is_public: boolean;
+  voice?: string;
+  ai_model: string;
+};
+
+type ModuleCharacter = {
+  module_id: number;
+  character_id: number;
+  ordinal: number;
+  prompt: string;
+};
+
+type TestData = {
+  users: TestUser[];
+  trainings: TestTraining[];
+  characters: TestCharacter[];
+  modules_characters: ModuleCharacter[];
+};
+
+async function createTestUsers(testData: TestData) {
+  const users = testData.users.map(async (user: TestUser) => {
     try {
       // Create user
       const { data: authData, error: authError } =
@@ -159,7 +214,7 @@ async function createTestUsers(testData: any) {
   return users;
 }
 
-async function createTrainingData(userId: string, testData: any) {
+async function createTrainingData(userId: string, testData: TestData) {
   for (const training of testData.trainings) {
     try {
       // Create training
@@ -208,7 +263,7 @@ async function createTrainingData(userId: string, testData: any) {
   }
 }
 
-async function createCharactersData(userId: string, testData: any) {
+async function createCharactersData(userId: string, testData: TestData) {
   try {
     // Create characters
     for (const character of testData.characters) {
@@ -255,7 +310,7 @@ async function createCharactersData(userId: string, testData: any) {
   }
 }
 
-async function loadTestData(filePath?: string) {
+async function loadTestData(filePath?: string): Promise<TestData> {
   try {
     const defaultPath = join(__dirname, "test-data.json");
     const targetPath = filePath || defaultPath;
