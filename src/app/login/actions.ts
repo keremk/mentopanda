@@ -87,25 +87,43 @@ const getURL = () => {
 export async function githubSignIn() {
   /* IMPORTANT (Local Development): In order for the redirectUrl to work, you need to change config.toml file to have the correct site_url and additional_redirect_urls that match the
   URL provided below. I wasted hours on this, so beware.
-  For Production you need to change the Authentication/URL Configuration in Supabase Studio.
+  For Production you need to change the Authentication->URL Configuration in Supabase Studio.
+  VERY IMPORTANT: You need to provide the full URL including the protocol (http or https) + and the full path (e.g. https://example.com/auth/callback)
   Supabase Studio in local does not have this UI, so you need to use config.toml file.
   */ 
 
   const supabase = await createClient();
 
   const redirectUrl = `${getURL()}auth/callback`;
-  console.log("Providing redirect URL as such: ", redirectUrl);
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",
     options: {
       redirectTo: redirectUrl,
     },
   });
-  console.log("data ", data);
 
   if (error) {
     console.log("error", error.message);
     return redirect("/login?message=Could not authenticate with GitHub");
+  }
+
+  return redirect(data.url);
+}
+
+export async function googleSignIn() {
+  const supabase = await createClient();
+
+  const redirectUrl = `${getURL()}auth/callback`;
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: redirectUrl,
+    },
+  });
+
+  if (error) {
+    console.log("error", error.message);
+    return redirect("/login?message=Could not authenticate with Google");
   }
 
   return redirect(data.url);

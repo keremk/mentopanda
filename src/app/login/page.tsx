@@ -1,11 +1,11 @@
-import { login, signup, githubSignIn } from "@/app/login/actions";
+import { login, signup, githubSignIn, googleSignIn } from "@/app/login/actions";
 
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import GitHubIcon from "@/components/icons/github";
+import { SiGoogle, SiGithub } from "@icons-pack/react-simple-icons";
 
 export default async function LoginPage(
   props: {
@@ -69,8 +69,14 @@ export default async function LoginPage(
           <form>
             <div className="mt-4">
               <Button formAction={githubSignIn} className="w-full">
-                <GitHubIcon className="mr-2 h-4 w-4" />
+                <SiGithub className="mr-2 h-4 w-4" />
                 GitHub
+              </Button>
+            </div>
+            <div className="mt-4">
+              <Button formAction={googleSignIn} className="w-full">
+                <SiGoogle className="mr-2 h-4 w-4" />
+                Google
               </Button>
             </div>
           </form>
