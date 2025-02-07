@@ -72,6 +72,18 @@ export async function signup(formData: FormData) {
   }
 }
 
+const getURL = () => {
+  let url =
+    process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+    process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
+    "http://localhost:3000/";
+  // Make sure to include `https://` when not localhost.
+  url = url.startsWith("http") ? url : `https://${url}`;
+  // Make sure to include a trailing `/`.
+  url = url.endsWith("/") ? url : `${url}/`;
+  return url;
+};
+
 export async function githubSignIn() {
   /* IMPORTANT (Local Development): In order for the redirectUrl to work, you need to change config.toml file to have the correct site_url and additional_redirect_urls that match the
   URL provided below. I wasted hours on this, so beware.
@@ -81,7 +93,7 @@ export async function githubSignIn() {
 
   const supabase = await createClient();
 
-  const redirectUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
+  const redirectUrl = `${getURL()}auth/callback`;
   console.log("Providing redirect URL as such: ", redirectUrl);
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",
