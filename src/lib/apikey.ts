@@ -40,31 +40,44 @@ async function getEncryptionKey(): Promise<CryptoKey> {
 async function encryptData(text: string): Promise<string> {
   if (typeof window === "undefined") return text;
 
-  const encoder = new TextEncoder();
-  const key = await getEncryptionKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
+  try {
+    const encoder = new TextEncoder();
+    const key = await getEncryptionKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encryptedData = await crypto.subtle.encrypt(
+      {
+        name: "AES-GCM",
+        iv,
+      },
+      key,
+      encoder.encode(text)
+    );
 
-  const encryptedData = await crypto.subtle.encrypt(
-    {
-      name: "AES-GCM",
-      iv,
-    },
-    key,
-    encoder.encode(text)
-  );
+    const encryptedArray = new Uint8Array(encryptedData);
+    const combined = new Uint8Array(iv.length + encryptedArray.length);
+    combined.set(iv);
+    combined.set(encryptedArray, iv.length);
 
-  // Combine IV and encrypted data into a single string
-  const encryptedArray = new Uint8Array(encryptedData);
-  const combined = new Uint8Array(iv.length + encryptedArray.length);
-  combined.set(iv);
-  combined.set(encryptedArray, iv.length);
+    const base64Result = btoa(
+      Array.from(combined)
+        .map((byte) => String.fromCharCode(byte))
+        .join("")
+    );
 
-  // Convert to base64 without spread operator
-  return btoa(
-    Array.from(combined)
-      .map((byte) => String.fromCharCode(byte))
-      .join("")
-  );
+    // Log sizes
+    console.log({
+      originalLength: text.length,
+      encryptedLength: encryptedArray.length,
+      combinedLength: combined.length,
+      base64Length: base64Result.length,
+      totalStorageUsed: JSON.stringify(localStorage).length,
+    });
+
+    return base64Result;
+  } catch (error) {
+    console.error("Encryption error:", error);
+    throw error;
+  }
 }
 
 async function decryptData(encryptedText: string): Promise<string> {
@@ -110,8 +123,13 @@ export async function getStoredApiKey(): Promise<string | null> {
 
 export async function storeApiKey(apiKey: string): Promise<void> {
   if (typeof window === "undefined") return;
-  const encryptedKey = await encryptData(apiKey);
-  window.localStorage.setItem(API_KEY_STORAGE_KEY, encryptedKey);
+  try {
+    const encryptedKey = await encryptData(apiKey);
+    window.localStorage.setItem(API_KEY_STORAGE_KEY, encryptedKey);
+  } catch (error) {
+    console.error("Failed to store API key:", error);
+    throw new Error("Unable to store API key. Try clearing your browser data.");
+  }
 }
 
 export async function removeApiKey(): Promise<void> {
