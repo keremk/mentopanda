@@ -146,7 +146,6 @@ export function useOpenAIRealtime({
   const handleMessage = (event: MessageEvent) => {
     try {
       const serverEvent = JSON.parse(event.data) as ServerEvent;
-      // console.log("Data Channel Message:", serverEvent);
 
       switch (serverEvent.type) {
         case "session.created":

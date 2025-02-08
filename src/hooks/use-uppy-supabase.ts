@@ -17,17 +17,12 @@ export const useUppyWithSupabase = ({
   onUploadComplete,
   allowedFileTypes,
 }: UppySupabaseOptions) => {
-  // Initialize Uppy instance only once
-  // const [uppy] = useState(() => new Uppy());
-  // // Initialize Supabase client with project URL and anon key
-  // const supabase = createClient();
 
   const uppyRef = useRef<Uppy | null>(null);
   const supabase = createClient();
   const pluginIdRef = useRef(`image-uploader-${nanoid()}`);
 
   if (!uppyRef.current) {
-    console.log("Creating new Uppy instance for: ", process.env.NODE_ENV);
     uppyRef.current = new Uppy({
       debug: process.env.NODE_ENV === "development",
       restrictions: {
@@ -42,7 +37,6 @@ export const useUppyWithSupabase = ({
 
   useEffect(() => {
     const initializeUppy = async () => {
-      // Retrieve the current user's session for authentication
       const {
         data: { session },
       } = await supabase.auth.getSession();
