@@ -132,19 +132,20 @@ export function Header() {
   );
 
   return (
-    <header className="fixed top-0 w-full bg-background/80 backdrop-blur-sm z-50 border-b px-4 sm:px-6 lg:px-8">
-      <div className="container mx-auto flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center space-x-2">
+    <header className="fixed top-0 w-full bg-background/80 backdrop-blur-sm z-50 border-b">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
           <Image
             src="/panda-light.svg"
             alt="MentoPanda Logo"
-            width={40}
-            height={40}
-            className=""
+            width={32}
+            height={32}
+            className="w-8 h-8 sm:w-10 sm:h-10"
+            priority
           />
-          <span className="font-semibold text-xl">MentoPanda</span>
+          <span className="font-semibold text-sm sm:text-xl">MentoPanda</span>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <NavigationMenu className="hidden lg:block">
             <NavigationMenuList>
               <NavigationMenuItem>
@@ -209,16 +210,25 @@ export function Header() {
               <Link href="/login?mode=signup">Get Started</Link>
             </Button>
           </div>
-          <div className="lg:hidden flex items-center gap-4">
-            <Button variant="outline" size="sm" asChild>
+          <div className="lg:hidden flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="px-3 text-sm"
+              asChild
+            >
               <Link href="/login?mode=signin">Login</Link>
             </Button>
-            <Button size="sm" className="bg-red-500 hover:bg-red-600" asChild>
+            <Button
+              size="sm"
+              className="bg-red-500 hover:bg-red-600 px-3 text-sm"
+              asChild
+            >
               <Link href="/login?mode=signup">Get Started</Link>
             </Button>
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="ml-1">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
