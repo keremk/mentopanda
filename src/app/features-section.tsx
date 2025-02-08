@@ -197,7 +197,7 @@ export function FeaturesSection() {
   }, [handleScroll]);
 
   return (
-    <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
+    <section id="features" className="py-16 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="container mx-auto">
         <div className="text-center mb-16">
           <div className="text-red-500 font-medium mb-4">FEATURES</div>

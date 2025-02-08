@@ -17,8 +17,8 @@ interface PricingFeature {
 
 interface PricingTier {
   name: string;
-  monthlyPrice: number;
-  yearlyPrice: number;
+  monthlyPrice: number | null;
+  yearlyPrice: number | null;
   description: string;
   features: PricingFeature[];
   isPopular?: boolean;
@@ -52,9 +52,9 @@ const pricingTiers: PricingTier[] = [
   },
   {
     name: "CUSTOM",
-    monthlyPrice: 99,
-    yearlyPrice: 990,
-    description: "For large-scale operations and high-volume users",
+    monthlyPrice: null,
+    yearlyPrice: null,
+    description: "For your custom needs",
     features: [
       { text: "100 hours of lessons per month" },
       { text: "Custom lesson development for your needs" },
@@ -198,13 +198,17 @@ function PricingCard({
       )}
       <CardHeader>
         <h3 className="text-lg font-semibold text-center mb-4">{tier.name}</h3>
-        <div className="text-center">
-          <div className="text-4xl font-bold">
-            ${isYearly ? tier.yearlyPrice : tier.monthlyPrice}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            / {isYearly ? "year" : "month"}
-          </div>
+        <div className="text-center min-h-[80px] flex flex-col justify-center">
+          {(isYearly ? tier.yearlyPrice : tier.monthlyPrice) !== null ? (
+            <>
+              <div className="text-4xl font-bold">
+                ${isYearly ? tier.yearlyPrice : tier.monthlyPrice}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                / {isYearly ? "year" : "month"}
+              </div>
+            </>
+          ) : null}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -222,7 +226,9 @@ function PricingCard({
           }`}
           variant={tier.isPopular ? "default" : "outline"}
         >
-          Subscribe
+          {(isYearly ? tier.yearlyPrice : tier.monthlyPrice) === null
+            ? "Contact Us"
+            : "Subscribe"}
         </Button>
         <p className="text-xs text-center text-muted-foreground">
           {tier.description}

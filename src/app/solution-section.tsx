@@ -1,6 +1,6 @@
 export function SolutionSection() {
   return (
-    <section id="solutions" className="py-24 px-4 sm:px-6 lg:px-8">
+    <section id="solutions" className="py-16 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto">
         <div className="text-center mb-16">
           <div className="text-red-500 font-medium mb-4">SOLUTIONS</div>

@@ -2,7 +2,7 @@ import { Ban, Zap, Shield } from "lucide-react";
 
 export function ProblemSection() {
   return (
-    <section id="problem" className="py-24 px-4 sm:px-6 lg:px-8">
+    <section id="problem" className="py-16 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto">
         <div className="text-center mb-16">
           <div className="text-red-500 font-medium mb-4">PROBLEM</div>
