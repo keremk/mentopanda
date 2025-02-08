@@ -65,13 +65,13 @@ async function encryptData(text: string): Promise<string> {
     );
 
     // Log sizes
-    console.log({
-      originalLength: text.length,
-      encryptedLength: encryptedArray.length,
-      combinedLength: combined.length,
-      base64Length: base64Result.length,
-      totalStorageUsed: JSON.stringify(localStorage).length,
-    });
+    // console.log({
+    //   originalLength: text.length,
+    //   encryptedLength: encryptedArray.length,
+    //   combinedLength: combined.length,
+    //   base64Length: base64Result.length,
+    //   totalStorageUsed: JSON.stringify(localStorage).length,
+    // });
 
     return base64Result;
   } catch (error) {

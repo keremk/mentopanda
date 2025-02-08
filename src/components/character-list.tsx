@@ -40,13 +40,6 @@ export function CharacterList({ characters }: CharacterListProps) {
   );
   const isCharacterSelected = Boolean(currentCharId);
 
-  console.log({
-    currentCharId,
-    characterIds: characters.map((c) => c.id),
-    selectedCharacterData,
-    match: characters.find((c) => c.id.toString() === currentCharId)?.id,
-  });
-
   async function handleCreateCharacter() {
     if (!newCharacterName.trim()) return;
 

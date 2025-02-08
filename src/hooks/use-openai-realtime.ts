@@ -126,11 +126,9 @@ export function useOpenAIRealtime({
 
     if (!mostRecentAgentMessage) {
       console.warn("can't cancel, no recent assistant message found");
-      console.log(transcriptEntries);
       return;
     }
     if (mostRecentAgentMessage.status === "DONE") {
-      console.log("No truncation needed, message is DONE");
       return;
     }
 
@@ -226,13 +224,13 @@ export function useOpenAIRealtime({
   const registerHandlers = (dataChannel: RTCDataChannel) => {
     dataChannel.addEventListener("message", handleMessage);
 
-    dataChannel.addEventListener("open", () => {
-      console.log("Data channel opened");
-    });
+    // dataChannel.addEventListener("open", () => {
+    //   console.log("Data channel opened");
+    // });
 
-    dataChannel.addEventListener("close", () => {
-      console.log("Data channel closed");
-    });
+    // dataChannel.addEventListener("close", () => {
+    //   console.log("Data channel closed");
+    // });
 
     dataChannel.addEventListener("error", (error) => {
       console.error("Data channel error:", error);

@@ -19,7 +19,6 @@ export async function createOpenAISession({
     if (!finalApiKey) throw new Error("OpenAI API key is required");
 
     const finalVoice = (voice || DEFAULT_VOICE).toLowerCase();
-    console.log(finalVoice);
     const response = await fetch(
       "https://api.openai.com/v1/realtime/sessions",
       {

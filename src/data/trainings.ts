@@ -261,8 +261,6 @@ export async function updateTraining(
   if (verifyError) handleError(verifyError);
   if (!existingTraining) throw new Error("Training not found");
 
-  console.log(training.tagline);
-
   // Check user's organization and training's organization
   const { data: userProfile } = await supabase
     .from("profiles")
@@ -275,11 +273,6 @@ export async function updateTraining(
     .select("organization_id")
     .eq("id", training.id)
     .single();
-
-  console.log("Debug info:", {
-    userOrgId: userProfile?.organization_id,
-    trainingOrgId: trainingData?.organization_id,
-  });
 
   // Check if user has training.manage permission
   const { data: permissions } = await supabase
@@ -334,10 +327,6 @@ export async function updateTraining(
     })
     .eq("id", training.id)
     .select();
-
-  console.log(data);
-  console.log(statusText);
-  console.log(error);
 
   if (error) handleError(error);
   if (!data || data.length === 0) throw new Error("Failed to update training");

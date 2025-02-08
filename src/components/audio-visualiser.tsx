@@ -20,10 +20,9 @@ function AudioVisualiser({ audioRef }: AudioVisualiserProps) {
   useEffect(() => {
     const audioElement = audioRef.current as ExtendedHTMLAudioElement | null;
     if (!audioElement) {
-      console.log("Analyser: audioRef.current is not set yet.");
+      console.error("Analyser: audioRef.current is not set yet.");
       return;
     }
-    console.log("Analyser: audioRef.current is set");
 
     let audioContext: AudioContext;
     let mediaSource: MediaStreamAudioSourceNode | null = null;
@@ -32,7 +31,7 @@ function AudioVisualiser({ audioRef }: AudioVisualiserProps) {
 
     const setupAnalyser = async () => {
       if (!audioElement) {
-        console.log("Analyser: audioElement is null");
+        console.error("Analyser: audioElement is null");
         return;
       }
 
@@ -56,7 +55,7 @@ function AudioVisualiser({ audioRef }: AudioVisualiserProps) {
 
       const update = () => {
         if (!analyser) {
-          console.log("Analyser: analyser is null");
+          console.error("Analyser: analyser is null");
           return;
         }
         analyser.getFloatTimeDomainData(dataArray);
@@ -83,7 +82,6 @@ function AudioVisualiser({ audioRef }: AudioVisualiserProps) {
     // If the audio element is already playing, set up the analyser immediately.
     // Otherwise, wait for the 'play' event to set it up.
     if (!audioElement.paused) {
-      console.log("Analyser: Audio element is already playing");
       setupAnalyser();
     } else {
       const onPlay = () => {

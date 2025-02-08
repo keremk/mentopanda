@@ -103,7 +103,7 @@ export async function githubSignIn() {
   });
 
   if (error) {
-    console.log("error", error.message);
+    console.error("error", error.message);
     return redirect("/login?message=Could not authenticate with GitHub");
   }
 
@@ -122,7 +122,7 @@ export async function googleSignIn() {
   });
 
   if (error) {
-    console.log("error", error.message);
+    console.error("error", error.message);
     return redirect("/login?message=Could not authenticate with Google");
   }
 

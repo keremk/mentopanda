@@ -34,7 +34,6 @@ export async function getCurrentUserInfo(supabase: SupabaseClient): Promise<User
     pricingPlan: data.pricingPlan || "free", // Providing a default value
   };
 
-  console.log(userData);
   return userData;
 }
 

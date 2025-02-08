@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
   const nextParam = searchParams.get("next")
   const next = nextParam ? `/${nextParam}` : "/";
 
-  console.log("next is", next);
   if (token_hash && type) {
     const supabase = await createClient();
 
@@ -29,6 +28,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  console.log("Unexpected or no token type ", type)
+  console.error("Unexpected or no token type ", type)
   return redirect(`/login?message=${encodeURIComponent("Something went wrong, try again")}`);
 }

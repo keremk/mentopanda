@@ -27,8 +27,7 @@ export const useUppyWithSupabase = ({
   const pluginIdRef = useRef(`image-uploader-${nanoid()}`);
 
   if (!uppyRef.current) {
-    console.log("Creating new Uppy instance");
-    console.log("process.env.NODE_ENV", process.env.NODE_ENV);
+    console.log("Creating new Uppy instance for: ", process.env.NODE_ENV);
     uppyRef.current = new Uppy({
       debug: process.env.NODE_ENV === "development",
       restrictions: {
@@ -40,7 +39,6 @@ export const useUppyWithSupabase = ({
   }
 
   const uppy = uppyRef.current;
-  console.log("Plugin ID", pluginIdRef.current);
 
   useEffect(() => {
     const initializeUppy = async () => {
@@ -73,7 +71,6 @@ export const useUppyWithSupabase = ({
           // Attach metadata to each file, including bucket name and content type
           const fileExt = file?.name?.split(".").pop();
           const fileName = `${folderName}/${crypto.randomUUID()}.${fileExt}`;
-          console.log("fileName", fileName);
 
           file.meta = {
             ...file.meta,
@@ -90,7 +87,6 @@ export const useUppyWithSupabase = ({
 
           const uploadedFile = result.successful[0];
           const fileName = uploadedFile.meta.objectName as string;
-          console.log("Uploaded fileName", fileName);
 
           if (!fileName) {
             console.error("Missing filename in uploaded file metadata");
@@ -105,7 +101,6 @@ export const useUppyWithSupabase = ({
             console.error("Failed to get public URL");
             return;
           }
-          console.log("publicUrl", publicUrl);
           onUploadComplete(publicUrl);
         });
     };
@@ -117,7 +112,6 @@ export const useUppyWithSupabase = ({
     // a subsequent Strict Mode mount doesn't see it as "already attached".
     return () => {
       const existing = uppy.getPlugin(pluginIdRef.current);
-      console.log("existing", existing);
       if (existing) {
         uppy.removePlugin(existing);
       }

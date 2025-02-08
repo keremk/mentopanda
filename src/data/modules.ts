@@ -246,7 +246,7 @@ export async function getModuleById2(
     .single();
 
   if (error) {
-    console.log("Error", error);
+    console.error("Error getting module by id", error);
     if (error.code === "PGRST116") return null;
     handleError(error);
   }

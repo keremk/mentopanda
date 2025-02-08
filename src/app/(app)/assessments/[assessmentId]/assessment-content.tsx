@@ -48,7 +48,6 @@ export default function AssessmentContent({
   // Update streamed content with a small delay to reduce render frequency
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      console.log("Setting streamed content:", completion);
       setStreamedContent(completion);
     }, 200);
     return () => clearTimeout(timeoutId);
