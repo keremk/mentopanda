@@ -3,6 +3,24 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  
+  body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* iOS-specific fix */
+  @supports (-webkit-touch-callout: none) {
+    body {
+      text-size-adjust: none;
+      -webkit-text-size-adjust: none;
+    }
+  }
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
