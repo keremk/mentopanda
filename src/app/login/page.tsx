@@ -1,5 +1,4 @@
 import { login, signup, githubSignIn, googleSignIn } from "@/app/login/actions";
-import { Header } from "@/app/header";
 import { Footer } from "@/app/footer";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,6 @@ import {
   Card,
   CardContent,
   CardFooter,
-  CardHeader,
 } from "@/components/ui/card";
 import { SiGoogle, SiGithub } from "@icons-pack/react-simple-icons";
 import Image from "next/image";
@@ -138,7 +136,7 @@ export default async function LoginPage(props: {
                 </>
               ) : (
                 <>
-                  Don't have an account?{" "}
+                  Don&apos;t have an account?{" "}
                   <Link
                     href="/login?mode=signup"
                     className="underline hover:text-primary"
