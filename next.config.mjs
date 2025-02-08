@@ -27,9 +27,9 @@ const nextConfig = {
         ? "'self' http://localhost:54321 http://127.0.0.1:54321"
         : "'self'";
 
-    console.log("connectSrc:", connectSrc);
-    console.log("imgSrc:", imgSrc);
-    console.log("mediaSrc:", mediaSrc);
+    // Add font-src directive
+    const fontSrc = "'self' data:";
+
     return [
       {
         source: "/:path*",
@@ -43,6 +43,7 @@ const nextConfig = {
               `img-src ${imgSrc}`,
               `media-src ${mediaSrc}`,
               `connect-src ${connectSrc}`,
+              `font-src ${fontSrc}`,
               "frame-ancestors 'none'",
               "form-action 'self'",
               "base-uri 'self'",
