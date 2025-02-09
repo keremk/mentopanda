@@ -2,6 +2,16 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 export type PricingPlan = "free" | "pro" | "team" | "enterprise";
 
+export type AppPermission =
+  | "training.manage"
+  | "training.make.public"
+  | "enrollment.manage"
+  | "user.select"
+  | "user.admin"
+  | "organization.admin";
+
+export type UserRole = "admin" | "manager" | "member" | "super_admin";
+
 export type User = {
   id: string;
   email: string;
@@ -9,9 +19,14 @@ export type User = {
   avatarUrl: string;
   pricingPlan: PricingPlan;
   organizationName?: string;
+  organizationId: number;
+  role: UserRole;
+  permissions: AppPermission[];
 };
 
-export async function getCurrentUserInfo(supabase: SupabaseClient): Promise<User> {
+export async function getCurrentUserInfo(
+  supabase: SupabaseClient
+): Promise<User> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -23,15 +38,16 @@ export async function getCurrentUserInfo(supabase: SupabaseClient): Promise<User
 
   if (error) throw new Error("Failed to fetch user profile");
 
-  // The function returns all fields, even when includeOrgInfo is false
-  // We can filter out org info if not requested
   const userData: User = {
     id: data.id,
     email: data.email,
     displayName: data.displayName,
     avatarUrl: data.avatarUrl,
     organizationName: data.organizationName,
-    pricingPlan: data.pricingPlan || "free", // Providing a default value
+    organizationId: data.organizationId,
+    pricingPlan: data.pricingPlan || "free",
+    role: data.role || "member",
+    permissions: data.permissions || [],
   };
 
   return userData;
@@ -100,4 +116,28 @@ export async function updateUserAvatar({
 
   // Return updated user info
   return await getCurrentUserInfo(supabase);
+}
+
+export async function hasPermission({
+  supabase,
+  permission,
+  user,
+}: {
+  supabase: SupabaseClient;
+  permission: AppPermission;
+  user?: User;
+}): Promise<boolean> {
+  // If user is provided and has permissions array, check locally
+  if (user?.permissions) {
+    return user.permissions.includes(permission);
+  }
+
+  // Fallback to RPC call if no cached permissions
+  const { data: hasPermission, error } = await supabase.rpc("authorize", {
+    requested_permission: permission,
+  });
+
+  if (error) throw new Error(`Permission check failed: ${error.message}`);
+
+  return hasPermission;
 }

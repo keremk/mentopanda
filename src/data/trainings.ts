@@ -1,6 +1,7 @@
 import { ModuleProgress, ModuleSummary } from "./modules";
-import { getOrganizationId, getUserId, handleError } from "./utils";
+import { getUserId, handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { hasPermission, getCurrentUserInfo } from "./user";
 
 export type TrainingSummary = {
   id: number;
@@ -184,8 +185,7 @@ export async function getTrainingWithProgress(
 export async function getTrainingsWithEnrollment(
   supabase: SupabaseClient
 ): Promise<TrainingWithEnrollment[]> {
-  const userId = await getUserId(supabase);
-  const organizationId = await getOrganizationId(supabase);
+  const { id: userId, organizationId } = await getCurrentUserInfo(supabase);
 
   const query = supabase.from("trainings").select(
     `
@@ -262,43 +262,14 @@ export async function updateTraining(
   if (!existingTraining) throw new Error("Training not found");
 
   // Check if user has training.manage permission
-  const { data: permissions } = await supabase
-    .from("role_permissions")
-    .select("permission")
-    .eq(
-      "role",
-      (
-        await supabase.auth.getUser()
-      ).data.user?.user_metadata?.user_role
-    )
-    .eq("permission", "training.manage");
-
-  console.log("Permission check:", {
-    userRole: (await supabase.auth.getUser()).data.user?.user_metadata
-      ?.user_role,
-    hasTrainingManage: permissions && permissions.length > 0,
+  const canManageTraining = await hasPermission({
+    supabase,
+    permission: "training.manage",
   });
 
-  // Test authorize function directly
-  const { data: hasPermission, error: authorizeError } = await supabase.rpc(
-    "authorize",
-    {
-      requested_permission: "training.manage",
-    }
-  );
-
-  console.log("Authorize check:", {
-    hasPermission,
-    authorizeError,
-  });
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  console.log("JWT payload:", {
-    jwt: session?.access_token,
-    decodedJWT: session && JSON.parse(atob(session.access_token.split(".")[1])),
-  });
+  if (!canManageTraining) {
+    throw new Error("You don't have permission to manage trainings");
+  }
 
   // Now perform the update
   const { data, error } = await supabase
@@ -338,8 +309,7 @@ export async function createTraining(
   supabase: SupabaseClient,
   training: BaseTrainingInput
 ): Promise<Training> {
-  const userId = await getUserId(supabase);
-  const organizationId = await getOrganizationId(supabase);
+  const { id: userId, organizationId } = await getCurrentUserInfo(supabase);
 
   const { data, error } = await supabase
     .from("trainings")

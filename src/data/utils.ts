@@ -9,20 +9,6 @@ export async function getUserId(supabase: SupabaseClient): Promise<string> {
   return user.id;
 }
 
-export async function getOrganizationId(supabase: SupabaseClient): Promise<number | null> {
-  const userId = await getUserId(supabase);
-  const { data: userData, error: userError } = await supabase
-    .from("profiles")
-    .select("organization_id")
-    .eq("id", userId)
-    .single();
-
-  if (userError) {
-    throw new Error(`Failed to fetch user data: ${userError.message}`);
-  }
-
-  return userData.organization_id;
-}
 
 export function handleError(error: PostgrestError) {
   // Postgres error codes: https://docs.postgrest.org/en/v12/references/errors.html

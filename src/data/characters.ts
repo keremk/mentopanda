@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
-import { getUserId, getOrganizationId } from "./utils";
+import { getCurrentUserInfo } from "./user";
 import { AIModel, AI_MODELS, aiModelSchema } from "@/types/models";
 
 export type CharacterSummary = {
@@ -191,8 +191,7 @@ export async function createCharacter(
   supabase: SupabaseClient,
   data: CreateCharacterInput
 ): Promise<CharacterDetails> {
-  const userId = await getUserId(supabase);
-  const organizationId = await getOrganizationId(supabase);
+  const { id: userId, organizationId } = await getCurrentUserInfo(supabase);
 
   if (!organizationId)
     throw new Error("User must belong to an organization to create characters");
