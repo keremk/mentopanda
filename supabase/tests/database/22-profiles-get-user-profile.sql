@@ -44,8 +44,10 @@ SELECT diag(
         )
     );
 
--- Test 1: User with complete profile and metadata
-SELECT diag('Test 1: Fetching complete user profile');
+-- Test 1: User with complete profile, metadata, and member permissions
+SELECT diag(
+        'Test 1: Fetching complete user profile with member permissions'
+    );
 
 SELECT tests.authenticate_as('test.user.1');
 
@@ -56,8 +58,11 @@ SELECT diag(
             FROM (
                     SELECT (r->>'displayName')::text as display_name,
                         (r->>'organizationName')::text as org_name,
+                        (r->>'organizationId')::bigint as org_id,
                         (r->>'pricingPlan')::text as pricing_plan,
-                        (r->>'avatarUrl')::text as avatar_url
+                        (r->>'avatarUrl')::text as avatar_url,
+                        (r->>'role')::text as role,
+                        json_array_length(r->'permissions') as permission_count
                     FROM get_user_profile(auth.uid()) r
                 ) r
         )
@@ -67,37 +72,51 @@ SELECT results_eq(
         $$
         SELECT (r->>'displayName')::text as display_name,
             (r->>'organizationName')::text as org_name,
+            (r->>'organizationId')::bigint as org_id,
             (r->>'pricingPlan')::text as pricing_plan,
-            (r->>'avatarUrl')::text as avatar_url
+            (r->>'avatarUrl')::text as avatar_url,
+            (r->>'role')::text as role,
+            json_array_length(r->'permissions') as permission_count
         FROM get_user_profile(auth.uid()) r $$,
             $$
         VALUES (
                 'Test User One'::text,
                 'Test Org'::text,
+                100::bigint,
                 'free'::text,
-                'https://example.com/avatar1.jpg'::text
+                'https://example.com/avatar1.jpg'::text,
+                'member'::text,
+                1 -- member has 1 permission from seed data: enrollment.manage
             ) $$,
-            'Should return complete profile with metadata for test.user.1'
+            'Should return complete profile with metadata and member permissions for test.user.1'
     );
 
--- Test 2: User with minimal metadata
-SELECT diag('Test 2: Fetching profile with minimal metadata');
+-- Test 2: User with minimal metadata but admin permissions
+SELECT diag(
+        'Test 2: Fetching profile with minimal metadata and admin permissions'
+    );
 
 SELECT tests.authenticate_as('test.user.2');
 
 SELECT results_eq(
         $$
         SELECT (r->>'organizationName')::text as org_name,
+            (r->>'organizationId')::bigint as org_id,
             (r->>'pricingPlan')::text as pricing_plan,
-            (r->>'avatarUrl')::text as avatar_url
+            (r->>'avatarUrl')::text as avatar_url,
+            (r->>'role')::text as role,
+            json_array_length(r->'permissions') as permission_count
         FROM get_user_profile(auth.uid()) r $$,
             $$
         VALUES (
                 'Other Org'::text,
+                101::bigint,
                 'free'::text,
-                '/placeholder.svg'::text
+                '/placeholder.svg'::text,
+                'admin'::text,
+                6 -- admin has 6 permissions from seed data
             ) $$,
-            'Should return profile with default values for test.user.2'
+            'Should return profile with default values and admin permissions for test.user.2'
     );
 
 -- Test 3: Attempting to access another user's profile (should fail)
