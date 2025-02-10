@@ -25,9 +25,13 @@ import {
 
 type CharacterListProps = {
   characters: CharacterSummary[];
+  canManageCharacters: boolean;
 };
 
-export function CharacterList({ characters }: CharacterListProps) {
+export function CharacterList({
+  characters,
+  canManageCharacters,
+}: CharacterListProps) {
   const router = useRouter();
   const params = useParams();
   const currentCharId = params.charId;
@@ -102,9 +106,10 @@ export function CharacterList({ characters }: CharacterListProps) {
         </div>
       </ScrollArea>
 
-      <div className="border-t p-2 flex gap-2">
-        {/* Add Character Dialog */}
-        <Dialog>
+      {canManageCharacters && (
+        <div className="border-t p-2 flex gap-2">
+          {/* Add Character Dialog */}
+          <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" className="flex-1">
               <PlusCircle className="h-4 w-4 mr-2" />
@@ -172,8 +177,9 @@ export function CharacterList({ characters }: CharacterListProps) {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
-      </div>
+          </Dialog>
+        </div>
+      )}
     </div>
   );
 }

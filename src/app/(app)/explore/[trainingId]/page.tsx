@@ -32,8 +32,10 @@ export default async function TrainingDetailsPage(
   }
 ) {
   const params = await props.params;
-  const training = await getTrainingByIdAction(params.trainingId);
-  const user = await getCurrentUserAction();
+  const [training, user] = await Promise.all([
+    getTrainingByIdAction(params.trainingId),
+    getCurrentUserAction(),
+  ]);
 
   if (!training) {
     notFound();
