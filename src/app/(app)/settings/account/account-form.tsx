@@ -12,6 +12,7 @@ import { useTransition, useState, useEffect } from "react";
 import type { User } from "@/data/user";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import { getStoredApiKey, storeApiKey, removeApiKey } from "@/lib/apikey";
+import { ProjectDialog } from "@/components/project-dialog";
 
 type AccountFormProps = {
   user: User;
@@ -106,21 +107,32 @@ export function AccountForm({ user }: AccountFormProps) {
               disabled
               className="flex-1"
             />
-            <Button type="button" variant="outline">
-              Change Email
-            </Button>
           </div>
         </div>
 
         {/* Organization Name Field */}
         <div className="space-y-2">
-          <Label htmlFor="orgName">Organization Name</Label>
-          <Input
-            id="orgName"
-            name="orgName"
-            defaultValue={user.organizationName}
-            className="max-w-md"
-          />
+          <Label htmlFor="orgName">Project Name</Label>
+          <div className="flex gap-4 max-w-md">
+            <Input
+              id="orgName"
+              name="orgName"
+              defaultValue={user.organizationName}
+              className="flex-1"
+            />
+            <ProjectDialog onProjectCreate={(name) => {
+              startTransition(async () => {
+                await updateProfileAction({
+                  displayName: user.displayName,
+                  organizationName: name,
+                });
+              });
+            }}>
+              <Button type="button" variant="outline">
+                Edit Project
+              </Button>
+            </ProjectDialog>
+          </div>
         </div>
 
         {/* API Key Field */}
