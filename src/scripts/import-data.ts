@@ -209,15 +209,6 @@ async function createTestUsers(testData: TestData) {
         return null;
       }
 
-      // // Update user role directly in profiles table
-      // const organizationId = user.organization_id || 1;
-      // const { error: profileError } = await supabase
-      //   .from("profiles")
-      //   .update({ user_role: user.role, organization_id: organizationId })
-      //   .eq("id", authData.user.id);
-
-      // if (profileError) throw profileError;
-
       console.log(`Created user: ${user.email}`);
       const testUser: TestUser = {
         id: authData.user.id,
@@ -239,7 +230,6 @@ async function createTestProjects(
   users: TestUser[],
   membersList: TestProjectMember[][]
 ) {
-  // Create email to ID lookup
   let index = 0;
   for (const user of users) {
     // Sign in as user to get session
@@ -265,15 +255,13 @@ async function createTestProjects(
     if (projectError) throw projectError;
     if (!projectId) throw new Error("No project data returned");
 
-    console.log("Project ID:", projectId);
     // Use the new refreshed session for subsequent operations
     const newSession = await switchProject(projectId, session);
 
-    console.log("New session:", JSON.stringify(newSession, null, 2));
-    console.log(
-      "JWT Contents:",
-      JSON.stringify(decodeJWT(newSession.access_token), null, 2)
-    );
+    // console.log(
+    //   "JWT Contents:",
+    //   JSON.stringify(decodeJWT(newSession.access_token), null, 2)
+    // );
 
     await setupProjectMembers(users, membersList[index], projectId, newSession);
     const characters = await createCharactersData(projectId, testData, newSession);
@@ -285,19 +273,7 @@ async function createTestProjects(
     console.log(`Created project: ${projectId}`);
 
     index++;
-    if (index === 3) {
-      break;
-    }
   }
-}
-
-function decodeJWT(token: string) {
-  const [header, payload, signature] = token.split(".");
-  return {
-    header: JSON.parse(Buffer.from(header, "base64").toString()),
-    payload: JSON.parse(Buffer.from(payload, "base64").toString()),
-    signature,
-  };
 }
 
 async function switchProject(
@@ -385,36 +361,6 @@ async function setupProjectMembers(
     if (projectError) throw projectError;
   }
 }
-
-// async function createTestProjects(users: TestUser[]) {
-//   for (const user of users) {
-//     // Sign in as user to get session
-//     const {
-//       data: { session },
-//       error: signInError,
-//     } = await supabase.auth.signInWithPassword({
-//       email: user.email,
-//       password: user.password,
-//     });
-
-//     if (signInError) throw signInError;
-//     if (!session) throw new Error("No session created");
-
-//     // Create new supabase client with session
-//     const userSupabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-//     await userSupabase.auth.setSession(session);
-
-//     const { data: projectData, error: projectError } = await userSupabase.rpc(
-//       "create_project",
-//       { project_name: `Project for ${user.email}` }
-//     );
-
-//     if (projectError) throw projectError;
-//     if (!projectData) throw new Error("No project data returned");
-
-//     console.log(`Created project: ${projectData}`);
-//   }
-// }
 
 async function createTrainingData(
   projectId: string,
@@ -575,19 +521,6 @@ async function createTestData() {
   }
 
   await createTestProjects(testData, validTestUsers, testData.members);
-
-  // const mainUser = testUsers?.find(
-  //   (user) => user?.email === "admin@codingventures.com"
-  // );
-
-  // if (!mainUser) {
-  //   console.error("Main user not found");
-  //   return;
-  // }
-
-  // await createTrainingData(mainUser.id, testData);
-  // await createCharactersData(mainUser.id, testData);
-  // await createHistoryData(mainUser.id);
 }
 
 // Add help text if --help flag is provided
