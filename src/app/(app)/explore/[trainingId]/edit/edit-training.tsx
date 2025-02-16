@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Training, UpdateTrainingInput } from "@/data/trainings";
-import { updateTrainingAction } from "@/app/(app)/trainingActions";
+import { updateTrainingAction } from "@/app/actions/trainingActions";
 import {
   createModuleAction,
   deleteModuleAction,
@@ -15,7 +15,7 @@ import {
 import { PlusIcon, TrashIcon, PencilIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { MarkdownEditor } from "@/components/markdown-editor";
-import { deleteTrainingAction } from "@/app/(app)/trainingActions";
+import { deleteTrainingAction } from "@/app/actions/trainingActions";
 import {
   AlertDialog,
   AlertDialogAction,

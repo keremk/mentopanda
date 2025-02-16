@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useState, useTransition } from "react";
 import { CreateOrgDialog } from "@/components/dialogs/create-org-dialog";
-import { createTrainingAction } from "@/app/(app)/trainingActions";
+import { createTrainingAction } from "@/app/actions/trainingActions";
 
 type CreateTrainingButtonProps = {
   needsOrganization: boolean;

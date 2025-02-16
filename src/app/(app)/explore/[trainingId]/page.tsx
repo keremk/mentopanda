@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { EnrollmentButton } from "@/components/enrollment-button";
-import { getTrainingByIdAction } from "@/app/(app)/trainingActions";
+import { getTrainingByIdAction } from "@/app/actions/trainingActions";
 import { Pencil } from "lucide-react";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
@@ -26,11 +26,9 @@ function YouTubeEmbed({ url }: { url: string }) {
   );
 }
 
-export default async function TrainingDetailsPage(
-  props: {
-    params: Promise<{ trainingId: number }>;
-  }
-) {
+export default async function TrainingDetailsPage(props: {
+  params: Promise<{ trainingId: number }>;
+}) {
   const params = await props.params;
   const [training, user] = await Promise.all([
     getTrainingByIdAction(params.trainingId),

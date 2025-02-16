@@ -1,4 +1,4 @@
-import { getTrainingsWithEnrollmentAction } from "@/app/(app)/trainingActions";
+import { getTrainingsWithEnrollmentAction } from "@/app/actions/trainingActions";
 import { TrainingCard } from "@/components/training-card";
 import { Metadata } from "next";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
