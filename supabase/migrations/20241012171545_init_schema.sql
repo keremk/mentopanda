@@ -1,11 +1,10 @@
 -- Types
 create type "public"."app_permission" as enum(
 	'training.manage',
-	'training.make.public',
 	'enrollment.manage',
-	'user.select',
-	'user.admin',
-	'organization.admin'
+	'project.manage',
+	'project.member.manage',
+	'basic.access'
 );
 
 create type "public"."user_role" as enum('admin', 'manager', 'member', 'super_admin');
@@ -13,22 +12,38 @@ create type "public"."user_role" as enum('admin', 'manager', 'member', 'super_ad
 create type "public"."pricing_plan" as enum('free', 'pro', 'team', 'enterprise');
 
 -- Tables
-create table if not exists "organizations" (
+create table if not exists "projects" (
 	"id" bigserial primary key not null,
 	"name" text,
-	"domain" text not null,
+	"is_public" boolean default false not null,
+	"created_by" uuid default auth.uid(),
 	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 create table if not exists "profiles" (
 	"id" uuid primary key not null references auth.users (id) on delete cascade on update cascade,
-	"organization_id" bigint references organizations (id) on delete
-	set default default 1 not null,
-		"user_role" "user_role" default 'member' not null,
-		"pricing_plan" "pricing_plan" default 'free' not null,
-		"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-		"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	"current_project_id" bigint DEFAULT 1,
+	"pricing_plan" "pricing_plan" default 'free' not null,
+	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE "profiles"
+ADD CONSTRAINT "profiles_current_project_id_fkey" FOREIGN KEY ("current_project_id") REFERENCES "projects" ("id") ON DELETE
+SET DEFAULT;
+
+ALTER TABLE "projects"
+ADD CONSTRAINT "projects_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "profiles" ("id") ON DELETE
+SET NULL;
+
+create table if not exists "projects_profiles" (
+	"project_id" bigint references projects (id) on delete cascade,
+	"profile_id" uuid references profiles (id) on delete cascade,
+	"role" "user_role" not null,
+	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	constraint "projects_profiles_project_id_profile_id_pk" primary key ("project_id", "profile_id")
 );
 
 create table if not exists "role_permissions" (
@@ -46,10 +61,9 @@ create table if not exists "trainings" (
 	"description" text,
 	"image_url" text,
 	"preview_url" text,
-	"created_by" uuid references profiles (id) on delete
+	"created_by" uuid default auth.uid() references profiles (id) on delete
 	set null,
-		"is_public" boolean default true not null,
-		"organization_id" bigint references organizations (id) on delete cascade,
+		"project_id" bigint not null references projects (id) on delete cascade,
 		"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 		"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -78,9 +92,8 @@ create table if not exists "characters" (
 	"ai_model" text,
 	"description" text,
 	"avatar_url" text,
-	"organization_id" bigint references organizations (id) on delete cascade,
-	"is_public" boolean default true not null,
-	"created_by" uuid references profiles (id) on delete
+	"project_id" bigint not null references projects (id) on delete cascade,
+	"created_by" uuid default auth.uid() references profiles (id) on delete
 	set null,
 		"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 		"updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -133,18 +146,14 @@ create index if not exists "modules_training_id_idx" on "modules" ("training_id"
 -- History
 create index if not exists "history_user_id_idx" on "history" ("user_id");
 
--- Organizations
-create unique index if not exists "domain_idx" on "organizations" using btree ("domain");
-
--- Profiles
-create index if not exists "profiles_organization_id_idx" on "profiles" ("organization_id");
-
 -- Row Level Security
 alter table trainings enable row level security;
 
 alter table enrollments enable row level security;
 
-alter table organizations enable row level security;
+alter table projects enable row level security;
+
+alter table projects_profiles enable row level security;
 
 alter table profiles enable row level security;
 

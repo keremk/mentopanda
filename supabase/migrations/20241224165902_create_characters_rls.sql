@@ -1,14 +1,17 @@
-CREATE POLICY "Anyone can view public characters" ON characters FOR
-SELECT USING (is_public = TRUE);
-
-CREATE POLICY "Private characters are only viewable by organization members the character belongs to" ON characters FOR
+CREATE POLICY "Characters are viewable by project members or if project is public" ON characters FOR
 SELECT TO authenticated USING (
         EXISTS (
             SELECT 1
-            FROM profiles
-            WHERE profiles.id = auth.uid()
-                AND profiles.organization_id = characters.organization_id
-                AND characters.is_public = FALSE
+            FROM projects p
+                LEFT JOIN projects_profiles pp ON pp.project_id = p.id
+                AND pp.profile_id = auth.uid()
+            WHERE p.id = characters.project_id
+                AND (
+                    -- Either the project is public
+                    p.is_public = true
+                    OR -- Or the user is a member of the project
+                    pp.profile_id IS NOT NULL
+                )
         )
     );
 
@@ -18,7 +21,7 @@ CREATE POLICY "Characters are manageable by users with training.manage permissio
         SELECT 1
         FROM profiles
         WHERE profiles.id = auth.uid()
-            AND profiles.organization_id = characters.organization_id
+            AND profiles.current_project_id = characters.project_id
     )
 ) WITH CHECK (
     authorize('training.manage')
@@ -26,7 +29,6 @@ CREATE POLICY "Characters are manageable by users with training.manage permissio
         SELECT 1
         FROM profiles
         WHERE profiles.id = auth.uid()
-            AND profiles.organization_id = characters.organization_id
+            AND profiles.current_project_id = characters.project_id
     )
 );
-

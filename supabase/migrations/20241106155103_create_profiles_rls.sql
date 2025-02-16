@@ -1,47 +1,19 @@
--- Profile policies
--- CREATE POLICY "Users can view their own profile" ON profiles FOR
--- SELECT
---   TO authenticated USING (id = auth.uid ());
+-- Allow users to view their own profile always
+CREATE POLICY "Users can view their own profile" ON profiles FOR
+SELECT TO authenticated USING (id = auth.uid());
 
--- Create a function to get the current user's organization_id
-CREATE
-OR REPLACE function public.get_current_user_organization_id () returns bigint language sql security definer stable
-SET
-  search_path = public AS $$
-  SELECT organization_id 
-  FROM profiles 
-  WHERE id = auth.uid()
-$$;
-
-CREATE POLICY "Users with user.select permission can only view profiles in same organization" ON profiles FOR
-SELECT
-  TO authenticated USING (
-    -- Allow users to see their own profile regardless of organization
-    id = auth.uid ()
-    OR (
-      authorize ('user.select') 
-      -- Use the function to get organization_id without recursion
-      AND get_current_user_organization_id () != 1 -- Exclude special "No organization" case
-      AND organization_id = get_current_user_organization_id ()
+-- Allow users to view profiles of users in their projects
+CREATE POLICY "Users can view profiles of users in shared projects" ON profiles FOR
+SELECT TO authenticated USING (
+    EXISTS (
+      SELECT 1
+      FROM projects_profiles pp1
+        JOIN projects_profiles pp2 ON pp1.project_id = pp2.project_id
+      WHERE pp1.profile_id = auth.uid()
+        AND pp2.profile_id = profiles.id
     )
   );
 
-CREATE POLICY "Users can update their own profile or admins can update profiles in their organization" ON profiles 
-FOR UPDATE
-  TO authenticated USING (
-    id = auth.uid () 
-    OR (
-      -- Check if user has user.admin permission AND target profile is in same organization
-      authorize ('user.admin')
-      AND organization_id = get_current_user_organization_id ()
-    )
-  )
-WITH
-  CHECK (
-    id = auth.uid () 
-    OR (
-      -- Check if user has user.admin permission AND target profile is in same organization
-      authorize ('user.admin')
-      AND organization_id = get_current_user_organization_id ()
-    )
-  );
+-- Allow users to update their own profile
+CREATE POLICY "Users can update their own profile" ON profiles FOR
+UPDATE TO authenticated USING (id = auth.uid()) WITH CHECK (id = auth.uid());

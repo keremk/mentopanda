@@ -16,6 +16,7 @@
   },
   "editor.formatOnSave": true,
   "sqltools.format": {
+    
     "keywordCase": "upper",
     "identifierCase": "preserve",
     "indentSize": 4,

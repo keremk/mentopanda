@@ -1,15 +1,5 @@
 import { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
 
-export async function getUserId(supabase: SupabaseClient): Promise<string> {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) throw new Error("User is not authenticated");
-  return user.id;
-}
-
-
 export function handleError(error: PostgrestError) {
   // Postgres error codes: https://docs.postgrest.org/en/v12/references/errors.html
 

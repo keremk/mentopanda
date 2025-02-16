@@ -1,4 +1,4 @@
-import { getEnrolledTrainingsAction } from "@/app/(app)/trainingActions";
+import { getEnrolledTrainingsAction } from "@/app/actions/enrollment-actions";
 import { EnrolledTrainingsList } from "@/components/enrolled-trainings-list";
 
 export default async function TrainingsLayout({

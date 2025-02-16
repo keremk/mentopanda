@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { getUserId, handleError } from "./utils";
-
+import { handleError } from "./utils";
+import { TrainingSummary } from "./trainings";
+import { getUserId } from "./user";
 export interface Enrollment {
   id: number;
   trainingTitle: string;
@@ -8,6 +9,46 @@ export interface Enrollment {
   tagline: string;
   imageUrl: string;
   createdAt: string;
+}
+
+export async function getEnrolledTrainings(
+  supabase: SupabaseClient
+): Promise<TrainingSummary[]> {
+  const userId = await getUserId(supabase);
+
+  const { data, error } = await supabase
+    .from("enrollments")
+    .select(
+      `
+      id,
+      trainings (id, title, tagline, image_url, project_id),
+      created_at
+    `
+    )
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) handleError(error);
+
+  if (!data) return [];
+
+  /* 
+    Why am I using "any" type?
+    It's clear now that there's a mismatch between what TypeScript infers from the Supabase client and what's actually returned at runtime. 
+Given that trainings is indeed an object and not an array at runtime, we'll need to update our type definitions and the way we handle the data.
+  */
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  return data.map((enrollment: any) => ({
+    id: enrollment.trainings?.id,
+    title: enrollment.trainings?.title ?? "",
+    tagline: enrollment.trainings?.tagline ?? "",
+    imageUrl: enrollment.trainings?.image_url ?? "",
+    createdAt: new Date(enrollment.trainings?.created_at),
+    updatedAt: new Date(enrollment.trainings?.updated_at),
+    projectId: enrollment.trainings?.project_id,
+  }));
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
 export async function enrollInTraining(

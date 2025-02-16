@@ -1,9 +1,9 @@
-import { getUserId, handleError } from "@/data/utils";
+import { handleError } from "@/data/utils";
 import { TranscriptEntry } from "@/types/chat-types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
 import { Database } from "@/types/supabase";
-
+import { getUserId } from "@/data/user";
 export type HistorySummary = {
   id: number;
   moduleId: number;

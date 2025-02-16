@@ -14,13 +14,11 @@ export default async function ExplorePage() {
     getCurrentUserAction(),
   ]);
 
-  const needsOrganization = !user.organizationId || user.organizationId === 1;
-
   return (
     <div className="p-4">
       {user.permissions.includes("training.manage") && (
         <div className="absolute top-0 right-0 p-4 z-10">
-          <CreateTrainingButton needsOrganization={needsOrganization} />
+          <CreateTrainingButton needsOrganization={false} />
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { Enrollment } from "@/data/enrollments";
-import { getEnrolledTrainings } from "@/data/trainings";
+import { getEnrolledTrainings } from "@/data/enrollments";
 import { setupTestClient } from "@/tests/utils/test-client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

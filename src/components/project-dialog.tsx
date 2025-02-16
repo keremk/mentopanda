@@ -21,7 +21,10 @@ type ProjectDialogProps = {
   onProjectCreate: (name: string) => void;
 };
 
-export function ProjectDialog({ children, onProjectCreate }: ProjectDialogProps) {
+export function ProjectDialog({
+  children,
+  onProjectCreate,
+}: ProjectDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -33,10 +36,8 @@ export function ProjectDialog({ children, onProjectCreate }: ProjectDialogProps)
     try {
       const formData = new FormData(event.currentTarget);
       const name = formData.get("name") as string;
-      const domain = name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+      const project = await createProjectAction(name);
 
-      const project = await createProjectAction({ name, domain });
-      
       onProjectCreate(project.name);
       setOpen(false);
       toast({
@@ -77,7 +78,11 @@ export function ProjectDialog({ children, onProjectCreate }: ProjectDialogProps)
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
@@ -88,4 +93,4 @@ export function ProjectDialog({ children, onProjectCreate }: ProjectDialogProps)
       </DialogContent>
     </Dialog>
   );
-} 
+}

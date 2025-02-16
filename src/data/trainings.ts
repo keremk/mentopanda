@@ -1,22 +1,21 @@
 import { ModuleProgress, ModuleSummary } from "./modules";
-import { getUserId, handleError } from "./utils";
+import { handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { hasPermission, getCurrentUserInfo } from "./user";
+import { hasPermission, getCurrentUserInfo, getUserId } from "./user";
 
 export type TrainingSummary = {
   id: number;
   title: string;
   tagline: string;
   imageUrl: string;
+  projectId: number;
   createdAt: Date;
   updatedAt: Date;
 };
 
 export type Training = TrainingSummary & {
   description: string;
-  isPublic: boolean;
   createdBy: string | null;
-  organizationId: string | null;
   previewUrl: string | null;
   modules: ModuleSummary[];
 };
@@ -24,8 +23,6 @@ export type Training = TrainingSummary & {
 export type TrainingWithProgress = TrainingSummary & {
   description: string;
   previewUrl: string | null;
-  isPublic: boolean;
-  organizationId: number | null;
   modules: ModuleProgress[];
 };
 
@@ -68,53 +65,13 @@ export async function getTrainingById(
     tagline: training.tagline,
     description: training.description,
     imageUrl: training.image_url,
-    isPublic: training.is_public,
     createdBy: training.created_by,
-    organizationId: training.organization_id,
+    projectId: training.project_id,
     previewUrl: training.preview_url,
     createdAt: new Date(training.created_at),
     updatedAt: new Date(training.updated_at),
     modules: training.modules,
   };
-}
-
-export async function getEnrolledTrainings(
-  supabase: SupabaseClient
-): Promise<TrainingSummary[]> {
-  const userId = await getUserId(supabase);
-
-  const { data, error } = await supabase
-    .from("enrollments")
-    .select(
-      `
-      id,
-      trainings (id, title, tagline, image_url),
-      created_at
-    `
-    )
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-
-  if (error) handleError(error);
-
-  if (!data) return [];
-
-  /* 
-    Why am I using "any" type?
-    It's clear now that there's a mismatch between what TypeScript infers from the Supabase client and what's actually returned at runtime. 
-Given that trainings is indeed an object and not an array at runtime, we'll need to update our type definitions and the way we handle the data.
-  */
-
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  return data.map((enrollment: any) => ({
-    id: enrollment.trainings?.id,
-    title: enrollment.trainings?.title ?? "",
-    tagline: enrollment.trainings?.tagline ?? "",
-    imageUrl: enrollment.trainings?.image_url ?? "",
-    createdAt: new Date(enrollment.trainings?.created_at),
-    updatedAt: new Date(enrollment.trainings?.updated_at),
-  }));
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
 export async function getTrainingWithProgress(
@@ -158,8 +115,7 @@ export async function getTrainingWithProgress(
     description: training.description,
     imageUrl: training.image_url,
     previewUrl: training.preview_url,
-    isPublic: training.is_public,
-    organizationId: training.organization_id,
+    projectId: training.project_id,
     createdAt: new Date(training.created_at),
     updatedAt: new Date(training.updated_at),
     modules: training.modules.map((module: any) => {
@@ -185,16 +141,17 @@ export async function getTrainingWithProgress(
 export async function getTrainingsWithEnrollment(
   supabase: SupabaseClient
 ): Promise<TrainingWithEnrollment[]> {
-  const { id: userId, organizationId } = await getCurrentUserInfo(supabase);
+  const { id: userId, currentProject } = await getCurrentUserInfo(supabase);
 
-  const query = supabase.from("trainings").select(
-    `
+  const query = supabase
+    .from("trainings")
+    .select(
+      `
       id,
       title,
       tagline,
       image_url,
-      is_public,
-      organization_id,
+      project_id,
       created_at,
       updated_at,
       enrollments!left (
@@ -202,15 +159,8 @@ export async function getTrainingsWithEnrollment(
         user_id
       )
     `
-  );
-
-  // Build filter conditions
-  const conditions = ["is_public.eq.true"];
-  if (organizationId && organizationId !== 1) {
-    conditions.push(`organization_id.eq.${organizationId}`);
-  }
-
-  query.or(conditions.join(","));
+    )
+    .eq("project_id", currentProject.id);
 
   const { data: trainings, error } = await query;
 
@@ -222,8 +172,7 @@ export async function getTrainingsWithEnrollment(
       title: training.title,
       tagline: training.tagline,
       imageUrl: training.image_url,
-      isPublic: training.is_public,
-      organizationId: training.organization_id,
+      projectId: training.project_id,
       createdAt: new Date(training.created_at),
       updatedAt: new Date(training.updated_at),
       isEnrolled:
@@ -240,7 +189,6 @@ export type BaseTrainingInput = {
   description: string;
   imageUrl: string;
   previewUrl: string | null;
-  isPublic: boolean;
 };
 
 export type UpdateTrainingInput = BaseTrainingInput & {
@@ -280,7 +228,6 @@ export async function updateTraining(
       description: training.description,
       image_url: training.imageUrl,
       preview_url: training.previewUrl,
-      is_public: training.isPublic,
       updated_at: new Date().toISOString(),
     })
     .eq("id", training.id)
@@ -295,8 +242,7 @@ export async function updateTraining(
     tagline: data[0].tagline,
     description: data[0].description,
     imageUrl: data[0].image_url,
-    isPublic: data[0].is_public,
-    organizationId: data[0].organization_id,
+    projectId: data[0].project_id,
     previewUrl: data[0].preview_url,
     createdAt: new Date(data[0].created_at),
     updatedAt: new Date(data[0].updated_at),
@@ -309,7 +255,7 @@ export async function createTraining(
   supabase: SupabaseClient,
   training: BaseTrainingInput
 ): Promise<Training> {
-  const { id: userId, organizationId } = await getCurrentUserInfo(supabase);
+  const { id: userId, currentProject } = await getCurrentUserInfo(supabase);
 
   const { data, error } = await supabase
     .from("trainings")
@@ -319,9 +265,8 @@ export async function createTraining(
       description: training.description,
       image_url: training.imageUrl,
       preview_url: training.previewUrl,
-      is_public: training.isPublic,
       created_by: userId,
-      organization_id: organizationId,
+      project_id: currentProject.id,
     })
     .select()
     .single();
@@ -335,8 +280,7 @@ export async function createTraining(
     tagline: data.tagline,
     description: data.description,
     imageUrl: data.image_url,
-    isPublic: data.is_public,
-    organizationId: data.organization_id,
+    projectId: data.project_id,
     previewUrl: data.preview_url,
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at),
@@ -358,7 +302,7 @@ export async function deleteTraining(
     .single();
 
   if (!training || training.created_by !== userId) {
-    throw new Error("Unauthorized to delete this training");
+    throw new Error("You can only delete your own trainings");
   }
 
   const { error } = await supabase

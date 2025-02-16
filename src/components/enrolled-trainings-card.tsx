@@ -4,11 +4,13 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Search, PlayCircle, GripVertical } from "lucide-react";
 import { EnrollmentButton } from "@/components/enrollment-button";
-import { getEnrolledTrainingsAction } from "@/app/(app)/trainingActions";
+import { TrainingSummary } from "@/data/trainings";
 
-export async function EnrolledTrainingsCard() {
-  const trainings = await getEnrolledTrainingsAction();
+type EnrolledTrainingsCardProps = {
+  trainings: TrainingSummary[];
+};
 
+export async function EnrolledTrainingsCard({ trainings }: EnrolledTrainingsCardProps) {
   return (
     <Card className="w-full h-[310px] flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">

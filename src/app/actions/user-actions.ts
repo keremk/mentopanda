@@ -22,20 +22,16 @@ export async function getCurrentUserAction() {
   return await getCurrentUserInfo(supabase);
 }
 
-export async function updateProfileAction(data: {
-  displayName: string;
-  organizationName: string;
-}) {
+export async function updateProfileAction(data: { displayName: string }) {
   try {
     // Validate input
     const validated = updateProfileSchema.parse(data);
 
     const supabase = await createClient();
-    const updatedUser = await updateUserProfile({
+    const updatedUser = await updateUserProfile(
       supabase,
-      displayName: validated.displayName,
-      organizationName: validated.organizationName,
-    });
+      validated.displayName
+    );
 
     return { success: true, data: updatedUser };
   } catch (error) {
@@ -52,10 +48,7 @@ export async function updateAvatarAction(data: { avatarUrl: string }) {
     const validated = updateAvatarSchema.parse(data);
 
     const supabase = await createClient();
-    const updatedUser = await updateUserAvatar({
-      supabase,
-      avatarUrl: validated.avatarUrl,
-    });
+    const updatedUser = await updateUserAvatar(supabase, validated.avatarUrl);
 
     return { success: true, data: updatedUser };
   } catch (error) {

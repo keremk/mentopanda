@@ -1,20 +1,10 @@
-create
-or replace function public.authorize (requested_permission app_permission) returns boolean as $$
-declare
-  bind_permissions int;
-  user_role public.user_role;
-begin
-  -- Fetch user role once and store it to reduce number of calls
-  select (auth.jwt() ->> 'user_role')::public.user_role into user_role;
+CREATE OR REPLACE FUNCTION authorize(requested_permission app_permission) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = public AS $$ BEGIN RETURN requested_permission = ANY(
+    ARRAY(
+      SELECT jsonb_array_elements_text((auth.jwt()->'permissions')::jsonb)
+    )::public.app_permission []
+  );
 
-  select count(*)
-  into bind_permissions
-  from public.role_permissions
-  where role_permissions.permission = requested_permission
-    and role_permissions.role = user_role;
+END;
 
-  return bind_permissions > 0;
-end;
-$$ language plpgsql stable security definer
-set
-  search_path = '';
+$$;

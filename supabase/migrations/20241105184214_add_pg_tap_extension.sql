@@ -1,2 +1,2 @@
 -- Enable pgTAP extension
-create extension if not exists pgtap;
+-- create extension if not exists pgtap;

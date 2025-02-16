@@ -1,30 +1,19 @@
 -- Module policies
-CREATE POLICY "Anyone can view modules of public trainings" ON modules FOR
-SELECT
-  USING (
+CREATE POLICY "Modules are viewable by project members or if project is public" ON modules FOR
+SELECT TO authenticated USING (
     EXISTS (
-      SELECT
-        1
-      FROM
-        trainings
-      WHERE
-        trainings.id = modules.training_id AND
-        trainings.is_public = TRUE
-    )
-  );
-
-CREATE POLICY "Private modules are only viewable by organization members the training module belongs to" ON modules FOR
-SELECT
-  TO authenticated USING (
-    EXISTS (
-      SELECT
-        1
-      FROM
-        trainings
-        JOIN profiles ON profiles.organization_id = trainings.organization_id
-      WHERE
-        trainings.id = modules.training_id AND
-        profiles.id = auth.uid ()
+      SELECT 1
+      FROM trainings t
+        JOIN projects p ON p.id = t.project_id
+        LEFT JOIN projects_profiles pp ON pp.project_id = p.id
+        AND pp.profile_id = auth.uid()
+      WHERE t.id = modules.training_id
+        AND (
+          -- Either the project is public
+          p.is_public = true
+          OR -- Or the user is a member of the project
+          pp.profile_id IS NOT NULL
+        )
     )
   );
 
@@ -35,7 +24,7 @@ CREATE POLICY "Modules are manageable by users with training.manage permission" 
       1
     FROM
       trainings
-      JOIN profiles ON profiles.organization_id = trainings.organization_id
+      JOIN profiles ON profiles.current_project_id = trainings.project_id
     WHERE
       trainings.id = modules.training_id AND
       profiles.id = auth.uid ()
@@ -49,7 +38,7 @@ WITH
         1
       FROM
         trainings
-        JOIN profiles ON profiles.organization_id = trainings.organization_id
+        JOIN profiles ON profiles.current_project_id = trainings.project_id
       WHERE
         trainings.id = modules.training_id AND
         profiles.id = auth.uid ()

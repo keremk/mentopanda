@@ -12,10 +12,16 @@ export type CharacterSummary = {
 
 export async function getCharacters(
   supabase: SupabaseClient
-): Promise<CharacterSummary[]> {
+): Promise<CharacterSummary[]> {  
+  const { currentProject } = await getCurrentUserInfo(supabase);
+
+  if (!currentProject)
+    throw new Error("User must belong to a project to get characters");
+
   const { data, error } = await supabase
     .from("characters")
     .select("id, name, avatar_url, ai_model")
+    .eq("project_id", currentProject.id)
     .order("name");
 
   if (error) handleError(error);
@@ -37,8 +43,7 @@ export type CharacterDetails = CharacterSummary & {
   voice: string | null;
   aiDescription: string | null;
   description: string | null;
-  organizationId: number;
-  isPublic: boolean;
+  projectId: number;
   createdBy: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -59,8 +64,7 @@ export async function getCharacterDetails(
       ai_model,
       description,
       avatar_url,
-      organization_id,
-      is_public,
+      project_id,
       created_by,
       created_at,
       updated_at
@@ -83,8 +87,7 @@ export async function getCharacterDetails(
     aiModel: aiModel,
     description: data.description,
     avatarUrl: data.avatar_url,
-    organizationId: data.organization_id,
-    isPublic: data.is_public,
+    projectId: data.project_id,
     createdBy: data.created_by,
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at),
@@ -128,7 +131,7 @@ export async function updateCharacter(
       ai_model,
       description,
       avatar_url,
-      organization_id,
+      project_id,
       is_public,
       created_by,
       created_at,
@@ -150,8 +153,7 @@ export async function updateCharacter(
     aiModel: aiModel,
     description: updatedData.description,
     avatarUrl: updatedData.avatar_url,
-    organizationId: updatedData.organization_id,
-    isPublic: updatedData.is_public,
+    projectId: updatedData.project_id,
     createdBy: updatedData.created_by,
     createdAt: new Date(updatedData.created_at),
     updatedAt: new Date(updatedData.updated_at),
@@ -191,16 +193,16 @@ export async function createCharacter(
   supabase: SupabaseClient,
   data: CreateCharacterInput
 ): Promise<CharacterDetails> {
-  const { id: userId, organizationId } = await getCurrentUserInfo(supabase);
+  const { id: userId, currentProject } = await getCurrentUserInfo(supabase);
 
-  if (!organizationId)
-    throw new Error("User must belong to an organization to create characters");
+  if (!currentProject)
+    throw new Error("User must belong to a project to create characters");
 
   const { data: newCharacter, error } = await supabase
     .from("characters")
     .insert({
       name: data.name,
-      organization_id: organizationId,
+      project_id: currentProject.id,
       ai_model: AI_MODELS.OPENAI, // default to OPENAI for now
       created_by: userId,
     })
@@ -213,8 +215,7 @@ export async function createCharacter(
       ai_model,
       description,
       avatar_url,
-      organization_id,
-      is_public,
+      project_id,
       created_by,
       created_at,
       updated_at
@@ -235,8 +236,7 @@ export async function createCharacter(
     aiModel: aiModel,
     description: newCharacter.description,
     avatarUrl: newCharacter.avatar_url,
-    organizationId: newCharacter.organization_id,
-    isPublic: newCharacter.is_public,
+    projectId: newCharacter.project_id,
     createdBy: newCharacter.created_by,
     createdAt: new Date(newCharacter.created_at),
     updatedAt: new Date(newCharacter.updated_at),

@@ -1,14 +1,13 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-
+import { handleError } from "./utils";
 export type PricingPlan = "free" | "pro" | "team" | "enterprise";
 
 export type AppPermission =
   | "training.manage"
-  | "training.make.public"
   | "enrollment.manage"
-  | "user.select"
-  | "user.admin"
-  | "organization.admin";
+  | "project.manage"
+  | "project.member.manage"
+  | "basic.access";
 
 export type UserRole = "admin" | "manager" | "member" | "super_admin";
 
@@ -18,96 +17,66 @@ export type User = {
   displayName: string;
   avatarUrl: string;
   pricingPlan: PricingPlan;
-  organizationName?: string;
-  organizationId: number;
-  role: UserRole;
+  currentProject: {
+    id: number;
+    name: string;
+    isPublic: boolean;
+  };
+  projectRole: UserRole;
   permissions: AppPermission[];
 };
+
+export async function getUserId(supabase: SupabaseClient): Promise<string> {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (error || !user) throw new Error("User is not authenticated");
+  return user.id;
+}
 
 export async function getCurrentUserInfo(
   supabase: SupabaseClient
 ): Promise<User> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not found");
+  const userId = await getUserId(supabase);
 
   const { data, error } = await supabase.rpc("get_user_profile", {
-    user_id: user.id,
+    user_id: userId,
   });
 
-  if (error) throw new Error("Failed to fetch user profile");
+  if (error) throw new Error(`Failed to fetch user profile, with error ${error}`);
 
   const userData: User = {
     id: data.id,
     email: data.email,
     displayName: data.displayName,
     avatarUrl: data.avatarUrl,
-    organizationName: data.organizationName,
-    organizationId: data.organizationId,
-    pricingPlan: data.pricingPlan || "free",
-    role: data.role || "member",
+    pricingPlan: data.pricingPlan,
+    currentProject: data.currentProject,
+    projectRole: data.projectRole,
     permissions: data.permissions || [],
   };
 
   return userData;
 }
 
-export async function updateUserProfile({
-  supabase,
-  displayName,
-  organizationName,
-}: {
-  supabase: SupabaseClient;
-  displayName: string;
-  organizationName: string;
-}): Promise<User> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not found");
-
-  // Update display name in auth.users
+export async function updateUserProfile(
+  supabase: SupabaseClient,
+  displayName: string
+): Promise<User> {
   const { error: updateAuthError } = await supabase.auth.updateUser({
     data: { display_name: displayName },
   });
 
   if (updateAuthError) throw new Error("Failed to update display name");
 
-  // Get user's organization ID from profiles
-  const { data: profileData, error: profileError } = await supabase
-    .from("profiles")
-    .select("organization_id")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError) throw new Error("Failed to fetch profile");
-
-  // Update organization name
-  const { error: updateOrgError } = await supabase
-    .from("organizations")
-    .update({ name: organizationName })
-    .eq("id", profileData.organization_id);
-
-  if (updateOrgError) throw new Error("Failed to update organization name");
-
-  // Return updated user info
   return await getCurrentUserInfo(supabase);
 }
 
-export async function updateUserAvatar({
-  supabase,
-  avatarUrl,
-}: {
-  supabase: SupabaseClient;
-  avatarUrl: string;
-}): Promise<User> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not found");
-
-  // Update avatar URL in auth.users metadata
+export async function updateUserAvatar(
+  supabase: SupabaseClient,
+  avatarUrl: string
+): Promise<User> {
   const { error: updateAuthError } = await supabase.auth.updateUser({
     data: { avatar_url: avatarUrl },
   });
@@ -116,6 +85,29 @@ export async function updateUserAvatar({
 
   // Return updated user info
   return await getCurrentUserInfo(supabase);
+}
+
+export async function updateCurrentProject(
+  supabase: SupabaseClient,
+  projectId: number
+): Promise<{ id: string; currentProjectId: number }> {
+  const userId = await getUserId(supabase);
+  const { data,error } = await supabase
+    .from("profiles")
+    .update({
+      current_project_id: projectId,
+    })
+    .eq("id", userId)
+    .select()
+    .single();
+
+  if (error) handleError(error);
+  if (!data) throw new Error("Failed to update current project");
+
+  return {
+    id: data.id,
+    currentProjectId: data.current_project_id,
+  }
 }
 
 export async function hasPermission({

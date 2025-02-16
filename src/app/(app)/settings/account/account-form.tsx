@@ -36,7 +36,6 @@ export function AccountForm({ user }: AccountFormProps) {
     startTransition(async () => {
       await updateProfileAction({
         displayName: formData.get("displayName") as string,
-        organizationName: formData.get("orgName") as string,
       });
     });
   }
@@ -117,17 +116,18 @@ export function AccountForm({ user }: AccountFormProps) {
             <Input
               id="orgName"
               name="orgName"
-              defaultValue={user.organizationName}
+              defaultValue={user.currentProject.name}
               className="flex-1"
             />
-            <ProjectDialog onProjectCreate={(name) => {
-              startTransition(async () => {
-                await updateProfileAction({
-                  displayName: user.displayName,
-                  organizationName: name,
+            <ProjectDialog
+              onProjectCreate={(name) => {
+                startTransition(async () => {
+                  await updateProfileAction({
+                    displayName: user.displayName,
+                  });
                 });
-              });
-            }}>
+              }}
+            >
               <Button type="button" variant="outline">
                 Edit Project
               </Button>

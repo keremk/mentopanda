@@ -6,6 +6,12 @@ import {
   isEnrolled,
   unenrollFromTraining,
 } from "@/data/enrollments";
+import { getEnrolledTrainings } from "@/data/enrollments";
+
+export async function getEnrolledTrainingsAction() {
+  const supabase = await createClient();
+  return await getEnrolledTrainings(supabase);
+}
 
 export async function isEnrolledAction(trainingId: number) {
   const supabase = await createClient();

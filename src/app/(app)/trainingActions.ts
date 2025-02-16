@@ -5,7 +5,6 @@ import {
   getTrainingById,
   getTrainingWithProgress,
   getTrainingsWithEnrollment,
-  getEnrolledTrainings,
   updateTraining,
   createTraining,
   type UpdateTrainingInput,
@@ -16,11 +15,6 @@ import { redirect } from "next/navigation";
 export async function getTrainingByIdAction(trainingId: number) {
   const supabase = await createClient();
   return await getTrainingById(supabase, trainingId);
-}
-
-export async function getEnrolledTrainingsAction() {
-  const supabase = await createClient();
-  return await getEnrolledTrainings(supabase);
 }
 
 export async function getTrainingWithProgressAction(trainingId: number) {
@@ -46,7 +40,6 @@ export async function createTrainingAction() {
     description: "",
     imageUrl: "/course-images/meetings.jpg", // default image
     previewUrl: null,
-    isPublic: false,
   });
 
   redirect(`/explore/${training.id}/edit`);

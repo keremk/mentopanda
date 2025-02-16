@@ -1,44 +1,46 @@
--- Create policies for modules_characters table
-create policy "Users with training.manage can manage modules_characters" on modules_characters for all to authenticated using (
-    exists (
-        select 1
-        from profiles p
-            inner join role_permissions rp on p.user_role = rp.role
-        where p.id = auth.uid()
-            and rp.permission = 'training.manage'
+CREATE POLICY "Modules-characters associations are viewable by project members or if project is public" ON modules_characters FOR
+SELECT TO authenticated USING (
+        EXISTS (
+            SELECT 1
+            FROM modules m
+                JOIN trainings t ON t.id = m.training_id
+                JOIN projects p ON p.id = t.project_id
+                LEFT JOIN projects_profiles pp ON pp.project_id = p.id
+                AND pp.profile_id = auth.uid()
+            WHERE m.id = modules_characters.module_id
+                AND (
+                    -- Either the project is public
+                    p.is_public = true
+                    OR -- Or the user is a member of the project
+                    pp.profile_id IS NOT NULL
+                )
+        )
+    );
+
+CREATE POLICY "Modules-characters associations are manageable by users with training.manage permission" ON modules_characters FOR ALL TO authenticated USING (
+    authorize('training.manage')
+    AND EXISTS (
+        SELECT 1
+        FROM modules m
+            JOIN trainings t ON t.id = m.training_id
+        WHERE m.id = modules_characters.module_id
+            AND t.project_id = (
+                SELECT current_project_id
+                FROM profiles
+                WHERE id = auth.uid()
+            )
     )
-) with check (
-    exists (
-        select 1
-        from profiles p
-            inner join role_permissions rp on p.user_role = rp.role
-        where p.id = auth.uid()
-            and rp.permission = 'training.manage'
+) WITH CHECK (
+    authorize('training.manage')
+    AND EXISTS (
+        SELECT 1
+        FROM modules m
+            JOIN trainings t ON t.id = m.training_id
+        WHERE m.id = modules_characters.module_id
+            AND t.project_id = (
+                SELECT current_project_id
+                FROM profiles
+                WHERE id = auth.uid()
+            )
     )
 );
-
--- Anyone can view associations for public trainings
-create policy "Anyone can view public training module-character associations" on modules_characters for
-select using (
-        exists (
-            select 1
-            from modules m
-                join trainings t on m.training_id = t.id
-            where m.id = modules_characters.module_id
-                and t.is_public = true
-        )
-    );
-
--- Authenticated users can view private training associations from their org
-create policy "Organization members can view their private training module-character associations" on modules_characters for
-select to authenticated using (
-        exists (
-            select 1
-            from modules m
-                join trainings t on m.training_id = t.id
-                join profiles p on p.id = auth.uid()
-                and p.organization_id = t.organization_id
-            where m.id = modules_characters.module_id
-                and t.is_public = false
-        )
-    );
