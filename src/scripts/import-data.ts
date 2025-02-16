@@ -125,11 +125,6 @@ type TestUser = {
   role?: string;
 };
 
-type TestProject = {
-  name: string;
-  members: TestUser[];
-};
-
 type TestProjectMember = {
   email: string;
   role: string;
@@ -185,10 +180,18 @@ type ModuleCharacter = {
 
 type TestData = {
   users: TestUser[];
+  projects: TestProject[];
   trainings: TestTraining[];
   characters: TestCharacter[];
   modules_characters: ModuleCharacter[];
   members: TestProjectMember[][];
+};
+
+type TestProject = {
+  name: string;
+  members: TestProjectMember[];
+  trainings: string[] ;
+  characters: string[];
 };
 
 async function createTestUsers(testData: TestData) {
@@ -232,6 +235,17 @@ async function createTestProjects(
 ) {
   let index = 0;
   for (const user of users) {
+    if (user.email === "super@example.com") {
+      const { error: projectError } = await supabase
+        .from("projects_profiles")
+        .insert({
+          project_id: 1,
+          profile_id: user.id,
+          role: "admin",
+        });
+      if (projectError) throw projectError;
+    }
+
     // Sign in as user to get session
     const {
       data: { session },
@@ -244,16 +258,23 @@ async function createTestProjects(
     if (signInError) throw signInError;
     if (!session) throw new Error("No session created");
 
-    const { data: projectId, error: projectError } = await supabase.auth
-      .setSession(session)
-      .then(() =>
-        supabase.rpc("create_project", {
-          project_name: `Project for ${user.email}`,
-        })
-      );
+    let projectId: number;
+    if (user.email === "super@example.com") {
+      projectId = 1;
+      console.log(`Super user logged in, using project ${projectId}`);
+    } else {
+      const { data: newProjectId, error: projectError } = await supabase.auth
+        .setSession(session)
+        .then(() =>
+          supabase.rpc("create_project", {
+            project_name: `Project for ${user.email}`,
+          })
+        );
 
-    if (projectError) throw projectError;
-    if (!projectId) throw new Error("No project data returned");
+      if (projectError) throw projectError;
+      if (!newProjectId) throw new Error("No project data returned");
+      projectId = newProjectId;
+    }
 
     // Use the new refreshed session for subsequent operations
     const newSession = await switchProject(projectId, session);
@@ -263,21 +284,43 @@ async function createTestProjects(
     //   JSON.stringify(decodeJWT(newSession.access_token), null, 2)
     // );
 
-    await setupProjectMembers(users, membersList[index], projectId, newSession);
-    const characters = await createCharactersData(projectId, testData, newSession);
+    const project = testData.projects[index];
+    await setupProjectMembers(users, project.members, projectId, newSession);
 
+    const inputCharacters = project.characters.map(
+      (characterName) => {
+        const character = testData.characters.find(
+          (c) => c.name === characterName
+        );
+        return character;
+      }
+    ).filter((c): c is TestCharacter => c !== undefined);
+
+    const characters = await createCharactersData(
+      projectId,
+      inputCharacters,
+      newSession
+    );
     if (!characters) throw new Error("No characters created");
-    await createTrainingData(projectId, testData, characters, newSession);
     
+    const inputTrainings = project.trainings.map(
+      (trainingName) => {
+        const training = testData.trainings.find(
+          (t) => t.title === trainingName
+        );
+        return training;
+      }
+    ).filter((t): t is TestTraining => t !== undefined);
+    await createTrainingData(projectId, inputTrainings, characters, newSession);
+
     await createHistoryData(newSession);
     console.log(`Created project: ${projectId}`);
-
     index++;
   }
 }
 
 async function switchProject(
-  projectId: string,
+  projectId: number,
   session: Session
 ): Promise<Session> {
   // First, update the project creator's current_project_id
@@ -308,10 +351,13 @@ async function switchProject(
         .single()
     );
 
+  console.log(JSON.stringify(verifyData, null, 2));
   if (verifyError || verifyData?.current_project_id !== projectId) {
     throw new Error(
       `Profile update verification failed: ${
         verifyError || "Project ID mismatch"
+      }, for user ${session.user.id} and project ${projectId} does not match ${
+        verifyData?.current_project_id
       }`
     );
   }
@@ -331,7 +377,7 @@ async function switchProject(
 async function setupProjectMembers(
   users: TestUser[],
   members: TestProjectMember[],
-  projectId: string,
+  projectId: number,
   session: Session
 ) {
   const emailToId = new Map(
@@ -363,8 +409,8 @@ async function setupProjectMembers(
 }
 
 async function createTrainingData(
-  projectId: string,
-  testData: TestData,
+  projectId: number,
+  projectTrainings: TestTraining[],
   characters: TestCharacter[],
   session: Session
 ) {
@@ -372,7 +418,7 @@ async function createTrainingData(
     characters.map((character) => [character.name, character.id])
   );
 
-  for (const training of testData.trainings) {
+  for (const training of projectTrainings) {
     try {
       // Create training
       const { data: trainingData, error: trainingError } = await supabase.auth
@@ -401,20 +447,22 @@ async function createTrainingData(
         const { data: moduleData, error: moduleError } = await supabase.auth
           .setSession(session)
           .then(() =>
-            supabase.from("modules").insert({
-              training_id: trainingData.id,
-              title: moduleItem.title,
-              instructions: moduleItem.instructions,
-              ordinal: moduleItem.ordinal,
-              ai_model: moduleItem.ai_model,
-              scenario_prompt: moduleItem.scenario_prompt,
-              assessment_prompt: moduleItem.assessment_prompt,
-              moderator_prompt: moduleItem.moderator_prompt,
-              video_url: moduleItem.video_url,
-              audio_url: moduleItem.audio_url,
-            })
-            .select()
-            .single()
+            supabase
+              .from("modules")
+              .insert({
+                training_id: trainingData.id,
+                title: moduleItem.title,
+                instructions: moduleItem.instructions,
+                ordinal: moduleItem.ordinal,
+                ai_model: moduleItem.ai_model,
+                scenario_prompt: moduleItem.scenario_prompt,
+                assessment_prompt: moduleItem.assessment_prompt,
+                moderator_prompt: moduleItem.moderator_prompt,
+                video_url: moduleItem.video_url,
+                audio_url: moduleItem.audio_url,
+              })
+              .select()
+              .single()
           );
 
         if (moduleError) throw moduleError;
@@ -425,19 +473,23 @@ async function createTrainingData(
           const { error: moduleCharError } = await supabase.auth
             .setSession(session)
             .then(() =>
-              supabase.from("modules_characters").insert({
-                module_id: moduleData.id,
-                character_id: characterNameToId.get(moduleChar.character_name),
-                ordinal: 1,
-                prompt: moduleChar.prompt,
-              })
-              .select()
-              .single()
+              supabase
+                .from("modules_characters")
+                .insert({
+                  module_id: moduleData.id,
+                  character_id: characterNameToId.get(
+                    moduleChar.character_name
+                  ),
+                  ordinal: 1,
+                  prompt: moduleChar.prompt,
+                })
+                .select()
+                .single()
             );
 
           if (moduleCharError) throw moduleCharError;
           console.log(
-            `Created module-character association for module ${moduleData.id} and character ${moduleChar.character_name }`
+            `Created module-character association for module ${moduleData.id} and character ${moduleChar.character_name}`
           );
         }
       }
@@ -452,14 +504,15 @@ async function createTrainingData(
 }
 
 async function createCharactersData(
-  projectId: string,
-  testData: TestData,
+  projectId: number,
+  projectCharacters: TestCharacter[],
   session: Session
-) {
+): Promise<TestCharacter[]> {
+  let characters: TestCharacter[] = [];
+
   try {
-    let characters: TestCharacter[] = [];
     // Create characters
-    for (const character of testData.characters) {
+    for (const character of projectCharacters) {
       const { data: characterData, error: characterError } = await supabase.auth
         .setSession(session)
         .then(() =>
@@ -485,11 +538,10 @@ async function createCharactersData(
       characters.push(characterData);
       console.log(`Created character: ${character.name}`);
     }
-
-    return characters;
   } catch (error) {
     console.error("Error creating characters:", error);
   }
+  return characters;
 }
 
 async function loadTestData(filePath?: string): Promise<TestData> {

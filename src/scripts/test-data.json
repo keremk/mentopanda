@@ -1,0 +1,441 @@
+{
+  "users": [
+    {
+      "email": "super@example.com",
+      "password": "Test123!"
+    },
+    {
+      "email": "user1@example.com",
+      "password": "Test123!"
+    },
+    {
+      "email": "user2@example.com",
+      "password": "Test123!"
+    },
+    {
+      "email": "user3@example.com",
+      "password": "Test123!"
+    },
+    {
+      "email": "user4@example.com",
+      "password": "Test123!"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Public Project",
+      "members": [],
+      "trainings": [
+        "Mastering Constructive Feedback",
+        "Effective Team Meetings",
+        "Effective Performance Reviews",
+        "Hard Conversations",
+        "Career Conversations"
+      ],
+      "characters": [
+        "Janet",
+        "Taylor",
+        "Brendon",
+        "Anna",
+        "Laura",
+        "John",
+        "Michael"
+      ]
+    },
+    {
+      "name": "Private Project 1",
+      "members": [
+        {
+          "email": "user2@example.com",
+          "role": "member"
+        },
+        {
+          "email": "user3@example.com",
+          "role": "manager"
+        },
+        {
+          "email": "user4@example.com",
+          "role": "member"
+        }
+      ],
+      "trainings": [
+        "Mastering Constructive Feedback",
+        "Effective Team Meetings"
+      ],
+      "characters": ["Janet", "Taylor", "Brendon", "Anna"]
+    },
+    {
+      "name": "Private Project 2",
+      "members": [
+        {
+          "email": "user1@example.com",
+          "role": "admin"
+        },
+        {
+          "email": "user3@example.com",
+          "role": "member"
+        }
+      ],
+      "trainings": ["Effective Performance Reviews", "Hard Conversations"],
+      "characters": ["Brendon", "Anna", "Laura", "John"]
+    },
+    {
+      "name": "Private Project 3",
+      "members": [
+        {
+          "email": "user1@example.com",
+          "role": "member"
+        }
+      ],
+      "trainings": ["Career Conversations"],
+      "characters": ["Anna", "John", "Michael"]
+    },
+    {
+      "name": "Private Project 4",
+      "members": [],
+      "trainings": [],
+      "characters": []
+    }
+  ],
+  "characters": [
+    {
+      "name": "Janet",
+      "ai_description": "You are a junior engineer who has been focusing on feature delivery and consistently overlooking test coverage. You believe tests slow down development and aren't always necessary.",
+      "description": "A talented junior engineer who prioritizes speed and feature delivery, sometimes at the expense of best practices.",
+      "avatar_url": "/avatars/janet.jpg",
+      "organization_id": 2,
+      "ai_model": "openai",
+      "voice": "Ballad",
+      "is_public": true
+    },
+    {
+      "name": "Taylor",
+      "ai_description": "You are a mid-level engineer who frequently interrupts others in meetings. When receiving feedback, you respond: 'I don't agree at all. Others interrupt way more than I do!'",
+      "description": "An experienced mid-level engineer with strong technical opinions and an assertive communication style.",
+      "avatar_url": "/avatars/taylor.jpg",
+      "organization_id": 2,
+      "ai_model": "openai",
+      "voice": "Ash",
+      "is_public": true
+    },
+    {
+      "name": "Brendon",
+      "ai_description": "You are a team member who tends to go off-topic and bring up technical debt issues during sprint planning, making it difficult to stay focused on sprint goals.",
+      "description": "A detail-oriented developer who is passionate about code quality and technical excellence.",
+      "avatar_url": "/avatars/brendon.jpg",
+      "organization_id": 2,
+      "ai_model": "openai",
+      "voice": "Echo",
+      "is_public": true
+    },
+    {
+      "name": "Anna",
+      "ai_description": "You are a senior engineer who excels technically but finds mentoring junior developers frustrating and time-consuming.",
+      "description": "A technically brilliant senior engineer working on improving leadership and mentoring skills.",
+      "avatar_url": "/avatars/anna.jpg",
+      "organization_id": 2,
+      "ai_model": "openai",
+      "voice": "Verse",
+      "is_public": true
+    },
+    {
+      "name": "Laura",
+      "ai_description": "You are an engineer who wants to improve your system design skills but struggles to define concrete steps for improvement.",
+      "description": "A motivated engineer seeking to advance their technical architecture capabilities.",
+      "avatar_url": "/avatars/laura.jpg",
+      "organization_id": 2,
+      "ai_model": "openai",
+      "voice": "Coral",
+      "is_public": true
+    },
+    {
+      "name": "John",
+      "ai_description": "You are an engineer who wants to improve your system design skills but struggles to define concrete steps for improvement.",
+      "description": "A motivated engineer seeking to advance their technical architecture capabilities.",
+      "avatar_url": "/avatars/taylor.jpg",
+      "organization_id": 2,
+      "ai_model": "openai",
+      "voice": "Coral",
+      "is_public": true
+    },
+    {
+      "name": "Michael",
+      "ai_description": "You are a team member who tends to go off-topic and bring up technical debt issues during sprint planning, making it difficult to stay focused on sprint goals.",
+      "description": "A detail-oriented developer who is passionate about code quality and technical excellence.",
+      "avatar_url": "/avatars/brendon.jpg",
+      "organization_id": 2,
+      "ai_model": "openai",
+      "voice": "Echo",
+      "is_public": true
+    }
+  ],
+  "trainings": [
+    {
+      "title": "Mastering Constructive Feedback",
+      "tagline": "Learn how to give and receive feedback effectively",
+      "description": "This an interactive training course designed to help engineering managers effectively deliver constructive feedback to their teams. Through a series of immersive role-playing scenarios powered by AI-created personas, participants will engage with engineers of varying skill levels, backgrounds, and attitudes. Managers will face real-world situations, such as handling defensiveness during feedback, addressing recurring performance issues, and navigating difficult conversations in 1:1 meetings. For instance, participants might be asked to give feedback to an engineer who consistently receives improvement comments in pull request reviews but becomes defensive when approached. The AI persona will simulate common responses—ranging from excuses to pushback—allowing managers to practice giving clear, actionable feedback and ensuring it is understood and accepted.",
+      "image_url": "/course-images/feedback.jpg",
+      "is_public": true,
+      "organization_id": 2,
+      "preview_url": "https://www.youtube.com/watch?v=gEB3ckYeZF4",
+      "modules": [
+        {
+          "title": "Understanding Feedback Fundamentals",
+          "instructions": "Learn the core principles of effective feedback and how to structure feedback conversations.",
+          "ordinal": 1,
+          "ai_model": "openai",
+          "scenario_prompt": "You are meeting with a junior engineer who has been consistently submitting code without proper test coverage.",
+          "assessment_prompt": "How do you provide constructive feedback about this issue?",
+          "moderator_prompt": "Guide the conversation towards understanding the importance of testing while maintaining a supportive tone.",
+          "video_url": "https://example.com/feedback-fundamentals",
+          "audio_url": "https://example.com/feedback-fundamentals-audio",
+          "characters": [
+            {
+              "character_name": "Janet",
+              "prompt": "You are a junior engineer who has been focusing on feature delivery and consistently overlooking test coverage. You believe tests slow down development and aren't always necessary."
+            },
+            {
+              "character_name": "Taylor",
+              "prompt": "You are a mid-level engineer who frequently interrupts others in meetings. When receiving feedback, you respond: 'I don't agree at all. Others interrupt way more than I do!'"
+            }
+          ]
+        },
+        {
+          "title": "Handling Defensive Responses",
+          "instructions": "Practice techniques for managing defensive reactions and maintaining productive dialogue.",
+          "ordinal": 2,
+          "ai_model": "openai",
+          "scenario_prompt": "An engineer responds defensively to your feedback about their communication style in team meetings.",
+          "assessment_prompt": "How would you handle their defensive reaction?",
+          "moderator_prompt": "Focus on maintaining a constructive dialogue while addressing the defensive response.",
+          "video_url": "https://example.com/defensive-responses",
+          "audio_url": "https://example.com/defensive-responses-audio",
+          "characters": [
+            {
+              "character_name": "Janet",
+              "prompt": "You are a junior engineer who has been focusing on feature delivery and consistently overlooking test coverage. You believe tests slow down development and aren't always necessary."
+            }
+          ]
+        },
+        {
+          "title": "Positive Reinforcement",
+          "instructions": "Master the art of recognizing and reinforcing positive behaviors effectively.",
+          "ordinal": 3,
+          "ai_model": "gemini",
+          "scenario_prompt": "Your team member has shown significant improvement in their code quality.",
+          "assessment_prompt": "How do you deliver specific, meaningful praise that reinforces this positive change?",
+          "moderator_prompt": "Guide the conversation to highlight specific improvements while encouraging continued growth.",
+          "video_url": "https://example.com/positive-reinforcement",
+          "audio_url": "https://example.com/positive-reinforcement-audio",
+          "characters": [
+            {
+              "character_name": "Anna",
+              "prompt": "You are a senior engineer who excels technically but finds mentoring junior developers frustrating and time-consuming."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Effective Team Meetings",
+      "tagline": "Optimize your team meetings for productivity and engagement",
+      "description": "This course teaches engineering managers how to run efficient, productive, and engaging team meetings. Participants will learn strategies for setting clear agendas, facilitating discussions, managing time effectively, and ensuring all team members have a voice. The training covers various meeting types, from daily stand-ups to sprint planning sessions, and provides practical tips for remote and hybrid team scenarios.",
+      "image_url": "/course-images/meetings.jpg",
+      "is_public": true,
+      "organization_id": 2,
+      "preview_url": null,
+      "modules": [
+        {
+          "title": "Meeting Structure and Agenda Setting",
+          "instructions": "Learn how to create effective agendas and establish meeting rhythms.",
+          "ordinal": 1,
+          "ai_model": "openai",
+          "scenario_prompt": "You need to plan and facilitate a sprint planning meeting with your team.",
+          "assessment_prompt": "Design an agenda for a 30-minute sprint planning meeting that needs to cover sprint goals, task assignment, and risk assessment.",
+          "moderator_prompt": "Guide the conversation to maintain focus while acknowledging concerns appropriately.",
+          "video_url": "https://example.com/meeting-structure",
+          "audio_url": "https://example.com/meeting-structure-audio",
+          "characters": [
+            {
+              "character_name": "Brendon",
+              "prompt": "You are a team member who tends to go off-topic and bring up technical debt issues during sprint planning, making it difficult to stay focused on sprint goals."
+            }
+          ]
+        },
+        {
+          "title": "Remote Meeting Facilitation",
+          "instructions": "Master techniques for keeping remote participants engaged and included.",
+          "ordinal": 2,
+          "ai_model": "openai",
+          "scenario_prompt": "Your remote team members seem disengaged during virtual meetings.",
+          "assessment_prompt": "How would you redesign the meeting format to improve participation?",
+          "moderator_prompt": "Focus on creating an inclusive environment and encouraging active participation from remote team members.",
+          "video_url": "https://example.com/remote-facilitation",
+          "audio_url": "https://example.com/remote-facilitation-audio",
+          "characters": [
+            {
+              "character_name": "Anna",
+              "prompt": "You are a team member who tends to go off-topic and bring up technical debt issues during sprint planning, making it difficult to stay focused on sprint goals."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Effective Performance Reviews",
+      "tagline": "Master the art of conducting meaningful performance evaluations",
+      "description": "This comprehensive course guides engineering managers through the process of conducting effective performance reviews. Participants will learn how to prepare for reviews, set appropriate goals, provide constructive feedback, and create actionable development plans. The training emphasizes the importance of ongoing feedback and how to align individual performance with organizational objectives.",
+      "image_url": "/course-images/perf-review.jpg",
+      "is_public": true,
+      "organization_id": 2,
+      "preview_url": null,
+      "modules": [
+        {
+          "title": "Preparing for Reviews",
+          "instructions": "Learn how to gather and organize feedback from multiple sources.",
+          "ordinal": 1,
+          "ai_model": "openai",
+          "scenario_prompt": "You are preparing for a performance review with a technically strong senior engineer who struggles with mentoring.",
+          "assessment_prompt": "How do you structure your feedback to address both technical excellence and areas for growth?",
+          "moderator_prompt": "Guide the conversation to balance recognition of technical skills while addressing the importance of mentorship.",
+          "video_url": "https://example.com/review-prep",
+          "audio_url": "https://example.com/review-prep-audio",
+          "characters": [
+            {
+              "character_name": "Anna",
+              "prompt": "You are a senior engineer who excels technically but finds mentoring junior developers frustrating and time-consuming."
+            }
+          ]
+        },
+        {
+          "title": "Setting SMART Goals",
+          "instructions": "Practice creating specific, measurable, achievable, relevant, and time-bound goals.",
+          "ordinal": 2,
+          "ai_model": "openai",
+          "scenario_prompt": "You need to help a team member improve their system design skills.",
+          "assessment_prompt": "Work with your team member to set appropriate goals for improving their system design skills over the next six months.",
+          "moderator_prompt": "Help guide the conversation towards creating specific, actionable goals.",
+          "video_url": "https://example.com/smart-goals",
+          "audio_url": "https://example.com/smart-goals-audio",
+          "characters": [
+            {
+              "character_name": "John",
+              "prompt": "You are an engineer who wants to improve your system design skills but struggles to define concrete steps for improvement."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Hard Conversations",
+      "tagline": "Navigate challenging discussions with confidence and empathy",
+      "description": "This course equips engineering managers with the skills to handle difficult conversations professionally and empathetically. Participants will learn techniques for addressing underperformance, resolving conflicts, and delivering unwelcome news. The training focuses on maintaining a positive team dynamic while tackling tough issues, and provides strategies for turning challenging situations into opportunities for growth and improvement.",
+      "image_url": "/course-images/hard-conversations.jpg",
+      "is_public": true,
+      "organization_id": 2,
+      "preview_url": null,
+      "modules": [
+        {
+          "title": "Addressing Underperformance",
+          "instructions": "Learn how to have difficult conversations about performance issues.",
+          "ordinal": 1,
+          "ai_model": "openai",
+          "scenario_prompt": "A team member has missed several deadlines and their code quality has been declining.",
+          "assessment_prompt": "How do you initiate and conduct this difficult conversation?",
+          "moderator_prompt": "Guide the conversation to address performance issues while showing empathy and understanding.",
+          "video_url": "https://example.com/underperformance",
+          "audio_url": "https://example.com/underperformance-audio",
+          "characters": [
+            {
+              "character_name": "Laura",
+              "prompt": "You are an engineer who wants to improve your system design skills but struggles to define concrete steps for improvement."
+            }
+          ]
+        },
+        {
+          "title": "Managing Conflicts",
+          "instructions": "Develop skills for mediating conflicts between team members.",
+          "ordinal": 2,
+          "ai_model": "openai",
+          "scenario_prompt": "Two senior engineers disagree strongly about the technical direction of a project.",
+          "assessment_prompt": "How do you facilitate a resolution between team members with opposing viewpoints?",
+          "moderator_prompt": "Guide the conversation towards finding common ground and a constructive resolution.",
+          "video_url": "https://example.com/conflict-management",
+          "audio_url": "https://example.com/conflict-management-audio",
+          "characters": [
+            {
+              "character_name": "Brendon",
+              "prompt": "You are a team member who tends to go off-topic and bring up technical debt issues during sprint planning, making it difficult to stay focused on sprint goals."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Career Conversations",
+      "tagline": "Guide your team members towards their professional goals",
+      "description": "This training course teaches engineering managers how to conduct meaningful career conversations with their team members. Participants will learn how to help employees identify their career aspirations, assess their current skills, and create development plans. The course covers topics such as mentoring, identifying growth opportunities within the organization, and aligning individual career goals with company objectives.",
+      "image_url": "/course-images/careers.jpg",
+      "is_public": true,
+      "organization_id": 2,
+      "preview_url": null,
+      "modules": [
+        {
+          "title": "Career Path Exploration",
+          "instructions": "Learn how to help team members identify their career aspirations and potential paths.",
+          "ordinal": 1,
+          "ai_model": "openai",
+          "scenario_prompt": "A mid-level engineer is unsure about their career direction.",
+          "assessment_prompt": "Guide a conversation with a mid-level engineer who is unsure whether to pursue a technical or management track.",
+          "moderator_prompt": "Help guide the exploration of both paths while considering the engineer's strengths and interests.",
+          "video_url": "https://example.com/career-exploration",
+          "audio_url": "https://example.com/career-exploration-audio",
+          "characters": [
+            {
+              "character_name": "Anna",
+              "prompt": "You are a mid-level engineer who frequently interrupts others in meetings. When receiving feedback, you respond: 'I don't agree at all. Others interrupt way more than I do!'"
+            },
+            {
+              "character_name": "John",
+              "prompt": "You are an engineer who wants to improve your system design skills but struggles to define concrete steps for improvement."
+            }
+          ]
+        },
+        {
+          "title": "Skill Gap Analysis",
+          "instructions": "Practice identifying skill gaps and creating development plans.",
+          "ordinal": 2,
+          "ai_model": "openai",
+          "scenario_prompt": "You need to help assess and plan development for a technical lead role.",
+          "assessment_prompt": "Work with your team member to assess their current skills against their goal of becoming a technical lead.",
+          "moderator_prompt": "Guide the conversation to identify specific areas for growth and create an actionable development plan.",
+          "video_url": "https://example.com/skill-gap",
+          "audio_url": "https://example.com/skill-gap-audio",
+          "characters": [
+            {
+              "character_name": "Michael",
+              "prompt": "You are a senior engineer who excels technically but finds mentoring junior developers frustrating and time-consuming."
+            }
+          ]
+        },
+        {
+          "title": "Growth Opportunities",
+          "instructions": "Learn to identify and create growth opportunities within current roles.",
+          "ordinal": 3,
+          "ai_model": "openai",
+          "scenario_prompt": "A team member feels stagnant in their current role.",
+          "assessment_prompt": "Help a team member who feels stagnant discover new challenges and learning opportunities.",
+          "moderator_prompt": "Guide the discussion to uncover potential areas for growth and development within the current role.",
+          "video_url": "https://example.com/growth-opportunities",
+          "audio_url": "https://example.com/growth-opportunities-audio",
+          "characters": [
+            {
+              "character_name": "Anna",
+              "prompt": "You are an engineer who wants to improve your system design skills but struggles to define concrete steps for improvement."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
