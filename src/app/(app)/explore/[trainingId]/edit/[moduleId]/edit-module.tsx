@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Module } from "@/data/modules";
-import { updateModuleAction } from "@/app/(app)/moduleActions";
+import { updateModuleAction } from "@/app/actions/moduleActions";
 import { UpdateModuleInput } from "@/data/modules";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { CharacterSelect } from "@/components/character-select";
@@ -112,15 +112,15 @@ export function ModuleEditForm({ module }: Props) {
         debouncedFormData.title !== lastSavedModule.title ||
         debouncedFormData.instructions !== lastSavedModule.instructions ||
         debouncedFormData.modulePrompt.scenario !==
-        lastSavedModule.modulePrompt.scenario ||
+          lastSavedModule.modulePrompt.scenario ||
         debouncedFormData.modulePrompt.assessment !==
-        lastSavedModule.modulePrompt.assessment ||
+          lastSavedModule.modulePrompt.assessment ||
         debouncedFormData.modulePrompt.moderator !==
-        lastSavedModule.modulePrompt.moderator ||
+          lastSavedModule.modulePrompt.moderator ||
         debouncedFormData.modulePrompt.aiModel !==
-        lastSavedModule.modulePrompt.aiModel ||
+          lastSavedModule.modulePrompt.aiModel ||
         JSON.stringify(debouncedFormData.modulePrompt.characters) !==
-        JSON.stringify(lastSavedModule.modulePrompt.characters);
+          JSON.stringify(lastSavedModule.modulePrompt.characters);
 
       if (hasChanges) {
         const updatedModule = await updateModuleAction(debouncedFormData);

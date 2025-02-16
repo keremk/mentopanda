@@ -36,45 +36,6 @@ export type ModuleProgress = ModuleSummary & {
   history: HistorySummary[];
 };
 
-export async function getModuleById(
-  supabase: SupabaseClient,
-  moduleId: number
-): Promise<Module | null> {
-  const { data: module, error } = await supabase
-    .from("modules")
-    .select("*")
-    .eq("id", moduleId)
-    .single();
-
-  if (error) {
-    if (error.code === "PGRST116") return null;
-    handleError(error);
-  }
-
-  if (!module) return null;
-
-  const aiModel = aiModelSchema.parse(module.ai_model) as AIModel;
-
-  const modulePrompt: ModulePrompt = {
-    aiModel: aiModel,
-    scenario: module.scenario_prompt,
-    assessment: module.assessment_prompt,
-    moderator: module.moderator_prompt,
-    characters: [],
-  };
-
-  return {
-    id: module.id,
-    trainingId: module.training_id,
-    title: module.title,
-    instructions: module.instructions,
-    ordinal: module.ordinal,
-    modulePrompt: modulePrompt,
-    createdAt: new Date(module.created_at),
-    updatedAt: new Date(module.updated_at),
-  };
-}
-
 // Add this new function to get modules for a training
 export async function getModulesByTrainingId(
   supabase: SupabaseClient,

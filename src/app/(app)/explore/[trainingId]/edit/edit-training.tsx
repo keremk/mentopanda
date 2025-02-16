@@ -11,7 +11,7 @@ import { updateTrainingAction } from "@/app/(app)/trainingActions";
 import {
   createModuleAction,
   deleteModuleAction,
-} from "@/app/(app)/moduleActions";
+} from "@/app/actions/moduleActions";
 import { PlusIcon, TrashIcon, PencilIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { MarkdownEditor } from "@/components/markdown-editor";
@@ -46,7 +46,6 @@ export function EditTrainingForm({ training, user }: EditTrainingFormProps) {
     description: training.description,
     imageUrl: training.imageUrl,
     previewUrl: training.previewUrl,
-    isPublic: training.isPublic,
   });
 
   const debouncedFormData = useDebounce(formData, 1000);

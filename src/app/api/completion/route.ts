@@ -1,6 +1,6 @@
 import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
+import { getModuleByIdAction2 } from "@/app/actions/moduleActions";
 import { getHistoryEntryAction } from "@/app/actions/history-actions";
 
 // Allow streaming responses up to 30 seconds

@@ -1,7 +1,6 @@
 "use server";
 
 import {
-  getModulesByTrainingId,
   updateModule,
   createModule,
   deleteModule,
@@ -10,11 +9,6 @@ import {
   Module,
 } from "@/data/modules";
 import { createClient } from "@/utils/supabase/server";
-
-export async function getModulesByTrainingIdAction(trainingId: string) {
-  const supabase = await createClient();
-  return await getModulesByTrainingId(supabase, trainingId);
-}
 
 export async function updateModuleAction(module: UpdateModuleInput) {
   const supabase = await createClient();

@@ -1,12 +1,10 @@
 import { notFound } from "next/navigation";
 import ModuleEditForm from "./edit-module";
-import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
+import { getModuleByIdAction2 } from "@/app/actions/moduleActions";
 
-export default async function EditModulePage(
-  props: {
-    params: Promise<{ moduleId: number }>;
-  }
-) {
+export default async function EditModulePage(props: {
+  params: Promise<{ moduleId: number }>;
+}) {
   const params = await props.params;
   const trainingModule = await getModuleByIdAction2(params.moduleId);
   if (!trainingModule) notFound();

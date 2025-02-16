@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getModuleByIdAction2 } from "@/app/(app)/moduleActions";
+import { getModuleByIdAction2 } from "@/app/actions/moduleActions";
 import OpenAIChat from "@/components/openai-chat";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 import { AI_MODELS } from "@/types/models";
