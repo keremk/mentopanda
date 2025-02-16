@@ -231,7 +231,6 @@ async function createTestUsers(testData: TestData) {
 async function createTestProjects(
   testData: TestData,
   users: TestUser[],
-  membersList: TestProjectMember[][]
 ) {
   let index = 0;
   for (const user of users) {
@@ -508,7 +507,7 @@ async function createCharactersData(
   projectCharacters: TestCharacter[],
   session: Session
 ): Promise<TestCharacter[]> {
-  let characters: TestCharacter[] = [];
+  const characters: TestCharacter[] = [];
 
   try {
     // Create characters
@@ -572,7 +571,7 @@ async function createTestData() {
     return;
   }
 
-  await createTestProjects(testData, validTestUsers, testData.members);
+  await createTestProjects(testData, validTestUsers);
 }
 
 // Add help text if --help flag is provided

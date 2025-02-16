@@ -45,6 +45,7 @@ export function ProjectDialog({
         description: "Project created successfully",
       });
     } catch (error) {
+      console.error(`Error creating project: ${error}`);
       toast({
         title: "Error",
         description: "Failed to create project",

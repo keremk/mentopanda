@@ -109,7 +109,7 @@ export function AccountForm({ user }: AccountFormProps) {
           </div>
         </div>
 
-        {/* Organization Name Field */}
+        {/* Project Name Field */}
         <div className="space-y-2">
           <Label htmlFor="orgName">Project Name</Label>
           <div className="flex gap-4 max-w-md">
@@ -120,7 +120,7 @@ export function AccountForm({ user }: AccountFormProps) {
               className="flex-1"
             />
             <ProjectDialog
-              onProjectCreate={(name) => {
+              onProjectCreate={() => {
                 startTransition(async () => {
                   await updateProfileAction({
                     displayName: user.displayName,

@@ -1,4 +1,4 @@
-import { SupabaseClient, PostgrestError } from "@supabase/supabase-js";
+import { PostgrestError } from "@supabase/supabase-js";
 
 export function handleError(error: PostgrestError) {
   // Postgres error codes: https://docs.postgrest.org/en/v12/references/errors.html

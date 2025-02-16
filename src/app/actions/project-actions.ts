@@ -17,7 +17,7 @@ export async function switchToProjectAction(projectId: number) {
   const supabase = await createClient();
 
   // First update the user's current project
-  const { id, currentProjectId } = await updateCurrentProject(
+  const { currentProjectId } = await updateCurrentProject(
     supabase,
     projectId
   );
