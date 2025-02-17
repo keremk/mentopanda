@@ -8,11 +8,11 @@ import {
   updateProfileAction,
   updateAvatarAction,
 } from "@/app/actions/user-actions";
-import { useTransition, useState, useEffect } from "react";
+import { useTransition, useState } from "react";
 import type { User } from "@/data/user";
 import { ImageUploadButton } from "@/components/image-upload-button";
-import { getStoredApiKey, storeApiKey, removeApiKey } from "@/lib/apikey";
 import { ProjectDialog } from "@/components/project-dialog";
+import { ApiKeyInput } from "@/components/api-key-input";
 
 type AccountFormProps = {
   user: User;
@@ -22,15 +22,6 @@ export function AccountForm({ user }: AccountFormProps) {
   const [isPending, startTransition] = useTransition();
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
-  const [apiKey, setApiKey] = useState<string>("");
-
-  useEffect(() => {
-    async function loadApiKey() {
-      const storedApiKey = await getStoredApiKey();
-      if (storedApiKey) setApiKey(storedApiKey);
-    }
-    loadApiKey();
-  }, []);
 
   async function handleSubmit(formData: FormData) {
     startTransition(async () => {
@@ -51,14 +42,6 @@ export function AccountForm({ user }: AccountFormProps) {
     } finally {
       setIsAvatarUpdating(false);
     }
-  }
-
-  async function handleApiKeyChange(
-    event: React.ChangeEvent<HTMLInputElement>
-  ) {
-    const newApiKey = event.target.value;
-    setApiKey(newApiKey);
-    await storeApiKey(newApiKey);
   }
 
   return (
@@ -136,33 +119,7 @@ export function AccountForm({ user }: AccountFormProps) {
         </div>
 
         {/* API Key Field */}
-        <div className="space-y-2">
-          <Label htmlFor="apiKey">OpenAI API Key</Label>
-          <div className="flex gap-4 max-w-md">
-            <Input
-              id="apiKey"
-              name="apiKey"
-              type="password"
-              value={apiKey}
-              onChange={handleApiKeyChange}
-              placeholder="sk-..."
-              className="flex-1"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setApiKey("");
-                removeApiKey();
-              }}
-            >
-              Clear Key
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Your API key is stored locally and never sent to our servers
-          </p>
-        </div>
+        <ApiKeyInput />
       </div>
 
       <div className="flex justify-end pt-6">

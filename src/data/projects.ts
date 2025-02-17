@@ -10,15 +10,17 @@ export async function createProject(
   supabase: SupabaseClient,
   name: string
 ): Promise<ProjectSummary> {
-  const { data, error } = await supabase.rpc("create_project", {
+  const { data: projectId , error } = await supabase.rpc("create_project", {
     project_name: name,
   });
 
+  console.log(`Project ID: ${projectId}`);
   if (error) handleError(error);
-  if (!data) throw new Error("Failed to create project");
+  if (!projectId) throw new Error("Failed to create project");
 
+  console.log(`Created project with name: ${name} and id: ${projectId}`);
   return {
-    id: data.id,
+    id: projectId,
     name: name,
   };
 }
@@ -50,4 +52,17 @@ export async function getProjects(
   }));
 }
 
+export async function copyPublicTrainings(
+  supabase: SupabaseClient,
+  projectId: number,
+  userId: string
+) {
+  console.log(`Copying public trainings to project ${projectId} for user ${userId}`);
+  const { error } = await supabase.rpc("deep_copy_project", {
+    source_project_id: 1, // Public project ID
+    target_project_id: projectId,
+    target_user_id: userId,
+  });
 
+  if (error) throw error;
+}

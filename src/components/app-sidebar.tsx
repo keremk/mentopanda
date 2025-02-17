@@ -13,7 +13,7 @@ import type { NavItem } from "@/types/nav";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  navItems: NavItem[]
+  navItems: NavItem[];
 }
 
 export async function AppSidebar({ navItems, ...props }: AppSidebarProps) {
@@ -28,11 +28,13 @@ export async function AppSidebar({ navItems, ...props }: AppSidebarProps) {
         <NavMain items={navItems} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={{
-          name: userInfo.displayName,
-          email: userInfo.email,
-          avatarUrl: userInfo.avatarUrl
-        }} />
+        <NavUser
+          user={{
+            name: userInfo.displayName,
+            email: userInfo.email,
+            avatarUrl: userInfo.avatarUrl,
+          }}
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

@@ -44,7 +44,8 @@ export async function getCurrentUserInfo(
     user_id: userId,
   });
 
-  if (error) throw new Error(`Failed to fetch user profile, with error ${error}`);
+  if (error)
+    throw new Error(`Failed to fetch user profile, with error ${error}`);
 
   const userData: User = {
     id: data.id,
@@ -92,7 +93,7 @@ export async function updateCurrentProject(
   projectId: number
 ): Promise<{ id: string; currentProjectId: number }> {
   const userId = await getUserId(supabase);
-  const { data,error } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .update({
       current_project_id: projectId,
@@ -107,7 +108,7 @@ export async function updateCurrentProject(
   return {
     id: data.id,
     currentProjectId: data.current_project_id,
-  }
+  };
 }
 
 export async function hasPermission({

@@ -61,7 +61,7 @@ export async function signup(formData: FormData) {
     // If we have a user and session, it means email confirmation is disabled
     // or the user was automatically confirmed
     revalidatePath("/", "layout");
-    return redirect("/home");
+    return redirect("/onboard");
   } else {
     // Email confirmation is required
     return redirect(
