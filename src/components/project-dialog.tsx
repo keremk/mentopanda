@@ -59,6 +59,7 @@ export function ProjectDialog({
         description: "Switched to selected project",
       });
     } catch (error) {
+      console.error("Error switching projects", error);
       toast({
         title: "Error",
         description: "Failed to switch projects",
@@ -86,6 +87,7 @@ export function ProjectDialog({
         description: "Project created and switched successfully",
       });
     } catch (error) {
+      console.error("Error creating project", error);
       toast({
         title: "Error",
         description: "Failed to create project",
