@@ -7,7 +7,7 @@ export default async function TrainingsLayout({
   children: React.ReactNode;
 }) {
   const trainings = await getEnrolledTrainingsAction();
-
+  console.log(trainings);
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-1 border-t mt-5">
