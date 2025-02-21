@@ -22,6 +22,7 @@ export function AccountForm({ user }: AccountFormProps) {
   const [isPending, startTransition] = useTransition();
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
+  const [showProjectDialog, setShowProjectDialog] = useState(false);
 
   async function handleSubmit(formData: FormData) {
     startTransition(async () => {
@@ -92,30 +93,29 @@ export function AccountForm({ user }: AccountFormProps) {
           </div>
         </div>
 
-        {/* Project Name Field */}
+        {/* Project Selection */}
         <div className="space-y-2">
-          <Label htmlFor="orgName">Project Name</Label>
+          <Label>Current Project</Label>
           <div className="flex gap-4 max-w-md">
-            <Input
-              id="orgName"
-              name="orgName"
-              defaultValue={user.currentProject.name}
-              className="flex-1"
-            />
-            <ProjectDialog
-              onProjectCreate={() => {
-                startTransition(async () => {
-                  await updateProfileAction({
-                    displayName: user.displayName,
-                  });
-                });
-              }}
-            >
-              <Button type="button" variant="outline">
-                Edit Project
+            <div className="flex-1 flex items-center gap-4">
+              <Input
+                value={user.currentProject?.name || "No project selected"}
+                disabled
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowProjectDialog(true)}
+              >
+                Select Project
               </Button>
-            </ProjectDialog>
+            </div>
           </div>
+          <ProjectDialog
+            open={showProjectDialog}
+            onOpenChange={setShowProjectDialog}
+          />
         </div>
 
         {/* API Key Field */}
