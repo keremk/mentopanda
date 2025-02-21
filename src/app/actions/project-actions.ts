@@ -4,10 +4,13 @@ import { createClient } from "@/utils/supabase/server";
 import { createProject } from "@/data/projects";
 import { revalidatePath } from "next/cache";
 import { updateCurrentProject, getUserId } from "@/data/user";
-import type { OnboardingData } from "@/app/(app)/onboard/onboarding-flow";
-import { copyPublicTrainings } from "@/data/projects";
+export type ProjectSetupData = {
+  projectName: string;
+  copyStarterContent: boolean;
+};
+import { copyPublicTrainings, getProjects } from "@/data/projects";
 
-export async function setupProjectAction(data: OnboardingData) {
+export async function setupProjectAction(data: ProjectSetupData) {
   const supabase = await createClient();
 
   console.log("Creating project:", data.projectName);
@@ -75,4 +78,10 @@ export async function switchToProjectAction(projectId: number) {
   console.log("Successfully switched to project:", projectId);
 
   revalidatePath("/");
+}
+
+export async function getProjectsAction() {
+  const supabase = await createClient();
+
+  return await getProjects(supabase);   
 }

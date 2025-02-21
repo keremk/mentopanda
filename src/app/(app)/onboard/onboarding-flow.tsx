@@ -69,7 +69,11 @@ export function OnboardingFlow() {
     setCurrentStep("Progress");
 
     try {
-      await setupProjectAction(data);
+      // Only pass the required data for project setup
+      await setupProjectAction({
+        projectName: data.projectName,
+        copyStarterContent: data.copyStarterContent
+      });
       router.push("/home");
     } catch (error) {
       console.error("Setup failed:", error);
