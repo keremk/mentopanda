@@ -9,14 +9,11 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import type { NavItem } from "@/types/nav";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 
-interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  navItems: NavItem[];
-}
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {}
 
-export async function AppSidebar({ navItems, ...props }: AppSidebarProps) {
+export async function AppSidebar({ ...props }: AppSidebarProps) {
   const userInfo = await getCurrentUserAction();
 
   return (
@@ -25,7 +22,7 @@ export async function AppSidebar({ navItems, ...props }: AppSidebarProps) {
         <NavTop title="MentoPanda" />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navItems} />
+        <NavMain permissions={userInfo.permissions} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser

@@ -8,6 +8,7 @@ import {
   PieChart,
   Users,
   GraduationCap,
+  Bot,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -27,18 +28,63 @@ import {
 } from "@/components/ui/sidebar";
 import type { NavItem } from "@/types/nav";
 import { useEffect, useState } from "react";
+import { AppPermission } from "@/data/user";
 
 // Icon mapping on the client side
 const iconMap: Record<string, LucideIcon> = {
   home: Home,
   search: BookOpen,
   book: GraduationCap,
-  characters: Users,
+  characters: Bot,
+  users: Users,
   settings: Settings2,
   piechart: PieChart,
 };
 
-export function NavMain({ items }: { items: NavItem[] }) {
+export const navItems: NavItem[] = [
+  {
+    title: "Home",
+    url: "/home",
+    iconKey: "home",
+    permissions: ["basic.access"],
+  },
+  {
+    title: "Trainings",
+    url: "/explore",
+    iconKey: "search",
+    permissions: ["basic.access"],
+  },
+  {
+    title: "Characters",
+    url: "/characters",
+    iconKey: "characters",
+    permissions: ["training.manage"],
+  },
+  {
+    title: "Enrollments",
+    url: "/enrollments",
+    iconKey: "book",
+    permissions: ["basic.access"],
+  },
+  {
+    title: "Team",
+    url: "/team",
+    iconKey: "users",
+    permissions: ["project.member.manage"],
+  },
+  {
+    title: "Settings",
+    url: "/settings/account",
+    iconKey: "settings",
+    permissions: ["basic.access"],
+  },
+];
+
+export function NavMain({
+  permissions,
+}: {
+  permissions: AppPermission[];
+}) {
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
 
@@ -68,10 +114,19 @@ export function NavMain({ items }: { items: NavItem[] }) {
     }
   };
 
+  const availableItems = navItems.filter((item) => {
+    if (item.permissions) {
+      return item.permissions.some((permission) =>
+        permissions.includes(permission)
+      );
+    }
+    return true;
+  });
+
   return (
     <SidebarGroup>
       <SidebarMenu>
-        {items.map((item) => {
+        {availableItems.map((item) => {
           const hasSubItems = item.items && item.items.length > 0;
           const Icon = iconMap[item.iconKey];
           const isActive = isActivePath(item.url) || hasActiveChild(item.items);
