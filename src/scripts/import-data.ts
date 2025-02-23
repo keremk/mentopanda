@@ -123,6 +123,8 @@ type TestUser = {
   email: string;
   password: string;
   role?: string;
+  displayname?: string;
+  avatar_url?: string;
 };
 
 type TestProjectMember = {
@@ -203,6 +205,10 @@ async function createTestUsers(testData: TestData) {
           email: user.email,
           password: user.password,
           email_confirm: true,
+          user_metadata: {
+            displayname: user.displayname,
+            avatar_url: user.avatar_url,
+          },
         });
 
       if (authError) throw authError;

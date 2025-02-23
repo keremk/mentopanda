@@ -2,23 +2,33 @@
   "users": [
     {
       "email": "super@example.com",
-      "password": "Test123!"
+      "password": "Test123!",
+      "displayname": "Anna - Super",
+      "avatar_url": "/avatars/anna.jpg"
     },
     {
       "email": "user1@example.com",
-      "password": "Test123!"
+      "password": "Test123!",
+      "displayname": "Brendon",
+      "avatar_url": "/avatars/brendon.jpg"
     },
     {
       "email": "user2@example.com",
-      "password": "Test123!"
+      "password": "Test123!",
+      "displayname": "Taylor",
+      "avatar_url": "/avatars/taylor.jpg"
     },
     {
       "email": "user3@example.com",
-      "password": "Test123!"
+      "password": "Test123!",
+      "displayname": "Janet",
+      "avatar_url": "/avatars/janet.jpg"
     },
     {
       "email": "user4@example.com",
-      "password": "Test123!"
+      "password": "Test123!",
+      "displayname": "Laura",
+      "avatar_url": "/avatars/laura.jpg"
     }
   ],
   "projects": [

@@ -8,7 +8,7 @@ export type ProjectSetupData = {
   projectName: string;
   copyStarterContent: boolean;
 };
-import { copyPublicTrainings, getProjects } from "@/data/projects";
+import { copyPublicTrainings, getProjects, getProjectMembers } from "@/data/projects";
 
 export async function setupProjectAction(data: ProjectSetupData) {
   const supabase = await createClient();
@@ -84,4 +84,9 @@ export async function getProjectsAction() {
   const supabase = await createClient();
 
   return await getProjects(supabase);   
+}
+
+export async function getProjectMembersAction(projectId: number) {
+  const supabase = await createClient();
+  return await getProjectMembers(supabase, projectId);
 }

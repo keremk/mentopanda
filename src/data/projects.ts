@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
 import { getUserId } from "./user";
+
 export type ProjectSummary = {
   id: number;
   name: string;
@@ -10,7 +11,7 @@ export async function createProject(
   supabase: SupabaseClient,
   name: string
 ): Promise<ProjectSummary> {
-  const { data: projectId , error } = await supabase.rpc("create_project", {
+  const { data: projectId, error } = await supabase.rpc("create_project", {
     project_name: name,
   });
 
@@ -57,7 +58,9 @@ export async function copyPublicTrainings(
   projectId: number,
   userId: string
 ) {
-  console.log(`Copying public trainings to project ${projectId} for user ${userId}`);
+  console.log(
+    `Copying public trainings to project ${projectId} for user ${userId}`
+  );
   const { error } = await supabase.rpc("deep_copy_project", {
     source_project_id: 1, // Public project ID
     target_project_id: projectId,
@@ -65,4 +68,37 @@ export async function copyPublicTrainings(
   });
 
   if (error) throw error;
+}
+
+export type ProjectMember = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar_url: string;
+};
+
+export async function getProjectMembers(
+  supabase: SupabaseClient,
+  projectId: number
+): Promise<ProjectMember[]> {
+  const { data, error } = await supabase.rpc("get_project_members", {
+    p_project_id: projectId,
+  });
+
+  if (error) handleError(error);
+  if (!data) throw new Error("Failed to get project members");
+  if (data.status === "error") throw new Error(data.message);
+
+  // The function returns { status: 'success', data: [...members] }
+  const members = data.data;
+
+  console.log(JSON.stringify(members, null, 2));
+  return members.map((member: any) => ({
+    id: member.user_id,
+    name: member.displayname,
+    email: member.email,
+    role: member.role,
+    avatar_url: member.avatar_url || "",
+  }));
 }
