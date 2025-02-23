@@ -2,10 +2,21 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
 import { getUserId } from "./user";
 
+export type ProjectRole = "admin" | "manager" | "member";
+
 export type ProjectSummary = {
   id: number;
   name: string;
 };
+
+export type ProjectMember = {
+  id: string;
+  name: string;
+  email: string;
+  role: ProjectRole;
+  avatar_url: string;
+};
+
 
 export async function createProject(
   supabase: SupabaseClient,
@@ -70,14 +81,6 @@ export async function copyPublicTrainings(
   if (error) throw error;
 }
 
-export type ProjectMember = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  avatar_url: string;
-};
-
 export async function getProjectMembers(
   supabase: SupabaseClient,
   projectId: number
@@ -93,7 +96,6 @@ export async function getProjectMembers(
   // The function returns { status: 'success', data: [...members] }
   const members = data.data;
 
-  console.log(JSON.stringify(members, null, 2));
   return members.map((member: any) => ({
     id: member.user_id,
     name: member.displayname,
@@ -101,4 +103,52 @@ export async function getProjectMembers(
     role: member.role,
     avatar_url: member.avatar_url || "",
   }));
+}
+
+export async function getProjectMemberInfo(
+  supabase: SupabaseClient,
+  projectId: number,
+  userId: string
+): Promise<ProjectMember | null> {
+  const { data, error } = await supabase.rpc("get_project_member_info", {
+    p_project_id: projectId,
+    p_user_id: userId,
+  });
+
+  if (error) handleError(error);
+  if (!data) throw new Error("Failed to get project member info");
+  if (data.status === "error") throw new Error(data.message);
+
+  // The function returns { status: 'success', data: memberInfo }
+  const memberInfo = data.data;
+
+  // Return null if no member was found
+  if (!memberInfo) return null;
+
+  return {
+    id: memberInfo.user_id,
+    name: memberInfo.displayname,
+    email: memberInfo.email,
+    role: memberInfo.role,
+    avatar_url: memberInfo.avatar_url || "",
+  };
+}
+
+
+export async function updateProjectMemberRole(
+  supabase: SupabaseClient,
+  projectId: number,
+  userId: string,
+  role: ProjectRole
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects_profiles")
+    .update({
+      role,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("project_id", projectId)
+    .eq("profile_id", userId);
+
+  if (error) handleError(error);
 }

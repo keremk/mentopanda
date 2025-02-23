@@ -36,9 +36,10 @@ export async function getTrainingHistory(
   supabase: SupabaseClient<Database>,
   limit: number,
   completedOnly: boolean = false,
-  start: number = 0
+  start: number = 0,
+  forUserId?: string
 ): Promise<{ data: HistorySummary[]; count: number }> {
-  const userId = await getUserId(supabase);
+  const userId = forUserId ?? (await getUserId(supabase));
   let query = supabase
     .from("history")
     .select(

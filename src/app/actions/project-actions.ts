@@ -8,7 +8,14 @@ export type ProjectSetupData = {
   projectName: string;
   copyStarterContent: boolean;
 };
-import { copyPublicTrainings, getProjects, getProjectMembers } from "@/data/projects";
+import {
+  copyPublicTrainings,
+  getProjects,
+  getProjectMembers,
+  getProjectMemberInfo,
+  updateProjectMemberRole,
+  type ProjectRole,
+} from "@/data/projects";
 
 export async function setupProjectAction(data: ProjectSetupData) {
   const supabase = await createClient();
@@ -83,10 +90,29 @@ export async function switchToProjectAction(projectId: number) {
 export async function getProjectsAction() {
   const supabase = await createClient();
 
-  return await getProjects(supabase);   
+  return await getProjects(supabase);
 }
 
 export async function getProjectMembersAction(projectId: number) {
   const supabase = await createClient();
   return await getProjectMembers(supabase, projectId);
+}
+
+export async function getProjectMemberInfoAction(
+  projectId: number,
+  userId: string
+) {
+  const supabase = await createClient();
+  return await getProjectMemberInfo(supabase, projectId, userId);
+}
+
+export async function updateProjectMemberRoleAction(
+  projectId: number,
+  userId: string,
+  role: ProjectRole
+) {
+  const supabase = await createClient();
+  await updateProjectMemberRole(supabase, projectId, userId, role);
+  revalidatePath(`/team/${userId}`); // Revalidate the member's page
+  revalidatePath("/team"); // Revalidate the team list if it exists
 }
