@@ -4,13 +4,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getProjectMemberInfoAction } from "@/app/actions/project-actions";
 import { getCurrentUserInfo } from "@/data/user";
 import { createClient } from "@/utils/supabase/server";
-import { MemberRoleSelector } from "./_components/member-role-selector";
+import { MemberRoleSelector } from "@/components/member-role-selector";
 
-export default async function TeamMemberPage({
-  params,
-}: {
-  params: { memberId: string };
-}) {
+export default async function TeamMemberPage(
+  props: {
+    params: Promise<{ memberId: string }>;
+  }
+) {
+  const params = await props.params;
+
   const supabase = await createClient();
   const currentUser = await getCurrentUserInfo(supabase);
   const member = await getProjectMemberInfoAction(
@@ -43,7 +45,9 @@ export default async function TeamMemberPage({
               <div className="flex items-start gap-6">
                 <Avatar className="h-24 w-24">
                   <AvatarImage src={member.avatar_url} alt={member.name} />
-                  <AvatarFallback className="text-xl">{initials}</AvatarFallback>
+                  <AvatarFallback className="text-xl">
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-grow space-y-6">
                   <div>
