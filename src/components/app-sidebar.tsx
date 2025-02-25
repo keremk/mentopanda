@@ -11,9 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 
-interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {}
-
-export async function AppSidebar({ ...props }: AppSidebarProps) {
+export async function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const userInfo = await getCurrentUserAction();
 
   return (

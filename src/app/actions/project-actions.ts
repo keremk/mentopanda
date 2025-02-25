@@ -14,8 +14,8 @@ import {
   getProjectMembers,
   getProjectMemberInfo,
   updateProjectMemberRole,
-  type ProjectRole,
 } from "@/data/projects";
+import { UserRole } from "@/data/user";
 
 export async function setupProjectAction(data: ProjectSetupData) {
   const supabase = await createClient();
@@ -109,7 +109,7 @@ export async function getProjectMemberInfoAction(
 export async function updateProjectMemberRoleAction(
   projectId: number,
   userId: string,
-  role: ProjectRole
+  role: UserRole
 ) {
   const supabase = await createClient();
   await updateProjectMemberRole(supabase, projectId, userId, role);

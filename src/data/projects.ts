@@ -1,22 +1,22 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
-import { getUserId } from "./user";
-
-export type ProjectRole = "admin" | "manager" | "member";
+import { getUserId, UserRole } from "./user";
 
 export type ProjectSummary = {
   id: number;
   name: string;
 };
 
-export type ProjectMember = {
+export type ProjectMemberSummary = {
   id: string;
-  name: string;
-  email: string;
-  role: ProjectRole;
-  avatar_url: string;
+  role: UserRole;
 };
 
+export type ProjectMember = ProjectMemberSummary & {
+  name: string;
+  email: string;
+  avatar_url: string;
+};
 
 export async function createProject(
   supabase: SupabaseClient,
@@ -96,6 +96,7 @@ export async function getProjectMembers(
   // The function returns { status: 'success', data: [...members] }
   const members = data.data;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return members.map((member: any) => ({
     id: member.user_id,
     name: member.displayname,
@@ -103,6 +104,7 @@ export async function getProjectMembers(
     role: member.role,
     avatar_url: member.avatar_url || "",
   }));
+  // eslint-enable @typescript-eslint/no-explicit-any
 }
 
 export async function getProjectMemberInfo(
@@ -134,21 +136,52 @@ export async function getProjectMemberInfo(
   };
 }
 
-
 export async function updateProjectMemberRole(
   supabase: SupabaseClient,
   projectId: number,
   userId: string,
-  role: ProjectRole
-): Promise<void> {
-  const { error } = await supabase
+  role: UserRole
+): Promise<ProjectMemberSummary> {
+  const { data, error } = await supabase
     .from("projects_profiles")
     .update({
       role,
       updated_at: new Date().toISOString(),
     })
     .eq("project_id", projectId)
-    .eq("profile_id", userId);
+    .eq("profile_id", userId)
+    .select("profile_id, role")
+    .single();
 
   if (error) handleError(error);
+  if (!data) throw new Error("Failed to update project member role");
+
+  return {
+    id: data.profile_id,
+    role: data.role,
+  };
+}
+
+export async function addProjectMember(
+  supabase: SupabaseClient,
+  projectId: number,
+  userId: string,
+  role: UserRole
+): Promise<ProjectMemberSummary> {
+  console.log(
+    `Adding project member ${userId} to project ${projectId} with role ${role}`
+  );
+  const { data, error } = await supabase.from("projects_profiles").insert({
+    project_id: projectId,
+    profile_id: userId,
+    role: role,
+  }).select(`profile_id, role`).single();
+
+  if (error) handleError(error);
+  if (!data) throw new Error("Failed to add project member");
+
+  return {
+    id: data.profile_id,
+    role: data.role,
+  };
 }

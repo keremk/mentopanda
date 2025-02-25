@@ -18,6 +18,16 @@ import { Input } from "@/components/ui/input";
 import { PlusCircle, Trash2 } from "lucide-react";
 import type { ProjectMember } from "@/data/projects";
 import { useRouter, useParams } from "next/navigation";
+import { UserRole } from "@/data/user";
+import { createInvitationAction } from "@/app/actions/invitation-actions";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type MemberListProps = {
   members: ProjectMember[];
@@ -29,8 +39,10 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
   const params = useParams();
   const currentMemberId = params.memberId;
   const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [selectedRole, setSelectedRole] = useState<UserRole>("member");
   const createDialogCloseRef = useRef<HTMLButtonElement>(null);
   const deleteDialogCloseRef = useRef<HTMLButtonElement>(null);
+  const { toast } = useToast();
 
   const selectedMemberData = members.find((m) => m.id === currentMemberId);
   const isMemberSelected = Boolean(currentMemberId);
@@ -42,9 +54,23 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
 
   async function handleInviteMember() {
     if (!newMemberEmail.trim()) return;
-    // TODO: Implement invite member action
-    setNewMemberEmail("");
-    createDialogCloseRef.current?.click();
+    try {
+      await createInvitationAction(newMemberEmail, selectedRole);
+      toast({
+        title: "Success",
+        description:
+          "Invitation sent successfully, you will see them in the team when they accept the invitation",
+      });
+      setNewMemberEmail("");
+      createDialogCloseRef.current?.click();
+    } catch (error) {
+      console.error(`Failed to send invitation: ${error}`);
+      toast({
+        title: "Error",
+        description: "Failed to send invitation, please try again",
+        variant: "destructive",
+      });
+    }
   }
 
   async function handleRemoveMember() {
@@ -106,8 +132,24 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
                 onChange={(e) => setNewMemberEmail(e.target.value)}
                 placeholder="Email address"
                 type="email"
-                className="my-4"
+                className="mb-4"
               />
+              <div className="mb-4">
+                <label className="text-sm font-medium mb-2 block">Role</label>
+                <Select
+                  value={selectedRole}
+                  onValueChange={(value: UserRole) => setSelectedRole(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="member">Member</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <DialogFooter>
                 <DialogClose ref={createDialogCloseRef} asChild>
                   <Button variant="secondary">Cancel</Button>

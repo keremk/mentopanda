@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { type ProjectRole } from "@/data/projects";
+import { type UserRole } from "@/data/user";
 import { updateProjectMemberRoleAction } from "@/app/actions/project-actions";
 
 export function MemberRoleSelector({
@@ -19,9 +19,9 @@ export function MemberRoleSelector({
 }: {
   projectId: number;
   memberId: string;
-  currentRole: ProjectRole;
+  currentRole: UserRole;
 }) {
-  const [role, setRole] = useState<ProjectRole>(currentRole);
+  const [role, setRole] = useState<UserRole>(currentRole);
 
   return (
     <div className="flex items-center gap-4">
@@ -31,7 +31,7 @@ export function MemberRoleSelector({
         </label>
         <Select
           value={role}
-          onValueChange={(value) => setRole(value as ProjectRole)}
+          onValueChange={(value) => setRole(value as UserRole)}
         >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select level" />
