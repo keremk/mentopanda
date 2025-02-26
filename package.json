@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "NODE_NO_WARNINGS=1 next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -11,7 +11,8 @@
     "test:integration": "vitest run tests/integration",
     "test:db": "supabase test db",
     "import-data": "tsx src/scripts/import-data.ts",
-    "export-data": "tsx src/scripts/export-data.ts"
+    "export-data": "tsx src/scripts/export-data.ts",
+    "email:dev": "email dev --dir src/emails --port 3001"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.1.9",
@@ -36,6 +37,8 @@
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-toast": "^1.2.5",
     "@radix-ui/react-tooltip": "^1.1.7",
+    "@react-email/components": "^0.0.33",
+    "@react-email/tailwind": "^1.0.4",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.48.1",
     "@tanstack/react-virtual": "^3.12.0",
@@ -71,8 +74,10 @@
     "postgres": "^3.4.5",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-email": "^3.0.7",
     "react-grid-layout": "^1.5.0",
     "react-markdown": "^9.0.3",
+    "resend": "^4.1.2",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "tailwindcss-question-mark": "^0.5.0",
