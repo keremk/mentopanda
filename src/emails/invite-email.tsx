@@ -6,7 +6,6 @@ import {
   Heading,
   Hr,
   Html,
-  Img,
   Link,
   Preview,
   Section,
@@ -29,23 +28,13 @@ export default function InviteEmail({
   return (
     <Html>
       <Head />
-      <Preview>Join {inviterName}'s project on MentoPanda</Preview>
+      <Preview>Join {inviterName}&apos;s project on MentoPanda</Preview>
       <Tailwind>
         <Body className="bg-white font-sans">
           <Container className="mx-auto py-8 px-4">
             <Section className="bg-white rounded-lg border border-gray-200 p-8 shadow-sm">
-              {/* <Section className="text-center mb-6">
-                <Img
-                  src="https://mentopanda.com/panda-light.svg"
-                  width="120"
-                  height="120"
-                  alt="MentoPanda Logo"
-                  className="mx-auto"
-                />
-              </Section> */}
-
               <Heading className="text-2xl font-bold text-[#3A3B7B] mb-4 text-center">
-                You're invited to join a project on MentoPanda
+                You&apos;re invited to join a project on MentoPanda
               </Heading>
 
               <Text className="text-gray-700 mb-6 text-center">
