@@ -3,7 +3,7 @@ import { TranscriptEntry } from "@/types/chat-types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { format } from "date-fns";
 import { Database } from "@/types/supabase";
-import { getUserId } from "@/data/user";
+import { getUserId, getCurrentUserInfo } from "@/data/user";
 export type HistorySummary = {
   id: number;
   moduleId: number;
@@ -39,7 +39,9 @@ export async function getTrainingHistory(
   start: number = 0,
   forUserId?: string
 ): Promise<{ data: HistorySummary[]; count: number }> {
-  const userId = forUserId ?? (await getUserId(supabase));
+  const currentUser = await getCurrentUserInfo(supabase);
+  const userId = forUserId ?? currentUser.id;
+
   let query = supabase
     .from("history")
     .select(
@@ -50,18 +52,21 @@ export async function getTrainingHistory(
       started_at,
       module_id,
       assessment_created,
-      modules (
+      modules!inner (
         id,
         title,
-        trainings (
+        trainings!inner (
           id,
-          title
+          title,
+          project_id
         )
       )
     `,
       { count: "estimated" }
     )
     .eq("user_id", userId)
+    // Filter by modules that belong to trainings in the current project
+    .eq("modules.trainings.project_id", currentUser.currentProject.id)
     .order("started_at", { ascending: false })
     .range(start, start + limit - 1);
 
@@ -137,7 +142,9 @@ export async function getHistoryEntry(
   supabase: SupabaseClient,
   id: number
 ): Promise<HistoryEntry | null> {
-  const userId = await getUserId(supabase);
+  const user = await getCurrentUserInfo(supabase);
+
+  console.log("user", JSON.stringify(user, null, 2));
 
   const { data, error } = await supabase
     .from("history")
@@ -164,7 +171,6 @@ export async function getHistoryEntry(
     `
     )
     .eq("id", id)
-    .eq("user_id", userId) // Security: ensure user owns this entry
     .single();
 
   if (!data) return null;

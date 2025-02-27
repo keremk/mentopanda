@@ -4,8 +4,8 @@ DECLARE
     authorized boolean;
     member_info json;
 BEGIN
-    -- Check if the caller has 'project.member.manage' permission
-    authorized := public.authorize('project.member.manage'::public.app_permission);
+    -- Check if the caller has 'project.member.manage' permission for this specific project
+    authorized := public.authorize('project.member.manage'::public.app_permission, p_project_id);
 
     IF authorized THEN
         -- Retrieve single member's information for the specified project and user

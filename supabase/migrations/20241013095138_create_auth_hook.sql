@@ -9,7 +9,7 @@ DECLARE
     debug_profiles jsonb;
     debug_projects jsonb;
 BEGIN
-    RAISE LOG 'custom_access_token_hook called with event: %', event;
+    -- RAISE LOG 'custom_access_token_hook called with event: %', event;
 
     claims := event->'claims';
     user_id := (event->>'user_id')::uuid;
@@ -19,7 +19,7 @@ BEGIN
     FROM public.profiles p
     WHERE p.id = user_id;
     
-    RAISE LOG 'Debug profiles row: %', debug_profiles;
+    -- RAISE LOG 'Debug profiles row: %', debug_profiles;
 
     -- Get current project and explicit role if any
     SELECT p.current_project_id, pp.role 
@@ -33,8 +33,8 @@ BEGIN
     FROM public.projects pr
     WHERE pr.id = current_project_id;
     
-    RAISE LOG 'Debug projects row: %', debug_projects;
-    RAISE LOG 'Found project_id: %, role: %', current_project_id, project_role;
+    -- RAISE LOG 'Debug projects row: %', debug_projects;
+    -- RAISE LOG 'Found project_id: %, role: %', current_project_id, project_role;
 
     -- Get permissions for the role
     SELECT array_agg(permission) INTO user_permissions

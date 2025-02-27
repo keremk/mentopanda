@@ -89,13 +89,48 @@ const transcript_json = [
   },
 ];
 
-function generateRandomHistoryEntries(userId: string, moduleIds: number[]) {
+async function generateRandomHistoryEntries(
+  userId: string,
+  session: Session,
+  projectId: number
+) {
+  // First, get modules that belong to trainings in this project
+  const { data: projectModules, error: moduleError } = await supabase.auth
+    .setSession(session)
+    .then(() =>
+      supabase
+        .from("modules")
+        .select(
+          `
+        id,
+        training_id,
+        trainings!inner(
+          project_id
+        )
+      `
+        )
+        .eq("trainings.project_id", projectId)
+    );
+
+  if (moduleError) {
+    console.error("Error fetching project modules:", moduleError);
+    return [];
+  }
+
+  if (!projectModules || projectModules.length === 0) {
+    console.log(`No modules found for project ${projectId}`);
+    return [];
+  }
+
+  const moduleIds = projectModules.map((m) => m.id);
+  console.log(`Found ${moduleIds.length} modules for project ${projectId}`);
+
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
   const entries = [];
   let totalEntries = 0;
-  const maxEntries = 50;
+  const maxEntries = 25;
 
   // Create array of dates from three months ago to now
   const dates = [];
@@ -148,47 +183,153 @@ function generateRandomHistoryEntries(userId: string, moduleIds: number[]) {
   return entries;
 }
 
-async function createHistoryData(session: Session) {
-  // First, get all available module IDs
-  const { data: modules, error: moduleError } = await supabase.auth
-    .setSession(session)
-    .then(() => supabase.from("modules").select("id"));
+// async function createHistoryData(session: Session) {
+//   // Get the current project ID from the session
+//   const { data: profileData, error: profileError } = await supabase.auth
+//     .setSession(session)
+//     .then(() =>
+//       supabase
+//         .from("profiles")
+//         .select("current_project_id")
+//         .eq("id", session.user.id)
+//         .single()
+//     );
 
-  if (moduleError) {
-    console.error("Error fetching modules:", moduleError);
-    return;
-  }
+//   if (profileError) {
+//     console.error("Error fetching user profile:", profileError);
+//     return;
+//   }
 
-  const moduleIds = modules.map((m) => m.id);
-  if (moduleIds.length === 0) {
-    console.error("No modules found to create history entries");
-    return;
-  }
+//   const projectId = profileData.current_project_id;
+//   if (!projectId) {
+//     console.error("No current project ID found for user");
+//     return;
+//   }
 
-  const historyEntries = generateRandomHistoryEntries(
-    session.user.id,
-    moduleIds
-  );
+//   const historyEntries = await generateRandomHistoryEntries(
+//     session.user.id,
+//     session,
+//     projectId
+//   );
 
-  // Insert history entries in chunks to avoid rate limits
-  const chunkSize = 10;
-  for (let i = 0; i < historyEntries.length; i += chunkSize) {
-    const chunk = historyEntries.slice(i, i + chunkSize);
-    const { error: historyError } = await supabase.auth
+//   if (historyEntries.length === 0) {
+//     console.log(
+//       `No history entries generated for user ${session.user.id} in project ${projectId}`
+//     );
+//     return;
+//   }
+
+//   // Insert history entries in chunks to avoid rate limits
+//   const chunkSize = 10;
+//   for (let i = 0; i < historyEntries.length; i += chunkSize) {
+//     const chunk = historyEntries.slice(i, i + chunkSize);
+//     const { error: historyError } = await supabase.auth
+//       .setSession(session)
+//       .then(() => supabase.from("history").insert(chunk));
+
+//     if (historyError) {
+//       console.error(
+//         `Error inserting history entries chunk ${i}:`,
+//         historyError
+//       );
+//     }
+//   }
+
+//   console.log(
+//     `Created ${historyEntries.length} history entries for user ${session.user.id} in project ${projectId}`
+//   );
+// }
+
+async function createAllMemberHistoryData(
+  testData: TestData,
+  users: TestUser[]
+) {
+  console.log("Creating history data for members across all projects...");
+
+  // For each user
+  for (const user of users) {
+    if (!user || !user.id) continue;
+
+    // Sign in as the user
+    const {
+      data: { session },
+      error: signInError,
+    } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: user.password,
+    });
+
+    if (signInError || !session) {
+      console.error(`Error signing in as ${user.email}:`, signInError);
+      continue;
+    }
+
+    // Get all projects where this user is a member
+    const { data: memberProjects, error: projectError } = await supabase.auth
       .setSession(session)
-      .then(() => supabase.from("history").insert(chunk));
+      .then(() =>
+        supabase
+          .from("projects_profiles")
+          .select("project_id")
+          .eq("profile_id", user.id)
+      );
 
-    if (historyError) {
-      console.error(
-        `Error inserting history entries chunk ${i}:`,
-        historyError
+    if (projectError) {
+      console.error(`Error fetching projects for ${user.email}:`, projectError);
+      continue;
+    }
+
+    if (!memberProjects || memberProjects.length === 0) {
+      console.log(`User ${user.email} is not a member of any projects`);
+      continue;
+    }
+
+    console.log(
+      `User ${user.email} is a member of ${memberProjects.length} projects`
+    );
+
+    // For each project, create history entries
+    for (const { project_id } of memberProjects) {
+      // Switch to this project
+      const projectSession = await switchProject(project_id, session);
+
+      // Generate and create history entries for this project
+      const historyEntries = await generateRandomHistoryEntries(
+        user.id,
+        projectSession,
+        project_id
+      );
+
+      if (historyEntries.length === 0) {
+        console.log(
+          `No history entries generated for user ${user.email} in project ${project_id}`
+        );
+        continue;
+      }
+
+      // Insert history entries
+      const chunkSize = 10;
+      for (let i = 0; i < historyEntries.length; i += chunkSize) {
+        const chunk = historyEntries.slice(i, i + chunkSize);
+        const { error: historyError } = await supabase.auth
+          .setSession(projectSession)
+          .then(() => supabase.from("history").insert(chunk));
+
+        if (historyError) {
+          console.error(
+            `Error inserting history entries for ${user.email} in project ${project_id}:`,
+            historyError
+          );
+        }
+      }
+
+      console.log(
+        `Created ${historyEntries.length} history entries for user ${user.email} in project ${project_id}`
       );
     }
   }
 
-  console.log(
-    `Created ${historyEntries.length} history entries for user ${session.user.id}`
-  );
+  console.log("Finished creating history data for all members");
 }
 
 type TestUser = {
@@ -391,7 +532,7 @@ async function createTestProjects(
     ).filter((t): t is TestTraining => t !== undefined);
     await createTrainingData(projectId, inputTrainings, characters, newSession);
 
-    await createHistoryData(newSession);
+    // await createHistoryData(newSession);
     console.log(`Created project: ${projectId}`);
     index++;
   }
@@ -651,6 +792,8 @@ async function createTestData() {
   }
 
   await createTestProjects(testData, validTestUsers);
+
+  await createAllMemberHistoryData(testData, validTestUsers);
 }
 
 // Add help text if --help flag is provided

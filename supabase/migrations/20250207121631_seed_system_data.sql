@@ -49,6 +49,7 @@ perform insert_role_permissions(
             'enrollment.manage'::app_permission,
             'project.manage'::app_permission,
             'project.member.manage'::app_permission,
+            'training.history'::app_permission,
             'basic.access'::app_permission
         ]
 );
@@ -56,9 +57,7 @@ perform insert_role_permissions(
 perform insert_role_permissions(
     'manager'::user_role,
     ARRAY [
-            'project.member.manage'::app_permission,
             'training.manage'::app_permission,
-            'enrollment.manage'::app_permission,
             'basic.access'::app_permission
         ]
 );

@@ -7,21 +7,5 @@ USING (
 
 CREATE POLICY "Invitations are manageable by users with project.member.manage permission" ON invitations FOR ALL 
 TO authenticated 
-USING (
-    authorize('project.member.manage') AND
-    EXISTS (
-        SELECT 1
-        FROM profiles
-        WHERE profiles.id = auth.uid()
-        AND profiles.current_project_id = invitations.project_id
-    )
-)
-WITH CHECK (
-    authorize('project.member.manage') AND
-    EXISTS (
-        SELECT 1
-        FROM profiles
-        WHERE profiles.id = auth.uid()
-        AND profiles.current_project_id = project_id
-    )
-);
+USING (authorize('project.member.manage', project_id))
+WITH CHECK (authorize('project.member.manage', project_id));
