@@ -5,17 +5,16 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Welcome } from "./steps/welcome";
 import { ProjectSetup } from "./steps/project-setup";
-import { InviteTeam } from "./steps/invite-team";
 import { Summary } from "./steps/summary";
 import { Progress } from "./steps/progress";
 import { ApiKeySetup } from "./steps/api-key-setup";
 import { useRouter } from "next/navigation";
 import { setupProjectAction } from "@/app/actions/project-actions";
+import { useToast } from "@/hooks/use-toast";
 
 export type OnboardingData = {
   projectName: string;
   copyStarterContent: boolean;
-  teamEmails: string[];
   isApiKeyEntered: boolean;
 };
 
@@ -23,7 +22,6 @@ const STEPS = [
   "Welcome",
   "Project Setup",
   "API Setup",
-  "Invite Team",
   "Summary",
   "Progress",
 ] as const;
@@ -35,11 +33,11 @@ export function OnboardingFlow() {
   const [data, setData] = useState<OnboardingData>({
     projectName: "",
     copyStarterContent: true,
-    teamEmails: [],
     isApiKeyEntered: false,
   });
   const router = useRouter();
-
+  const { toast } = useToast();
+  
   const currentStepIndex = STEPS.indexOf(currentStep);
 
   async function goToNextStep() {
@@ -69,14 +67,18 @@ export function OnboardingFlow() {
     setCurrentStep("Progress");
 
     try {
-      // Only pass the required data for project setup
       await setupProjectAction({
         projectName: data.projectName,
         copyStarterContent: data.copyStarterContent
       });
       router.push("/home");
     } catch (error) {
-      console.error("Setup failed:", error);
+      console.log("Setup failed:", error);
+      toast({
+        title: "Setup failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
       setStatus("Setup failed. Please try again.");
     }
   }
@@ -91,9 +93,6 @@ export function OnboardingFlow() {
           )}
           {currentStep === "API Setup" && (
             <ApiKeySetup data={data} updateData={updateData} />
-          )}
-          {currentStep === "Invite Team" && (
-            <InviteTeam data={data} updateData={updateData} />
           )}
           {currentStep === "Summary" && <Summary data={data} />}
           {currentStep === "Progress" && <Progress status={status} />}
