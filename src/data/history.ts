@@ -117,16 +117,12 @@ export async function updateHistoryEntry(
 ): Promise<void> {
   const userId = await getUserId(supabase);
 
-  const transcriptJson = updates.transcript
-    ? JSON.stringify(updates.transcript)
-    : undefined;
-
   const { error } = await supabase
     .from("history")
     .update({
       recording_url: updates.recordingUrl,
       transcript_text: updates.transcriptText,
-      transcript_json: transcriptJson,
+      transcript_json: updates.transcript,
       assessment_text: updates.assessmentText,
       assessment_created: updates.assessmentCreated,
       completed_at: updates.completedAt?.toISOString(),
@@ -174,10 +170,6 @@ export async function getHistoryEntry(
   if (!data) return null;
   if (error) handleError(error);
 
-  const transcript = data.transcript_json
-    ? JSON.parse(data.transcript_json)
-    : null;
-
   /* eslint-disable @typescript-eslint/no-explicit-any */
   return {
     id: data.id,
@@ -186,7 +178,7 @@ export async function getHistoryEntry(
     trainingTitle: (data.modules as any)?.trainings?.title ?? null,
     recordingUrl: data.recording_url,
     transcriptText: data.transcript_text,
-    transcript: transcript,
+    transcript: data.transcript_json,
     assessmentText: data.assessment_text,
     assessmentCreated: data.assessment_created,
     completedAt: data.completed_at ? new Date(data.completed_at) : null,
