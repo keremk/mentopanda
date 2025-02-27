@@ -20,6 +20,75 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
   },
 });
 
+const assessment_text = `
+## Introduction  
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+## Inititation
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+## Tone & Empathy
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+## Clarity & Specificity
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+## Empathy & Support
+Consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+## Resolution & Next Steps
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+
+## Conclusion
+Dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+`;
+
+const transcript_text = `
+Jason: Hello, how are you?
+John: I'm good, thank you. How are you?
+Jason: Not bad, just busy. I have a lot of work to do.
+John: Great to hear. I'm also busy, but I'm enjoying it.
+`;
+
+const transcript_json = [
+  {
+    participantName: "Jason",
+    text: "Hello, how are you?",
+    role: "user",
+    timestamp: "2024-01-01T00:00:00Z",
+    createdAtMs: 1714531200000,
+    status: "IN_PROGRESS",
+    isHidden: false,
+  },
+  {
+    participantName: "John",
+    text: "I'm good, thank you. How are you?",
+    role: "agent",
+    timestamp: "2024-01-01T00:00:00Z",
+    createdAtMs: 1714531200000,
+    status: "IN_PROGRESS",
+    isHidden: false,
+  },
+  {
+    participantName: "Jason",
+    text: "Not bad, just busy. I have a lot of work to do.",
+    role: "user",
+    timestamp: "2024-01-01T00:00:00Z",
+    createdAtMs: 1714531200000,
+    status: "IN_PROGRESS",
+    isHidden: false,
+  },
+  {
+    participantName: "John",
+    text: "Great to hear. I'm also busy, but I'm enjoying it.",
+    role: "agent",
+    timestamp: "2024-01-01T00:00:00Z",
+    createdAtMs: 1714531200000,
+    status: "IN_PROGRESS",
+    isHidden: false,
+  },
+];
+
 function generateRandomHistoryEntries(userId: string, moduleIds: number[]) {
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
@@ -65,6 +134,10 @@ function generateRandomHistoryEntries(userId: string, moduleIds: number[]) {
           module_id: moduleId,
           started_at: startedAt.toISOString(),
           completed_at: completedAt.toISOString(),
+          assessment_text: assessment_text,
+          assessment_created: true,
+          transcript_text: transcript_text,
+          transcript_json: transcript_json,
         });
 
         totalEntries++;
