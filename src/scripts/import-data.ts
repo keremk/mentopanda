@@ -123,7 +123,7 @@ type TestUser = {
   email: string;
   password: string;
   role?: string;
-  displayname?: string;
+  display_name?: string;
   avatar_url?: string;
 };
 
@@ -206,7 +206,7 @@ async function createTestUsers(testData: TestData) {
           password: user.password,
           email_confirm: true,
           user_metadata: {
-            displayname: user.displayname,
+            display_name: user.display_name,
             avatar_url: user.avatar_url,
           },
         });

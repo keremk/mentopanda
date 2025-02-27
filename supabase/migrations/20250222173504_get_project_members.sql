@@ -12,7 +12,7 @@ BEGIN
         SELECT json_agg(json_build_object(
             'user_id', pp.profile_id,
             'email', u.email,
-            'displayname', u.raw_user_meta_data->>'displayname',
+            'display_name', u.raw_user_meta_data->>'display_name',
             'avatar_url', u.raw_user_meta_data->>'avatar_url',
             'role', pp.role
         ))

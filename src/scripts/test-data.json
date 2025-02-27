@@ -3,31 +3,31 @@
     {
       "email": "super@example.com",
       "password": "Test123!",
-      "displayname": "Anna - Super",
+      "display_name": "Anna - Super",
       "avatar_url": "/avatars/anna.jpg"
     },
     {
       "email": "user1@example.com",
       "password": "Test123!",
-      "displayname": "Brendon",
+      "display_name": "Brendon",
       "avatar_url": "/avatars/brendon.jpg"
     },
     {
       "email": "user2@example.com",
       "password": "Test123!",
-      "displayname": "Taylor",
+      "display_name": "Taylor",
       "avatar_url": "/avatars/taylor.jpg"
     },
     {
       "email": "user3@example.com",
       "password": "Test123!",
-      "displayname": "Janet",
+      "display_name": "Janet",
       "avatar_url": "/avatars/janet.jpg"
     },
     {
       "email": "user4@example.com",
       "password": "Test123!",
-      "displayname": "Laura",
+      "display_name": "Laura",
       "avatar_url": "/avatars/laura.jpg"
     }
   ],

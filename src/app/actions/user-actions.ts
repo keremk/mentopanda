@@ -10,7 +10,6 @@ import { z } from "zod";
 
 const updateProfileSchema = z.object({
   displayName: z.string().min(2).max(50),
-  organizationName: z.string().min(2).max(100),
 });
 
 const updateAvatarSchema = z.object({

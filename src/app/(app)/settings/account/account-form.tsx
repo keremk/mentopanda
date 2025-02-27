@@ -13,6 +13,7 @@ import type { User } from "@/data/user";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import { ProjectDialog } from "@/components/project-dialog";
 import { ApiKeyInput } from "@/components/api-key-input";
+import { useToast } from "@/hooks/use-toast";
 
 type AccountFormProps = {
   user: User;
@@ -21,14 +22,42 @@ type AccountFormProps = {
 export function AccountForm({ user }: AccountFormProps) {
   const [isPending, startTransition] = useTransition();
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
+  const [displayName, setDisplayName] = useState(user.displayName);
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
   const [showProjectDialog, setShowProjectDialog] = useState(false);
+  const { toast } = useToast();
 
   async function handleSubmit(formData: FormData) {
     startTransition(async () => {
-      await updateProfileAction({
-        displayName: formData.get("displayName") as string,
-      });
+      const newDisplayName = formData.get("displayName") as string;
+
+      try {
+        const response = await updateProfileAction({
+          displayName: newDisplayName,
+        });
+
+        if (response.success) {
+          setDisplayName(newDisplayName);
+          toast({
+            title: "Profile updated",
+            description: "Your display name has been updated successfully.",
+          });
+        } else {
+          console.log("Update failed:", response.error);
+          toast({
+            title: "Update failed",
+            description: response.error || "Failed to update profile",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.log("Error updating profile:", error);
+        toast({
+          title: "Update failed",
+          description: "An unexpected error occurred",
+          variant: "destructive",
+        });
+      }
     });
   }
 
@@ -37,9 +66,21 @@ export function AccountForm({ user }: AccountFormProps) {
     try {
       const response = await updateAvatarAction({ avatarUrl: url });
       if (response.success) setAvatarUrl(url);
-      else console.error("Failed to update avatar:", response.error);
+      else {
+        console.log("Failed to update avatar:", response.error);
+        toast({
+          title: "Update failed",
+          description: response.error || "Failed to update avatar",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
-      console.error("Error updating avatar:", error);
+      console.log("Error updating avatar:", error);
+      toast({
+        title: "Update failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsAvatarUpdating(false);
     }
@@ -50,9 +91,9 @@ export function AccountForm({ user }: AccountFormProps) {
       {/* Avatar Section */}
       <div className="flex items-center space-x-4 mb-8">
         <Avatar className="h-20 w-20">
-          <AvatarImage src={avatarUrl} alt={user.displayName} />
+          <AvatarImage src={avatarUrl} alt={displayName} />
           <AvatarFallback>
-            {user.displayName.slice(0, 2).toUpperCase()}
+            {displayName.slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
         <ImageUploadButton
@@ -74,7 +115,7 @@ export function AccountForm({ user }: AccountFormProps) {
           <Input
             id="displayName"
             name="displayName"
-            defaultValue={user.displayName}
+            defaultValue={displayName}
             className="max-w-md"
           />
         </div>

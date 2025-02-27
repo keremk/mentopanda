@@ -13,26 +13,26 @@ select json_build_object(
     au.id,
     'email',
     au.email,
-    'displayName',
+    'display_name',
     COALESCE(
       (au.raw_user_meta_data->>'display_name')::text,
       split_part(au.email, '@', 1),
       'User'
     ),
-    'avatarUrl',
+    'avatar_url',
     COALESCE(
       (au.raw_user_meta_data->>'avatar_url')::text,
       '/placeholder.svg'
     ),
-    'pricingPlan',
+    'pricing_plan',
     p.pricing_plan,
-    'currentProject',
+    'current_project',
     json_build_object(
       'id',
       proj.id,
       'name',
       proj.name,
-      'isPublic',
+      'is_public',
       proj.is_public
     ),
     -- Convert JWT permissions from JSON to array using array constructor
@@ -41,7 +41,7 @@ select json_build_object(
       select elem::app_permission
       from jsonb_array_elements_text(coalesce(auth.jwt()->'permissions', '[]'::jsonb)) as elem
     ),
-    'projectRole',
+    'project_role',
     (auth.jwt()->>'project_role')::user_role
   ) into result
 from auth.users au

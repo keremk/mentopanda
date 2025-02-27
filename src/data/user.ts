@@ -50,11 +50,11 @@ export async function getCurrentUserInfo(
   const userData: User = {
     id: data.id,
     email: data.email,
-    displayName: data.displayName,
-    avatarUrl: data.avatarUrl,
-    pricingPlan: data.pricingPlan,
-    currentProject: data.currentProject,
-    projectRole: data.projectRole,
+    displayName: data.display_name,
+    avatarUrl: data.avatar_url,
+    pricingPlan: data.pricing_plan,
+    currentProject: data.current_project,
+    projectRole: data.project_role,
     permissions: data.permissions || [],
   };
 
@@ -65,12 +65,19 @@ export async function updateUserProfile(
   supabase: SupabaseClient,
   displayName: string
 ): Promise<User> {
+  // Update the user metadata in auth.users
   const { error: updateAuthError } = await supabase.auth.updateUser({
-    data: { display_name: displayName },
+    data: {
+      display_name: displayName,
+    },
   });
 
-  if (updateAuthError) throw new Error("Failed to update display name");
+  if (updateAuthError)
+    throw new Error(
+      `Failed to update display name: ${updateAuthError.message}`
+    );
 
+  // Get the updated user info
   return await getCurrentUserInfo(supabase);
 }
 
@@ -79,10 +86,13 @@ export async function updateUserAvatar(
   avatarUrl: string
 ): Promise<User> {
   const { error: updateAuthError } = await supabase.auth.updateUser({
-    data: { avatar_url: avatarUrl },
+    data: {
+      avatar_url: avatarUrl,
+    },
   });
 
-  if (updateAuthError) throw new Error("Failed to update avatar");
+  if (updateAuthError)
+    throw new Error(`Failed to update avatar: ${updateAuthError.message}`);
 
   // Return updated user info
   return await getCurrentUserInfo(supabase);
