@@ -13,6 +13,7 @@ import {
 
 export async function getTrainingHistoryAction(
   page: number = 1,
+  forUserId?: string,
   pageSize: number = 10,
   completedOnly: boolean = false
 ) {
@@ -22,6 +23,7 @@ export async function getTrainingHistoryAction(
   const { data: entries, count } = await getTrainingHistory(
     supabase,
     pageSize,
+    forUserId,
     completedOnly,
     start
   );
@@ -49,9 +51,9 @@ export async function getHistoryEntryAction(id: number) {
   return await getHistoryEntry(supabase, id);
 }
 
-export async function getTrainingHeatmapDataAction() {
+export async function getTrainingHeatmapDataAction(forUserId?: string) {
   const supabase = await createClient();
-  return await getTrainingHeatmapData(supabase);
+  return await getTrainingHeatmapData(supabase, forUserId);
 }
 
 export async function deleteHistoryEntryAction(id: number) {

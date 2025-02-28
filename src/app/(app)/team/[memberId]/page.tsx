@@ -5,12 +5,11 @@ import { getProjectMemberInfoAction } from "@/app/actions/project-actions";
 import { getCurrentUserInfo } from "@/data/user";
 import { createClient } from "@/utils/supabase/server";
 import { MemberRoleSelector } from "@/components/member-role-selector";
-
-export default async function TeamMemberPage(
-  props: {
-    params: Promise<{ memberId: string }>;
-  }
-) {
+import { TrainingHistory } from "@/components/training-history";
+import { TrainingSessionsHeatmap } from "@/components/training-sessions-heatmap";
+export default async function TeamMemberPage(props: {
+  params: Promise<{ memberId: string }>;
+}) {
   const params = await props.params;
 
   const supabase = await createClient();
@@ -67,17 +66,9 @@ export default async function TeamMemberPage(
           </Card>
         </TabsContent>
 
-        <TabsContent value="trainings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Trainings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Training content coming soon...
-              </p>
-            </CardContent>
-          </Card>
+        <TabsContent value="trainings" className="space-y-6">
+          <TrainingSessionsHeatmap forUserId={member.id} />
+          <TrainingHistory forUserId={member.id} />
         </TabsContent>
       </Tabs>
     </div>

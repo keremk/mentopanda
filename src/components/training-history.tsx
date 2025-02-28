@@ -4,7 +4,7 @@ import { GripVertical } from "lucide-react";
 import { TrainingHistoryTable } from "./training-history-table";
 import { TrainingHistoryTableSkeleton } from "./training-history-skeleton";
 
-export function TrainingHistory() {
+export function TrainingHistory({ forUserId }: { forUserId?: string }) {
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
@@ -15,7 +15,7 @@ export function TrainingHistory() {
       </CardHeader>
       <CardContent className="flex-grow overflow-auto flex flex-col">
         <Suspense fallback={<TrainingHistoryTableSkeleton />}>
-          <TrainingHistoryTable />
+          <TrainingHistoryTable forUserId={forUserId} />
         </Suspense>
       </CardContent>
     </Card>

@@ -12,8 +12,12 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { GripVertical } from "lucide-react";
 import { getTrainingHeatmapDataAction } from "@/app/actions/history-actions";
 
-export async function TrainingSessionsHeatmap() {
-  const data = await getTrainingHeatmapDataAction();
+export async function TrainingSessionsHeatmap({
+  forUserId,
+}: {
+  forUserId?: string;
+}) {
+  const data = await getTrainingHeatmapDataAction(forUserId);
   const totalSessions = Object.values(data).reduce((sum, val) => sum + val, 0);
 
   const today = new Date();

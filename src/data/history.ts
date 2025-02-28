@@ -35,9 +35,9 @@ export type UpdateHistoryEntry = {
 export async function getTrainingHistory(
   supabase: SupabaseClient<Database>,
   limit: number,
+  forUserId?: string,
   completedOnly: boolean = false,
-  start: number = 0,
-  forUserId?: string
+  start: number = 0
 ): Promise<{ data: HistorySummary[]; count: number }> {
   const currentUser = await getCurrentUserInfo(supabase);
   const userId = forUserId ?? currentUser.id;
@@ -142,10 +142,6 @@ export async function getHistoryEntry(
   supabase: SupabaseClient,
   id: number
 ): Promise<HistoryEntry | null> {
-  const user = await getCurrentUserInfo(supabase);
-
-  console.log("user", JSON.stringify(user, null, 2));
-
   const { data, error } = await supabase
     .from("history")
     .select(
@@ -194,16 +190,29 @@ export async function getHistoryEntry(
 }
 
 export async function getTrainingHeatmapData(
-  supabase: SupabaseClient
+  supabase: SupabaseClient<Database>,
+  forUserId?: string
 ): Promise<Record<string, number>> {
-  const userId = await getUserId(supabase);
+  const currentUser = await getCurrentUserInfo(supabase);
+  const userId = forUserId ?? currentUser.id;
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
   const { data, error } = await supabase
     .from("history")
-    .select("started_at")
+    .select(
+      `
+      started_at,
+      modules!inner (
+        trainings!inner (
+          project_id
+        )
+      )
+    `
+    )
     .eq("user_id", userId)
+    // Filter by modules that belong to trainings in the current project
+    .eq("modules.trainings.project_id", currentUser.currentProject.id)
     .gte("started_at", threeMonthsAgo.toISOString())
     .order("started_at", { ascending: true });
 
@@ -212,6 +221,8 @@ export async function getTrainingHeatmapData(
 
   // Group sessions by date
   return data.reduce((acc: Record<string, number>, entry) => {
+    if (!entry.started_at) return acc;
+
     const date = new Date(entry.started_at);
     const dateKey = format(date, "yyyy-MM-dd");
     acc[dateKey] = (acc[dateKey] || 0) + 1;

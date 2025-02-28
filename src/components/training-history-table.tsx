@@ -21,13 +21,13 @@ import { format } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import { HistorySummary } from "@/data/history";
 
-export function TrainingHistoryTable() {
+export function TrainingHistoryTable({ forUserId }: { forUserId?: string }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [entries, setEntries] = useState<HistorySummary[]>([]);
 
   const loadPage = useCallback(async (page: number) => {
-    const result = await getTrainingHistoryAction(page);
+    const result = await getTrainingHistoryAction(page, forUserId);
     setEntries(result.entries);
     setTotalPages(result.totalPages);
     setCurrentPage(result.currentPage);
