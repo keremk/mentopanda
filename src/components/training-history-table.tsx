@@ -31,7 +31,7 @@ export function TrainingHistoryTable({ forUserId }: { forUserId?: string }) {
     setEntries(result.entries);
     setTotalPages(result.totalPages);
     setCurrentPage(result.currentPage);
-  }, []);
+  }, [forUserId]);
 
   useEffect(() => {
     loadPage(currentPage);

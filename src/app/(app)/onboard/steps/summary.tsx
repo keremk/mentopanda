@@ -38,16 +38,6 @@ export function Summary({ data }: SummaryProps) {
             </p>
           </div>
 
-          {data.teamEmails.length > 0 && (
-            <div>
-              <h3 className="font-medium">Team Members</h3>
-              <ul className="text-muted-foreground">
-                {data.teamEmails.map((email) => (
-                  <li key={email}>{email}</li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
 
         <p className="text-sm text-muted-foreground">
