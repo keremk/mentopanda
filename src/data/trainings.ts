@@ -1,7 +1,7 @@
 import { ModuleProgress, ModuleSummary } from "./modules";
 import { handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { hasPermission, getCurrentUserInfo, getUserId } from "./user";
+import { getCurrentUserInfo, getUserId } from "./user";
 
 export type TrainingSummary = {
   id: number;
@@ -199,27 +199,6 @@ export async function updateTraining(
   supabase: SupabaseClient,
   training: UpdateTrainingInput
 ): Promise<Training> {
-  // First verify the user has access to this training
-  const { data: existingTraining, error: verifyError } = await supabase
-    .from("trainings")
-    .select("*")
-    .eq("id", training.id)
-    .single();
-
-  if (verifyError) handleError(verifyError);
-  if (!existingTraining) throw new Error("Training not found");
-
-  // Check if user has training.manage permission
-  const canManageTraining = await hasPermission({
-    supabase,
-    permission: "training.manage",
-  });
-
-  if (!canManageTraining) {
-    throw new Error("You don't have permission to manage trainings");
-  }
-
-  // Now perform the update
   const { data, error } = await supabase
     .from("trainings")
     .update({
@@ -293,17 +272,6 @@ export async function deleteTraining(
   supabase: SupabaseClient,
   trainingId: number
 ): Promise<void> {
-  // First verify the user has access to this training
-  const userId = await getUserId(supabase);
-  const { data: training } = await supabase
-    .from("trainings")
-    .select("created_by")
-    .eq("id", trainingId)
-    .single();
-
-  if (!training || training.created_by !== userId) {
-    throw new Error("You can only delete your own trainings");
-  }
 
   const { error } = await supabase
     .from("trainings")

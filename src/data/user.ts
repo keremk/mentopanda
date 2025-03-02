@@ -128,19 +128,33 @@ export async function hasPermission({
 }: {
   supabase: SupabaseClient;
   permission: AppPermission;
-  user?: User;
+  user: User;
 }): Promise<boolean> {
-  // If user is provided and has permissions array, check locally
-  if (user?.permissions) {
+  // If user has permissions array, check locally
+  if (user.permissions) {
     return user.permissions.includes(permission);
   }
 
-  // Fallback to RPC call if no cached permissions
-  const { data: hasPermission, error } = await supabase.rpc("authorize", {
-    requested_permission: permission,
-  });
+  // If no current project, we can't check permission
+  if (!user.currentProject?.id) {
+    return false;
+  }
 
-  if (error) throw new Error(`Permission check failed: ${error.message}`);
+  try {
+    // Fallback to RPC call if no cached permissions
+    const { data: hasPermission, error } = await supabase.rpc("authorize", {
+      requested_permission: permission,
+      project_id: user.currentProject.id,
+    });
 
-  return hasPermission;
+    if (error) {
+      console.error(`Permission check error: ${error.message}`);
+      return false;
+    }
+
+    return !!hasPermission;
+  } catch (error) {
+    console.error("Permission check failed:", error);
+    return false;
+  }
 }
