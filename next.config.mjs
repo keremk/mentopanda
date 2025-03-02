@@ -25,8 +25,8 @@ const nextConfig = {
 
     const mediaSrc =
       process.env.NODE_ENV === "development"
-        ? "'self' http://localhost:54321 http://127.0.0.1:54321"
-        : "'self'";
+        ? "'self' http://localhost:54321 http://127.0.0.1:54321 https://*.supabase.co"
+        : "'self' https://*.supabase.co";
 
     // Add font-src directive
     const fontSrc = "'self' data:";

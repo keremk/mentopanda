@@ -19,14 +19,54 @@ export type Voice = {
 // The name field will remain stable as it is persisted in the database. The voice field is the name of the voice in the OpenAI and Gemini APIs which may change.
 export const VOICES: Record<AIModel, Voice[]> = {
   [AI_MODELS.OPENAI]: [
-    { name: "Alloy", voice: "alloy", sampleUrl: null },
-    { name: "Ash", voice: "ash", sampleUrl: null },
-    { name: "Ballad", voice: "ballad", sampleUrl: null },
-    { name: "Coral", voice: "coral", sampleUrl: null },
-    { name: "Echo", voice: "echo", sampleUrl: null },
-    { name: "Sage", voice: "sage", sampleUrl: null },
-    { name: "Shimmer", voice: "shimmer", sampleUrl: null },
-    { name: "Verse", voice: "verse", sampleUrl: null },
+    {
+      name: "Alloy",
+      voice: "alloy",
+      sampleUrl:
+        "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/voices/alloy.ogg",
+    },
+    {
+      name: "Ash",
+      voice: "ash",
+      sampleUrl:
+        "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/voices/ash.ogg",
+    },
+    {
+      name: "Ballad",
+      voice: "ballad",
+      sampleUrl:
+        "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/voices/ballad.ogg",
+    },
+    {
+      name: "Coral",
+      voice: "coral",
+      sampleUrl:
+        "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/voices/coral.ogg",
+    },
+    {
+      name: "Echo",
+      voice: "echo",
+      sampleUrl:
+        "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/voices/echo.ogg",
+    },
+    {
+      name: "Sage",
+      voice: "sage",
+      sampleUrl:
+        "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/voices/sage.ogg",
+    },
+    {
+      name: "Shimmer",
+      voice: "shimmer",
+      sampleUrl:
+        "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/voices/shimmer.ogg",
+    },
+    {
+      name: "Verse",
+      voice: "verse",
+      sampleUrl:
+        "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/voices/verse.ogg",
+    },
   ],
   [AI_MODELS.GEMINI]: [
     { name: "Aoede", voice: "Aoede", sampleUrl: "/voices/Aoede.wav" },
