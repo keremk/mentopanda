@@ -25,11 +25,17 @@ const nextConfig = {
 
     const mediaSrc =
       process.env.NODE_ENV === "development"
-        ? "'self' http://localhost:54321 http://127.0.0.1:54321 https://*.supabase.co"
-        : "'self' https://*.supabase.co";
+        ? "'self' http://localhost:54321 http://127.0.0.1:54321 https://*.supabase.co https://*.youtube.com https://*.ytimg.com"
+        : "'self' https://*.supabase.co https://*.youtube.com https://*.ytimg.com";
 
     // Add font-src directive
     const fontSrc = "'self' data:";
+
+    // Add frame-src directive for YouTube embeds
+    const frameSrc =
+      process.env.NODE_ENV === "development"
+        ? "'self' https://*.youtube.com https://*.youtube-nocookie.com"
+        : "'self' https://*.youtube.com https://*.youtube-nocookie.com";
 
     return [
       {
@@ -45,6 +51,7 @@ const nextConfig = {
               `media-src ${mediaSrc}`,
               `connect-src ${connectSrc}`,
               `font-src ${fontSrc}`,
+              `frame-src ${frameSrc}`,
               "frame-ancestors 'none'",
               "form-action 'self'",
               "base-uri 'self'",
