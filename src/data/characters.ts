@@ -101,7 +101,6 @@ export type UpdateCharacterInput = {
   aiModel: AIModel;
   description?: string | null;
   avatarUrl?: string | null;
-  isPublic?: boolean;
 };
 
 export async function updateCharacter(
@@ -118,7 +117,6 @@ export async function updateCharacter(
       ai_model: data.aiModel,
       description: data.description,
       avatar_url: data.avatarUrl,
-      is_public: data.isPublic,
       updated_at: new Date().toISOString(),
     })
     .eq("id", characterId)
@@ -132,7 +130,6 @@ export async function updateCharacter(
       description,
       avatar_url,
       project_id,
-      is_public,
       created_by,
       created_at,
       updated_at
