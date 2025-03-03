@@ -9,12 +9,18 @@ import {
   createTraining,
   type UpdateTrainingInput,
   deleteTraining,
+  getTrainingByIdForEdit,
 } from "@/data/trainings";
 import { redirect } from "next/navigation";
 
 export async function getTrainingByIdAction(trainingId: number) {
   const supabase = await createClient();
   return await getTrainingById(supabase, trainingId);
+}
+
+export async function getTrainingByIdForEditAction(trainingId: number) {
+  const supabase = await createClient();
+  return await getTrainingByIdForEdit(supabase, trainingId);
 }
 
 export async function getTrainingWithProgressAction(trainingId: number) {

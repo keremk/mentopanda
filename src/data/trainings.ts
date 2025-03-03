@@ -1,4 +1,4 @@
-import { ModuleProgress, ModuleSummary } from "./modules";
+import { ModuleProgress, ModuleSummary, Module } from "./modules";
 import { handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { getCurrentUserInfo, getUserId } from "./user";
@@ -28,6 +28,13 @@ export type TrainingWithProgress = TrainingSummary & {
 
 export type TrainingWithEnrollment = TrainingSummary & {
   isEnrolled: boolean;
+};
+
+export type TrainingEdit = TrainingSummary & {
+  description: string;
+  createdBy: string | null;
+  previewUrl: string | null;
+  modules: Module[];
 };
 
 export async function getTrainingById(
@@ -72,6 +79,82 @@ export async function getTrainingById(
     updatedAt: new Date(training.updated_at),
     modules: training.modules,
   };
+}
+
+export async function getTrainingByIdForEdit(
+  supabase: SupabaseClient,
+  trainingId: number
+): Promise<TrainingEdit | null> {
+  const query = supabase
+    .from("trainings")
+    .select(
+      `
+      *,
+      modules (
+        *,
+        modules_characters (
+          ordinal,
+          prompt,
+          characters (
+            id,
+            name,
+            voice,
+            avatar_url
+          )
+        )
+      )
+      `
+    )
+    .eq("id", trainingId);
+
+  const { data: training, error: trainingError } = await query.single();
+
+  if (trainingError) {
+    if (trainingError.code === "PGRST116") {
+      // Training not found or user doesn't have access
+      return null;
+    }
+    handleError(trainingError);
+  }
+
+  console.log(JSON.stringify(training, null, 2));
+  const trainingEdit: TrainingEdit = {
+    id: training.id,
+    title: training.title,
+    tagline: training.tagline,
+    description: training.description,
+    imageUrl: training.image_url,
+    createdBy: training.created_by,
+    projectId: training.project_id,
+    previewUrl: training.preview_url,
+    createdAt: new Date(training.created_at),
+    updatedAt: new Date(training.updated_at),
+    modules: training.modules.map((module: any) => ({
+      id: module.id,
+      title: module.title,
+      trainingId: module.training_id,
+      ordinal: module.ordinal,
+      createdAt: new Date(module.created_at),
+      updatedAt: new Date(module.updated_at),
+      modulePrompt: {
+        aiModel: module.ai_model,
+        scenario: module.scenario_prompt,
+        assessment: module.assessment_prompt,
+        moderator: module.moderator_prompt,
+        characters: module.modules_characters.map((mc: any) => ({
+          id: mc.characters.id,
+          name: mc.characters.name,
+          voice: mc.characters.voice,
+          avatarUrl: mc.characters.avatar_url,
+          prompt: mc.prompt,
+          ordinal: mc.ordinal,
+        })),
+      },
+    })),
+  };
+
+  console.log(JSON.stringify(trainingEdit, null, 2));
+  return trainingEdit;
 }
 
 export async function getTrainingWithProgress(
@@ -272,7 +355,6 @@ export async function deleteTraining(
   supabase: SupabaseClient,
   trainingId: number
 ): Promise<void> {
-
   const { error } = await supabase
     .from("trainings")
     .delete()
