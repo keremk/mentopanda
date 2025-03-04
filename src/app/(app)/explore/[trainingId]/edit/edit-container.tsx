@@ -132,7 +132,7 @@ export function EditContainer() {
       <Tabs
         defaultValue="details"
         onValueChange={setActiveTab}
-        className="w-full flex-1 flex flex-col mt-16"
+        className="w-full flex-1 flex flex-col mt-8"
       >
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="details">Training Details</TabsTrigger>

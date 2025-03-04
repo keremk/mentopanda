@@ -22,7 +22,7 @@ type ModuleListContextType = {
   lastSavedAt: Date | null;
 
   // Module CRUD operations
-  addModule: () => Promise<Module | null>;
+  addModule: (title: string) => Promise<Module | null>;
   deleteModule: (moduleId: number) => Promise<boolean>;
   refreshModules: (modules: Module[]) => void;
 };
@@ -47,39 +47,42 @@ export function ModuleListProvider({
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   // Add a new module to the training
-  const addModule = useCallback(async () => {
-    try {
-      setSaveStatus("saving");
+  const addModule = useCallback(
+    async (title: string) => {
+      try {
+        setSaveStatus("saving");
 
-      // Create default module with empty content
-      const newModule = await createModuleAction(trainingId, {
-        title: "New Module",
-        instructions: "",
-        ordinal: modules.length, // Add to the end of the list
-        modulePrompt: {
-          aiModel: AI_MODELS.OPENAI,
-          scenario: "",
-          assessment: "",
-          moderator: "",
-          characters: [],
-        },
-      });
+        // Create default module with empty content
+        const newModule = await createModuleAction(trainingId, {
+          title,
+          instructions: "",
+          ordinal: modules.length, // Add to the end of the list
+          modulePrompt: {
+            aiModel: AI_MODELS.OPENAI,
+            scenario: "",
+            assessment: "",
+            moderator: "",
+            characters: [],
+          },
+        });
 
-      // Update local state with the new module
-      setModules((prev) => [...prev, newModule]);
+        // Update local state with the new module
+        setModules((prev) => [...prev, newModule]);
 
-      setLastSavedAt(new Date());
-      setSaveStatus("saved");
+        setLastSavedAt(new Date());
+        setSaveStatus("saved");
 
-      setTimeout(() => setSaveStatus("idle"), 2000);
-      return newModule;
-    } catch (error) {
-      console.error("Error adding module:", error);
-      setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
-      return null;
-    }
-  }, [trainingId, modules.length]);
+        setTimeout(() => setSaveStatus("idle"), 2000);
+        return newModule;
+      } catch (error) {
+        console.error("Error adding module:", error);
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+        return null;
+      }
+    },
+    [trainingId, modules.length]
+  );
 
   // Delete a module from the training
   const deleteModule = useCallback(
@@ -120,7 +123,16 @@ export function ModuleListProvider({
 
   // Update the local modules list when the training changes
   const refreshModules = useCallback((updatedModules: Module[]) => {
-    setModules(updatedModules);
+    setModules((prevModules) => {
+      const newModules = [...prevModules];
+      updatedModules.forEach((updatedModule) => {
+        const index = newModules.findIndex((m) => m.id === updatedModule.id);
+        if (index !== -1) {
+          newModules[index] = updatedModule;
+        }
+      });
+      return newModules;
+    });
   }, []);
 
   return (

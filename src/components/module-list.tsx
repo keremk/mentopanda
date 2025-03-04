@@ -23,7 +23,7 @@ type ModuleListProps = {
   selectedModuleId?: number;
   canManageModules?: boolean;
   onSelectModule: (moduleId: number) => void;
-  onAddModule: () => Promise<any>;
+  onAddModule: (title: string) => Promise<any>;
   onDeleteModule: (moduleId: number) => Promise<boolean>;
 };
 
@@ -45,7 +45,7 @@ export function ModuleList({
   async function handleCreateModule() {
     if (!newModuleTitle.trim()) return;
 
-    await onAddModule();
+    await onAddModule(newModuleTitle);
 
     setNewModuleTitle("");
     createDialogCloseRef.current?.click();

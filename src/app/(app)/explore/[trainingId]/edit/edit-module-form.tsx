@@ -25,7 +25,7 @@ export function EditModuleForm({ module }: Props) {
   const [isCharacterDialogOpen, setIsCharacterDialogOpen] = useState(false);
 
   // Use the contexts
-  const { updateModuleField, selectModule } = useModuleEdit();
+  const { updateModuleField, selectModule, selectedModule } = useModuleEdit();
   const {
     selectedCharacterId,
     selectCharacter,
@@ -41,15 +41,24 @@ export function EditModuleForm({ module }: Props) {
 
   // Initialize character prompts
   useEffect(() => {
-    initializeCharacters(module.modulePrompt.characters);
-  }, [module.modulePrompt.characters, initializeCharacters]);
+    if (!selectedModule) return;
+    initializeCharacters(selectedModule.modulePrompt.characters);
+  }, [selectedModule?.modulePrompt.characters, initializeCharacters]);
 
   // Initialize selected character if not set
   useEffect(() => {
-    if (!selectedCharacterId && module.modulePrompt.characters.length > 0) {
-      selectCharacter(module.modulePrompt.characters[0]?.id);
+    if (!selectedModule) return;
+    if (
+      !selectedCharacterId &&
+      selectedModule.modulePrompt.characters.length > 0
+    ) {
+      selectCharacter(selectedModule.modulePrompt.characters[0]?.id);
     }
-  }, [module.modulePrompt.characters, selectedCharacterId, selectCharacter]);
+  }, [
+    selectedModule?.modulePrompt.characters,
+    selectedCharacterId,
+    selectCharacter,
+  ]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -62,9 +71,10 @@ export function EditModuleForm({ module }: Props) {
     e: React.ChangeEvent<HTMLTextAreaElement>,
     field: string
   ) => {
+    if (!selectedModule) return;
     const { value } = e.target;
     updateModuleField("modulePrompt", {
-      ...module.modulePrompt,
+      ...selectedModule.modulePrompt,
       [field]: value,
     });
   };
@@ -83,7 +93,7 @@ export function EditModuleForm({ module }: Props) {
       .toUpperCase();
   };
 
-  const selectedCharacter = module.modulePrompt.characters.find(
+  const selectedCharacter = selectedModule?.modulePrompt.characters.find(
     (c) => c.id === selectedCharacterId
   );
 
@@ -98,18 +108,24 @@ export function EditModuleForm({ module }: Props) {
     setIsCharacterDialogOpen(false);
   };
 
+  if (!selectedModule) return null;
+
   return (
     <div className="h-full overflow-auto space-y-6">
       <div>
         <label className="text-sm font-medium">Title</label>
-        <Input name="title" value={module.title} onChange={handleInputChange} />
+        <Input
+          name="title"
+          value={selectedModule.title}
+          onChange={handleInputChange}
+        />
       </div>
 
       <div>
         <label className="text-sm font-medium mb-2 block">Instructions</label>
         <div className="border rounded-md">
           <MarkdownEditor
-            content={module.instructions || ""}
+            content={selectedModule.instructions || ""}
             onChange={(value) => updateModuleField("instructions", value)}
             className="min-h-[200px]"
           />
@@ -128,7 +144,7 @@ export function EditModuleForm({ module }: Props) {
 
           <TabsContent value="scenario" className="mt-4">
             <Textarea
-              value={module.modulePrompt.scenario}
+              value={selectedModule.modulePrompt.scenario}
               onChange={(e) => handlePromptChange(e, "scenario")}
               rows={12}
               placeholder="Enter the scenario instructions..."
@@ -137,7 +153,7 @@ export function EditModuleForm({ module }: Props) {
 
           <TabsContent value="moderator" className="mt-4">
             <Textarea
-              value={module.modulePrompt.moderator || ""}
+              value={selectedModule.modulePrompt.moderator || ""}
               onChange={(e) => handlePromptChange(e, "moderator")}
               rows={12}
               placeholder="Enter the moderator instructions..."
@@ -146,7 +162,7 @@ export function EditModuleForm({ module }: Props) {
 
           <TabsContent value="assessment" className="mt-4">
             <Textarea
-              value={module.modulePrompt.assessment}
+              value={selectedModule.modulePrompt.assessment}
               onChange={(e) => handlePromptChange(e, "assessment")}
               rows={12}
               placeholder="Enter the assessment instructions..."

@@ -13,6 +13,7 @@ import {
   updateModuleAction,
   getModuleByIdAction2,
 } from "@/app/actions/moduleActions";
+import { useModuleList } from "@/contexts/module-list-context";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -42,6 +43,7 @@ export function ModuleEditProvider({
   children,
   trainingId,
 }: ModuleEditProviderProps) {
+  const { refreshModules } = useModuleList();
   const [selectedModuleId, setSelectedModuleId] = useState<
     number | undefined
   >();
@@ -53,32 +55,38 @@ export function ModuleEditProvider({
   const debouncedModule = useDebounce(selectedModule, 1000);
 
   // Extracted common save logic
-  const performSave = useCallback(async (moduleData: Module) => {
-    try {
-      setSaveStatus("saving");
-      await updateModuleAction({
-        id: moduleData.id,
-        trainingId: moduleData.trainingId,
-        title: moduleData.title,
-        instructions: moduleData.instructions,
-        ordinal: moduleData.ordinal,
-        modulePrompt: moduleData.modulePrompt,
-      });
+  const performSave = useCallback(
+    async (moduleData: Module) => {
+      try {
+        setSaveStatus("saving");
+        const updatedModule = await updateModuleAction({
+          id: moduleData.id,
+          trainingId: moduleData.trainingId,
+          title: moduleData.title,
+          instructions: moduleData.instructions,
+          ordinal: moduleData.ordinal,
+          modulePrompt: moduleData.modulePrompt,
+        });
 
-      // Update last saved module to current state
-      setLastSavedModule(structuredClone(moduleData));
+        // Update last saved module to current state
+        setLastSavedModule(structuredClone(moduleData));
 
-      setLastSavedAt(new Date());
-      setSaveStatus("saved");
-      setTimeout(() => setSaveStatus("idle"), 2000);
-      return true;
-    } catch (error) {
-      console.error("Error saving module:", error);
-      setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
-      return false;
-    }
-  }, []);
+        // Update the modules list with the latest changes
+        refreshModules([updatedModule]);
+
+        setLastSavedAt(new Date());
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+        return true;
+      } catch (error) {
+        console.error("Error saving module:", error);
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+        return false;
+      }
+    },
+    [refreshModules]
+  );
 
   // Auto-save when module changes
   useDebounce(async () => {
