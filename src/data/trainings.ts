@@ -132,6 +132,7 @@ export async function getTrainingByIdForEdit(
     modules: training.modules.map((module: any) => ({
       id: module.id,
       title: module.title,
+      instructions: module.instructions,
       trainingId: module.training_id,
       ordinal: module.ordinal,
       createdAt: new Date(module.created_at),

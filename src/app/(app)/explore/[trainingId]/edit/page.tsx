@@ -1,20 +1,28 @@
 import { notFound } from "next/navigation";
-import { getTrainingByIdAction } from "@/app/actions/trainingActions";
-import { EditTrainingForm } from "./edit-training";
-import { getCurrentUserAction } from "@/app/actions/user-actions";
+import { getTrainingByIdForEditAction } from "@/app/actions/trainingActions";
+import { EditContainer } from "./edit-container";
+import { getCharactersAction } from "@/app/actions/character-actions";
+import { TrainingEditProvider } from "@/contexts/training-edit-provider";
 
 export default async function EditTrainingPage(props: {
   params: Promise<{ trainingId: number }>;
 }) {
   const params = await props.params;
-  const [training, user] = await Promise.all([
-    getTrainingByIdAction(params.trainingId),
-    getCurrentUserAction(),
+  const [training, characters] = await Promise.all([
+    getTrainingByIdForEditAction(params.trainingId),
+    getCharactersAction(),
   ]);
 
   if (!training) {
     notFound();
   }
 
-  return <EditTrainingForm training={training} user={user} />;
+  return (
+    <TrainingEditProvider
+      initialTraining={training}
+      initialCharacters={characters}
+    >
+      <EditContainer />
+    </TrainingEditProvider>
+  );
 }
