@@ -6,6 +6,7 @@ import {
   useState,
   ReactNode,
   useCallback,
+  useEffect,
 } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Module } from "@/data/modules";
@@ -51,6 +52,7 @@ export function ModuleEditProvider({
   const [lastSavedModule, setLastSavedModule] = useState<Module | undefined>();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [userModified, setUserModified] = useState(false);
 
   const debouncedModule = useDebounce(selectedModule, 1000);
 
@@ -89,8 +91,15 @@ export function ModuleEditProvider({
   );
 
   // Auto-save when module changes
-  useDebounce(async () => {
-    if (!debouncedModule || saveStatus !== "idle" || !lastSavedModule) return;
+  useEffect(() => {
+    // Skip if no module, already saving, no last saved module, or not user modified
+    if (
+      !debouncedModule ||
+      saveStatus !== "idle" ||
+      !lastSavedModule ||
+      !userModified
+    )
+      return;
 
     // Only save if something changed compared to last saved version
     if (
@@ -110,13 +119,19 @@ export function ModuleEditProvider({
       return;
     }
 
-    await performSave(debouncedModule);
-  }, 1500);
+    const timeoutId = setTimeout(() => {
+      performSave(debouncedModule);
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [debouncedModule, lastSavedModule, saveStatus, performSave, userModified]);
 
   const selectModule = useCallback(
     async (moduleId: number | undefined) => {
       if (moduleId === selectedModuleId) return;
 
+      // Reset the user modified flag when selecting a new module
+      setUserModified(false);
       setSelectedModuleId(moduleId);
 
       if (!moduleId) {
@@ -142,6 +157,9 @@ export function ModuleEditProvider({
   const updateModuleField = useCallback(
     <K extends keyof Module>(field: K, value: Module[K]) => {
       if (!selectedModule) return;
+
+      // Set the user modified flag when a field is updated
+      setUserModified(true);
 
       setSelectedModule((prev) => {
         if (!prev) return prev;

@@ -67,9 +67,7 @@ export function EditContainer() {
         (characterPrompt.saveStatus === "idle" ||
           characterPrompt.saveStatus === "error")
       ) {
-        await characterPrompt.saveCharacterPrompt(
-          characterPrompt.selectedCharacterId
-        );
+        await characterPrompt.saveCharacterPrompt();
       }
 
       // Navigate to training page

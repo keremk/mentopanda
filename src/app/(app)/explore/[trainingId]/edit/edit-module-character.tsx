@@ -21,10 +21,11 @@ type Props = {
 export function EditModuleCharacter({ module }: Props) {
   const { selectedModule, updateModuleField } = useModuleEdit();
   const {
-    characterPrompts,
+    characterPrompt,
     updateCharacterPrompt,
     replaceCharacter,
     characters,
+    selectedCharacterId,
   } = useCharacterPrompt();
 
   const getInitials = (name: string) => {
@@ -38,7 +39,7 @@ export function EditModuleCharacter({ module }: Props) {
 
   const handleCharacterPromptChange = (value: string) => {
     if (!selectedModule?.modulePrompt.characters.length) return;
-    updateCharacterPrompt(selectedModule.modulePrompt.characters[0].id, value);
+    updateCharacterPrompt(value);
   };
 
   const handleCharacterChange = async (newCharacterId: number) => {
@@ -46,8 +47,11 @@ export function EditModuleCharacter({ module }: Props) {
     const currentCharacterId = selectedModule.modulePrompt.characters[0].id;
     if (newCharacterId !== currentCharacterId) {
       try {
-        // First update the database
-        await replaceCharacter(currentCharacterId, newCharacterId);
+        // Get the current prompt before replacing
+        const currentPrompt = characterPrompt;
+
+        // Replace the character
+        await replaceCharacter(newCharacterId);
 
         // Then update the local state
         const newCharacter = characters.find((c) => c.id === newCharacterId);
@@ -68,7 +72,7 @@ export function EditModuleCharacter({ module }: Props) {
                 createdBy: null,
                 createdAt: now,
                 updatedAt: now,
-                prompt: "",
+                prompt: currentPrompt, // Keep the current prompt instead of empty string
                 ordinal: 0,
               },
             ],
@@ -151,10 +155,7 @@ export function EditModuleCharacter({ module }: Props) {
             Character Prompt
           </label>
           <Textarea
-            value={
-              characterPrompts[selectedModule.modulePrompt.characters[0].id] ??
-              ""
-            }
+            value={characterPrompt}
             onChange={(e) => handleCharacterPromptChange(e.target.value)}
             placeholder="Enter the character's prompt..."
             rows={10}

@@ -21,18 +21,25 @@ export function EditModuleForm({ module }: Props) {
 
   // Use the contexts
   const { updateModuleField, selectModule, selectedModule } = useModuleEdit();
-  const { initializeCharacters } = useCharacterPrompt();
+  const { initializeCharacter } = useCharacterPrompt();
 
   // Initialize the module in context
   useEffect(() => {
     selectModule(module.id);
   }, [module.id, selectModule]);
 
-  // Initialize character prompts
+  // Initialize character prompt
   useEffect(() => {
     if (!selectedModule) return;
-    initializeCharacters(selectedModule.modulePrompt.characters);
-  }, [selectedModule?.modulePrompt.characters, initializeCharacters]);
+
+    // Get the first character if available
+    const character =
+      selectedModule.modulePrompt.characters.length > 0
+        ? selectedModule.modulePrompt.characters[0]
+        : null;
+
+    initializeCharacter(character);
+  }, [selectedModule?.modulePrompt.characters, initializeCharacter]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -115,7 +122,7 @@ export function EditModuleForm({ module }: Props) {
           </TabsContent>
 
           <TabsContent value="character" className="mt-4">
-            <EditModuleCharacter module={module} />
+            <EditModuleCharacter module={selectedModule} />
           </TabsContent>
         </Tabs>
       </div>
