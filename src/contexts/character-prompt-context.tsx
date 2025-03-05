@@ -9,9 +9,12 @@ import {
   useEffect,
 } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { updateModuleCharacterPromptAction } from "@/app/actions/modules-characters-actions";
+import {
+  updateModuleCharacterPromptAction,
+  replaceModuleCharacterAction,
+} from "@/app/actions/modules-characters-actions";
 import { ModuleCharacter } from "@/data/modules";
-
+import { CharacterSummary } from "@/data/characters";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 type CharacterPromptContextType = {
@@ -23,6 +26,11 @@ type CharacterPromptContextType = {
   updateCharacterPrompt: (characterId: number, prompt: string) => void;
   initializeCharacters: (characters: ModuleCharacter[]) => void;
   saveCharacterPrompt: (characterId: number) => Promise<boolean>;
+  replaceCharacter: (
+    oldCharacterId: number,
+    newCharacterId: number
+  ) => Promise<void>;
+  characters: CharacterSummary[];
 };
 
 const CharacterPromptContext = createContext<
@@ -32,11 +40,15 @@ const CharacterPromptContext = createContext<
 interface CharacterPromptProviderProps {
   children: ReactNode;
   moduleId: number | undefined;
+  characters: CharacterSummary[];
+  refreshModule?: () => void;
 }
 
 export function CharacterPromptProvider({
   children,
   moduleId,
+  characters,
+  refreshModule,
 }: CharacterPromptProviderProps) {
   const [selectedCharacterId, setSelectedCharacterId] = useState<
     number | undefined
@@ -147,6 +159,52 @@ export function CharacterPromptProvider({
     [characterPrompts, performSave]
   );
 
+  const replaceCharacter = useCallback(
+    async (oldCharacterId: number, newCharacterId: number) => {
+      if (!moduleId) return;
+
+      try {
+        setSaveStatus("saving");
+        await replaceModuleCharacterAction({
+          moduleId,
+          oldCharacterId,
+          newCharacterId,
+        });
+
+        // Clear the old character's prompt and set the new character's prompt to empty
+        setCharacterPrompts((prev) => {
+          const { [oldCharacterId]: _, ...rest } = prev;
+          return {
+            ...rest,
+            [newCharacterId]: "",
+          };
+        });
+        setLastSavedPrompts((prev) => {
+          const { [oldCharacterId]: _, ...rest } = prev;
+          return {
+            ...rest,
+            [newCharacterId]: "",
+          };
+        });
+
+        // Select the new character
+        setSelectedCharacterId(newCharacterId);
+
+        // Refresh module data
+        refreshModule?.();
+
+        setLastSavedAt(new Date());
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      } catch (error) {
+        console.error("Error replacing character:", error);
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
+    },
+    [moduleId, refreshModule]
+  );
+
   return (
     <CharacterPromptContext.Provider
       value={{
@@ -158,6 +216,8 @@ export function CharacterPromptProvider({
         updateCharacterPrompt,
         initializeCharacters,
         saveCharacterPrompt,
+        replaceCharacter,
+        characters,
       }}
     >
       {children}

@@ -28,7 +28,10 @@ export function TrainingEditProvider({
         <ModuleEditProvider trainingId={initialTraining.id}>
           <ModuleEditConsumer>
             {(moduleId) => (
-              <CharacterPromptProvider moduleId={moduleId}>
+              <CharacterPromptProvider
+                moduleId={moduleId}
+                characters={initialCharacters}
+              >
                 {children}
               </CharacterPromptProvider>
             )}

@@ -15,13 +15,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { PlusIcon, TrashIcon } from "lucide-react";
-import { useModuleList } from "@/contexts/module-list-context";
 import { ModuleSummary } from "@/data/modules";
 
 type ModuleListProps = {
   modules: ModuleSummary[];
   selectedModuleId?: number;
-  canManageModules?: boolean;
   onSelectModule: (moduleId: number) => void;
   onAddModule: (title: string) => Promise<any>;
   onDeleteModule: (moduleId: number) => Promise<boolean>;
@@ -30,7 +28,6 @@ type ModuleListProps = {
 export function ModuleList({
   modules,
   selectedModuleId,
-  canManageModules = true,
   onSelectModule,
   onAddModule,
   onDeleteModule,

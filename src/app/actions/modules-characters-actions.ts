@@ -5,6 +5,8 @@ import { revalidateTag } from "next/cache";
 import {
   updateModuleCharacterPrompt,
   type UpdateModuleCharacterPromptInput,
+  replaceModuleCharacter,
+  type ReplaceModuleCharacterInput,
 } from "@/data/modules-characters";
 
 export async function updateModuleCharacterPromptAction(
@@ -22,6 +24,25 @@ export async function updateModuleCharacterPromptAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to update prompt",
+    };
+  }
+}
+
+export async function replaceModuleCharacterAction(
+  data: ReplaceModuleCharacterInput
+) {
+  try {
+    const supabase = await createClient();
+    await replaceModuleCharacter(supabase, data);
+
+    // Revalidate the module data
+    revalidateTag(`module-${data.moduleId}`);
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to replace character",
     };
   }
 }

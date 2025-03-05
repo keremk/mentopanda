@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,12 +7,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Module } from "@/data/modules";
 import { MarkdownEditor } from "@/components/markdown-editor";
-import { CharacterSelect } from "@/components/character-select";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Plus, Edit } from "lucide-react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { useCharacterPrompt } from "@/contexts/character-prompt-context";
+import { EditModuleCharacter } from "./edit-module-character";
 
 type Props = {
   module: Module;
@@ -22,17 +18,10 @@ type Props = {
 export function EditModuleForm({ module }: Props) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("scenario");
-  const [isCharacterDialogOpen, setIsCharacterDialogOpen] = useState(false);
 
   // Use the contexts
   const { updateModuleField, selectModule, selectedModule } = useModuleEdit();
-  const {
-    selectedCharacterId,
-    selectCharacter,
-    characterPrompts,
-    updateCharacterPrompt,
-    initializeCharacters,
-  } = useCharacterPrompt();
+  const { initializeCharacters } = useCharacterPrompt();
 
   // Initialize the module in context
   useEffect(() => {
@@ -44,21 +33,6 @@ export function EditModuleForm({ module }: Props) {
     if (!selectedModule) return;
     initializeCharacters(selectedModule.modulePrompt.characters);
   }, [selectedModule?.modulePrompt.characters, initializeCharacters]);
-
-  // Initialize selected character if not set
-  useEffect(() => {
-    if (!selectedModule) return;
-    if (
-      !selectedCharacterId &&
-      selectedModule.modulePrompt.characters.length > 0
-    ) {
-      selectCharacter(selectedModule.modulePrompt.characters[0]?.id);
-    }
-  }, [
-    selectedModule?.modulePrompt.characters,
-    selectedCharacterId,
-    selectCharacter,
-  ]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -77,35 +51,6 @@ export function EditModuleForm({ module }: Props) {
       ...selectedModule.modulePrompt,
       [field]: value,
     });
-  };
-
-  const handleCharacterPromptChange = (value: string) => {
-    if (!selectedCharacterId) return;
-    updateCharacterPrompt(selectedCharacterId, value);
-  };
-
-  const getInitials = (name: string) => {
-    if (!name) return "";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
-
-  const selectedCharacter = selectedModule?.modulePrompt.characters.find(
-    (c) => c.id === selectedCharacterId
-  );
-
-  const handleCharacterSelect = (characterId: number) => {
-    selectCharacter(characterId);
-    setIsCharacterDialogOpen(false);
-    router.refresh();
-  };
-
-  const handleUpdateCharacters = () => {
-    router.refresh();
-    setIsCharacterDialogOpen(false);
   };
 
   if (!selectedModule) return null;
@@ -170,76 +115,7 @@ export function EditModuleForm({ module }: Props) {
           </TabsContent>
 
           <TabsContent value="character" className="mt-4">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border rounded-md p-4">
-                {selectedCharacterId ? (
-                  <div className="flex items-center space-x-4">
-                    <Avatar>
-                      <AvatarImage
-                        src={selectedCharacter?.avatarUrl || undefined}
-                      />
-                      <AvatarFallback>
-                        {getInitials(selectedCharacter?.name || "")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">
-                      {selectedCharacter?.name}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    No character selected
-                  </span>
-                )}
-
-                <Dialog
-                  open={isCharacterDialogOpen}
-                  onOpenChange={setIsCharacterDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="w-32">
-                      {selectedCharacterId ? (
-                        <>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Change
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add
-                        </>
-                      )}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[500px]">
-                    <CharacterSelect
-                      moduleId={module.id}
-                      aiModel={module.modulePrompt.aiModel}
-                      characters={module.modulePrompt.characters}
-                      selectedCharacterId={selectedCharacterId}
-                      onSelectCharacter={handleCharacterSelect}
-                      onUpdate={handleUpdateCharacters}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              {selectedCharacterId && (
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Character Prompt
-                  </label>
-                  <Textarea
-                    value={characterPrompts[selectedCharacterId] ?? ""}
-                    onChange={(e) =>
-                      handleCharacterPromptChange(e.target.value)
-                    }
-                    placeholder="Enter the character's prompt..."
-                    rows={10}
-                  />
-                </div>
-              )}
-            </div>
+            <EditModuleCharacter module={module} />
           </TabsContent>
         </Tabs>
       </div>

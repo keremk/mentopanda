@@ -201,12 +201,8 @@
           "audio_url": "https://example.com/feedback-fundamentals-audio",
           "characters": [
             {
-              "character_name": "Janet",
-              "prompt": "You are a junior engineer who has been focusing on feature delivery and consistently overlooking test coverage. You believe tests slow down development and aren't always necessary."
-            },
-            {
               "character_name": "Taylor",
-              "prompt": "You are a mid-level engineer who frequently interrupts others in meetings. When receiving feedback, you respond: 'I don't agree at all. Others interrupt way more than I do!'"
+              "prompt": "You are a junior engineer who has been focusing on feature delivery and consistently overlooking test coverage. You believe tests slow down development and aren't always necessary."
             }
           ]
         },
@@ -401,10 +397,6 @@
           "video_url": "https://example.com/career-exploration",
           "audio_url": "https://example.com/career-exploration-audio",
           "characters": [
-            {
-              "character_name": "Anna",
-              "prompt": "You are a mid-level engineer who frequently interrupts others in meetings. When receiving feedback, you respond: 'I don't agree at all. Others interrupt way more than I do!'"
-            },
             {
               "character_name": "John",
               "prompt": "You are an engineer who wants to improve your system design skills but struggles to define concrete steps for improvement."

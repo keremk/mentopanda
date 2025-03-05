@@ -4,7 +4,6 @@ import { ModuleList } from "@/components/module-list";
 import { EditModuleForm } from "./edit-module-form";
 import { useModuleList } from "@/contexts/module-list-context";
 import { useModuleEdit } from "@/contexts/module-edit-context";
-import { useEffect, useState } from "react";
 
 export function EditModules() {
   const { modules, addModule, deleteModule } = useModuleList();
