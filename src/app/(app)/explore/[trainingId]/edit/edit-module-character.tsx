@@ -13,6 +13,7 @@ import { CharacterSummary } from "@/data/characters";
 import { Module } from "@/data/modules";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { useCharacterPrompt } from "@/contexts/character-prompt-context";
+import { useEffect } from "react";
 
 type Props = {
   module: Module;
@@ -23,10 +24,23 @@ export function EditModuleCharacter({ module }: Props) {
   const {
     characterPrompt,
     updateCharacterPrompt,
-    replaceCharacter,
+    selectCharacter,
     characters,
     selectedCharacterId,
+    initializeCharacter,
   } = useCharacterPrompt();
+
+  useEffect(() => {
+    if (!module) return;
+
+    // Get the first character if available
+    const character =
+      module.modulePrompt.characters.length > 0
+        ? module.modulePrompt.characters[0]
+        : null;
+
+    initializeCharacter(character);
+  }, [module.modulePrompt.characters, initializeCharacter]);
 
   const getInitials = (name: string) => {
     if (!name) return "";
@@ -45,13 +59,14 @@ export function EditModuleCharacter({ module }: Props) {
   const handleCharacterChange = async (newCharacterId: number) => {
     if (!selectedModule?.modulePrompt.characters.length) return;
     const currentCharacterId = selectedModule.modulePrompt.characters[0].id;
+
     if (newCharacterId !== currentCharacterId) {
       try {
         // Get the current prompt before replacing
         const currentPrompt = characterPrompt;
 
-        // Replace the character
-        await replaceCharacter(newCharacterId);
+        // Select the new character (this will handle the replacement)
+        await selectCharacter(newCharacterId);
 
         // Then update the local state
         const newCharacter = characters.find((c) => c.id === newCharacterId);
@@ -72,7 +87,7 @@ export function EditModuleCharacter({ module }: Props) {
                 createdBy: null,
                 createdAt: now,
                 updatedAt: now,
-                prompt: currentPrompt, // Keep the current prompt instead of empty string
+                prompt: currentPrompt, // Keep the current prompt instead of resetting
                 ordinal: 0,
               },
             ],
@@ -84,7 +99,7 @@ export function EditModuleCharacter({ module }: Props) {
           });
         }
       } catch (error) {
-        console.error("Error replacing character:", error);
+        console.error("Error changing character:", error);
       }
     }
   };

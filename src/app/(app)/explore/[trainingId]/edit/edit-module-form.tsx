@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 import { Module } from "@/data/modules";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { useModuleEdit } from "@/contexts/module-edit-context";
-import { useCharacterPrompt } from "@/contexts/character-prompt-context";
 import { EditModuleCharacter } from "./edit-module-character";
 
 type Props = {
@@ -21,25 +20,11 @@ export function EditModuleForm({ module }: Props) {
 
   // Use the contexts
   const { updateModuleField, selectModule, selectedModule } = useModuleEdit();
-  const { initializeCharacter } = useCharacterPrompt();
-
+  
   // Initialize the module in context
   useEffect(() => {
     selectModule(module.id);
   }, [module.id, selectModule]);
-
-  // Initialize character prompt
-  useEffect(() => {
-    if (!selectedModule) return;
-
-    // Get the first character if available
-    const character =
-      selectedModule.modulePrompt.characters.length > 0
-        ? selectedModule.modulePrompt.characters[0]
-        : null;
-
-    initializeCharacter(character);
-  }, [selectedModule?.modulePrompt.characters, initializeCharacter]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

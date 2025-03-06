@@ -7,6 +7,7 @@ import {
   ReactNode,
   useCallback,
   useEffect,
+  useRef,
 } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import {
@@ -18,23 +19,14 @@ import { CharacterSummary } from "@/data/characters";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
-// Simplified state structure
-type CharacterState = {
-  characterId: number | null;
-  prompt: string;
-  lastSavedPrompt: string;
-};
-
 type CharacterPromptContextType = {
   selectedCharacterId: number | undefined;
   characterPrompt: string;
   saveStatus: SaveStatus;
   lastSavedAt: Date | null;
-  selectCharacter: (characterId: number | undefined) => void;
+  selectCharacter: (characterId: number) => Promise<void>;
   updateCharacterPrompt: (prompt: string) => void;
   initializeCharacter: (character: ModuleCharacter | null) => void;
-  saveCharacterPrompt: () => Promise<boolean>;
-  replaceCharacter: (newCharacterId: number) => Promise<void>;
   characters: CharacterSummary[];
 };
 
@@ -55,203 +47,144 @@ export function CharacterPromptProvider({
   characters,
   refreshModule,
 }: CharacterPromptProviderProps) {
-  // Simplified state - only tracking the current character for the module
-  const [characterState, setCharacterState] = useState<CharacterState>({
-    characterId: null,
-    prompt: "",
-    lastSavedPrompt: "",
-  });
+  const [characterId, setCharacterId] = useState<number | undefined>(undefined);
+  const [prompt, setPrompt] = useState("");
+  const [lastSavedPrompt, setLastSavedPrompt] = useState("");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
-  // Add a flag to track if changes were made by the user
+  // Track if the prompt was modified by the user
   const [userModified, setUserModified] = useState(false);
 
-  const debouncedPrompt = useDebounce(characterState.prompt, 1000);
+  // Track the previous module ID to detect module changes
+  const prevModuleIdRef = useRef<number | undefined>(moduleId);
 
-  // Extracted common save logic
-  const performSave = useCallback(
-    async (prompt: string) => {
-      if (!moduleId || !characterState.characterId) return false;
+  const debouncedPrompt = useDebounce(prompt, 1000);
+
+  // Save prompt to the server
+  const savePrompt = useCallback(
+    async (textToSave: string) => {
+      if (!moduleId || !characterId) return;
 
       try {
         setSaveStatus("saving");
         await updateModuleCharacterPromptAction({
           moduleId,
-          characterId: characterState.characterId,
-          prompt: prompt || null,
+          characterId,
+          prompt: textToSave || null,
         });
 
-        // Update last saved prompt
-        setCharacterState((prev) => ({
-          ...prev,
-          lastSavedPrompt: prompt,
-        }));
-
+        setLastSavedPrompt(textToSave);
         setLastSavedAt(new Date());
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
-        return true;
       } catch (error) {
         console.error("Error saving character prompt:", error);
         setSaveStatus("error");
         setTimeout(() => setSaveStatus("idle"), 3000);
-        return false;
       }
     },
-    [moduleId, characterState.characterId]
+    [moduleId, characterId]
   );
 
-  // Auto-save when prompt changes
+  // Auto-save when prompt changes (debounced)
   useEffect(() => {
-    if (
-      !moduleId ||
-      saveStatus !== "idle" ||
-      !characterState.characterId ||
-      !userModified
-    )
+    // Only save if:
+    // 1. We have a character ID
+    // 2. The prompt has changed from what was last saved
+    // 3. The user has actually modified the prompt (not just module selection)
+    if (!characterId || debouncedPrompt === lastSavedPrompt || !userModified)
       return;
 
-    // Only save if prompt has changed compared to last saved version
-    if (debouncedPrompt === characterState.lastSavedPrompt) return;
-
-    const timeoutId = setTimeout(() => {
-      performSave(debouncedPrompt);
-    }, 0);
-
-    return () => clearTimeout(timeoutId);
-  }, [
-    debouncedPrompt,
-    characterState.lastSavedPrompt,
-    characterState.characterId,
-    moduleId,
-    saveStatus,
-    performSave,
-    userModified,
-  ]);
+    savePrompt(debouncedPrompt);
+  }, [debouncedPrompt, lastSavedPrompt, characterId, savePrompt, userModified]);
 
   // Reset state when module changes
   useEffect(() => {
-    setCharacterState({
-      characterId: null,
-      prompt: "",
-      lastSavedPrompt: "",
-    });
-    setUserModified(false);
+    // Check if the module ID has actually changed
+    if (moduleId !== prevModuleIdRef.current) {
+      setCharacterId(undefined);
+      setPrompt("");
+      setLastSavedPrompt("");
+      setUserModified(false);
+      prevModuleIdRef.current = moduleId;
+    }
   }, [moduleId]);
 
+  // Select a character - immediately replace if there was a previous character
   const selectCharacter = useCallback(
-    (characterId: number | undefined) => {
-      if (!characterId) {
-        setCharacterState({
-          characterId: null,
-          prompt: "",
-          lastSavedPrompt: "",
-        });
-        return;
+    async (newCharacterId: number) => {
+      if (!moduleId) return;
+
+      // If we already have a character, replace it
+      if (characterId) {
+        try {
+          setSaveStatus("saving");
+          await replaceModuleCharacterAction({
+            moduleId,
+            oldCharacterId: characterId,
+            newCharacterId,
+          });
+
+          // Update state for the new character but keep the current prompt
+          setCharacterId(newCharacterId);
+          // Don't reset the prompt - keep the current one
+          // Don't reset the userModified flag either
+
+          // Refresh module data
+          refreshModule?.();
+
+          setSaveStatus("saved");
+          setTimeout(() => setSaveStatus("idle"), 2000);
+        } catch (error) {
+          console.error("Error replacing character:", error);
+          setSaveStatus("error");
+          setTimeout(() => setSaveStatus("idle"), 3000);
+        }
+      } else {
+        // Just set the character ID if there was no previous character
+        setCharacterId(newCharacterId);
+        // Don't reset the prompt here either
       }
-
-      // Keep the existing prompt if we're just selecting the same character
-      if (characterId === characterState.characterId) return;
-
-      // Otherwise reset the prompt for the new character
-      setCharacterState({
-        characterId,
-        prompt: "",
-        lastSavedPrompt: "",
-      });
-
-      // Reset the user modified flag when selecting a new character
-      setUserModified(false);
     },
-    [characterState.characterId]
+    [moduleId, characterId, refreshModule]
   );
 
-  const updateCharacterPrompt = useCallback((prompt: string) => {
-    setCharacterState((prev) => ({
-      ...prev,
-      prompt,
-    }));
-
-    // Set the user modified flag when the prompt is updated
-    setUserModified(true);
-    setSaveStatus("idle");
+  // Update prompt text
+  const updateCharacterPrompt = useCallback((newPrompt: string) => {
+    setPrompt(newPrompt);
+    setUserModified(true); // Mark that the user has modified the prompt
   }, []);
 
+  // Initialize with existing character data
   const initializeCharacter = useCallback(
     (character: ModuleCharacter | null) => {
       if (!character) {
-        setCharacterState({
-          characterId: null,
-          prompt: "",
-          lastSavedPrompt: "",
-        });
+        setCharacterId(undefined);
+        setPrompt("");
+        setLastSavedPrompt("");
+        setUserModified(false);
         return;
       }
 
-      setCharacterState({
-        characterId: character.id,
-        prompt: character.prompt || "",
-        lastSavedPrompt: character.prompt || "",
-      });
-
-      // Reset the user modified flag when initializing a character
-      setUserModified(false);
+      setCharacterId(character.id);
+      setPrompt(character.prompt || "");
+      setLastSavedPrompt(character.prompt || "");
+      setUserModified(false); // Reset the user modified flag when initializing
     },
     []
-  );
-
-  const saveCharacterPrompt = useCallback(async () => {
-    if (!characterState.characterId) return false;
-    return performSave(characterState.prompt);
-  }, [characterState, performSave]);
-
-  const replaceCharacter = useCallback(
-    async (newCharacterId: number) => {
-      if (!moduleId || !characterState.characterId) return;
-
-      try {
-        setSaveStatus("saving");
-        await replaceModuleCharacterAction({
-          moduleId,
-          oldCharacterId: characterState.characterId,
-          newCharacterId,
-        });
-
-        // Update state to reflect the new character
-        setCharacterState({
-          characterId: newCharacterId,
-          prompt: "", // Reset prompt for new character
-          lastSavedPrompt: "",
-        });
-
-        // Refresh module data
-        refreshModule?.();
-
-        setLastSavedAt(new Date());
-        setSaveStatus("saved");
-        setTimeout(() => setSaveStatus("idle"), 2000);
-      } catch (error) {
-        console.error("Error replacing character:", error);
-        setSaveStatus("error");
-        setTimeout(() => setSaveStatus("idle"), 3000);
-      }
-    },
-    [moduleId, characterState.characterId, refreshModule]
   );
 
   return (
     <CharacterPromptContext.Provider
       value={{
-        selectedCharacterId: characterState.characterId || undefined,
-        characterPrompt: characterState.prompt,
+        selectedCharacterId: characterId,
+        characterPrompt: prompt,
         saveStatus,
         lastSavedAt,
         selectCharacter,
         updateCharacterPrompt,
         initializeCharacter,
-        saveCharacterPrompt,
-        replaceCharacter,
         characters,
       }}
     >
