@@ -27,10 +27,11 @@ export function TrainingEditProvider({
       >
         <ModuleEditProvider trainingId={initialTraining.id}>
           <ModuleEditConsumer>
-            {(moduleId) => (
+            {(moduleId, refreshModule) => (
               <CharacterPromptProvider
                 moduleId={moduleId}
                 characters={initialCharacters}
+                refreshModule={refreshModule}
               >
                 {children}
               </CharacterPromptProvider>
@@ -46,9 +47,12 @@ export function TrainingEditProvider({
 function ModuleEditConsumer({
   children,
 }: {
-  children: (moduleId: number | undefined) => ReactNode;
+  children: (
+    moduleId: number | undefined,
+    refreshModule: () => Promise<void>
+  ) => ReactNode;
 }) {
-  // Access module context to get selected module ID
-  const { selectedModuleId } = useModuleEdit();
-  return <>{children(selectedModuleId)}</>;
+  // Access module context to get selected module ID and refresh function
+  const { selectedModuleId, refreshCurrentModule } = useModuleEdit();
+  return <>{children(selectedModuleId, refreshCurrentModule)}</>;
 }

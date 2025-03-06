@@ -29,6 +29,7 @@ type ModuleEditContextType = {
     value: Module[K]
   ) => void;
   saveModule: () => Promise<boolean>;
+  refreshCurrentModule: () => Promise<void>;
 };
 
 const ModuleEditContext = createContext<ModuleEditContextType | undefined>(
@@ -176,6 +177,24 @@ export function ModuleEditProvider({
     return performSave(selectedModule);
   }, [selectedModule, performSave]);
 
+  // Add this function to refresh the current module
+  const refreshCurrentModule = useCallback(async () => {
+    if (!selectedModuleId) return;
+
+    try {
+      const module = await getModuleByIdAction2(selectedModuleId);
+      if (module) {
+        setSelectedModule(module);
+        // Also update the module in the module list
+        refreshModules([module]);
+        // Reset the user modified flag since we're getting fresh data
+        setUserModified(false);
+      }
+    } catch (error) {
+      console.error("Error refreshing module:", error);
+    }
+  }, [selectedModuleId, refreshModules]);
+
   return (
     <ModuleEditContext.Provider
       value={{
@@ -186,6 +205,7 @@ export function ModuleEditProvider({
         selectModule,
         updateModuleField,
         saveModule,
+        refreshCurrentModule,
       }}
     >
       {children}

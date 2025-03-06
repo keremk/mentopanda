@@ -26,7 +26,6 @@ export function EditModuleCharacter({ module }: Props) {
     updateCharacterPrompt,
     selectCharacter,
     characters,
-    selectedCharacterId,
     initializeCharacter,
   } = useCharacterPrompt();
 
@@ -62,42 +61,8 @@ export function EditModuleCharacter({ module }: Props) {
 
     if (newCharacterId !== currentCharacterId) {
       try {
-        // Get the current prompt before replacing
-        const currentPrompt = characterPrompt;
-
-        // Select the new character (this will handle the replacement)
         await selectCharacter(newCharacterId);
 
-        // Then update the local state
-        const newCharacter = characters.find((c) => c.id === newCharacterId);
-        if (newCharacter && selectedModule) {
-          const now = new Date();
-          const updatedModulePrompt = {
-            ...selectedModule.modulePrompt,
-            characters: [
-              {
-                id: newCharacterId,
-                name: newCharacter.name,
-                avatarUrl: newCharacter.avatarUrl,
-                aiModel: newCharacter.aiModel,
-                voice: null,
-                aiDescription: null,
-                description: null,
-                projectId: selectedModule.modulePrompt.characters[0].projectId,
-                createdBy: null,
-                createdAt: now,
-                updatedAt: now,
-                prompt: currentPrompt, // Keep the current prompt instead of resetting
-                ordinal: 0,
-              },
-            ],
-          };
-
-          // Use Promise.resolve to ensure this runs in the next tick
-          Promise.resolve().then(() => {
-            updateModuleField("modulePrompt", updatedModulePrompt);
-          });
-        }
       } catch (error) {
         console.error("Error changing character:", error);
       }
