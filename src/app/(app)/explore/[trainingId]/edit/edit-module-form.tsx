@@ -20,11 +20,14 @@ export function EditModuleForm({ module }: Props) {
 
   // Use the contexts
   const { updateModuleField, selectModule, selectedModule } = useModuleEdit();
-  
+
   // Initialize the module in context
   useEffect(() => {
     selectModule(module.id);
   }, [module.id, selectModule]);
+
+  // Add a key to force re-render of the MarkdownEditor when module changes
+  const editorKey = `markdown-editor-${selectedModule?.id}-${selectedModule?.title}`;
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -62,6 +65,7 @@ export function EditModuleForm({ module }: Props) {
         <label className="text-sm font-medium mb-2 block">Instructions</label>
         <div className="border rounded-md">
           <MarkdownEditor
+            key={editorKey}
             content={selectedModule.instructions || ""}
             onChange={(value) => updateModuleField("instructions", value)}
             className="min-h-[200px]"
