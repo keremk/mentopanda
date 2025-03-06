@@ -27,6 +27,7 @@ type CharacterPromptContextType = {
   selectCharacter: (characterId: number) => Promise<void>;
   updateCharacterPrompt: (prompt: string) => void;
   initializeCharacter: (character: ModuleCharacter | null) => void;
+  saveCharacterPrompt: () => Promise<void>;
   characters: CharacterSummary[];
 };
 
@@ -175,6 +176,11 @@ export function CharacterPromptProvider({
     []
   );
 
+  const saveCharacterPrompt = useCallback(async () => {
+    if (!characterId) return;
+    await savePrompt(prompt);
+  }, [characterId, prompt, savePrompt]);
+
   return (
     <CharacterPromptContext.Provider
       value={{
@@ -185,6 +191,7 @@ export function CharacterPromptProvider({
         selectCharacter,
         updateCharacterPrompt,
         initializeCharacter,
+        saveCharacterPrompt,
         characters,
       }}
     >
