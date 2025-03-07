@@ -2,104 +2,44 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useDebounce } from "@/hooks/use-debounce";
-import type { CharacterDetails, UpdateCharacterInput } from "@/data/characters";
-import { updateCharacterAction } from "@/app/actions/character-actions";
+import { useState } from "react";
+import { AIModel } from "@/types/models";
 import { CharacterVoiceSelect } from "@/components/character-voice-select";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { ImageIcon } from "lucide-react";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import { updateCharacterAvatarAction } from "@/app/actions/character-actions";
-import { AIModel, AI_MODELS } from "@/types/models";
+import { useCharacterDetails } from "@/contexts/character-details-context";
+import { useToast } from "@/hooks/use-toast";
 
-type Props = {
-  character: CharacterDetails;
-};
-
-export function EditCharacterForm({ character }: Props) {
+export function EditCharacterForm() {
   const router = useRouter();
-  const [formData, setFormData] = useState<UpdateCharacterInput>({
-    name: character.name,
-    voice: character.voice,
-    aiModel: character.aiModel || AI_MODELS.OPENAI,
-    aiDescription: character.aiDescription || "",
-    description: character.description || "",
-  });
-  const [hasChanges, setHasChanges] = useState(false);
+  const { toast } = useToast();
+  const { character, updateCharacterField, saveStatus, saveCharacter } =
+    useCharacterDetails();
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(character.avatarUrl);
 
-  const debouncedFormData = useDebounce(formData, 1000);
-
-  useEffect(() => {
-    const isChanged =
-      formData.name !== character.name ||
-      formData.voice !== character.voice ||
-      formData.aiModel !== character.aiModel ||
-      formData.aiDescription !== character.aiDescription ||
-      formData.description !== character.description;
-
-    setHasChanges(isChanged);
-  }, [formData, character]);
-
-  useEffect(() => {
-    const updateData = async () => {
-      if (hasChanges) {
-        try {
-          await updateCharacterAction(character.id, {
-            ...debouncedFormData,
-            voice: debouncedFormData.voice || null,
-          });
-          router.refresh();
-        } catch (error) {
-          console.error("Failed to update character:", error);
-        }
-      }
-    };
-    updateData();
-  }, [debouncedFormData, hasChanges, character.id, router]);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    updateCharacterField(name as any, value);
   };
 
   const handleVoiceChange = (voice: string) => {
-    setFormData((prev) => ({ ...prev, voice }));
+    updateCharacterField("voice", voice);
   };
 
-  // const handleModelChange = (value: AIModel) => {
-  //   setFormData((prev) => ({
-  //     ...prev,
-  //     aiModel: value,
-  //     voice: null,
-  //   }));
-  // };
-
-  const handleSaveAndExit = async () => {
-    if (hasChanges) {
-      try {
-        await updateCharacterAction(character.id, {
-          ...formData,
-          voice: formData.voice || null,
-        });
-        router.refresh();
-      } catch (error) {
-        console.error("Failed to save character:", error);
-      }
+  const handleSave = async () => {
+    const success = await saveCharacter();
+    if (success) {
+      toast({
+        title: "Character saved",
+        description: "Your character has been saved successfully",
+      });
     }
-    router.push(`/characters/${character.id}`);
   };
 
   async function handleAvatarUpload(url: string) {
@@ -112,10 +52,18 @@ export function EditCharacterForm({ character }: Props) {
         setAvatarUrl(url);
         router.refresh();
       } else {
-        console.error("Failed to update avatar:", response.error);
+        toast({
+          title: "Failed to update avatar",
+          description: response.error,
+        });
+        console.log(`Failed to update avatar: ${response.error}`);
       }
     } catch (error) {
-      console.error("Error updating avatar:", error);
+      console.log(`Failed to update avatar: ${error}`);
+      toast({
+        title: "Failed to update avatar",
+        description: "An error occurred while updating the avatar",
+      });
     } finally {
       setIsAvatarUpdating(false);
     }
@@ -123,9 +71,18 @@ export function EditCharacterForm({ character }: Props) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 absolute top-0 right-0 p-4 z-10">
-        <Button variant="outline" onClick={handleSaveAndExit}>
-          Save & Exit
+      <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex items-center gap-3">
+        {saveStatus === "saving" && (
+          <span className="text-sm text-muted-foreground">Saving...</span>
+        )}
+        {saveStatus === "saved" && (
+          <span className="text-sm text-green-500">Saved</span>
+        )}
+        {saveStatus === "error" && (
+          <span className="text-sm text-red-500">Error saving</span>
+        )}
+        <Button variant="outline" onClick={handleSave}>
+          Save
         </Button>
       </div>
 
@@ -154,36 +111,17 @@ export function EditCharacterForm({ character }: Props) {
               <label className="text-sm font-medium">Name</label>
               <Input
                 name="name"
-                value={formData.name}
+                value={character.name}
                 onChange={handleInputChange}
               />
             </div>
 
-            {/* <div>
-              <label className="text-sm font-medium">AI Model</label>
-              <Select
-                value={formData.aiModel || undefined}
-                onValueChange={handleModelChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select AI model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.values(AI_MODELS).map((model) => (
-                    <SelectItem key={model} value={model}>
-                      {model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div> */}
-
             <div>
               <label className="text-sm font-medium">Voice</label>
               <CharacterVoiceSelect
-                value={formData.voice || undefined}
+                value={character.voice || undefined}
                 onValueChange={handleVoiceChange}
-                aiModel={formData.aiModel as AIModel}
+                aiModel={character.aiModel as AIModel}
               />
             </div>
           </div>
@@ -195,21 +133,23 @@ export function EditCharacterForm({ character }: Props) {
             <TabsTrigger value="description">Description</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="ai-description" className="space-y-4 mt-4">
+          <TabsContent value="ai-description" className="space-y-4 mt-4 border">
             <MarkdownEditor
-              content={formData.aiDescription || ""}
+              key={`ai-description-${character.id}`}
+              content={character.aiDescription || ""}
               onChange={(markdown) =>
-                setFormData((prev) => ({ ...prev, aiDescription: markdown }))
+                updateCharacterField("aiDescription", markdown)
               }
               className="min-h-[300px]"
             />
           </TabsContent>
 
-          <TabsContent value="description" className="space-y-4 mt-4">
+          <TabsContent value="description" className="space-y-4 mt-4 border">
             <MarkdownEditor
-              content={formData.description || ""}
+              key={`description-${character.id}`}
+              content={character.description || ""}
               onChange={(markdown) =>
-                setFormData((prev) => ({ ...prev, description: markdown }))
+                updateCharacterField("description", markdown)
               }
               className="min-h-[300px]"
             />

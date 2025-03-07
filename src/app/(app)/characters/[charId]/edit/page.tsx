@@ -2,29 +2,25 @@ import { notFound, redirect } from "next/navigation";
 import { getCharacterDetailsAction } from "@/app/actions/character-actions";
 import { EditCharacterForm } from "./edit-character";
 import { Metadata } from "next";
-import { getCurrentUserAction } from "@/app/actions/user-actions";
+import { CharacterDetailsProvider } from "@/contexts/character-details-context";
+
 export const metadata: Metadata = {
   title: "Characters Catalog",
 };
 
-export default async function EditCharacterPage(
-  props: {
-    params: Promise<{ charId: string }>;
-  }
-) {
+export default async function EditCharacterPage(props: {
+  params: Promise<{ charId: string }>;
+}) {
   const params = await props.params;
-  const [character, user] = await Promise.all([
-    getCharacterDetailsAction(params.charId),
-    getCurrentUserAction(),
-  ]);
+  const character = await getCharacterDetailsAction(params.charId);
 
   if (!character) {
     notFound();
   }
 
-  if (user.id !== character.createdBy) {
-    redirect("/characters/" + character.id);
-  }
-
-  return <EditCharacterForm character={character} />;
+  return (
+    <CharacterDetailsProvider initialCharacter={character}>
+      <EditCharacterForm />
+    </CharacterDetailsProvider>
+  );
 }
