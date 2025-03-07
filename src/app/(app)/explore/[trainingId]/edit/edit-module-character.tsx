@@ -14,13 +14,15 @@ import { Module } from "@/data/modules";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { useCharacterPrompt } from "@/contexts/character-prompt-context";
 import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 type Props = {
   module: Module;
 };
 
 export function EditModuleCharacter({ module }: Props) {
-  const { selectedModule, updateModuleField } = useModuleEdit();
+  const { toast } = useToast();
+  const { selectedModule } = useModuleEdit();
   const {
     characterPrompt,
     updateCharacterPrompt,
@@ -55,35 +57,40 @@ export function EditModuleCharacter({ module }: Props) {
     updateCharacterPrompt(value);
   };
 
-  const handleCharacterChange = async (newCharacterId: number) => {
-    if (!selectedModule?.modulePrompt.characters.length) return;
-    const currentCharacterId = selectedModule.modulePrompt.characters[0].id;
+  const handleCharacterChange = async (value: string) => {
+    if (!selectedModule || !value) return;
 
-    if (newCharacterId !== currentCharacterId) {
-      try {
-        await selectCharacter(newCharacterId);
+    const newCharacterId = parseInt(value);
 
-      } catch (error) {
-        console.error("Error changing character:", error);
-      }
+    try {
+      await selectCharacter(newCharacterId);
+    } catch (error) {
+      console.error("Error selecting character:", error);
+      toast({
+        title: "Error selecting character",
+        description: "Please try again",
+      });
     }
   };
 
   if (!selectedModule) return null;
 
+  // Get current character ID or null
+  const currentCharacterId =
+    selectedModule.modulePrompt.characters.length > 0
+      ? selectedModule.modulePrompt.characters[0].id.toString()
+      : null;
+
   return (
     <div className="space-y-6">
       <div className="border rounded-md p-4">
-        {selectedModule.modulePrompt.characters.length > 0 ? (
-          <Select
-            value={selectedModule.modulePrompt.characters[0].id.toString()}
-            onValueChange={(value) => {
-              const newCharacterId = parseInt(value);
-              handleCharacterChange(newCharacterId);
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a character">
+        <Select
+          value={currentCharacterId || ""}
+          onValueChange={handleCharacterChange}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Assign Character">
+              {currentCharacterId && (
                 <div className="flex items-center space-x-2">
                   <Avatar className="h-6 w-6">
                     <AvatarImage
@@ -100,33 +107,29 @@ export function EditModuleCharacter({ module }: Props) {
                   </Avatar>
                   <span>{selectedModule.modulePrompt.characters[0].name}</span>
                 </div>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {characters.map((character: CharacterSummary) => (
-                <SelectItem
-                  key={character.id}
-                  value={character.id.toString()}
-                  className="flex items-center space-x-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={character.avatarUrl || undefined} />
-                      <AvatarFallback>
-                        {getInitials(character.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span>{character.name}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <span className="text-sm text-muted-foreground">
-            No character assigned to this module
-          </span>
-        )}
+              )}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {characters.map((character: CharacterSummary) => (
+              <SelectItem
+                key={character.id}
+                value={character.id.toString()}
+                className="flex items-center space-x-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={character.avatarUrl || undefined} />
+                    <AvatarFallback>
+                      {getInitials(character.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span>{character.name}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {selectedModule.modulePrompt.characters.length > 0 && (

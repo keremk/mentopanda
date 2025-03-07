@@ -1,6 +1,22 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
 
+export type InsertModuleCharacterInput = {
+  moduleId: number;
+  characterId: number;
+};
+
+export async function insertModuleCharacter(
+  supabase: SupabaseClient,
+  data: InsertModuleCharacterInput
+): Promise<void> {
+  const { error } = await supabase.from("modules_characters").insert({
+    module_id: data.moduleId,
+    character_id: data.characterId
+  });
+  if (error) handleError(error);
+}
+
 export type UpdateModuleCharacterPromptInput = {
   moduleId: number;
   characterId: number;

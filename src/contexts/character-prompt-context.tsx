@@ -13,6 +13,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import {
   updateModuleCharacterPromptAction,
   replaceModuleCharacterAction,
+  insertModuleCharacterAction,
 } from "@/app/actions/modules-characters-actions";
 import { ModuleCharacter } from "@/data/modules";
 import { CharacterSummary } from "@/data/characters";
@@ -116,7 +117,8 @@ export function CharacterPromptProvider({
   const selectCharacter = useCallback(
     async (newCharacterId: number) => {
       if (!moduleId) return;
-
+      console.log("Selecting character:", newCharacterId);
+      console.log("Character ID:", characterId);
       // If we already have a character, replace it
       if (characterId) {
         try {
@@ -143,9 +145,25 @@ export function CharacterPromptProvider({
           setTimeout(() => setSaveStatus("idle"), 3000);
         }
       } else {
-        // Just set the character ID if there was no previous character
-        setCharacterId(newCharacterId);
-        // Don't reset the prompt here either
+        console.log("Inserting character:", newCharacterId);
+        try {
+          setSaveStatus("saving");
+          await insertModuleCharacterAction({
+            moduleId,
+            characterId: newCharacterId,
+          });
+          setCharacterId(newCharacterId);
+
+          // Refresh module data
+          refreshModule?.();
+
+          setSaveStatus("saved");
+          setTimeout(() => setSaveStatus("idle"), 2000);
+        } catch (error) {
+          console.error("Error inserting character:", error);
+          setSaveStatus("error");
+          setTimeout(() => setSaveStatus("idle"), 3000);
+        }
       }
     },
     [moduleId, characterId, refreshModule]

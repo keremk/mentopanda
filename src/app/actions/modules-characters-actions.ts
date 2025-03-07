@@ -7,7 +7,29 @@ import {
   type UpdateModuleCharacterPromptInput,
   replaceModuleCharacter,
   type ReplaceModuleCharacterInput,
+  insertModuleCharacter,
+  type InsertModuleCharacterInput,
 } from "@/data/modules-characters";
+
+export async function insertModuleCharacterAction(
+  data: InsertModuleCharacterInput
+) {
+  try {
+    const supabase = await createClient();
+    await insertModuleCharacter(supabase, data);
+
+    // Revalidate the module data
+    revalidateTag(`module-${data.moduleId}`);
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to insert character",
+    };
+  }
+}
 
 export async function updateModuleCharacterPromptAction(
   data: UpdateModuleCharacterPromptInput
@@ -42,7 +64,8 @@ export async function replaceModuleCharacterAction(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to replace character",
+      error:
+        error instanceof Error ? error.message : "Failed to replace character",
     };
   }
 }

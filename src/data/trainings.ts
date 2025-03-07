@@ -117,7 +117,7 @@ export async function getTrainingByIdForEdit(
     handleError(trainingError);
   }
 
-  console.log(JSON.stringify(training, null, 2));
+  // console.log(JSON.stringify(training, null, 2));
   const trainingEdit: TrainingEdit = {
     id: training.id,
     title: training.title,
@@ -154,7 +154,7 @@ export async function getTrainingByIdForEdit(
     })),
   };
 
-  console.log(JSON.stringify(trainingEdit, null, 2));
+  // console.log(JSON.stringify(trainingEdit, null, 2));
   return trainingEdit;
 }
 
