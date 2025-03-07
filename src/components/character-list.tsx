@@ -89,7 +89,7 @@ export function CharacterList({
                   ? "bg-muted"
                   : "hover:bg-muted/50"
               }`}
-              onClick={() => router.push(`/characters/${character.id}`)}
+              onClick={() => router.push(`/characters/${character.id}/edit`)}
             >
               <Avatar>
                 <AvatarImage

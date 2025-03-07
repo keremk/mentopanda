@@ -4,7 +4,7 @@ import { EditCharacterForm } from "./edit-character";
 import { Metadata } from "next";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 export const metadata: Metadata = {
-  title: "Edit Character",
+  title: "Characters Catalog",
 };
 
 export default async function EditCharacterPage(
