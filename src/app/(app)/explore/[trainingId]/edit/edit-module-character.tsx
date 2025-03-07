@@ -15,6 +15,8 @@ import { useModuleEdit } from "@/contexts/module-edit-context";
 import { useCharacterPrompt } from "@/contexts/character-prompt-context";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 type Props = {
   module: Module;
@@ -84,52 +86,59 @@ export function EditModuleCharacter({ module }: Props) {
   return (
     <div className="space-y-6">
       <div className="border rounded-md p-4">
-        <Select
-          value={currentCharacterId || ""}
-          onValueChange={handleCharacterChange}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Assign Character">
-              {currentCharacterId && (
-                <div className="flex items-center space-x-2">
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage
-                      src={
-                        selectedModule.modulePrompt.characters[0].avatarUrl ||
-                        undefined
-                      }
-                    />
-                    <AvatarFallback>
-                      {getInitials(
-                        selectedModule.modulePrompt.characters[0].name
-                      )}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span>{selectedModule.modulePrompt.characters[0].name}</span>
-                </div>
-              )}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {characters.map((character: CharacterSummary) => (
-              <SelectItem
-                key={character.id}
-                value={character.id.toString()}
-                className="flex items-center space-x-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src={character.avatarUrl || undefined} />
-                    <AvatarFallback>
-                      {getInitials(character.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span>{character.name}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Select
+            value={currentCharacterId || ""}
+            onValueChange={handleCharacterChange}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Assign Character">
+                {currentCharacterId && (
+                  <div className="flex items-center space-x-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage
+                        src={
+                          selectedModule.modulePrompt.characters[0].avatarUrl ||
+                          undefined
+                        }
+                      />
+                      <AvatarFallback>
+                        {getInitials(
+                          selectedModule.modulePrompt.characters[0].name
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>
+                      {selectedModule.modulePrompt.characters[0].name}
+                    </span>
+                  </div>
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {characters.map((character: CharacterSummary) => (
+                <SelectItem
+                  key={character.id}
+                  value={character.id.toString()}
+                  className="flex items-center space-x-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={character.avatarUrl || undefined} />
+                      <AvatarFallback>
+                        {getInitials(character.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>{character.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" asChild>
+            <Link href="/characters">Manage</Link>
+          </Button>
+        </div>
       </div>
 
       {selectedModule.modulePrompt.characters.length > 0 && (

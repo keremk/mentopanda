@@ -115,7 +115,11 @@ export function EditContainer() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-        <Button onClick={handleSaveAndExit} disabled={isAnySaving}>
+        <Button
+          onClick={handleSaveAndExit}
+          disabled={isAnySaving}
+          variant="outline"
+        >
           {isAnySaving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
