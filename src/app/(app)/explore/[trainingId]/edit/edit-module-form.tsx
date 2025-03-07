@@ -3,7 +3,6 @@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Module } from "@/data/modules";
 import { MarkdownEditor } from "@/components/markdown-editor";
@@ -15,7 +14,6 @@ type Props = {
 };
 
 export function EditModuleForm({ module }: Props) {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("scenario");
 
   // Use the contexts

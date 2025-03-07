@@ -26,7 +26,6 @@ import { Loader2 } from "lucide-react";
 
 export function EditContainer() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("details");
   const [isSaving, setIsSaving] = useState(false);
 
   // Access all contexts for saving
@@ -131,11 +130,7 @@ export function EditContainer() {
         </Button>
       </div>
 
-      <Tabs
-        defaultValue="details"
-        onValueChange={setActiveTab}
-        className="w-full flex-1 flex flex-col mt-8"
-      >
+      <Tabs defaultValue="details" className="w-full flex-1 flex flex-col mt-8">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="details">Training Details</TabsTrigger>
           <TabsTrigger value="modules">Modules</TabsTrigger>

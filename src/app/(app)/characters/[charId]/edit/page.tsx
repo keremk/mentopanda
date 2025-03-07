@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getCharacterDetailsAction } from "@/app/actions/character-actions";
 import { EditCharacterForm } from "./edit-character";
 import { Metadata } from "next";

@@ -13,23 +13,6 @@ export function EditTrainingForm() {
     return <div>Loading training details...</div>;
   }
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    // Only allow specific fields that match BaseTrainingInput
-    const validFields = [
-      "title",
-      "tagline",
-      "description",
-      "imageUrl",
-      "previewUrl",
-    ] as const;
-    if (validFields.includes(name as any)) {
-      updateTrainingField(name as any, value);
-    }
-  };
-
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -68,7 +51,7 @@ export function EditTrainingForm() {
             <Input
               name="title"
               value={training.title}
-              onChange={handleInputChange}
+              onChange={(e) => updateTrainingField("title", e.target.value)}
             />
           </div>
 
@@ -77,7 +60,7 @@ export function EditTrainingForm() {
             <Input
               name="tagline"
               value={training.tagline}
-              onChange={handleInputChange}
+              onChange={(e) => updateTrainingField("tagline", e.target.value)}
             />
           </div>
 
@@ -86,7 +69,7 @@ export function EditTrainingForm() {
             <Input
               name="previewUrl"
               value={training.previewUrl || ""}
-              onChange={handleInputChange}
+              onChange={(e) => updateTrainingField("previewUrl", e.target.value)}
               placeholder="Enter video URL"
             />
           </div>

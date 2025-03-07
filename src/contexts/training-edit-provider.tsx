@@ -25,7 +25,7 @@ export function TrainingEditProvider({
         trainingId={initialTraining.id}
         initialModules={initialTraining.modules}
       >
-        <ModuleEditProvider trainingId={initialTraining.id}>
+        <ModuleEditProvider>
           <ModuleEditConsumer>
             {(moduleId, refreshModule) => (
               <CharacterPromptProvider

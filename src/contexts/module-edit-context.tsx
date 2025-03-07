@@ -38,12 +38,10 @@ const ModuleEditContext = createContext<ModuleEditContextType | undefined>(
 
 interface ModuleEditProviderProps {
   children: ReactNode;
-  trainingId: number;
 }
 
 export function ModuleEditProvider({
   children,
-  trainingId,
 }: ModuleEditProviderProps) {
   const { refreshModules } = useModuleList();
   const [selectedModuleId, setSelectedModuleId] = useState<
@@ -142,11 +140,11 @@ export function ModuleEditProvider({
       }
 
       try {
-        const module = await getModuleByIdAction2(moduleId);
-        if (module) {
-          setSelectedModule(module);
+        const trainingModule = await getModuleByIdAction2(moduleId);
+        if (trainingModule) {
+          setSelectedModule(trainingModule);
           // Initialize last saved module with the fetched data
-          setLastSavedModule(structuredClone(module));
+          setLastSavedModule(structuredClone(trainingModule));
         }
       } catch (error) {
         console.error("Error loading module:", error);
@@ -182,11 +180,11 @@ export function ModuleEditProvider({
     if (!selectedModuleId) return;
 
     try {
-      const module = await getModuleByIdAction2(selectedModuleId);
-      if (module) {
-        setSelectedModule(module);
+      const trainingModule = await getModuleByIdAction2(selectedModuleId);
+      if (trainingModule) {
+        setSelectedModule(trainingModule);
         // Also update the module in the module list
-        refreshModules([module]);
+        refreshModules([trainingModule]);
         // Reset the user modified flag since we're getting fresh data
         setUserModified(false);
       }

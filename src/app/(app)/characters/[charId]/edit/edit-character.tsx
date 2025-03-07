@@ -23,15 +23,6 @@ export function EditCharacterForm() {
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(character.avatarUrl);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    updateCharacterField(name as any, value);
-  };
-
-  const handleVoiceChange = (voice: string) => {
-    updateCharacterField("voice", voice);
-  };
-
   const handleSave = async () => {
     const success = await saveCharacter();
     if (success) {
@@ -112,7 +103,7 @@ export function EditCharacterForm() {
               <Input
                 name="name"
                 value={character.name}
-                onChange={handleInputChange}
+                onChange={(e) => updateCharacterField("name", e.target.value)}
               />
             </div>
 
@@ -120,7 +111,7 @@ export function EditCharacterForm() {
               <label className="text-sm font-medium">Voice</label>
               <CharacterVoiceSelect
                 value={character.voice || undefined}
-                onValueChange={handleVoiceChange}
+                onValueChange={(voice) => updateCharacterField("voice", voice)}
                 aiModel={character.aiModel as AIModel}
               />
             </div>
