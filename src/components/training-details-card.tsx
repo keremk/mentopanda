@@ -99,8 +99,50 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
                   </div>
                 </div>
 
-                {module.history.length > 0 && (
-                  <Accordion type="single" collapsible>
+                <Accordion type="multiple" className="space-y-2">
+                  <AccordionItem value="instructions">
+                    <AccordionTrigger>Instructions</AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-sm text-muted-foreground">
+                        {module.instructions || "No instructions available."}
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="character">
+                    <AccordionTrigger>Character</AccordionTrigger>
+                    <AccordionContent>
+                      {module.characters?.[0] ? (
+                        <div className="flex items-start space-x-4">
+                          <Image
+                            src={
+                              module.characters[0].avatarUrl ||
+                              "/placeholder-avatar.svg"
+                            }
+                            alt={module.characters[0].name}
+                            width={100}
+                            height={100}
+                            className="rounded-full"
+                          />
+                          <div>
+                            <h5 className="font-semibold">
+                              {module.characters[0].name}
+                            </h5>
+                            <p className="text-sm text-muted-foreground">
+                              {module.characters[0].description ||
+                                "No description available."}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No character assigned.
+                        </p>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {module.history.length > 0 && (
                     <AccordionItem value="history">
                       <AccordionTrigger>Practice History</AccordionTrigger>
                       <AccordionContent>
@@ -148,8 +190,8 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
                         </Table>
                       </AccordionContent>
                     </AccordionItem>
-                  </Accordion>
-                )}
+                  )}
+                </Accordion>
               </div>
             </div>
           ))}

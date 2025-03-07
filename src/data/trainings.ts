@@ -171,6 +171,16 @@ export async function getTrainingWithProgress(
       *,
       modules (
         *,
+        modules_characters (
+          *,
+          characters (
+            id,
+            name,
+            voice,
+            description,
+            avatar_url
+          )
+        ),
         history (
           id,
           practice_no,
@@ -209,6 +219,14 @@ export async function getTrainingWithProgress(
       return {
         id: module.id,
         title: module.title,
+        instructions: module.instructions,
+        characters: module.modules_characters.map((mc: any) => ({
+          id: mc.characters.id,
+          name: mc.characters.name,
+          voice: mc.characters.voice,
+          description: mc.characters.description,
+          avatarUrl: mc.characters.avatar_url,
+        })),
         practiceCount: history.length,
         history: history.map((h: any) => ({
           id: h.id,

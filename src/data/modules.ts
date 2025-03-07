@@ -32,6 +32,8 @@ export type Module = ModuleSummary & {
 };
 
 export type ModuleProgress = ModuleSummary & {
+  instructions: string | null;
+  characters: ModuleCharacter[];
   practiceCount: number;
   history: HistorySummary[];
 };
