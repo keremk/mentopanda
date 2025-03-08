@@ -22,7 +22,7 @@ export function EditModules() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
-      <div className="md:col-span-1 h-[calc(100vh-12rem)]">
+      <div className="md:col-span-1 h-[calc(100vh-10rem)]">
         <ModuleList
           key={JSON.stringify(modules)}
           modules={modules}
