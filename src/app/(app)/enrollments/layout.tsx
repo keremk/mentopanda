@@ -7,12 +7,12 @@ export default async function TrainingsLayout({
   children: React.ReactNode;
 }) {
   const trainings = await getEnrolledTrainingsAction();
-  console.log(trainings);
+
   return (
-    <div className="flex flex-col h-full py-2">
-      <div className="flex flex-1 border-t">
+    <div className="flex flex-col h-[calc(100vh-4rem)] py-2">
+      <div className="flex flex-1 border-t h-full overflow-hidden">
         <EnrolledTrainingsList trainings={trainings} />
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 overflow-y-auto w-full">{children}</div>
       </div>
     </div>
   );

@@ -61,7 +61,7 @@ export function EnrolledTrainingsList({
           ))}
         </nav>
       </div>
-      <div className="p-2 border-t border-border bg-background">
+      <div className="p-2 border-t border-border bg-background sticky bottom-0">
         <div className="flex gap-2">
           <Link href="/explore" className="flex-1">
             <Button variant="outline" size="sm" className="w-full">

@@ -3,13 +3,6 @@
 import { TrainingWithProgress } from "@/data/trainings";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -27,11 +20,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
 
-interface TrainingDetailsCardProps {
+interface TrainingDetailsProps {
   training: TrainingWithProgress;
 }
 
-export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
+export function TrainingDetails({ training }: TrainingDetailsProps) {
   const getRandomModuleId = () => {
     return training.modules[Math.floor(Math.random() * training.modules.length)]
       .id;
@@ -40,8 +33,8 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
   const randomModuleId = getRandomModuleId();
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-start space-x-4">
+    <div className="space-y-6">
+      <div className="flex flex-row items-start space-x-4">
         <div className="flex flex-col space-y-4">
           <Image
             src={training.imageUrl || "/placeholder.svg"}
@@ -61,13 +54,11 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
           )}
         </div>
         <div>
-          <CardTitle>{training.title}</CardTitle>
-          <CardDescription className="my-4">
-            {training.description}
-          </CardDescription>
+          <h1 className="text-2xl font-bold">{training.title}</h1>
+          <p className="my-4 text-muted-foreground">{training.description}</p>
         </div>
-      </CardHeader>
-      <CardContent>
+      </div>
+      <div>
         {training.previewUrl && (
           <Accordion type="single" collapsible className="mb-4">
             <AccordionItem value="video">
@@ -196,7 +187,7 @@ export function TrainingDetailsCard({ training }: TrainingDetailsCardProps) {
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
