@@ -8,7 +8,7 @@ import {
 } from "@/app/actions/enrollment-actions";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, MinusCircle } from "lucide-react";
+import { PlusIcon, MinusIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -78,15 +78,15 @@ export function EnrollmentButton({
   return (
     <>
       <Button
-        variant={enrolled ? "destructive" : "default"}
+        variant={enrolled ? "destructive" : "outline"}
         onClick={handleClick}
         className={className}
         disabled={isLoading}
       >
         {enrolled ? (
-          <MinusCircle className="mr-2 h-4 w-4" />
+          <MinusIcon className="mr-2 h-4 w-4" />
         ) : (
-          <PlusCircle className="mr-2 h-4 w-4" />
+          <PlusIcon className="mr-2 h-4 w-4" />
         )}
         {enrolled ? "Leave" : "Join"}
       </Button>

@@ -4,7 +4,7 @@ import { TrainingSummary } from "@/data/trainings";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { UnenrollButton } from "@/components/unenroll-button";
 import { useParams } from "next/navigation";
 
@@ -65,7 +65,7 @@ export function EnrolledTrainingsList({
         <div className="flex gap-2">
           <Link href="/explore" className="flex-1">
             <Button variant="outline" size="sm" className="w-full">
-              <Plus className="h-4 w-4 mr-1" />
+              <PlusIcon className="h-4 w-4 mr-1" />
               Add
             </Button>
           </Link>

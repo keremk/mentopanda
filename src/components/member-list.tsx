@@ -15,7 +15,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusIcon, TrashIcon } from "lucide-react";
 import type { ProjectMember } from "@/data/projects";
 import { useRouter, useParams } from "next/navigation";
 import { UserRole } from "@/data/user";
@@ -116,7 +116,7 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="flex-1">
-                <PlusCircle className="h-4 w-4 mr-2" />
+                <PlusIcon className="h-4 w-4 mr-2" />
                 Invite
               </Button>
             </DialogTrigger>
@@ -172,7 +172,7 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
                 className="flex-1"
                 disabled={!isMemberSelected}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <TrashIcon className="h-4 w-4 mr-2" />
                 Remove
               </Button>
             </DialogTrigger>

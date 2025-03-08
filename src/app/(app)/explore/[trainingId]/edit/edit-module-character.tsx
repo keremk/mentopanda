@@ -85,24 +85,24 @@ export function EditModuleCharacter({ module }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="border rounded-md p-4">
-        <div className="flex gap-2">
+      <div className="border border-border/50 rounded-lg p-5 bg-secondary/10 shadow-sm">
+        <div className="flex gap-3">
           <Select
             value={currentCharacterId || ""}
             onValueChange={handleCharacterChange}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full bg-background/90 border-border/50">
               <SelectValue placeholder="Assign Character">
                 {currentCharacterId && (
                   <div className="flex items-center space-x-2">
-                    <Avatar className="h-6 w-6">
+                    <Avatar className="h-6 w-6 border border-border/30">
                       <AvatarImage
                         src={
                           selectedModule.modulePrompt.characters[0].avatarUrl ||
                           undefined
                         }
                       />
-                      <AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary">
                         {getInitials(
                           selectedModule.modulePrompt.characters[0].name
                         )}
@@ -115,7 +115,7 @@ export function EditModuleCharacter({ module }: Props) {
                 )}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="border-border/50 bg-background/95 backdrop-blur-sm">
               {characters.map((character: CharacterSummary) => (
                 <SelectItem
                   key={character.id}
@@ -123,9 +123,9 @@ export function EditModuleCharacter({ module }: Props) {
                   className="flex items-center space-x-2"
                 >
                   <div className="flex items-center space-x-2">
-                    <Avatar className="h-6 w-6">
+                    <Avatar className="h-6 w-6 border border-border/30">
                       <AvatarImage src={character.avatarUrl || undefined} />
-                      <AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary">
                         {getInitials(character.name)}
                       </AvatarFallback>
                     </Avatar>
@@ -135,7 +135,11 @@ export function EditModuleCharacter({ module }: Props) {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" asChild>
+          <Button
+            variant="outline"
+            asChild
+            className="border-border/50 hover:bg-secondary/50 shadow-sm"
+          >
             <Link href="/characters">Manage</Link>
           </Button>
         </div>
@@ -143,7 +147,7 @@ export function EditModuleCharacter({ module }: Props) {
 
       {selectedModule.modulePrompt.characters.length > 0 && (
         <div>
-          <label className="text-sm font-medium mb-2 block">
+          <label className="text-sm font-medium mb-2 block text-foreground/90">
             Character Prompt
           </label>
           <Textarea
@@ -151,6 +155,7 @@ export function EditModuleCharacter({ module }: Props) {
             onChange={(e) => handleCharacterPromptChange(e.target.value)}
             placeholder="Enter the character's prompt..."
             rows={10}
+            className="border-border/50 bg-background/80 focus-visible:ring-primary/20 resize-none"
           />
         </div>
       )}

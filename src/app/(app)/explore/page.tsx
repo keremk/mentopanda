@@ -15,14 +15,14 @@ export default async function ExplorePage() {
   ]);
 
   return (
-    <div className="p-4">
+    <div className="py-2">
       {user.permissions.includes("training.manage") && (
         <div className="absolute top-0 right-0 p-4 z-10">
           <CreateTrainingButton needsOrganization={false} />
         </div>
       )}
 
-      <div className="grid gap-6 px-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mt-5 border-t py-6">
+      <div className="grid gap-6 px-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 border-t py-6">
         {trainings.map((training) => (
           <TrainingCard
             key={training.id}

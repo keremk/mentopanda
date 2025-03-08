@@ -40,20 +40,18 @@ export default async function TrainingDetailsPage(props: {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-2">
       <div className="absolute top-0 right-0 p-4 z-10">
         <EnrollmentButton className="mr-4" trainingId={training.id} />
-        {user.id === training.createdBy && (
-          <Button asChild variant="outline">
-            <Link
-              href={`/explore/${training.id}/edit`}
-              className="flex items-center"
-            >
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </Link>
-          </Button>
-        )}
+        <Button asChild variant="outline">
+          <Link
+            href={`/explore/${training.id}/edit`}
+            className="flex items-center"
+          >
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit
+          </Link>
+        </Button>
       </div>
 
       <div className="md:flex md:gap-8 mb-8">
@@ -81,9 +79,6 @@ export default async function TrainingDetailsPage(props: {
         </div>
       )}
 
-      <div className="text-center">
-        <EnrollmentButton trainingId={training.id} />
-      </div>
     </div>
   );
 }

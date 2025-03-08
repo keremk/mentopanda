@@ -15,7 +15,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, PlusIcon, Trash2, TrashIcon } from "lucide-react";
 import type { CharacterSummary } from "@/data/characters";
 import { useRouter, useParams } from "next/navigation";
 import {
@@ -112,7 +112,7 @@ export function CharacterList({
           <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" className="flex-1">
-              <PlusCircle className="h-4 w-4 mr-2" />
+              <PlusIcon className="h-4 w-4 mr-2" />
               Add
             </Button>
           </DialogTrigger>
@@ -152,7 +152,7 @@ export function CharacterList({
               className="flex-1"
               disabled={!isCharacterSelected}
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <TrashIcon className="h-4 w-4 mr-2" />
               Remove
             </Button>
           </DialogTrigger>

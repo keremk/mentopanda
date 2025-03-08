@@ -56,26 +56,30 @@ export function ModuleList({
   }
 
   return (
-    <div className="flex flex-col h-full border-r">
+    <div className="flex flex-col h-full border border-border/40 bg-background/80 rounded-lg overflow-hidden">
       <ScrollArea className="flex-1">
-        <div className="space-y-1 p-2">
+        <div className="space-y-2 p-3">
           {modules.map((module) => (
             <div
               key={module.id}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors ${
+              className={`flex items-center gap-3 rounded-lg px-4 py-3 cursor-pointer transition-all duration-200 ${
                 module.id === selectedModuleId
-                  ? "bg-muted"
-                  : "hover:bg-muted/50"
+                  ? "bg-secondary/90 shadow-sm border border-border/30"
+                  : "hover:bg-secondary/50 border border-transparent"
               }`}
               onClick={() => onSelectModule(module.id)}
             >
-              <span className="text-sm font-medium">{module.title}</span>
+              <span
+                className={`text-sm font-medium ${module.id === selectedModuleId ? "text-foreground" : "text-muted-foreground"}`}
+              >
+                {module.title}
+              </span>
             </div>
           ))}
         </div>
       </ScrollArea>
 
-      <div className="border-t p-2 flex gap-2">
+      <div className="border-t border-border/40 p-3 flex gap-2 bg-background/90">
         {/* Add Module Dialog */}
         <Dialog>
           <DialogTrigger asChild>

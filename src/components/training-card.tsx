@@ -1,5 +1,7 @@
+"use client";
+
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -7,8 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Info } from "lucide-react";
 import { EnrollmentButton } from "@/components/enrollment-button";
 
 interface TrainingCardProps {
@@ -26,42 +26,46 @@ export function TrainingCard({
   imageUrl,
   isEnrolled,
 }: TrainingCardProps) {
+  const router = useRouter();
   const fallbackImage = "/placeholder.svg?height=200&width=300";
 
+  const navigateToDetails = () => {
+    router.push(`/explore/${id}`);
+  };
+
   return (
-    <Card className="w-full min-h-[400px] flex flex-col">
-      <CardHeader className="p-0 relative h-[200px]">
-        <Image
-          src={imageUrl || fallbackImage}
-          alt={`Cover image for ${title}`}
-          fill
-          className="object-cover"
-          // layout="fill"
-          // objectFit="cover"
-        />
-      </CardHeader>
-      <CardContent className="p-4 flex-grow">
-        <CardTitle className="text-xl font-bold line-clamp-2 mb-3">
-          {title}
-        </CardTitle>
-        {tagline && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-            {tagline}
-          </p>
-        )}
-      </CardContent>
-      <CardFooter className="p-4 pt-0 flex justify-between mt-auto">
-        <EnrollmentButton 
-          trainingId={id} 
-          className="flex-1 mr-2" 
+    <Card className="w-full min-h-[400px] flex flex-col hover:shadow-md hover:border-primary/50 transition-all duration-200">
+      {/* Clickable area for navigation */}
+      <div className="flex-grow cursor-pointer" onClick={navigateToDetails}>
+        <CardHeader className="p-0 relative h-[200px]">
+          <Image
+            src={imageUrl || fallbackImage}
+            alt={`Cover image for ${title}`}
+            fill
+            className="object-cover"
+            // layout="fill"
+            // objectFit="cover"
+          />
+        </CardHeader>
+        <CardContent className="p-4">
+          <CardTitle className="text-xl font-bold line-clamp-2 mb-3">
+            {title}
+          </CardTitle>
+          {tagline && (
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+              {tagline}
+            </p>
+          )}
+        </CardContent>
+      </div>
+
+      {/* Separate footer for enrollment button */}
+      <CardFooter className="p-4 pt-0 flex justify-end mt-auto">
+        <EnrollmentButton
+          trainingId={id}
+          className="w-auto"
           isEnrolled={isEnrolled}
         />
-        <Button variant="secondary" className="flex-1 ml-2" asChild>
-          <Link href={`/explore/${id}`}>
-            <Info className="mr-2 h-4 w-4" />
-            Details
-          </Link>
-        </Button>
       </CardFooter>
     </Card>
   );

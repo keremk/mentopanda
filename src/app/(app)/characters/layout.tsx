@@ -15,8 +15,8 @@ export default async function CharactersLayout({
   const canManageCharacters = user.permissions.includes("training.manage");
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex flex-1 border-t mt-5">
+    <div className="flex flex-col h-full py-2">
+      <div className="flex flex-1 border-t">
         <CharacterList
           key={canManageCharacters ? "manager" : "viewer"}
           characters={characters}

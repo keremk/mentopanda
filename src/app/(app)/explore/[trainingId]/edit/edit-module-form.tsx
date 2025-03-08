@@ -51,17 +51,22 @@ export function EditModuleForm({ module }: Props) {
   return (
     <div className="h-full overflow-auto space-y-6">
       <div>
-        <label className="text-sm font-medium">Title</label>
+        <label className="text-sm font-medium mb-1 block text-foreground/90">
+          Title
+        </label>
         <Input
           name="title"
           value={selectedModule.title}
           onChange={handleInputChange}
+          className="border-border/50 bg-background/80 focus-visible:ring-primary/20"
         />
       </div>
 
       <div>
-        <label className="text-sm font-medium mb-2 block">Instructions</label>
-        <div className="border rounded-md">
+        <label className="text-sm font-medium mb-2 block text-foreground/90">
+          Instructions
+        </label>
+        <div className="border border-border/50 rounded-lg overflow-hidden shadow-sm">
           <MarkdownEditor
             key={editorKey}
             content={selectedModule.instructions || ""}
@@ -72,13 +77,35 @@ export function EditModuleForm({ module }: Props) {
       </div>
 
       <div className="mt-8">
-        <h3 className="text-lg font-medium mb-4">AI Instructions</h3>
+        <h3 className="text-lg font-medium mb-4 text-foreground">
+          AI Instructions
+        </h3>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="scenario">Scenario</TabsTrigger>
-            <TabsTrigger value="moderator">Moderator</TabsTrigger>
-            <TabsTrigger value="assessment">Assessment</TabsTrigger>
-            <TabsTrigger value="character">Character</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-secondary/50 p-1">
+            <TabsTrigger
+              value="scenario"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Scenario
+            </TabsTrigger>
+            <TabsTrigger
+              value="moderator"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Moderator
+            </TabsTrigger>
+            <TabsTrigger
+              value="assessment"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Assessment
+            </TabsTrigger>
+            <TabsTrigger
+              value="character"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Character
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="scenario" className="mt-4">
@@ -87,6 +114,7 @@ export function EditModuleForm({ module }: Props) {
               onChange={(e) => handlePromptChange(e, "scenario")}
               rows={12}
               placeholder="Enter the scenario instructions..."
+              className="border-border/50 bg-background/80 focus-visible:ring-primary/20 resize-none"
             />
           </TabsContent>
 
@@ -96,6 +124,7 @@ export function EditModuleForm({ module }: Props) {
               onChange={(e) => handlePromptChange(e, "moderator")}
               rows={12}
               placeholder="Enter the moderator instructions..."
+              className="border-border/50 bg-background/80 focus-visible:ring-primary/20 resize-none"
             />
           </TabsContent>
 
@@ -105,6 +134,7 @@ export function EditModuleForm({ module }: Props) {
               onChange={(e) => handlePromptChange(e, "assessment")}
               rows={12}
               placeholder="Enter the assessment instructions..."
+              className="border-border/50 bg-background/80 focus-visible:ring-primary/20 resize-none"
             />
           </TabsContent>
 

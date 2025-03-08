@@ -21,8 +21,8 @@ export function EditModules() {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
-      <div className="md:col-span-1 h-[calc(100vh-10rem)]">
+    <div className="flex flex-col md:flex-row gap-8 w-full">
+      <div className="w-full md:w-80 h-[calc(100vh-11rem)]">
         <ModuleList
           key={JSON.stringify(modules)}
           modules={modules}
@@ -32,7 +32,7 @@ export function EditModules() {
           onDeleteModule={deleteModule}
         />
       </div>
-      <div className="md:col-span-2 h-[calc(100vh-12rem)] overflow-auto">
+      <div className="flex-1 h-[calc(100vh-12rem)] overflow-auto">
         {currentModule ? (
           <EditModuleForm
             key={`module-${currentModule.id}`}

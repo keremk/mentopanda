@@ -70,7 +70,7 @@ export function EditContainer() {
       }
 
       // Navigate to training page
-      router.push(`/explore/${trainingDetails.training.id}`);
+      router.push(`/explore/`);
     } catch (error) {
       console.error("Error while saving:", error);
     } finally {
@@ -87,15 +87,19 @@ export function EditContainer() {
     characterPrompt.saveStatus === "saving";
 
   return (
-    <div className="container mx-auto px-4 flex flex-col min-h-[calc(100vh-2rem)] pb-4">
-      <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex gap-2">
+    <div className="container h-full px-4 flex flex-col min-h-[calc(100vh-2rem)] pb-4">
+      <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex gap-3">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive" disabled={isAnySaving}>
+            <Button
+              variant="destructive"
+              disabled={isAnySaving}
+              className="shadow-sm hover:shadow-md transition-all"
+            >
               Delete Training
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent>
+          <AlertDialogContent className="border-border/50 bg-background/95 backdrop-blur-sm">
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
@@ -104,10 +108,12 @@ export function EditContainer() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel className="border-border/50">
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteTraining}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm"
               >
                 Delete
               </AlertDialogAction>
@@ -118,6 +124,7 @@ export function EditContainer() {
           onClick={handleSaveAndExit}
           disabled={isAnySaving}
           variant="outline"
+          className="border-border/50 shadow-sm hover:shadow-md hover:bg-secondary/50 transition-all"
         >
           {isAnySaving ? (
             <>
@@ -131,14 +138,24 @@ export function EditContainer() {
       </div>
 
       <Tabs defaultValue="details" className="w-full flex-1 flex flex-col mt-8">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="details">Training Details</TabsTrigger>
-          <TabsTrigger value="modules">Modules</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-secondary/30 p-1 rounded-lg border border-border/30">
+          <TabsTrigger
+            value="details"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            Training Details
+          </TabsTrigger>
+          <TabsTrigger
+            value="modules"
+            className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            Modules
+          </TabsTrigger>
         </TabsList>
-        <TabsContent value="details" className="flex-1">
+        <TabsContent value="details" className="flex-1 mt-6">
           <EditTrainingForm />
         </TabsContent>
-        <TabsContent value="modules" className="flex-1 flex">
+        <TabsContent value="modules" className="flex-1 flex mt-6">
           <EditModules />
         </TabsContent>
       </Tabs>

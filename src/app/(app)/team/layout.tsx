@@ -13,8 +13,8 @@ export default async function TeamLayout({
   const canManageMembers = user.permissions.includes("project.member.manage");
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex flex-1 border-t mt-5">
+    <div className="flex flex-col h-full py-2">
+      <div className="flex flex-1 border-t">
         <MemberList
           key={canManageMembers ? "manager" : "viewer"}
           members={members}

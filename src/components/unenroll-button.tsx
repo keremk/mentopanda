@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Minus } from "lucide-react";
+import { TrashIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { unenrollFromTrainingAction } from "@/app/actions/enrollment-actions";
 import { useState } from "react";
@@ -80,7 +80,7 @@ export function UnenrollButton({
           className="flex-1"
           disabled={disabled || !trainingId || isLoading}
         >
-          <Minus className="h-4 w-4 mr-1" />
+          <TrashIcon className="h-4 w-4 mr-1" />
           Remove
         </Button>
       </AlertDialogTrigger>

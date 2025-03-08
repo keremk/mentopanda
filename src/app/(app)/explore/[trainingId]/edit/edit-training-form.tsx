@@ -17,7 +17,7 @@ export function EditTrainingForm() {
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div className="space-y-4">
-          <div className="aspect-video w-full relative bg-muted rounded-lg overflow-hidden">
+          <div className="aspect-video w-full relative bg-secondary/30 rounded-xl overflow-hidden border border-border/30 shadow-sm">
             {training.imageUrl ? (
               <Image
                 src={training.imageUrl}
@@ -69,7 +69,9 @@ export function EditTrainingForm() {
             <Input
               name="previewUrl"
               value={training.previewUrl || ""}
-              onChange={(e) => updateTrainingField("previewUrl", e.target.value)}
+              onChange={(e) =>
+                updateTrainingField("previewUrl", e.target.value)
+              }
               placeholder="Enter video URL"
             />
           </div>
