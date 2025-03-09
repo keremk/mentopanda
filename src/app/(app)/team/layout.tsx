@@ -1,16 +1,23 @@
+import { MemberList } from "@/components/member-list";
 import { getProjectMembersAction } from "@/app/actions/project-actions";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
-import { MemberList } from "@/components/member-list";
+
+// Create a shared data fetching function that will be cached
+async function getSharedData() {
+  const user = await getCurrentUserAction();
+  const members = await getProjectMembersAction(user.currentProject.id);
+  const canManageMembers = user.permissions.includes("project.member.manage");
+
+  return { user, members, canManageMembers };
+}
 
 export default async function TeamLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUserAction();
-  const members = await getProjectMembersAction(user.currentProject.id);
-
-  const canManageMembers = user.permissions.includes("project.member.manage");
+  // This call will be cached and shared with the page component
+  const { members, canManageMembers } = await getSharedData();
 
   return (
     <div className="flex flex-col h-full py-2">
@@ -25,3 +32,6 @@ export default async function TeamLayout({
     </div>
   );
 }
+
+// Export the shared data function for use in child pages
+export { getSharedData };

@@ -4,13 +4,14 @@ import { getProjectMemberInfoAction } from "@/app/actions/project-actions";
 import { MemberRoleSelector } from "@/components/member-role-selector";
 import { TrainingHistory } from "@/components/training-history";
 import { TrainingSessionsHeatmap } from "@/components/training-sessions-heatmap";
-import { getCurrentUserAction } from "@/app/actions/user-actions";
+import { getSharedData } from "../layout";
+
 export default async function TeamMemberPage(props: {
   params: Promise<{ memberId: string }>;
 }) {
   const params = await props.params;
+  const { user: currentUser } = await getSharedData();
 
-  const currentUser = await getCurrentUserAction();
   const member = await getProjectMemberInfoAction(
     currentUser.currentProject.id,
     params.memberId

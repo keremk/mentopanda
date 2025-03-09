@@ -1,10 +1,9 @@
-import { getProjectMembersAction } from "@/app/actions/project-actions";
-import { getCurrentUserAction } from "@/app/actions/user-actions";
 import { redirect } from "next/navigation";
+import { getSharedData } from "./layout";
 
 export default async function TeamPage() {
-  const user = await getCurrentUserAction();
-  const members = await getProjectMembersAction(user.currentProject.id);
+  // Reuse the cached data from the layout
+  const { members } = await getSharedData();
 
   // If members exist, redirect to the first member's page
   if (members.length > 0) {
