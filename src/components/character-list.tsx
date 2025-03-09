@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { PlusCircle, PlusIcon, Trash2, TrashIcon } from "lucide-react";
 import type { CharacterSummary } from "@/data/characters";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, usePathname } from "next/navigation";
 import {
   createCharacterAction,
   deleteCharacterAction,
@@ -34,6 +34,7 @@ export function CharacterList({
 }: CharacterListProps) {
   const router = useRouter();
   const params = useParams();
+  const pathname = usePathname();
   const currentCharId = params.charId;
   const [newCharacterName, setNewCharacterName] = useState("");
   const createDialogCloseRef = useRef<HTMLButtonElement>(null);
@@ -43,6 +44,16 @@ export function CharacterList({
     (c) => c.id.toString() === currentCharId
   );
   const isCharacterSelected = Boolean(currentCharId);
+
+  // Auto-select first character if none is selected and we're on the main characters page
+  useEffect(() => {
+    // Only run if we have characters but none is selected in the URL
+    // and we're on the main characters page
+    if (characters.length > 0 && !currentCharId && pathname === "/characters") {
+      // Always navigate to the edit page of the first character
+      router.push(`/characters/${characters[0].id}/edit`);
+    }
+  }, [characters, currentCharId, pathname, router]);
 
   async function handleCreateCharacter() {
     if (!newCharacterName.trim()) return;
@@ -89,6 +100,7 @@ export function CharacterList({
                   ? "bg-muted"
                   : "hover:bg-muted/50"
               }`}
+              // Always navigate to edit mode when clicking a character
               onClick={() => router.push(`/characters/${character.id}/edit`)}
             >
               <Avatar>
@@ -110,73 +122,73 @@ export function CharacterList({
         <div className="border-t p-2 flex gap-2">
           {/* Add Character Dialog */}
           <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="flex-1">
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Character</DialogTitle>
-              <DialogDescription>
-                Enter the name for your new character.
-              </DialogDescription>
-            </DialogHeader>
-            <Input
-              value={newCharacterName}
-              onChange={(e) => setNewCharacterName(e.target.value)}
-              placeholder="Character name"
-              className="my-4"
-            />
-            <DialogFooter>
-              <DialogClose ref={createDialogCloseRef} asChild>
-                <Button variant="secondary">Cancel</Button>
-              </DialogClose>
-              <Button
-                onClick={handleCreateCharacter}
-                disabled={!newCharacterName.trim()}
-              >
-                Create
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="flex-1">
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Add
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Character</DialogTitle>
+                <DialogDescription>
+                  Enter the name for your new character.
+                </DialogDescription>
+              </DialogHeader>
+              <Input
+                value={newCharacterName}
+                onChange={(e) => setNewCharacterName(e.target.value)}
+                placeholder="Character name"
+                className="my-4"
+              />
+              <DialogFooter>
+                <DialogClose ref={createDialogCloseRef} asChild>
+                  <Button variant="secondary">Cancel</Button>
+                </DialogClose>
+                <Button
+                  onClick={handleCreateCharacter}
+                  disabled={!newCharacterName.trim()}
+                >
+                  Create
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-        {/* Remove Character Dialog */}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              disabled={!isCharacterSelected}
-            >
-              <TrashIcon className="h-4 w-4 mr-2" />
-              Remove
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Remove Character</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to remove {selectedCharacterData?.name}?
-                This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <DialogClose ref={deleteDialogCloseRef} asChild>
-                <Button variant="secondary">Cancel</Button>
-              </DialogClose>
+          {/* Remove Character Dialog */}
+          <Dialog>
+            <DialogTrigger asChild>
               <Button
-                variant="destructive"
-                onClick={handleDeleteCharacter}
-                disabled={!currentCharId}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                disabled={!isCharacterSelected}
               >
+                <TrashIcon className="h-4 w-4 mr-2" />
                 Remove
               </Button>
-            </DialogFooter>
-          </DialogContent>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Remove Character</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to remove {selectedCharacterData?.name}?
+                  This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose ref={deleteDialogCloseRef} asChild>
+                  <Button variant="secondary">Cancel</Button>
+                </DialogClose>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteCharacter}
+                  disabled={!currentCharId}
+                >
+                  Remove
+                </Button>
+              </DialogFooter>
+            </DialogContent>
           </Dialog>
         </div>
       )}

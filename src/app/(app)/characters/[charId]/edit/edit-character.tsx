@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -78,9 +77,9 @@ export function EditCharacterForm() {
       </div>
 
       <div className="space-y-8">
-        <div className="grid grid-cols-[200px_1fr] gap-16">
+        <div className="grid grid-cols-[120px_1fr] gap-16">
           <div className="space-y-4 flex flex-col items-center">
-            <Avatar className="h-[200px] w-[200px]">
+            <Avatar className="h-[120px] w-[120px]">
               <AvatarImage src={avatarUrl || undefined} alt={character.name} />
               <AvatarFallback className="text-4xl">
                 <ImageIcon className="h-20 w-20 text-muted-foreground" />
@@ -118,13 +117,31 @@ export function EditCharacterForm() {
           </div>
         </div>
 
-        <Tabs defaultValue="ai-description" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="ai-description">AI Description</TabsTrigger>
-            <TabsTrigger value="description">Description</TabsTrigger>
-          </TabsList>
+        {/* Description Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Description</h3>
+          <p className="text-sm text-muted-foreground">
+            The character description that will be visible to users.
+          </p>
+          <div className="border rounded-md">
+            <MarkdownEditor
+              key={`description-${character.id}`}
+              content={character.description || ""}
+              onChange={(markdown) =>
+                updateCharacterField("description", markdown)
+              }
+              className="min-h-[250px]"
+            />
+          </div>
+        </div>
 
-          <TabsContent value="ai-description" className="space-y-4 mt-4 border">
+        {/* AI Description Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">AI Description</h3>
+          <p className="text-sm text-muted-foreground">
+            The character prompt that will be sent to the AI model.
+          </p>
+          <div className="border rounded-md">
             <MarkdownEditor
               key={`ai-description-${character.id}`}
               content={character.aiDescription || ""}
@@ -133,19 +150,8 @@ export function EditCharacterForm() {
               }
               className="min-h-[300px]"
             />
-          </TabsContent>
-
-          <TabsContent value="description" className="space-y-4 mt-4 border">
-            <MarkdownEditor
-              key={`description-${character.id}`}
-              content={character.description || ""}
-              onChange={(markdown) =>
-                updateCharacterField("description", markdown)
-              }
-              className="min-h-[300px]"
-            />
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
