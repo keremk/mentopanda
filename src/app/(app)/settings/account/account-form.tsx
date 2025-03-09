@@ -40,7 +40,7 @@ export function AccountForm({ user }: AccountFormProps) {
           setDisplayName(newDisplayName);
           toast({
             title: "Profile updated",
-            description: "Your display name has been updated successfully.",
+            description: "Your settings have been updated successfully.",
           });
         } else {
           console.log("Update failed:", response.error);
