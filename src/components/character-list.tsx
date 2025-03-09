@@ -15,7 +15,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, PlusIcon, Trash2, TrashIcon } from "lucide-react";
+import { PlusIcon, TrashIcon } from "lucide-react";
 import type { CharacterSummary } from "@/data/characters";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import {

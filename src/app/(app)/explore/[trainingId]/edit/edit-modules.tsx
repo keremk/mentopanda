@@ -26,39 +26,34 @@ export function EditModules() {
     ? modules.find((m) => m.id === effectiveModuleId)
     : null;
 
-  // Auto-select first module when navigating to modules tab if no module is selected
-  useEffect(() => {
-    // Only run if we have modules but none is selected AND there's no moduleId in the URL
-    if (modules.length > 0 && !effectiveModuleId && !moduleIdFromUrl) {
-      const firstModuleId = modules[0].id;
-      handleSelectModule(firstModuleId);
-    }
-  }, [modules, effectiveModuleId, moduleIdFromUrl]);
-
-  // Handle URL-specified module that might not be loaded in context yet
-  useEffect(() => {
-    // If URL has a moduleId but it doesn't match the selected one in context
-    if (moduleIdFromUrl && parseInt(moduleIdFromUrl) !== selectedModuleId) {
-      const moduleId = parseInt(moduleIdFromUrl);
-      // Check if this module exists in our list
-      if (modules.some((m) => m.id === moduleId)) {
-        // Update the context without changing the URL again
-        selectModule(moduleId);
-      }
-    }
-  }, [moduleIdFromUrl, selectedModuleId, modules, selectModule]);
-
-  const handleSelectModule = async (moduleId: number) => {
+  const handleSelectModule = (moduleId: number) => {
     // Update URL with the selected module ID
     const params = new URLSearchParams(searchParams);
     params.set("moduleId", moduleId.toString());
 
     // Update the context
-    await selectModule(moduleId);
+    selectModule(moduleId);
 
     // Update the URL
     router.push(`${pathname}?${params.toString()}`);
   };
+
+  // Unified module selection logic
+  useEffect(() => {
+    // Case 1: URL has moduleId that doesn't match context
+    if (moduleIdFromUrl && parseInt(moduleIdFromUrl) !== selectedModuleId) {
+      const moduleId = parseInt(moduleIdFromUrl);
+      // Only update context if module exists (don't update URL)
+      if (modules.some((m) => m.id === moduleId)) {
+        selectModule(moduleId);
+      }
+    }
+    // Case 2: No moduleId in URL or context, but modules exist
+    else if (modules.length > 0 && !effectiveModuleId) {
+      const firstModuleId = modules[0].id;
+      handleSelectModule(firstModuleId);
+    }
+  }, [modules, moduleIdFromUrl, selectedModuleId, effectiveModuleId]);
 
   return (
     <div className="flex flex-col md:flex-row gap-8 w-full">

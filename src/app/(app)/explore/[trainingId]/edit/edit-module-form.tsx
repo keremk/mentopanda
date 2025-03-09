@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Module } from "@/data/modules";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { useModuleEdit } from "@/contexts/module-edit-context";
