@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,13 +26,25 @@ import { Loader2 } from "lucide-react";
 
 export function EditContainer() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isSaving, setIsSaving] = useState(false);
+
+  // Get the active tab from URL or default to "details"
+  const activeTab = searchParams.get("tab") || "details";
 
   // Access all contexts for saving
   const trainingDetails = useTrainingDetails();
   const moduleList = useModuleList();
   const moduleEdit = useModuleEdit();
   const characterPrompt = useCharacterPrompt();
+
+  // Function to update URL when tab changes
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", value);
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
   const handleDeleteTraining = async () => {
     await deleteTrainingAction(trainingDetails.training.id);
@@ -137,7 +149,11 @@ export function EditContainer() {
         </Button>
       </div>
 
-      <Tabs defaultValue="details" className="w-full flex-1 flex flex-col mt-8">
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="w-full flex-1 flex flex-col mt-8"
+      >
         <TabsList className="grid w-full grid-cols-2 bg-secondary/30 p-1 rounded-lg border border-border/30">
           <TabsTrigger
             value="details"

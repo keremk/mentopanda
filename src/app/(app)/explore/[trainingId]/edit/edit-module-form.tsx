@@ -9,15 +9,19 @@ import { Module } from "@/data/modules";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { EditModuleCharacter } from "./edit-module-character";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 type Props = {
   module: Module;
 };
 
 export function EditModuleForm({ module }: Props) {
-  const [activeTab, setActiveTab] = useState<string>("scenario");
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Get the active tab from URL or default to "scenario"
+  const activeTab = searchParams.get("moduleTab") || "scenario";
 
   // Use the contexts
   const { updateModuleField, selectModule, selectedModule } = useModuleEdit();
@@ -53,6 +57,13 @@ export function EditModuleForm({ module }: Props) {
     if (selectedModule) {
       router.push(`/simulation/${selectedModule.id}`);
     }
+  };
+
+  // Function to update URL when tab changes
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("moduleTab", value);
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   if (!selectedModule) return null;
@@ -99,7 +110,11 @@ export function EditModuleForm({ module }: Props) {
             Quick Test
           </Button>
         </div>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-4 bg-secondary/50 p-1">
             <TabsTrigger
               value="scenario"
