@@ -3,11 +3,13 @@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { Module } from "@/data/modules";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { EditModuleCharacter } from "./edit-module-character";
+import { useRouter } from "next/navigation";
 
 type Props = {
   module: Module;
@@ -15,6 +17,7 @@ type Props = {
 
 export function EditModuleForm({ module }: Props) {
   const [activeTab, setActiveTab] = useState<string>("scenario");
+  const router = useRouter();
 
   // Use the contexts
   const { updateModuleField, selectModule, selectedModule } = useModuleEdit();
@@ -44,6 +47,12 @@ export function EditModuleForm({ module }: Props) {
       ...selectedModule.modulePrompt,
       [field]: value,
     });
+  };
+
+  const handleQuickTest = () => {
+    if (selectedModule) {
+      router.push(`/simulation/${selectedModule.id}`);
+    }
   };
 
   if (!selectedModule) return null;
@@ -77,9 +86,19 @@ export function EditModuleForm({ module }: Props) {
       </div>
 
       <div className="mt-8">
-        <h3 className="text-lg font-medium mb-4 text-foreground">
-          AI Instructions
-        </h3>
+        <div className="flex justify-between items-center mb-4 pb-2 border-b border-border/30">
+          <h3 className="text-lg font-medium text-foreground">
+            AI Instructions
+          </h3>
+          <Button
+            variant="outline"
+            onClick={handleQuickTest}
+            size="sm"
+            className="shadow-sm hover:shadow-md transition-all bg-background/80 border-primary/30 hover:bg-primary/10 text-primary"
+          >
+            Quick Test
+          </Button>
+        </div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 bg-secondary/50 p-1">
             <TabsTrigger

@@ -73,7 +73,9 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const router = useRouter();
   const [isTimeout, setIsTimeout] = useState(false);
-  const HARD_TIMEOUT_MINUTES = 2;
+  const HARD_TIMEOUT_MINUTES = process.env.NEXT_PUBLIC_CHAT_HARD_TIMEOUT_MINUTES
+    ? parseInt(process.env.NEXT_PUBLIC_CHAT_HARD_TIMEOUT_MINUTES)
+    : 2;
 
   const {
     startMicrophone,

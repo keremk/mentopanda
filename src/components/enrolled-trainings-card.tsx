@@ -2,7 +2,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Search, PlayCircle, GripVertical } from "lucide-react";
+import { Search, GripVertical, PlayIcon } from "lucide-react";
 import { EnrollmentButton } from "@/components/enrollment-button";
 import { TrainingSummary } from "@/data/trainings";
 
@@ -48,7 +48,7 @@ export async function EnrolledTrainingsCard({ trainings }: EnrolledTrainingsCard
                       asChild
                     >
                       <Link href={`/enrollments/${training.id}`}>
-                        <PlayCircle className="mr-2 h-4 w-4" />
+                        <PlayIcon className="mr-2 h-4 w-4" />
                         Train
                       </Link>
                     </Button>
