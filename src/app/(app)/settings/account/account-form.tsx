@@ -87,7 +87,7 @@ export function AccountForm({ user }: AccountFormProps) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-6">
+    <form action={handleSubmit} className="space-y-6 max-w-2xl">
       {/* Avatar Section */}
       <div className="flex items-center space-x-4 mb-8">
         <Avatar className="h-20 w-20">
@@ -164,7 +164,7 @@ export function AccountForm({ user }: AccountFormProps) {
       </div>
 
       <div className="flex justify-end pt-6">
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" variant="outline" disabled={isPending}>
           {isPending ? "Saving..." : "Save Changes"}
         </Button>
       </div>
