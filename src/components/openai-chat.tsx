@@ -225,7 +225,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
       </div>
 
       <div className="h-full overflow-hidden">
-        <Tabs defaultValue="transcript" className="h-full flex flex-col">
+        <Tabs defaultValue="instructions" className="h-full flex flex-col">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="instructions">Instructions</TabsTrigger>
             <TabsTrigger value="transcript">Transcript</TabsTrigger>
