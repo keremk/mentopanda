@@ -16,6 +16,7 @@ import {
   updateProjectMemberRole,
 } from "@/data/projects";
 import { UserRole } from "@/data/user";
+import { cache } from "react";
 
 export async function setupProjectAction(data: ProjectSetupData) {
   const supabase = await createClient();
@@ -97,6 +98,11 @@ export async function getProjectMembersAction(projectId: number) {
   const supabase = await createClient();
   return await getProjectMembers(supabase, projectId);
 }
+
+export const getProjectMembersActionCached = cache(async (projectId: number) => {
+  const supabase = await createClient();
+  return await getProjectMembers(supabase, projectId);
+});
 
 export async function getProjectMemberInfoAction(
   projectId: number,

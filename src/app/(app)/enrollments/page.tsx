@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { getSharedData } from "./layout";
+import { getEnrolledTrainingsActionCached } from "@/app/actions/enrollment-actions";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 export default async function TrainingPage() {
-  const trainings = await getSharedData();
+  const trainings = await getEnrolledTrainingsActionCached();
 
   if (trainings.length > 0) {
     redirect(`/enrollments/${trainings[0].id}`);

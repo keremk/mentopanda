@@ -7,11 +7,17 @@ import {
   unenrollFromTraining,
 } from "@/data/enrollments";
 import { getEnrolledTrainings } from "@/data/enrollments";
+import { cache } from "react";
 
 export async function getEnrolledTrainingsAction() {
   const supabase = await createClient();
   return await getEnrolledTrainings(supabase);
 }
+
+export const getEnrolledTrainingsActionCached = cache(async () => {
+  const supabase = await createClient();
+  return await getEnrolledTrainings(supabase);
+});
 
 export async function isEnrolledAction(trainingId: number) {
   const supabase = await createClient();

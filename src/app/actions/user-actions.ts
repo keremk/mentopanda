@@ -7,7 +7,7 @@ import {
   updateUserAvatar,
 } from "@/data/user";
 import { z } from "zod";
-
+import { cache } from "react";
 const updateProfileSchema = z.object({
   displayName: z.string().min(2).max(50),
 });
@@ -20,6 +20,11 @@ export async function getCurrentUserAction() {
   const supabase = await createClient();
   return await getCurrentUserInfo(supabase);
 }
+
+export const getCurrentUserActionCached = cache(async () => {
+  const supabase = await createClient();
+  return await getCurrentUserInfo(supabase);
+});
 
 export async function updateProfileAction(data: { displayName: string }) {
   try {

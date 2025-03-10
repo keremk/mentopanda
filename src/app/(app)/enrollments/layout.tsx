@@ -1,17 +1,12 @@
-import { getEnrolledTrainingsAction } from "@/app/actions/enrollment-actions";
+import { getEnrolledTrainingsActionCached } from "@/app/actions/enrollment-actions";
 import { EnrolledTrainingsList } from "@/components/enrolled-trainings-list";
-
-export async function getSharedData() {
-  const trainings = await getEnrolledTrainingsAction();
-  return trainings;
-}
 
 export default async function TrainingsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const trainings = await getSharedData();
+  const trainings = await getEnrolledTrainingsActionCached();
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] py-2">
