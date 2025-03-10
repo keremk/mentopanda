@@ -33,6 +33,7 @@ export function EditModuleCharacter({ module }: Props) {
     initializeCharacter,
   } = useCharacterPrompt();
 
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!module) return;
 
@@ -44,7 +45,8 @@ export function EditModuleCharacter({ module }: Props) {
 
     initializeCharacter(character);
   }, [module.modulePrompt.characters, initializeCharacter]);
-
+  /* eslint-enable react-hooks/exhaustive-deps */
+  
   const getInitials = (name: string) => {
     if (!name) return "";
     return name

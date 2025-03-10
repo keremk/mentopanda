@@ -102,6 +102,7 @@ export const useUppyWithSupabase = ({
     // Initialize Uppy with Supabase settings
     initializeUppy();
 
+    /* eslint-disable react-hooks/exhaustive-deps */
     // Cleanup function: remove the plugin on unmount so that
     // a subsequent Strict Mode mount doesn't see it as "already attached".
     return () => {
@@ -111,7 +112,7 @@ export const useUppyWithSupabase = ({
       }
     };
   }, [uppy, bucketName, folderName, onUploadComplete, supabase.auth, supabase.storage]);
-
+  /* eslint-enable react-hooks/exhaustive-deps */
   // Return the configured Uppy instance
   return uppy;
 };

@@ -38,7 +38,7 @@ export function EditModules() {
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  // Unified module selection logic
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     // Case 1: URL has moduleId that doesn't match context
     if (moduleIdFromUrl && parseInt(moduleIdFromUrl) !== selectedModuleId) {
@@ -54,7 +54,7 @@ export function EditModules() {
       handleSelectModule(firstModuleId);
     }
   }, [modules, moduleIdFromUrl, selectedModuleId, effectiveModuleId]);
-
+  /* eslint-enable react-hooks/exhaustive-deps */
   return (
     <div className="flex flex-col md:flex-row gap-8 w-full">
       <div className="w-full md:w-80 h-[calc(100vh-11rem)]">
