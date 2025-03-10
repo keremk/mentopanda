@@ -5,6 +5,7 @@ import { MemberRoleSelector } from "@/components/member-role-selector";
 import { TrainingHistory } from "@/components/training-history";
 import { TrainingSessionsHeatmap } from "@/components/training-sessions-heatmap";
 import { getCurrentUserActionCached } from "@/app/actions/user-actions";
+import { notFound } from "next/navigation";
 
 export default async function TeamMemberPage(props: {
   params: Promise<{ memberId: string }>;
@@ -17,13 +18,14 @@ export default async function TeamMemberPage(props: {
     params.memberId
   );
 
-  if (!member) return <div>Member not found</div>;
+  if (!member) notFound();
 
-  const initials = member.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
+  const initials =
+    member.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase() || "X";
 
   return (
     <div className="container py-6 space-y-6">

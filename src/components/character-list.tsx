@@ -22,7 +22,7 @@ import {
   createCharacterAction,
   deleteCharacterAction,
 } from "@/app/actions/character-actions";
-
+import { getInitials } from "@/lib/utils";
 type CharacterListProps = {
   characters: CharacterSummary[];
   canManageCharacters: boolean;
@@ -108,9 +108,7 @@ export function CharacterList({
                   src={character.avatarUrl ?? undefined}
                   alt={character.name}
                 />
-                <AvatarFallback>
-                  {character.name[0]?.toUpperCase() ?? "?"}
-                </AvatarFallback>
+                <AvatarFallback>{getInitials(character.name)}</AvatarFallback>
               </Avatar>
               <span className="text-sm font-medium">{character.name}</span>
             </div>

@@ -99,7 +99,7 @@ export async function getProjectMembers(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return members.map((member: any) => ({
     id: member.user_id,
-    name: member.display_name,
+    name: member.display_name || member.email.split("@")[0],
     email: member.email,
     role: member.role,
     avatar_url: member.avatar_url || "",
@@ -129,7 +129,7 @@ export async function getProjectMemberInfo(
 
   return {
     id: memberInfo.user_id,
-    name: memberInfo.display_name,
+    name: memberInfo.display_name || memberInfo.email.split("@")[0],
     email: memberInfo.email,
     role: memberInfo.role,
     avatar_url: memberInfo.avatar_url || "",

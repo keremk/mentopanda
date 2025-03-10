@@ -8,11 +8,11 @@ import { useState } from "react";
 import { AIModel } from "@/types/models";
 import { CharacterVoiceSelect } from "@/components/character-voice-select";
 import { MarkdownEditor } from "@/components/markdown-editor";
-import { ImageIcon } from "lucide-react";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import { updateCharacterAvatarAction } from "@/app/actions/character-actions";
 import { useCharacterDetails } from "@/contexts/character-details-context";
 import { useToast } from "@/hooks/use-toast";
+import { getInitials } from "@/lib/utils";
 
 export function EditCharacterForm() {
   const router = useRouter();
@@ -82,7 +82,7 @@ export function EditCharacterForm() {
             <Avatar className="h-[120px] w-[120px]">
               <AvatarImage src={avatarUrl || undefined} alt={character.name} />
               <AvatarFallback className="text-4xl">
-                <ImageIcon className="h-20 w-20 text-muted-foreground" />
+                {getInitials(character.name)}
               </AvatarFallback>
             </Avatar>
             <ImageUploadButton

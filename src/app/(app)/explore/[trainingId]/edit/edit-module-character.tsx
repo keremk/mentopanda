@@ -17,6 +17,7 @@ import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { getInitials } from "@/lib/utils";
 
 type Props = {
   module: Module;
@@ -47,14 +48,6 @@ export function EditModuleCharacter({ module }: Props) {
   }, [module.modulePrompt.characters, initializeCharacter]);
   /* eslint-enable react-hooks/exhaustive-deps */
   
-  const getInitials = (name: string) => {
-    if (!name) return "";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
 
   const handleCharacterPromptChange = (value: string) => {
     if (!selectedModule?.modulePrompt.characters.length) return;

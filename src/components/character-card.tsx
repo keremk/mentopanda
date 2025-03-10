@@ -8,7 +8,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
-
+import { getInitials } from "@/lib/utils";
 interface CharacterCardProps {
   name: string;
   avatarUrl: string;
@@ -58,7 +58,7 @@ export function CharacterCard({
                   <Avatar className="w-32 h-32 border-2 border-background shadow-md">
                     <AvatarImage src={avatarUrl} alt={name} />
                     <AvatarFallback className="text-2xl">
-                      {name[0]}
+                      {getInitials(name)}
                     </AvatarFallback>
                   </Avatar>
                 </motion.div>

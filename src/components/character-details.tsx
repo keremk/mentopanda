@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PlayCircle, StopCircle } from "lucide-react";
 import type { CharacterDetails } from "@/data/characters";
 import { VOICES, AI_MODELS } from "@/types/models";
-
+import { getInitials } from "@/lib/utils";
 type CharacterDetailsViewProps = {
   character: CharacterDetails;
 };
@@ -76,7 +76,7 @@ export function CharacterDetailsView({ character }: CharacterDetailsViewProps) {
             alt={character.name}
           />
           <AvatarFallback className="text-2xl">
-            {character.name[0]?.toUpperCase() ?? "?"}
+            {getInitials(character.name)}
           </AvatarFallback>
         </Avatar>
 

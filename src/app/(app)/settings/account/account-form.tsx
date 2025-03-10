@@ -14,6 +14,7 @@ import { ImageUploadButton } from "@/components/image-upload-button";
 import { ProjectDialog } from "@/components/project-dialog";
 import { ApiKeyInput } from "@/components/api-key-input";
 import { useToast } from "@/hooks/use-toast";
+import { getInitials } from "@/lib/utils";
 
 type AccountFormProps = {
   user: User;
@@ -92,9 +93,7 @@ export function AccountForm({ user }: AccountFormProps) {
       <div className="flex items-center space-x-4 mb-8">
         <Avatar className="h-20 w-20">
           <AvatarImage src={avatarUrl} alt={displayName} />
-          <AvatarFallback>
-            {displayName.slice(0, 2).toUpperCase()}
-          </AvatarFallback>
+          <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
         </Avatar>
         <ImageUploadButton
           bucket="avatars"
