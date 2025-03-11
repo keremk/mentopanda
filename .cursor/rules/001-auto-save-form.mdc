@@ -1,0 +1,69 @@
+---
+description: Autosaving forms to the backend server actions
+globs: *.ts
+alwaysApply: false
+---
+# Autosaving Forms
+Rather than explicitly submitting forms, autosaving them with some delay gives a better user experience and prevents users from losing their changes in case of an accidental browser navigation etc. So we will be using this consistently across the database. 
+
+Here are the top practices:
+* Use the React Providers patterns to decouple the form UI from the saving of form data and reduce usages of useEffect within the form. 
+* Use the server actions and follow the latest Next.js 15 forms practices when saving forms and calling the server. Never use the Supabase defined data functions directly and always use the server actions. 
+* Keep the following state when saving content:
+```
+type SaveStatus = "idle" | "saving" | "saved" | "error";
+```
+* Always compare against the last saved version and do not save if the last save is the same.
+* Always use a debounce of 1000ms to wait before saving, so that we are not bombarding the server with calls.
+* Keep a userModified state to only save when user actually modifies something. (not on initial load)
+* Add an additional delay of 500ms before the auto-save.
+* Use `structuredClone` when needed to deep copy to ensure proper copying of nested objects. 
+
+
+## Standard Pattern for Auto-save
+<example>
+
+``` 
+// 1. Create debounced version of state
+const debouncedState = useDebounce(state, 1000);
+
+// 2. Track user modifications
+const [userModified, setUserModified] = useState(false);
+
+// 3. Use effect for auto-save
+useEffect(() => {
+  // Skip if conditions aren't met
+  if (!necessaryId || saveStatus !== "idle" || !userModified) return;
+  
+  // Skip if no changes
+  if (debouncedState === lastSavedState) return;
+  
+  // Optional: Add additional delay
+  const timeoutId = setTimeout(() => {
+    performSave(debouncedState);
+  }, 500); // Additional delay after debounce
+  
+  return () => clearTimeout(timeoutId);
+}, [debouncedState, lastSavedState, necessaryId, saveStatus, performSave, userModified]);
+```
+</example>
+
+# Update Function Pattern
+
+```
+const updateField = useCallback((newValue) => {
+  setState(newValue);
+  setUserModified(true); // Mark as user-modified
+  setSaveStatus("idle"); // Reset save status if needed
+}, []);
+```
+
+# Initialize/Reset Pattern
+
+```
+const initialize = useCallback((data) => {
+  setState(data);
+  setLastSavedState(data);
+  setUserModified(false); // Reset user modified flag
+}, []);
+```

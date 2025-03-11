@@ -6,6 +6,7 @@ import {
   useState,
   ReactNode,
   useCallback,
+  useEffect,
 } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { TrainingEdit, UpdateTrainingInput } from "@/data/trainings";
@@ -38,54 +39,47 @@ export function TrainingDetailsProvider({
   initialTraining,
 }: TrainingDetailsProviderProps) {
   const [training, setTraining] = useState<TrainingEdit>(initialTraining);
-  const [lastSavedTraining, setLastSavedTraining] =
-    useState<TrainingEdit>(initialTraining);
+  const [lastSavedTraining, setLastSavedTraining] = useState<TrainingEdit>(
+    structuredClone(initialTraining)
+  );
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [userModified, setUserModified] = useState(false);
 
   const debouncedTraining = useDebounce(training, 1000);
 
   // Extracted common save logic
-  const performSave = useCallback(
-    async (trainingData: TrainingEdit) => {
-      try {
-        setSaveStatus("saving");
-        await updateTrainingAction({
-          id: trainingData.id,
-          title: trainingData.title,
-          tagline: trainingData.tagline,
-          description: trainingData.description,
-          imageUrl: trainingData.imageUrl,
-          previewUrl: trainingData.previewUrl,
-        });
+  const performSave = useCallback(async (trainingData: TrainingEdit) => {
+    try {
+      setSaveStatus("saving");
+      await updateTrainingAction({
+        id: trainingData.id,
+        title: trainingData.title,
+        tagline: trainingData.tagline,
+        description: trainingData.description,
+        imageUrl: trainingData.imageUrl,
+        previewUrl: trainingData.previewUrl,
+      });
 
-        // Update the last saved version with current values
-        setLastSavedTraining({
-          ...lastSavedTraining,
-          title: trainingData.title,
-          tagline: trainingData.tagline,
-          description: trainingData.description,
-          imageUrl: trainingData.imageUrl,
-          previewUrl: trainingData.previewUrl,
-        });
+      // Update the last saved version with current values using deep clone
+      setLastSavedTraining(structuredClone(trainingData));
 
-        setLastSavedAt(new Date());
-        setSaveStatus("saved");
-        setTimeout(() => setSaveStatus("idle"), 2000);
-        return true;
-      } catch (error) {
-        console.error("Error saving training:", error);
-        setSaveStatus("error");
-        setTimeout(() => setSaveStatus("idle"), 3000);
-        return false;
-      }
-    },
-    [lastSavedTraining]
-  );
+      setLastSavedAt(new Date());
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+      return true;
+    } catch (error) {
+      console.error("Error saving training:", error);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+      return false;
+    }
+  }, []);
 
   // Auto-save when training changes
-  useDebounce(async () => {
-    if (saveStatus !== "idle") return;
+  useEffect(() => {
+    // Skip if already saving or not user modified
+    if (saveStatus !== "idle" || !userModified) return;
 
     // Only save if something changed compared to last saved version
     if (
@@ -107,8 +101,19 @@ export function TrainingDetailsProvider({
       return;
     }
 
-    await performSave(debouncedTraining);
-  }, 1500);
+    // Add additional delay after debounce before saving
+    const timeoutId = setTimeout(() => {
+      performSave(debouncedTraining);
+    }, 500); // Additional 500ms delay after debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    debouncedTraining,
+    lastSavedTraining,
+    saveStatus,
+    performSave,
+    userModified,
+  ]);
 
   const updateTrainingField = useCallback(
     <K extends keyof UpdateTrainingInput>(
@@ -116,6 +121,7 @@ export function TrainingDetailsProvider({
       value: UpdateTrainingInput[K]
     ) => {
       setTraining((prev) => ({ ...prev, [field]: value }));
+      setUserModified(true);
       setSaveStatus("idle");
     },
     []

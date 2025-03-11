@@ -98,7 +98,12 @@ export function CharacterPromptProvider({
     if (!characterId || debouncedPrompt === lastSavedPrompt || !userModified)
       return;
 
-    savePrompt(debouncedPrompt);
+    // Add additional delay after debounce
+    const timeoutId = setTimeout(() => {
+      savePrompt(debouncedPrompt);
+    }, 500); // Additional 500ms delay after debounce
+
+    return () => clearTimeout(timeoutId);
   }, [debouncedPrompt, lastSavedPrompt, characterId, savePrompt, userModified]);
 
   // Reset state when module changes

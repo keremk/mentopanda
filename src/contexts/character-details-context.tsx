@@ -43,9 +43,10 @@ export function CharacterDetailsProvider({
   const [character, setCharacter] =
     useState<CharacterDetails>(initialCharacter);
   const [lastSavedCharacter, setLastSavedCharacter] =
-    useState<CharacterDetails>(initialCharacter);
+    useState<CharacterDetails>(structuredClone(initialCharacter));
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [userModified, setUserModified] = useState(false);
 
   const debouncedCharacter = useDebounce(character, 1000);
 
@@ -62,15 +63,8 @@ export function CharacterDetailsProvider({
           description: characterData.description || "",
         });
 
-        // Update the last saved version with current values
-        setLastSavedCharacter({
-          ...lastSavedCharacter,
-          name: characterData.name,
-          voice: characterData.voice,
-          aiModel: characterData.aiModel,
-          aiDescription: characterData.aiDescription,
-          description: characterData.description,
-        });
+        // Update the last saved version with current values using deep clone
+        setLastSavedCharacter(structuredClone(characterData));
 
         setLastSavedAt(new Date());
         setSaveStatus("saved");
@@ -84,12 +78,13 @@ export function CharacterDetailsProvider({
         return false;
       }
     },
-    [lastSavedCharacter, router]
+    [router]
   );
 
   // Auto-save when character changes
   useEffect(() => {
-    if (saveStatus !== "idle") return;
+    // Skip if already saving or not user modified
+    if (saveStatus !== "idle" || !userModified) return;
 
     const hasChanges =
       JSON.stringify({
@@ -108,9 +103,20 @@ export function CharacterDetailsProvider({
       });
 
     if (hasChanges) {
-      performSave(debouncedCharacter);
+      // Add additional delay after debounce
+      const timeoutId = setTimeout(() => {
+        performSave(debouncedCharacter);
+      }, 500); // Additional 500ms delay after debounce
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [debouncedCharacter, lastSavedCharacter, saveStatus, performSave]);
+  }, [
+    debouncedCharacter,
+    lastSavedCharacter,
+    saveStatus,
+    performSave,
+    userModified,
+  ]);
 
   const updateCharacterField = useCallback(
     <K extends keyof UpdateCharacterInput>(
@@ -118,6 +124,7 @@ export function CharacterDetailsProvider({
       value: UpdateCharacterInput[K]
     ) => {
       setCharacter((prev) => ({ ...prev, [field]: value }));
+      setUserModified(true);
       setSaveStatus("idle");
     },
     []

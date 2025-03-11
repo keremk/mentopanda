@@ -120,7 +120,7 @@ export function ModuleEditProvider({
 
     const timeoutId = setTimeout(() => {
       performSave(debouncedModule);
-    }, 0);
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [debouncedModule, lastSavedModule, saveStatus, performSave, userModified]);
