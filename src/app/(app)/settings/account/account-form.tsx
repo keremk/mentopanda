@@ -88,82 +88,84 @@ export function AccountForm({ user }: AccountFormProps) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-6 max-w-2xl">
+    <form action={handleSubmit} className="space-y-6 max-w-2xl px-2 py-6">
       {/* Avatar Section */}
-      <div className="flex items-center space-x-4 mb-8">
-        <Avatar className="h-20 w-20">
-          <AvatarImage src={avatarUrl} alt={displayName} />
-          <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-        </Avatar>
-        <ImageUploadButton
-          bucket="avatars"
-          folder="user-avatars"
-          onUploadComplete={handleAvatarUpload}
-          buttonText={isAvatarUpdating ? "Updating..." : "Change Avatar"}
-          dialogTitle="Upload Avatar"
-          buttonVariant="outline"
-          buttonSize="sm"
-        />
-      </div>
-
-      {/* Form Fields */}
-      <div className="space-y-6">
-        {/* Display Name Field */}
-        <div className="space-y-2">
-          <Label htmlFor="displayName">Display Name</Label>
-          <Input
-            id="displayName"
-            name="displayName"
-            defaultValue={displayName}
-            className="max-w-md"
+      <div className="flex items-start gap-8">
+        <div className="space-y-4 flex flex-col items-center w-48">
+          <Avatar className="h-32 w-32">
+            <AvatarImage src={avatarUrl} alt={displayName} />
+            <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+          </Avatar>
+          <ImageUploadButton
+            bucket="avatars"
+            folder="user-avatars"
+            onUploadComplete={handleAvatarUpload}
+            buttonText={isAvatarUpdating ? "Updating..." : "Change Avatar"}
+            buttonVariant="outline"
+            buttonSize="default"
           />
         </div>
 
-        {/* Email Field */}
-        <div className="space-y-2">
-          <Label htmlFor="email">Email Address</Label>
-          <div className="flex gap-4 max-w-md">
+        <div className="flex-1 space-y-6 py-2">
+          {/* Display Name Field */}
+          <div className="flex flex-col gap-y-2">
+            <Label className="text-muted-foreground">Display Name</Label>
+            <Input
+              id="displayName"
+              name="displayName"
+              defaultValue={displayName}
+              className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
+            />
+          </div>
+
+          {/* Email Field */}
+          <div className="flex flex-col gap-y-2">
+            <Label className="text-muted-foreground">Email Address</Label>
             <Input
               id="email"
               type="email"
               defaultValue={user.email}
               disabled
-              className="flex-1"
+              className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
             />
           </div>
         </div>
-
-        {/* Project Selection */}
-        <div className="space-y-2">
-          <Label>Current Project</Label>
-          <div className="flex gap-4 max-w-md">
-            <div className="flex-1 flex items-center gap-4">
-              <Input
-                value={user.currentProject?.name || "No project selected"}
-                disabled
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowProjectDialog(true)}
-              >
-                Select Project
-              </Button>
-            </div>
-          </div>
-          <ProjectDialog
-            open={showProjectDialog}
-            onOpenChange={setShowProjectDialog}
-          />
-        </div>
-
-        {/* API Key Field */}
-        <ApiKeyInput />
       </div>
 
+      {/* Project Selection */}
+      <div className="flex flex-col gap-y-2">
+        <Label className="text-muted-foreground">Current Project</Label>
+        <div className="flex gap-4">
+          <Input
+            value={user.currentProject?.name || "No project selected"}
+            disabled
+            className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowProjectDialog(true)}
+            className="shadow-sm hover:shadow-md transition-all bg-background/80 border-primary/20 hover:bg-primary/10 text-primary"
+          >
+            Select Project
+          </Button>
+        </div>
+        <ProjectDialog
+          open={showProjectDialog}
+          onOpenChange={setShowProjectDialog}
+        />
+      </div>
+
+      {/* API Key Field */}
+      <ApiKeyInput className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm" />
+
       <div className="flex justify-end pt-6">
-        <Button type="submit" variant="outline" disabled={isPending}>
+        <Button
+          type="submit"
+          variant="outline"
+          disabled={isPending}
+          className="shadow-sm hover:shadow-md transition-all bg-background/80 border-primary/20 hover:bg-primary/10 text-primary"
+        >
           {isPending ? "Saving..." : "Save Changes"}
         </Button>
       </div>
