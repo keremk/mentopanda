@@ -80,11 +80,7 @@ export const navItems: NavItem[] = [
   },
 ];
 
-export function NavMain({
-  permissions,
-}: {
-  permissions: AppPermission[];
-}) {
+export function NavMain({ permissions }: { permissions: AppPermission[] }) {
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, ChevronsUpDown, LogOut, Sun, Moon } from "lucide-react";
+import { Settings, LogOut, Sun, Moon } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -78,7 +78,6 @@ export function NavUser({
                 <span className="truncate font-semibold">{user.name}</span>
                 <span className="truncate text-xs">{user.email}</span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -118,9 +117,7 @@ export function NavUser({
                   {getCurrentThemeLabel()}
                 </div>
                 <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <ChevronsUpDown className="h-4 w-4" />
-                  </DropdownMenuTrigger>
+                  <DropdownMenuTrigger></DropdownMenuTrigger>
                   <DropdownMenuContent
                     side="right"
                     align="start"

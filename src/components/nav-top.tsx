@@ -9,15 +9,15 @@ export function NavTop({ title }: { title: string }) {
   const isCollapsed = state === "collapsed";
 
   return (
-    <div className="w-full px-2">
+    <div className="w-full px-2 pb-5">
       <div
-        className={`flex items-center transition-all duration-300 ease-in-out ${
+        className={`flex w-full items-center transition-all duration-300 ease-in-out ${
           isCollapsed ? "justify-center" : ""
         }`}
       >
         <div
           className={`flex aspect-square size-12 items-center justify-center rounded-lg bg-sidebar-secondary text-sidebar-primary-foreground transition-transform duration-300 ease-in-out ${
-            isCollapsed ? "transform translate-x-[calc(50%-1.25rem)]" : ""
+            isCollapsed ? "transform translate-x-[calc(50%-1.12rem)]" : ""
           }`}
         >
           <Image
