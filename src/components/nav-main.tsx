@@ -139,9 +139,17 @@ export function NavMain({ permissions }: { permissions: AppPermission[] }) {
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
                       tooltip={item.title}
-                      className={isActive ? "text-blue-500" : ""}
+                      className={isActive ? "text-sidebar-foreground" : "text-sidebar-foreground/60"}
                     >
-                      {Icon && <Icon />}
+                      {Icon && (
+                        <Icon
+                          className={
+                            isActive
+                              ? "text-sidebar-foreground"
+                              : "text-sidebar-foreground/60"
+                          }
+                        />
+                      )}
                       <span>{item.title}</span>
                       <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     </SidebarMenuButton>
@@ -153,7 +161,9 @@ export function NavMain({ permissions }: { permissions: AppPermission[] }) {
                           <SidebarMenuSubButton
                             asChild
                             className={
-                              isActivePath(subItem.url) ? "text-blue-500" : ""
+                              isActivePath(subItem.url)
+                                ? "text-sidebar-foreground"
+                                : "text-sidebar-foreground/60"
                             }
                           >
                             <Link href={subItem.url} onClick={handleClick}>
@@ -176,10 +186,18 @@ export function NavMain({ permissions }: { permissions: AppPermission[] }) {
                   href={item.url}
                   onClick={handleClick}
                   className={`flex items-center ${
-                    isActive ? "text-blue-500" : ""
+                    isActive ? "text-sidebar-foreground" : "text-sidebar-foreground/60"
                   }`}
                 >
-                  {Icon && <Icon />}
+                  {Icon && (
+                    <Icon
+                      className={
+                        isActive
+                          ? "text-sidebar-foreground"
+                          : "text-sidebar-foreground/60"
+                      }
+                    />
+                  )}
                   <span>{item.title}</span>
                 </Link>
               </SidebarMenuButton>
