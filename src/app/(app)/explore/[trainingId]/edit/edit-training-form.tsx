@@ -1,10 +1,10 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useTrainingDetails } from "@/contexts/training-details-context";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import Image from "next/image";
-import { MarkdownEditor } from "@/components/markdown-editor";
 
 export function EditTrainingForm() {
   const { training, updateTrainingField } = useTrainingDetails();
@@ -45,50 +45,52 @@ export function EditTrainingForm() {
           />
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Title</label>
+        <div className="space-y-6 mt-5">
+          <div className="flex flex-col gap-y-2">
+            <label className="text-sm font-medium text-muted-foreground">Title</label>
             <Input
               name="title"
               value={training.title}
               onChange={(e) => updateTrainingField("title", e.target.value)}
+              placeholder="Enter training title"
+              className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm"
             />
           </div>
 
-          <div>
-            <label className="text-sm font-medium">Tagline</label>
+          <div className="flex flex-col gap-y-2">
+            <label className="text-sm font-medium text-muted-foreground">Tagline</label>
             <Input
               name="tagline"
               value={training.tagline}
               onChange={(e) => updateTrainingField("tagline", e.target.value)}
+              placeholder="Enter catchy, short tagline"
+              className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm"
             />
           </div>
 
-          <div>
-            <label className="text-sm font-medium">Preview Video URL</label>
+          <div className="flex flex-col gap-y-2">
+            <label className="text-sm font-medium text-muted-foreground">Preview Video Url</label>
             <Input
               name="previewUrl"
               value={training.previewUrl || ""}
               onChange={(e) =>
                 updateTrainingField("previewUrl", e.target.value)
               }
-              placeholder="Enter video URL"
+              placeholder="Enter video link, e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+              className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm"
             />
           </div>
         </div>
       </div>
 
-      <div className="mb-8">
-        <label className="text-sm font-medium">Description</label>
-        <div className="border rounded-md">
-          <MarkdownEditor
-            content={training.description}
-            onChange={(markdown) =>
-              updateTrainingField("description", markdown)
-            }
-            className="min-h-[300px]"
-          />
-        </div>
+      <div className="mb-8 flex flex-col flex-grow">
+        <label className="text-sm font-medium text-muted-foreground mb-2">Description</label>
+        <Textarea
+          value={training.description || ""}
+          onChange={(e) => updateTrainingField("description", e.target.value)}
+          className="min-h-[calc(100vh-36rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
+          placeholder="Enter training description, use markdown for formatting"
+        />
       </div>
     </>
   );

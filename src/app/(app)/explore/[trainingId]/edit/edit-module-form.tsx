@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { Module } from "@/data/modules";
-import { MarkdownEditor } from "@/components/markdown-editor";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { EditModuleCharacter } from "./edit-module-character";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -30,9 +29,6 @@ export function EditModuleForm({ module }: Props) {
   useEffect(() => {
     selectModule(module.id);
   }, [module.id, selectModule]);
-
-  // Add a key to force re-render of the MarkdownEditor when module changes
-  const editorKey = `markdown-editor-${selectedModule?.id}-${selectedModule?.title}`;
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -69,31 +65,31 @@ export function EditModuleForm({ module }: Props) {
   if (!selectedModule) return null;
 
   return (
-    <div className="h-full overflow-auto space-y-6">
-      <div>
-        <label className="text-sm font-medium mb-1 block text-foreground/90">
+    <div className="h-full space-y-6 px-2">
+      <div className="flex flex-col gap-y-2">
+        <label className="text-sm font-medium text-muted-foreground">
           Title
         </label>
         <Input
           name="title"
           value={selectedModule.title}
           onChange={handleInputChange}
-          className="border-border/50 bg-background/80 focus-visible:ring-primary/20"
+          placeholder="Enter module title"
+          className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm"
         />
       </div>
 
-      <div>
-        <label className="text-sm font-medium mb-2 block text-foreground/90">
+      <div className="flex flex-col gap-y-2">
+        <label className="text-sm font-medium text-muted-foreground">
           Instructions
         </label>
-        <div className="border border-border/50 rounded-lg overflow-hidden shadow-sm">
-          <MarkdownEditor
-            key={editorKey}
-            content={selectedModule.instructions || ""}
-            onChange={(value) => updateModuleField("instructions", value)}
-            className="min-h-[200px]"
-          />
-        </div>
+        <Textarea
+          name="instructions"
+          value={selectedModule.instructions || ""}
+          onChange={(e) => updateModuleField("instructions", e.target.value)}
+          className="min-h-[200px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
+          placeholder="Enter module instructions visible to the user, use markdown for formatting"
+        />
       </div>
 
       <div className="mt-8">
@@ -105,7 +101,7 @@ export function EditModuleForm({ module }: Props) {
             variant="outline"
             onClick={handleQuickTest}
             size="sm"
-            className="shadow-sm hover:shadow-md transition-all bg-background/80 border-primary/30 hover:bg-primary/10 text-primary"
+            className="shadow-sm hover:shadow-md transition-all bg-background/80 border-primary/20 hover:bg-primary/10 text-primary"
           >
             Quick Test
           </Button>
@@ -115,19 +111,19 @@ export function EditModuleForm({ module }: Props) {
           onValueChange={handleTabChange}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-4 bg-secondary/50 p-1">
+          <TabsList className="grid w-full grid-cols-3 bg-secondary/50 p-1">
             <TabsTrigger
               value="scenario"
               className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
             >
               Scenario
             </TabsTrigger>
-            <TabsTrigger
+            {/* <TabsTrigger
               value="moderator"
               className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
             >
               Moderator
-            </TabsTrigger>
+            </TabsTrigger> */}
             <TabsTrigger
               value="assessment"
               className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
@@ -147,28 +143,28 @@ export function EditModuleForm({ module }: Props) {
               value={selectedModule.modulePrompt.scenario}
               onChange={(e) => handlePromptChange(e, "scenario")}
               rows={12}
-              placeholder="Enter the scenario instructions..."
-              className="border-border/50 bg-background/80 focus-visible:ring-primary/20 resize-none"
+              placeholder="Enter the prompt for the AI to set up the overall scenario"
+              className="min-h-[calc(100vh-41rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
             />
           </TabsContent>
 
-          <TabsContent value="moderator" className="mt-4">
+          {/* <TabsContent value="moderator" className="mt-4">
             <Textarea
               value={selectedModule.modulePrompt.moderator || ""}
               onChange={(e) => handlePromptChange(e, "moderator")}
               rows={12}
               placeholder="Enter the moderator instructions..."
-              className="border-border/50 bg-background/80 focus-visible:ring-primary/20 resize-none"
+              className="min-h-[calc(100vh-41rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
             />
-          </TabsContent>
+          </TabsContent> */}
 
           <TabsContent value="assessment" className="mt-4">
             <Textarea
               value={selectedModule.modulePrompt.assessment}
               onChange={(e) => handlePromptChange(e, "assessment")}
               rows={12}
-              placeholder="Enter the assessment instructions..."
-              className="border-border/50 bg-background/80 focus-visible:ring-primary/20 resize-none"
+              placeholder="Enter the prompt for the AI to assess the user's performance"
+              className="min-h-[calc(100vh-41rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
             />
           </TabsContent>
 

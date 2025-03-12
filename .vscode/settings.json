@@ -16,7 +16,6 @@
   },
   "editor.formatOnSave": true,
   "sqltools.format": {
-    
     "keywordCase": "upper",
     "identifierCase": "preserve",
     "indentSize": 4,
@@ -36,5 +35,7 @@
     "breakJoinOnSections": false,
     "allowShortTableAlias": true,
     "commaPosition": "after"
-  }
+  },
+  "editor.fontFamily": "Zed Plex Mono",
+  "editor.fontSize": 15
 }

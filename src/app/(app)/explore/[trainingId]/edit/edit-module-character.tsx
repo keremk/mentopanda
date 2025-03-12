@@ -142,15 +142,15 @@ export function EditModuleCharacter({ module }: Props) {
 
       {selectedModule.modulePrompt.characters.length > 0 && (
         <div>
-          <label className="text-sm font-medium mb-2 block text-foreground/90">
+          <label className="text-sm font-medium text-muted-foreground">
             Character Prompt
           </label>
           <Textarea
             value={characterPrompt}
             onChange={(e) => handleCharacterPromptChange(e.target.value)}
-            placeholder="Enter the character's prompt..."
+            placeholder="Enter the prompt about how this character should behave in this scenario"
             rows={10}
-            className="border-border/50 bg-background/80 focus-visible:ring-primary/20 resize-none"
+            className="min-h-[calc(100vh-50rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
           />
         </div>
       )}

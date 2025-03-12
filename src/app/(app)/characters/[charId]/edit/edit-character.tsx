@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AIModel } from "@/types/models";
 import { CharacterVoiceSelect } from "@/components/character-voice-select";
-import { MarkdownEditor } from "@/components/markdown-editor";
+import { Textarea } from "@/components/ui/textarea";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import { updateCharacterAvatarAction } from "@/app/actions/character-actions";
 import { useCharacterDetails } from "@/contexts/character-details-context";
@@ -60,8 +60,8 @@ export function EditCharacterForm() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex items-center gap-3">
+    <div className="h-full space-y-6 px-6">
+      <div className="absolute top-0 right-0 p-4 z-10 flex items-center gap-3">
         {saveStatus === "saving" && (
           <span className="text-sm text-muted-foreground">Saving...</span>
         )}
@@ -71,15 +71,19 @@ export function EditCharacterForm() {
         {saveStatus === "error" && (
           <span className="text-sm text-red-500">Error saving</span>
         )}
-        <Button variant="outline" onClick={handleSave}>
+        <Button
+          variant="outline"
+          onClick={handleSave}
+          className="shadow-sm hover:shadow-md transition-all bg-background/80 border-primary/20 hover:bg-primary/10 text-primary"
+        >
           Save
         </Button>
       </div>
 
-      <div className="space-y-8">
-        <div className="grid grid-cols-[120px_1fr] gap-16">
-          <div className="space-y-4 flex flex-col items-center">
-            <Avatar className="h-[120px] w-[120px]">
+      <div className="space-y-6">
+        <div className="flex gap-8 items-start">
+          <div className="space-y-4 flex flex-col items-center w-48">
+            <Avatar className="h-32 w-32">
               <AvatarImage src={avatarUrl || undefined} alt={character.name} />
               <AvatarFallback className="text-4xl">
                 {getInitials(character.name)}
@@ -90,24 +94,28 @@ export function EditCharacterForm() {
               folder="character-avatars"
               onUploadComplete={handleAvatarUpload}
               buttonText={isAvatarUpdating ? "Uploading..." : "Upload Image"}
-              dialogTitle="Upload Character Image"
               buttonVariant="outline"
               buttonSize="default"
             />
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Name</label>
+          <div className="flex-1 space-y-6">
+            <div className="flex flex-col gap-y-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                Name
+              </label>
               <Input
                 name="name"
                 value={character.name}
                 onChange={(e) => updateCharacterField("name", e.target.value)}
+                className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium">Voice</label>
+            <div className="flex flex-col gap-y-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                Voice
+              </label>
               <CharacterVoiceSelect
                 value={character.voice || undefined}
                 onValueChange={(voice) => updateCharacterField("voice", voice)}
@@ -117,40 +125,32 @@ export function EditCharacterForm() {
           </div>
         </div>
 
-        {/* Description Section */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Description</h3>
-          <p className="text-sm text-muted-foreground">
-            The character description that will be visible to users.
-          </p>
-          <div className="border rounded-md">
-            <MarkdownEditor
-              key={`description-${character.id}`}
-              content={character.description || ""}
-              onChange={(markdown) =>
-                updateCharacterField("description", markdown)
-              }
-              className="min-h-[250px]"
-            />
-          </div>
+        <div className="flex flex-col gap-y-2">
+          <label className="text-sm font-medium text-muted-foreground">
+            Description
+          </label>
+          <Textarea
+            value={character.description || ""}
+            onChange={(e) =>
+              updateCharacterField("description", e.target.value)
+            }
+            placeholder="Enter character description visible to users"
+            className="min-h-[300px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
+          />
         </div>
 
-        {/* AI Description Section */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">AI Description</h3>
-          <p className="text-sm text-muted-foreground">
-            The character prompt that will be sent to the AI model.
-          </p>
-          <div className="border rounded-md">
-            <MarkdownEditor
-              key={`ai-description-${character.id}`}
-              content={character.aiDescription || ""}
-              onChange={(markdown) =>
-                updateCharacterField("aiDescription", markdown)
-              }
-              className="min-h-[300px]"
-            />
-          </div>
+        <div className="flex flex-col gap-y-2">
+          <label className="text-sm font-medium text-muted-foreground">
+            AI Description
+          </label>
+          <Textarea
+            value={character.aiDescription || ""}
+            onChange={(e) =>
+              updateCharacterField("aiDescription", e.target.value)
+            }
+            placeholder="Enter character prompt for the AI model"
+            className="min-h-[400px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
+          />
         </div>
       </div>
     </div>
