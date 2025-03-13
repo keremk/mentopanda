@@ -118,7 +118,7 @@ export function CharacterVoiceSelect({
         variant="outline"
         role="combobox"
         aria-expanded={isOpen}
-        className="w-full justify-between"
+        className="w-full justify-between text-base"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span>{selectedVoice?.name || "Select a voice"}</span>
