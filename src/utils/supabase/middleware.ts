@@ -37,10 +37,8 @@ export async function updateSession(
   // issues with users being randomly logged out.
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  const user = session?.user;
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Handle protected routes
   if (isProtectedRoute && !user) {
@@ -58,28 +56,32 @@ export async function updateSession(
     return NextResponse.redirect(new URL("/home", request.url));
   }
 
-  if (user && session) {
-    const decodedToken = JSON.parse(
-      Buffer.from(session.access_token.split(".")[1], "base64").toString()
-    );
+  if (user && isProtectedRoute) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    // Access the custom claims
-    const currentProjectId = decodedToken.current_project_id;
-    const projectRole = decodedToken.project_role;
+    if (session) {
+      const decodedToken = JSON.parse(
+        Buffer.from(session.access_token.split(".")[1], "base64").toString()
+      );
 
-    if (!isProtectedRoute) {
-      return supabaseResponse;
-    }
+      // Access the custom claims
+      const currentProjectId = decodedToken.current_project_id;
+      const projectRole = decodedToken.project_role;
 
-    if (currentProjectId && currentProjectId == 1) {
-      // Onboarding is not completed unless it is the super admin (which is the admin for the first project - starter project)
-      if (
-        projectRole !== "admin" &&
-        request.nextUrl.pathname !== "/onboard"
-      ) {
-        // Add your logic here
-        return NextResponse.redirect(new URL("/onboard", request.url));
+      if (currentProjectId && currentProjectId == 1) {
+        // Onboarding is not completed unless it is the super admin (which is the admin for the first project - starter project)
+        if (
+          projectRole !== "admin" &&
+          request.nextUrl.pathname !== "/onboard"
+        ) {
+          // Add your logic here
+          return NextResponse.redirect(new URL("/onboard", request.url));
+        }
       }
+    } else {
+      console.error("No session found!");
     }
   }
 
