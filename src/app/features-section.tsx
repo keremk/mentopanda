@@ -21,28 +21,28 @@ const features: Feature[] = [
     id: 1,
     title: "Pre-built Lessons",
     description: "Lots of pre-built lessons to get you started.",
-    icon: <BarChart3 className="w-6 h-6 text-red-500" />,
+    icon: <BarChart3 className="w-6 h-6 text-teal-600 dark:text-teal-400" />,
     image: "/catalog.png",
   },
   {
     id: 2,
     title: "Build your unique characters",
     description: "Create your own characters and use them in your lessons.",
-    icon: <Brain className="w-6 h-6 text-red-500" />,
+    icon: <Brain className="w-6 h-6 text-teal-600 dark:text-teal-400" />,
     image: "/characters.png",
   },
   {
     id: 3,
     title: "Customize your lessons",
     description: "Add your own lessons and use them.",
-    icon: <LineChart className="w-6 h-6 text-red-500" />,
+    icon: <LineChart className="w-6 h-6 text-teal-600 dark:text-teal-400" />,
     image: "/customise.png",
   },
   {
     id: 4,
     title: "Manage your enrollments",
     description: "Enroll yourself or your students and track their progress.",
-    icon: <FileText className="w-6 h-6 text-red-500" />,
+    icon: <FileText className="w-6 h-6 text-teal-600 dark:text-teal-400" />,
     image: "/enrollments.png",
   },
   {
@@ -50,7 +50,7 @@ const features: Feature[] = [
     title: "Simulate conversations",
     description:
       "Use SOTA AI models to simulate conversations and get feedback.",
-    icon: <FileText className="w-6 h-6 text-red-500" />,
+    icon: <FileText className="w-6 h-6 text-teal-600 dark:text-teal-400" />,
     image: "/simulation.png",
   },
 ];
@@ -200,7 +200,7 @@ export function FeaturesSection() {
     <section id="features" className="py-16 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="container mx-auto">
         <div className="text-center mb-16">
-          <div className="text-red-500 font-medium mb-4">FEATURES</div>
+          <div className="text-brand font-medium mb-4">FEATURES</div>
           <h2 className="text-4xl font-bold mb-16">
             User Flows and Navigational Structures
           </h2>
@@ -208,19 +208,21 @@ export function FeaturesSection() {
           {/* Mobile Layout */}
           <div className="md:hidden">
             {/* Image section - shown on top for mobile */}
-            <div className="relative w-full aspect-[16/9] max-w-4xl mx-auto rounded-lg overflow-hidden border shadow-lg mb-8">
-              {features.map((feature, index) => (
-                <Image
-                  key={feature.id}
-                  src={feature.image || "/placeholder.svg"}
-                  alt={feature.title}
-                  fill
-                  className={`object-cover transition-opacity duration-300 ${
-                    index === activeFeature ? "opacity-100" : "opacity-0"
-                  }`}
-                  priority={index === 0}
-                />
-              ))}
+            <div className="relative w-full aspect-[16/9] max-w-4xl mx-auto image-container-enhanced mb-8">
+              <div className="image-inner">
+                {features.map((feature, index) => (
+                  <Image
+                    key={feature.id}
+                    src={feature.image || "/placeholder.svg"}
+                    alt={feature.title}
+                    fill
+                    className={`object-cover transition-opacity duration-300 ${
+                      index === activeFeature ? "opacity-100" : "opacity-0"
+                    }`}
+                    priority={index === 0}
+                  />
+                ))}
+              </div>
             </div>
 
             {/* Horizontal scrolling features list for mobile */}
@@ -250,7 +252,7 @@ export function FeaturesSection() {
                   >
                     <div className="text-center px-2">
                       <div className="relative">
-                        <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="w-12 h-12 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                           {feature.icon}
                         </div>
                         <ProgressBar
@@ -285,7 +287,7 @@ export function FeaturesSection() {
                   onMouseEnter={() => handleFeatureHover(index)}
                 >
                   <div className="relative">
-                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                       {feature.icon}
                     </div>
                     <ProgressBar
@@ -305,19 +307,21 @@ export function FeaturesSection() {
               ))}
             </div>
 
-            <div className="relative w-full aspect-[16/9] max-w-4xl mx-auto rounded-lg overflow-hidden border shadow-lg">
-              {features.map((feature, index) => (
-                <Image
-                  key={feature.id}
-                  src={feature.image || "/placeholder.svg"}
-                  alt={feature.title}
-                  fill
-                  className={`object-cover transition-opacity duration-300 ${
-                    index === activeFeature ? "opacity-100" : "opacity-0"
-                  }`}
-                  priority={index === 0}
-                />
-              ))}
+            <div className="relative w-full aspect-[16/9] max-w-4xl mx-auto image-container-enhanced">
+              <div className="image-inner">
+                {features.map((feature, index) => (
+                  <Image
+                    key={feature.id}
+                    src={feature.image || "/placeholder.svg"}
+                    alt={feature.title}
+                    fill
+                    className={`object-cover transition-opacity duration-300 ${
+                      index === activeFeature ? "opacity-100" : "opacity-0"
+                    }`}
+                    priority={index === 0}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -206,7 +206,10 @@ export function Header() {
             <Button variant="outline" asChild>
               <Link href="/login?mode=signin">Login</Link>
             </Button>
-            <Button className="bg-red-500 hover:bg-red-600" asChild>
+            <Button
+              className="bg-brand hover:bg-brand-hover text-brand-foreground"
+              asChild
+            >
               <Link href="/login?mode=signup">Get Started</Link>
             </Button>
           </div>
@@ -221,7 +224,7 @@ export function Header() {
             </Button>
             <Button
               size="sm"
-              className="bg-red-500 hover:bg-red-600 px-3 text-sm"
+              className="bg-brand hover:bg-brand-hover text-brand-foreground px-3 text-sm"
               asChild
             >
               <Link href="/login?mode=signup">Get Started</Link>

@@ -33,7 +33,7 @@ export function Footer() {
           </div>
           <div className="flex space-x-4">
             <a
-              href="https://github.com"
+              href="https://github.com/mentopanda"
               target="_blank"
               rel="noopener noreferrer"
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"

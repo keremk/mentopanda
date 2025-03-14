@@ -109,7 +109,7 @@ export function PricingSection() {
     <section id="pricing" className="py-16 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto">
         <div className="text-center mb-8">
-          <div className="text-red-500 font-medium mb-4">PRICING</div>
+          <div className="text-brand font-medium mb-4">PRICING</div>
           <h2 className="text-4xl font-bold mb-8">
             Choose the plan that is right for you
           </h2>
@@ -187,12 +187,12 @@ function PricingCard({
 }) {
   return (
     <Card
-      className={`relative mt-6 ${
-        tier.isPopular ? "border-red-500 shadow-lg" : ""
+      className={`relative mt-6 transition-all duration-300 hover:shadow-lg ${
+        tier.isPopular ? "border-brand shadow-lg" : ""
       }`}
     >
       {tier.isPopular && (
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-red-500 text-white px-3 py-1 rounded-full text-sm">
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand text-brand-foreground px-3 py-1 rounded-full text-sm">
           Popular
         </div>
       )}
@@ -214,7 +214,7 @@ function PricingCard({
       <CardContent className="space-y-4">
         {tier.features.map((feature, featureIndex) => (
           <div key={featureIndex} className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-red-500" />
+            <Check className="w-4 h-4 text-brand" />
             <span className="text-sm">{feature.text}</span>
           </div>
         ))}
@@ -222,7 +222,9 @@ function PricingCard({
       <CardFooter className="flex flex-col gap-4">
         <Button
           className={`w-full ${
-            tier.isPopular ? "bg-red-500 hover:bg-red-600" : ""
+            tier.isPopular
+              ? "bg-brand hover:bg-brand-hover text-brand-foreground"
+              : ""
           }`}
           variant={tier.isPopular ? "default" : "outline"}
         >

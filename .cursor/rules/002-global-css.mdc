@@ -1,0 +1,119 @@
+---
+description: Global CSS
+globs: *.css
+alwaysApply: false
+---
+I can help you enhance the glow effect for the image container in dark mode to make it more pronounced. Let's modify the CSS to create a stronger, more visible glow effect:
+
+```css:src/app/globals.css
+/* Enhanced image container with gradient border */
+.image-container-enhanced {
+  @apply relative rounded-2xl overflow-hidden transition-all duration-300;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1), 
+              0 5px 15px -5px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+}
+
+.image-container-enhanced:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.15), 
+              0 10px 20px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(20, 184, 166, 0.3);
+}
+
+.dark .image-container-enhanced {
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4), 
+              0 5px 15px -5px rgba(0, 0, 0, 0.2),
+              0 0 0 1px rgba(45, 212, 191, 0.4),
+              0 0 30px 5px rgba(45, 212, 191, 0.25);
+  border: 1px solid rgba(45, 212, 191, 0.5);
+}
+
+.dark .image-container-enhanced:hover {
+  box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.5), 
+              0 10px 20px -5px rgba(0, 0, 0, 0.3),
+              0 0 0 2px rgba(45, 212, 191, 0.6),
+              0 0 40px 8px rgba(45, 212, 191, 0.35);
+  border: 1px solid rgba(45, 212, 191, 0.7);
+}
+
+/* Inner container for the image */
+.image-container-enhanced .image-inner {
+  @apply absolute inset-0 rounded-2xl overflow-hidden z-10;
+  box-shadow: inset 0 0 0 1px rgba(20, 184, 166, 0.1);
+}
+
+.dark .image-container-enhanced .image-inner {
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.4),
+              inset 0 0 20px 0 rgba(45, 212, 191, 0.15);
+}
+
+.dark .image-container-enhanced:hover .image-inner {
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.5),
+              inset 0 0 25px 0 rgba(45, 212, 191, 0.25);
+}
+
+.image-container-enhanced::before {
+  content: "";
+  @apply absolute inset-0 rounded-2xl -m-1 blur-xl opacity-60 dark:opacity-80 transition-opacity;
+  background: linear-gradient(to right, rgba(20, 184, 166, 0.3), rgba(59, 130, 246, 0.3));
+}
+
+.image-container-enhanced:hover::before {
+  @apply opacity-80 dark:opacity-100;
+}
+
+.image-container-enhanced::after {
+  content: "";
+  @apply absolute inset-0 rounded-2xl p-[1px] overflow-hidden;
+  background: linear-gradient(to right, rgba(20, 184, 166, 0.4), rgba(59, 130, 246, 0.4));
+  z-index: 0;
+}
+
+.dark .image-container-enhanced::before {
+  background: linear-gradient(to right, rgba(45, 212, 191, 0.6), rgba(96, 165, 250, 0.6));
+  filter: blur(16px);
+  margin: -2px;
+}
+
+.dark .image-container-enhanced::after {
+  background: linear-gradient(to right, rgba(45, 212, 191, 0.8), rgba(96, 165, 250, 0.8));
+}
+```
+I've enhanced the glow effect for the image container in dark mode to make it more pronounced. Here are the specific changes I made:
+
+### Enhanced Dark Mode Glow Effect
+
+1. **Increased Glow Intensity**:
+   - Increased the glow radius from 20px to 30px (and from 25px to 40px on hover)
+   - Increased the glow opacity from 0.15 to 0.25 (and from 0.25 to 0.35 on hover)
+   - Made the border thicker on hover (from 1px to 2px) with higher opacity
+
+2. **Improved Gradient Effects**:
+   - Increased the opacity of the gradient overlays (from 0.7 to 0.8 for normal state)
+   - Increased the opacity to 1.0 on hover for maximum glow effect
+   - Added a stronger blur filter (16px) to the before pseudo-element
+   - Increased the margin of the blur effect to -2px to extend it further beyond the container
+
+3. **Enhanced Inner Shadow**:
+   - Increased the inner glow from 15px to 20px (and from 20px to 25px on hover)
+   - Increased the opacity of the inner border from 0.3 to 0.4 (and from 0.4 to 0.5 on hover)
+
+4. **Stronger Border Contrast**:
+   - Increased border opacity from 0.4 to 0.5 (and from 0.6 to 0.7 on hover)
+   - Made the gradient colors more vibrant (from 0.5/0.7 to 0.6/0.8)
+
+These changes create a much more pronounced glow effect in dark mode that makes the image container really stand out. The glow is now more visible and creates a stronger visual impact while still maintaining a tasteful, professional look.
+
+You can further customize the glow effect by adjusting these values:
+
+1. To make the glow even more intense, you could:
+   - Increase the blur radius in the `filter: blur(16px)` property
+   - Increase the glow spread in the `0 0 40px 8px` shadow property (the 8px value)
+   - Increase the opacity values in the gradient backgrounds
+
+2. To change the color of the glow:
+   - Adjust the color values in the gradients (currently using teal and blue)
+   - You could make it a single color by using the same color for both sides of the gradient
+
+Would you like me to make any further adjustments to the glow effect?

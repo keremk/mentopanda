@@ -58,19 +58,12 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     --lk-va-bar-width: 72px;
@@ -103,9 +96,9 @@
     --destructive-foreground: 210 40% 98%;
 
     /* Brand color for hero buttons in dark mode - Slightly brighter teal */
-    --brand: 25 80% 31%;
+    --brand: 175 70% 45%;
     --brand-foreground: 0 0% 100%;
-    --brand-hover: 25 85% 40%;
+    --brand-hover: 175 75% 40%;
 
     --border: 216 34% 17%;
     --input: 216 34% 17%;
@@ -134,6 +127,125 @@
 /* Hero button styles */
 .btn-hero {
   @apply bg-brand text-brand-foreground hover:bg-brand-hover transition-colors;
+}
+
+/* Image container with soft shadow */
+.image-container {
+  @apply relative rounded-2xl overflow-hidden shadow-xl;
+  box-shadow:
+    0 10px 40px -10px rgba(0, 0, 0, 0.1),
+    0 5px 20px -5px rgba(0, 0, 0, 0.05);
+}
+
+.dark .image-container {
+  box-shadow:
+    0 10px 40px -10px rgba(0, 0, 0, 0.5),
+    0 5px 20px -5px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced image container with gradient border */
+.image-container-enhanced {
+  @apply relative rounded-2xl overflow-hidden transition-all duration-300;
+  box-shadow:
+    0 10px 30px -10px rgba(0, 0, 0, 0.1),
+    0 5px 15px -5px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+}
+
+.image-container-enhanced:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 15px 40px -10px rgba(0, 0, 0, 0.15),
+    0 10px 20px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(20, 184, 166, 0.3);
+}
+
+.dark .image-container-enhanced {
+  box-shadow:
+    0 10px 30px -10px rgba(0, 0, 0, 0.4),
+    0 5px 15px -5px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(45, 212, 191, 0.4),
+    0 0 30px 5px rgba(45, 212, 191, 0.25);
+  border: 1px solid rgba(45, 212, 191, 0.5);
+}
+
+.dark .image-container-enhanced:hover {
+  box-shadow:
+    0 15px 40px -10px rgba(0, 0, 0, 0.5),
+    0 10px 20px -5px rgba(0, 0, 0, 0.3),
+    0 0 0 2px rgba(45, 212, 191, 0.6),
+    0 0 40px 8px rgba(45, 212, 191, 0.35);
+  border: 1px solid rgba(45, 212, 191, 0.7);
+}
+
+/* Inner container for the image */
+.image-container-enhanced .image-inner {
+  @apply absolute inset-0 rounded-2xl overflow-hidden z-10;
+  box-shadow: inset 0 0 0 1px rgba(20, 184, 166, 0.1);
+}
+
+.dark .image-container-enhanced .image-inner {
+  box-shadow:
+    inset 0 0 0 1px rgba(45, 212, 191, 0.4),
+    inset 0 0 20px 0 rgba(45, 212, 191, 0.15);
+}
+
+.dark .image-container-enhanced:hover .image-inner {
+  box-shadow:
+    inset 0 0 0 1px rgba(45, 212, 191, 0.5),
+    inset 0 0 25px 0 rgba(45, 212, 191, 0.25);
+}
+
+.image-container-enhanced::before {
+  content: "";
+  @apply absolute inset-0 rounded-2xl -m-1 blur-xl opacity-60 dark:opacity-80 transition-opacity;
+  background: linear-gradient(
+    to right,
+    rgba(20, 184, 166, 0.3),
+    rgba(59, 130, 246, 0.3)
+  );
+}
+
+.image-container-enhanced:hover::before {
+  @apply opacity-80 dark:opacity-100;
+}
+
+.image-container-enhanced::after {
+  content: "";
+  @apply absolute inset-0 rounded-2xl p-[1px] overflow-hidden;
+  background: linear-gradient(
+    to right,
+    rgba(20, 184, 166, 0.4),
+    rgba(59, 130, 246, 0.4)
+  );
+  z-index: 0;
+}
+
+.dark .image-container-enhanced::before {
+  background: linear-gradient(
+    to right,
+    rgba(45, 212, 191, 0.6),
+    rgba(96, 165, 250, 0.6)
+  );
+  filter: blur(16px);
+  margin: -2px;
+}
+
+.dark .image-container-enhanced::after {
+  background: linear-gradient(
+    to right,
+    rgba(45, 212, 191, 0.8),
+    rgba(96, 165, 250, 0.8)
+  );
+}
+
+/* Gradient text */
+.gradient-text {
+  @apply bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent;
+}
+
+.dark .gradient-text {
+  @apply from-teal-400 to-blue-400;
 }
 
 .agent-visualizer > .lk-audio-bar {
