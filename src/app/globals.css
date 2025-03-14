@@ -50,6 +50,11 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
+    /* Brand color for hero buttons - Teal/Turquoise shade */
+    --brand: 175 70% 41%;
+    --brand-foreground: 0 0% 100%;
+    --brand-hover: 175 80% 35%;
+
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
@@ -97,6 +102,11 @@
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
+    /* Brand color for hero buttons in dark mode - Slightly brighter teal */
+    --brand: 25 80% 31%;
+    --brand-foreground: 0 0% 100%;
+    --brand-hover: 25 85% 40%;
+
     --border: 216 34% 17%;
     --input: 216 34% 17%;
     --ring: 216 34% 17%;
@@ -119,6 +129,11 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Hero button styles */
+.btn-hero {
+  @apply bg-brand text-brand-foreground hover:bg-brand-hover transition-colors;
 }
 
 .agent-visualizer > .lk-audio-bar {

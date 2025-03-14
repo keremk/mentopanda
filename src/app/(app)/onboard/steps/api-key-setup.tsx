@@ -8,8 +8,9 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Lightbulb } from "lucide-react";
 import { useState } from "react";
+import Image from "next/image";
 import { OnboardingData } from "@/app/(app)/onboard/onboarding-flow";
 
 type ApiKeySetupProps = {
@@ -29,15 +30,32 @@ export function ApiKeySetup({ updateData }: ApiKeySetupProps) {
 
   return (
     <>
-      <CardHeader>
-        <CardTitle>API Key Setup</CardTitle>
-        <CardDescription>Configure your OpenAI API access</CardDescription>
+      <div className="relative w-full h-56 overflow-hidden rounded-t-lg">
+        <Image
+          src="/images/onboarding-apikey.jpg"
+          alt="API key setup visualization"
+          fill
+          priority
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-background/50 to-background/90" />
+        <div className="absolute top-4 right-4 text-4xl">🐼</div>
+      </div>
+
+      <CardHeader className="relative pt-6">
+        <CardTitle className="text-3xl font-bold">API Key Setup</CardTitle>
+        <CardDescription className="text-lg mt-2">
+          Configure your OpenAI API access
+        </CardDescription>
       </CardHeader>
 
-      <div className="space-y-6 px-6">
+      <div className="space-y-6 px-6 pb-6">
         <div className="space-y-4">
           <div className="p-4 bg-muted/50 rounded-lg">
-            <p className="font-medium mb-2">Coming Soon: MentoPanda Pro</p>
+            <div className="flex items-center gap-2 mb-2">
+              <Lightbulb className="h-5 w-5 text-amber-500" />
+              <p className="font-medium">Coming Soon: MentoPanda Pro</p>
+            </div>
             <p className="text-sm text-muted-foreground">
               With our Pro plan, you won&apos;t need to provide your own API
               key. We will handle all API costs and management for you.
