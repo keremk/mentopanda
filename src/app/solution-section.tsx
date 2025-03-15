@@ -18,33 +18,33 @@ export function SolutionSection() {
             <h3 className="text-teal-600 dark:text-teal-400 font-semibold mb-3">
               Engineering Managers
             </h3>
-            <p className="text-muted-foreground mb-6">
-              Create lessons for your team and yourself to practice how to: 
-              <ul className="list-disc list-inside">
-                <li>Interview candidates effectively</li>
-                <li>Communicate design decisions</li>
-                <li>Communicate with stakeholders</li>
-                <li>Say no when necessary</li>
-                <li>Motivate your team</li>
-                <li>Give constructive feedback</li>
-                <li>And more...</li>
-              </ul>
+            <p className="text-muted-foreground mb-3">
+              Create lessons for your team and yourself to practice how to:
             </p>
+            <ul className="list-disc list-inside text-muted-foreground mb-6">
+              <li>Interview candidates effectively</li>
+              <li>Communicate design decisions</li>
+              <li>Communicate with stakeholders</li>
+              <li>Say no when necessary</li>
+              <li>Motivate your team</li>
+              <li>Give constructive feedback</li>
+              <li>And more...</li>
+            </ul>
           </div>
           <div className="p-6 rounded-xl hover:bg-muted/50 transition-colors">
             <h3 className="text-teal-600 dark:text-teal-400 font-semibold mb-3">
               Product Managers, Designers
             </h3>
-            <p className="text-muted-foreground mb-6">
-              Create lessons for your team and yourself to practice how to: 
-              <ul className="list-disc list-inside">
-                <li>Practice stakeholder communications</li>
-                <li>Learn to pitch ideas effectively</li>
-                <li>Learn to give and receive feedback</li>
-                <li>Get better at gathering user feedback</li>
-                <li>And more...</li>
-              </ul>
+            <p className="text-muted-foreground mb-3">
+              Create lessons for your team and yourself to practice how to:
             </p>
+            <ul className="list-disc list-inside text-muted-foreground mb-6">
+              <li>Practice stakeholder communications</li>
+              <li>Learn to pitch ideas effectively</li>
+              <li>Learn to give and receive feedback</li>
+              <li>Get better at gathering user feedback</li>
+              <li>And more...</li>
+            </ul>
           </div>
           <div className="p-6 rounded-xl hover:bg-muted/50 transition-colors">
             <h3 className="text-teal-600 dark:text-teal-400 font-semibold mb-3">
