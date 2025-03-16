@@ -53,19 +53,19 @@ export function EndChatDialog({
         </DialogHeader>
         <div className="flex flex-col gap-3 mt-4">
           {!isTimeout && (
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="ghost-brand" onClick={() => onOpenChange(false)}>
               Cancel & Continue
             </Button>
           )}
           <Button
-            variant="secondary"
+            variant="ghost-danger"
             onClick={() => handleAction(onEndChat)}
             disabled={isLoading}
           >
             End Without Saving
           </Button>
           <Button
-            variant="default"
+            variant="brand"
             onClick={() => handleAction(onEndAndSave)}
             disabled={isLoading}
           >

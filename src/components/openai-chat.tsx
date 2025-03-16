@@ -191,7 +191,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
 
               <Button
                 size="lg"
-                variant="outline"
+                variant="ghost-brand"
                 onClick={isMuted ? unmuteMicrophone : muteMicrophone}
                 className="w-48"
               >

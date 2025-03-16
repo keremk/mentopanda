@@ -50,6 +50,7 @@ export function ChatTextEntry({
       />
       <Button
         size="icon"
+        variant="brand"
         onClick={handleSend}
         disabled={!isEnabled || !message.trim()}
         className="h-10 w-10 shrink-0"

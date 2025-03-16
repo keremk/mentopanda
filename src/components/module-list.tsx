@@ -100,6 +100,12 @@ export function ModuleList({
               onChange={(e) => setNewModuleTitle(e.target.value)}
               placeholder="Module title"
               className="my-4"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newModuleTitle.trim()) {
+                  e.preventDefault();
+                  handleCreateModule();
+                }
+              }}
             />
             <DialogFooter>
               <DialogClose ref={createDialogCloseRef} asChild>

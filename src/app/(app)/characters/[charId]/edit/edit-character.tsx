@@ -131,7 +131,7 @@ export function EditCharacterForm() {
               updateCharacterField("description", e.target.value)
             }
             placeholder="Enter character description visible to users"
-            className="min-h-[300px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
+            className="min-h-[300px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
           />
         </div>
 
@@ -145,7 +145,7 @@ export function EditCharacterForm() {
               updateCharacterField("aiDescription", e.target.value)
             }
             placeholder="Enter character prompt for the AI model"
-            className="min-h-[400px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
+            className="min-h-[400px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
           />
         </div>
       </div>
