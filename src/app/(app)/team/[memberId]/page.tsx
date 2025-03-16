@@ -28,7 +28,7 @@ export default async function TeamMemberPage(props: {
       .toUpperCase() || "X";
 
   return (
-    <div className="container py-6 space-y-6">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Member Information</CardTitle>

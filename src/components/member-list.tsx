@@ -81,38 +81,42 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
 
   return (
     <div className="flex flex-col h-full w-60 border-r">
-      <ScrollArea className="flex-1">
-        <div className="space-y-1 p-2">
-          {members?.map((member) => (
-            <div
-              key={member.id}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors ${
-                member.id === currentMemberId ? "bg-muted" : "hover:bg-muted/50"
-              }`}
-              onClick={() => router.push(`/team/${member.id}`)}
-            >
-              <Avatar>
-                <AvatarImage
-                  src={member.avatar_url}
-                  alt={member.name || "Team member"}
-                />
-                <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">
-                  {member.name || "Unnamed Member"}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {member.role || "No role"}
-                </span>
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <ScrollArea className="flex-1">
+          <div className="space-y-1 p-2">
+            {members?.map((member) => (
+              <div
+                key={member.id}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors ${
+                  member.id === currentMemberId
+                    ? "bg-muted"
+                    : "hover:bg-muted/50"
+                }`}
+                onClick={() => router.push(`/team/${member.id}`)}
+              >
+                <Avatar>
+                  <AvatarImage
+                    src={member.avatar_url}
+                    alt={member.name || "Team member"}
+                  />
+                  <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">
+                    {member.name || "Unnamed Member"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {member.role || "No role"}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
 
       {canManageMembers && (
-        <div className="border-t p-2 flex gap-2">
+        <div className="border-t p-4 flex gap-2 sticky bottom-0 bg-background">
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="ghost-brand" size="sm" className="flex-1">

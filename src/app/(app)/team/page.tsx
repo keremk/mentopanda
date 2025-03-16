@@ -5,7 +5,10 @@ import { getProjectMembersActionCached } from "@/app/actions/project-actions";
 export default async function TeamPage() {
   // Reuse the cached data from the layout
   const user = await getCurrentUserActionCached();
-  const members = await getProjectMembersActionCached(user.currentProject.id, user.id);
+  const members = await getProjectMembersActionCached(
+    user.currentProject.id,
+    user.id
+  );
 
   // If members exist, redirect to the first member's page
   if (members.length > 0) {
@@ -13,7 +16,7 @@ export default async function TeamPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+    <div className="flex flex-col items-center justify-center h-full text-center">
       <h1 className="text-2xl font-semibold mb-4">Team Management</h1>
       <p className="text-muted-foreground max-w-md">
         No team members found. Use the invite button to add members to your
