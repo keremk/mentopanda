@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, LogOut, Sun, Moon } from "lucide-react";
+import { Settings, LogOut, Sun, Moon, ChevronRight } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -117,7 +117,9 @@ export function NavUser({
                   {getCurrentThemeLabel()}
                 </div>
                 <DropdownMenu>
-                  <DropdownMenuTrigger></DropdownMenuTrigger>
+                  <DropdownMenuTrigger className="ml-1 flex h-4 w-4 items-center justify-center rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                    <ChevronRight className="h-4 w-4" />
+                  </DropdownMenuTrigger>
                   <DropdownMenuContent
                     side="right"
                     align="start"
