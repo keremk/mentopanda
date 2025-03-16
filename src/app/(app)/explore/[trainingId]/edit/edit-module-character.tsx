@@ -131,9 +131,8 @@ export function EditModuleCharacter({ module }: Props) {
             </SelectContent>
           </Select>
           <Button
-            variant="outline"
+            variant="ghost-brand"
             asChild
-            className="border-border/50 hover:bg-secondary/50 shadow-sm"
           >
             <Link href="/characters">Manage</Link>
           </Button>

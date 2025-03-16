@@ -98,10 +98,9 @@ export function EditModuleForm({ module }: Props) {
             AI Instructions
           </h3>
           <Button
-            variant="outline"
+            variant="ghost-brand"
             onClick={handleQuickTest}
             size="sm"
-            className="shadow-sm hover:shadow-md transition-all bg-background/80 border-primary/20 hover:bg-primary/10 text-primary"
           >
             Quick Test
           </Button>

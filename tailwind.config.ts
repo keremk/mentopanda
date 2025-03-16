@@ -61,6 +61,11 @@ const config = {
           foreground: "hsl(var(--brand-foreground))",
           hover: "hsl(var(--brand-hover))",
         },
+        danger: {
+          DEFAULT: "hsl(var(--danger))",
+          foreground: "hsl(var(--danger-foreground))",
+          hover: "hsl(var(--danger-hover))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

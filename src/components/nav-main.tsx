@@ -145,7 +145,7 @@ export function NavMain({ permissions }: { permissions: AppPermission[] }) {
                         <Icon
                           className={
                             isActive
-                              ? "text-sidebar-foreground"
+                              ? "text-brand"
                               : "text-sidebar-foreground/60"
                           }
                         />
@@ -162,7 +162,7 @@ export function NavMain({ permissions }: { permissions: AppPermission[] }) {
                             asChild
                             className={
                               isActivePath(subItem.url)
-                                ? "text-sidebar-foreground"
+                                ? "text-brand"
                                 : "text-sidebar-foreground/60"
                             }
                           >
@@ -193,7 +193,7 @@ export function NavMain({ permissions }: { permissions: AppPermission[] }) {
                     <Icon
                       className={
                         isActive
-                          ? "text-sidebar-foreground"
+                          ? "text-brand"
                           : "text-sidebar-foreground/60"
                       }
                     />

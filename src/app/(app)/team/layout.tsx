@@ -8,7 +8,7 @@ export default async function TeamLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUserActionCached();
-  const members = await getProjectMembersActionCached(user.currentProject.id);
+  const members = await getProjectMembersActionCached(user.currentProject.id, user.id);
   const canManageMembers = user.permissions.includes("project.member.manage");
 
   return (

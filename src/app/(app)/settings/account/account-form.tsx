@@ -101,7 +101,7 @@ export function AccountForm({ user }: AccountFormProps) {
             folder="user-avatars"
             onUploadComplete={handleAvatarUpload}
             buttonText={isAvatarUpdating ? "Updating..." : "Change Avatar"}
-            buttonVariant="outline"
+            buttonVariant="ghost-brand"
             buttonSize="default"
           />
         </div>
@@ -143,9 +143,8 @@ export function AccountForm({ user }: AccountFormProps) {
           />
           <Button
             type="button"
-            variant="outline"
+            variant="ghost-brand"
             onClick={() => setShowProjectDialog(true)}
-            className="shadow-sm hover:shadow-md transition-all bg-background/80 border-primary/20 hover:bg-primary/10 text-primary"
           >
             Select Project
           </Button>
@@ -162,9 +161,9 @@ export function AccountForm({ user }: AccountFormProps) {
       <div className="flex justify-end pt-6">
         <Button
           type="submit"
-          variant="outline"
+          variant="brand"
           disabled={isPending}
-          className="shadow-sm hover:shadow-md transition-all bg-background/80 border-primary/20 hover:bg-primary/10 text-primary"
+          className="shadow-sm hover:shadow-md transition-all"
         >
           {isPending ? "Saving..." : "Save Changes"}
         </Button>

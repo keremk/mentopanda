@@ -104,7 +104,7 @@ export function EditContainer() {
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button
-              variant="destructive"
+              variant="ghost-danger"
               disabled={isAnySaving}
               className="shadow-sm hover:shadow-md transition-all"
             >
@@ -120,12 +120,12 @@ export function EditContainer() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="border-border/50">
+              <AlertDialogCancel className="border-border/50 bg-secondary/30 hover:bg-secondary/50 shadow-sm">
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteTraining}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm"
+                className="bg-danger text-danger-foreground hover:bg-danger/90 shadow-sm"
               >
                 Delete
               </AlertDialogAction>
@@ -135,8 +135,7 @@ export function EditContainer() {
         <Button
           onClick={handleSaveAndExit}
           disabled={isAnySaving}
-          variant="outline"
-          className="border-border/50 shadow-sm hover:shadow-md hover:bg-secondary/50 transition-all"
+          variant="ghost-brand"
         >
           {isAnySaving ? (
             <>

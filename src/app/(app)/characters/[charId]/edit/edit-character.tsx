@@ -71,11 +71,7 @@ export function EditCharacterForm() {
         {saveStatus === "error" && (
           <span className="text-sm text-red-500">Error saving</span>
         )}
-        <Button
-          variant="outline"
-          onClick={handleSave}
-          className="shadow-sm hover:shadow-md transition-all bg-background/80 border-primary/20 hover:bg-primary/10 text-primary"
-        >
+        <Button variant="ghost-brand" onClick={handleSave}>
           Save
         </Button>
       </div>

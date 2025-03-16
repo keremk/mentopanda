@@ -24,6 +24,7 @@ type ImageUploadButtonProps = {
     | "outline"
     | "secondary"
     | "ghost"
+    | "ghost-brand"
     | "link";
   buttonSize?: "default" | "sm" | "lg" | "icon";
 };
@@ -35,7 +36,7 @@ export function ImageUploadButton({
   allowedFileTypes = ["image/jpeg", "image/png", "image/webp"],
   dialogTitle = "Upload Image",
   buttonText = "Upload Image",
-  buttonVariant = "outline",
+  buttonVariant = "ghost-brand",
   buttonSize = "sm",
 }: ImageUploadButtonProps) {
   const [isOpen, setIsOpen] = useState(false);

@@ -46,9 +46,14 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
+    /* Custom danger color that's more harmonious with the teal palette */
+    --danger: 342 75% 40%;
+    --danger-foreground: 210 40% 98%;
+    --danger-hover: 342 75% 35%;
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 175 70% 41%;
 
     /* Brand color for hero buttons - Teal/Turquoise shade */
     --brand: 175 70% 41%;
@@ -95,6 +100,11 @@
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
+    /* Custom danger color in dark mode */
+    --danger: 342 65% 45%;
+    --danger-foreground: 210 40% 98%;
+    --danger-hover: 342 65% 40%;
+
     /* Brand color for hero buttons in dark mode - Slightly brighter teal */
     --brand: 175 70% 45%;
     --brand-foreground: 0 0% 100%;
@@ -102,7 +112,7 @@
 
     --border: 216 34% 17%;
     --input: 216 34% 17%;
-    --ring: 216 34% 17%;
+    --ring: 175 70% 45%;
 
     --sidebar-background: 222 47% 10%;
     --sidebar-foreground: 213 31% 91%;

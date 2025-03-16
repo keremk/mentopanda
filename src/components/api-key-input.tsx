@@ -55,7 +55,7 @@ export function ApiKeyInput({
           className="flex-1"
         />
         {showRemoveButton && (
-          <Button type="button" variant="outline" onClick={handleRemoveApiKey}>
+          <Button type="button" variant="ghost-danger" onClick={handleRemoveApiKey}>
             Clear Key
           </Button>
         )}

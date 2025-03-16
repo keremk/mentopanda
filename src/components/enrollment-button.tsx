@@ -78,7 +78,7 @@ export function EnrollmentButton({
   return (
     <>
       <Button
-        variant={enrolled ? "destructive" : "outline"}
+        variant={enrolled ? "ghost-danger" : "outline"}
         onClick={handleClick}
         className={className}
         disabled={isLoading}
@@ -103,7 +103,7 @@ export function EnrollmentButton({
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={() => handleEnrollment()}>
+            <Button variant="ghost-danger" onClick={() => handleEnrollment()}>
               Leave
             </Button>
           </div>

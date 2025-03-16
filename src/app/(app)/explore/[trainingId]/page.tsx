@@ -39,7 +39,7 @@ export default async function TrainingDetailsPage(props: {
     <div className="container mx-auto px-4 py-2">
       <div className="absolute top-0 right-0 p-4 z-10">
         <EnrollmentButton className="mr-4" trainingId={training.id} />
-        <Button asChild variant="outline">
+        <Button asChild variant="ghost-brand">
           <Link
             href={`/explore/${training.id}/edit`}
             className="flex items-center"

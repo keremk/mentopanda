@@ -5,7 +5,7 @@ import { getProjectMembersActionCached } from "@/app/actions/project-actions";
 export default async function TeamPage() {
   // Reuse the cached data from the layout
   const user = await getCurrentUserActionCached();
-  const members = await getProjectMembersActionCached(user.currentProject.id);
+  const members = await getProjectMembersActionCached(user.currentProject.id, user.id);
 
   // If members exist, redirect to the first member's page
   if (members.length > 0) {

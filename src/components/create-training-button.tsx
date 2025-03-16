@@ -22,7 +22,7 @@ export function CreateTrainingButton({
         // If needs organization, show button that opens dialog
         <Button
           onClick={() => setShowDialog(true)}
-          variant="outline"
+          variant="brand"
           className="flex items-center"
         >
           <Plus className="mr-2 h-4 w-4" />
@@ -33,7 +33,7 @@ export function CreateTrainingButton({
         <Button
           onClick={() => startTransition(() => createTrainingAction())}
           disabled={isPending}
-          variant="outline"
+          variant="brand"
           className="flex items-center"
         >
           <Plus className="mr-2 h-4 w-4" />

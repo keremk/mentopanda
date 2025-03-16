@@ -43,7 +43,7 @@ export async function EnrolledTrainingsCard({ trainings }: EnrolledTrainingsCard
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                     <Button
-                      variant="secondary"
+                      variant="ghost-brand"
                       className="flex-shrink-0"
                       asChild
                     >

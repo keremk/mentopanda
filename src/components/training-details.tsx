@@ -45,7 +45,7 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
           />
           {randomModuleId ? (
             <Link href={`/simulation/${randomModuleId}`}>
-              <Button className="w-full" variant="outline">
+              <Button className="w-full" variant="brand">
                 Start Random Module
               </Button>
             </Link>
@@ -87,7 +87,7 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
                       Practices: {module.practiceCount}
                     </span>
                     <Link href={`/simulation/${module.id}`}>
-                      <Button variant="outline">Start Module</Button>
+                      <Button variant="ghost-brand">Start Module</Button>
                     </Link>
                   </div>
                 </div>

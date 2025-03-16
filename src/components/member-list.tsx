@@ -115,7 +115,7 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
         <div className="border-t p-2 flex gap-2">
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-1">
+              <Button variant="ghost-brand" size="sm" className="flex-1">
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Invite
               </Button>
@@ -156,6 +156,7 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
                 </DialogClose>
                 <Button
                   onClick={handleInviteMember}
+                  variant="brand"
                   disabled={!newMemberEmail.trim()}
                 >
                   Send Invite
@@ -167,7 +168,7 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
           <Dialog>
             <DialogTrigger asChild>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 className="flex-1"
                 disabled={!isMemberSelected}
@@ -190,7 +191,7 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
                   <Button variant="secondary">Cancel</Button>
                 </DialogClose>
                 <Button
-                  variant="destructive"
+                  variant="danger"
                   onClick={handleRemoveMember}
                   disabled={!currentMemberId}
                 >

@@ -99,10 +99,18 @@ export async function getProjectMembersAction(projectId: number) {
   return await getProjectMembers(supabase, projectId);
 }
 
-export const getProjectMembersActionCached = cache(async (projectId: number) => {
-  const supabase = await createClient();
-  return await getProjectMembers(supabase, projectId);
-});
+export const getProjectMembersActionCached = cache(
+  async (projectId: number, omitUserId: string | undefined) => {
+    const supabase = await createClient();
+    const members = await getProjectMembers(supabase, projectId);
+
+    if (!omitUserId) return members;
+
+    return members.filter(
+      (member) => member.id !== omitUserId
+    );
+  }
+);
 
 export async function getProjectMemberInfoAction(
   projectId: number,

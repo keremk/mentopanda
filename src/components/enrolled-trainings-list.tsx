@@ -64,7 +64,7 @@ export function EnrolledTrainingsList({
       <div className="p-2 border-t border-border bg-background sticky bottom-0">
         <div className="flex gap-2">
           <Link href="/explore" className="flex-1">
-            <Button variant="outline" size="sm" className="w-full">
+            <Button variant="ghost-brand" size="sm" className="w-full">
               <PlusIcon className="h-4 w-4 mr-1" />
               Add
             </Button>

@@ -83,7 +83,7 @@ export function ModuleList({
         {/* Add Module Dialog */}
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="flex-1">
+            <Button variant="ghost-brand" size="sm" className="flex-1">
               <PlusIcon className="h-4 w-4 mr-2" />
               Add
             </Button>
@@ -107,6 +107,7 @@ export function ModuleList({
               </DialogClose>
               <Button
                 onClick={handleCreateModule}
+                variant="brand"
                 disabled={!newModuleTitle.trim()}
               >
                 Create
@@ -119,7 +120,7 @@ export function ModuleList({
         <Dialog>
           <DialogTrigger asChild>
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               className="flex-1"
               disabled={!isModuleSelected}
@@ -141,7 +142,7 @@ export function ModuleList({
                 <Button variant="secondary">Cancel</Button>
               </DialogClose>
               <Button
-                variant="destructive"
+                variant="danger"
                 onClick={handleDeleteModule}
                 disabled={!selectedModuleId}
               >

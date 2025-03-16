@@ -121,7 +121,7 @@ export function CharacterList({
           {/* Add Character Dialog */}
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="flex-1">
+              <Button variant="ghost-brand" size="sm" className="flex-1">
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Add
               </Button>
@@ -145,6 +145,7 @@ export function CharacterList({
                 </DialogClose>
                 <Button
                   onClick={handleCreateCharacter}
+                  variant="brand"
                   disabled={!newCharacterName.trim()}
                 >
                   Create
@@ -157,7 +158,7 @@ export function CharacterList({
           <Dialog>
             <DialogTrigger asChild>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 className="flex-1"
                 disabled={!isCharacterSelected}
@@ -179,7 +180,7 @@ export function CharacterList({
                   <Button variant="secondary">Cancel</Button>
                 </DialogClose>
                 <Button
-                  variant="destructive"
+                  variant="danger"
                   onClick={handleDeleteCharacter}
                   disabled={!currentCharId}
                 >

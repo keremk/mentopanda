@@ -172,7 +172,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
             <div className="flex justify-center gap-4">
               <Button
                 size="lg"
-                variant={isConversationActive ? "destructive" : "default"}
+                variant={isConversationActive ? "danger" : "brand"}
                 onClick={handleToggleConversation}
                 className="w-48"
               >
@@ -183,7 +183,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
                   </span>
                 ) : (
                   <span className="flex items-center">
-                    <Phone className="mr-2 h-4 w-4 text-green-500" />
+                    <Phone className="mr-2 h-4 w-4" />
                     Start Conversation
                   </span>
                 )}
