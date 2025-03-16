@@ -10,22 +10,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CharacterSummary } from "@/data/characters";
-import { Module } from "@/data/modules";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { useCharacterPrompt } from "@/contexts/character-prompt-context";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getInitials } from "@/lib/utils";
+import { useSearchParams } from "next/navigation";
 
-type Props = {
-  module: Module;
-};
-
-export function EditModuleCharacter({ module }: Props) {
+export function EditModuleCharacter() {
   const { toast } = useToast();
   const { selectedModule } = useModuleEdit();
+  const searchParams = useSearchParams();
+  const moduleTab = searchParams.get("moduleTab");
+  // Use a ref to track if we've already initialized for this tab change
+  const hasInitializedRef = useRef(false);
+
   const {
     characterPrompt,
     updateCharacterPrompt,
@@ -34,23 +35,30 @@ export function EditModuleCharacter({ module }: Props) {
     initializeCharacter,
   } = useCharacterPrompt();
 
-  /* eslint-disable react-hooks/exhaustive-deps */
+  // Initialize character when module changes or when tab is switched to character
   useEffect(() => {
-    if (!module) return;
+    if (!selectedModule) return;
 
-    // Get the first character if available
-    const character =
-      module.modulePrompt.characters.length > 0
-        ? module.modulePrompt.characters[0]
-        : null;
+    // Only refresh and initialize when the tab is "character" and we haven't initialized yet
+    if (moduleTab === "character" && !hasInitializedRef.current) {
+      hasInitializedRef.current = true;
 
-    initializeCharacter(character);
-  }, [module.modulePrompt.characters, initializeCharacter]);
-  /* eslint-enable react-hooks/exhaustive-deps */
-  
+      // Get the first character if available
+      const character =
+        selectedModule.modulePrompt.characters.length > 0
+          ? selectedModule.modulePrompt.characters[0]
+          : null;
+
+      initializeCharacter(character);
+    } else if (moduleTab !== "character") {
+      // Reset the flag when we switch away from the character tab
+      hasInitializedRef.current = false;
+    }
+  }, [selectedModule, moduleTab, initializeCharacter]);
 
   const handleCharacterPromptChange = (value: string) => {
     if (!selectedModule?.modulePrompt.characters.length) return;
+
     updateCharacterPrompt(value);
   };
 
@@ -130,17 +138,14 @@ export function EditModuleCharacter({ module }: Props) {
               ))}
             </SelectContent>
           </Select>
-          <Button
-            variant="ghost-brand"
-            asChild
-          >
+          <Button variant="ghost-brand" asChild>
             <Link href="/characters">Manage</Link>
           </Button>
         </div>
       </div>
 
       {selectedModule.modulePrompt.characters.length > 0 && (
-        <div>
+        <div className="flex flex-col gap-y-2">
           <label className="text-sm font-medium text-muted-foreground">
             Character Prompt
           </label>
@@ -149,7 +154,7 @@ export function EditModuleCharacter({ module }: Props) {
             onChange={(e) => handleCharacterPromptChange(e.target.value)}
             placeholder="Enter the prompt about how this character should behave in this scenario"
             rows={10}
-            className="min-h-[calc(100vh-50rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
+            className="min-h-[calc(100vh-50rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
           />
         </div>
       )}

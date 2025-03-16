@@ -75,7 +75,7 @@ export function EditModuleForm({ module }: Props) {
           value={selectedModule.title}
           onChange={handleInputChange}
           placeholder="Enter module title"
-          className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm"
+          className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50"
         />
       </div>
 
@@ -87,7 +87,7 @@ export function EditModuleForm({ module }: Props) {
           name="instructions"
           value={selectedModule.instructions || ""}
           onChange={(e) => updateModuleField("instructions", e.target.value)}
-          className="min-h-[200px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
+          className="min-h-[200px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
           placeholder="Enter module instructions visible to the user, use markdown for formatting"
         />
       </div>
@@ -97,11 +97,7 @@ export function EditModuleForm({ module }: Props) {
           <h3 className="text-lg font-medium text-foreground">
             AI Instructions
           </h3>
-          <Button
-            variant="ghost-brand"
-            onClick={handleQuickTest}
-            size="sm"
-          >
+          <Button variant="ghost-brand" onClick={handleQuickTest} size="sm">
             Quick Test
           </Button>
         </div>
@@ -143,7 +139,7 @@ export function EditModuleForm({ module }: Props) {
               onChange={(e) => handlePromptChange(e, "scenario")}
               rows={12}
               placeholder="Enter the prompt for the AI to set up the overall scenario"
-              className="min-h-[calc(100vh-41rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
+              className="min-h-[calc(100vh-41rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
             />
           </TabsContent>
 
@@ -163,12 +159,12 @@ export function EditModuleForm({ module }: Props) {
               onChange={(e) => handlePromptChange(e, "assessment")}
               rows={12}
               placeholder="Enter the prompt for the AI to assess the user's performance"
-              className="min-h-[calc(100vh-41rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
+              className="min-h-[calc(100vh-41rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
             />
           </TabsContent>
 
           <TabsContent value="character" className="mt-4">
-            <EditModuleCharacter module={selectedModule} />
+            <EditModuleCharacter />
           </TabsContent>
         </Tabs>
       </div>

@@ -192,8 +192,10 @@ export function CharacterPromptProvider({
       }
 
       setCharacterId(character.id);
-      setPrompt(character.prompt || "");
-      setLastSavedPrompt(character.prompt || "");
+      // Ensure we set the prompt from the character data
+      const characterPrompt = character.prompt || "";
+      setPrompt(characterPrompt);
+      setLastSavedPrompt(characterPrompt);
       setUserModified(false); // Reset the user modified flag when initializing
     },
     []
