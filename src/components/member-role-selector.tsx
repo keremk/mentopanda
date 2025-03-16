@@ -45,6 +45,7 @@ export function MemberRoleSelector({
       </div>
       <Button
         className="mt-6"
+        variant="ghost-brand"
         onClick={async () => {
           await updateProjectMemberRoleAction(projectId, memberId, role);
         }}

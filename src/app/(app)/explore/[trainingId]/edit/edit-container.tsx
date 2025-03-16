@@ -135,7 +135,7 @@ export function EditContainer() {
         <Button
           onClick={handleSaveAndExit}
           disabled={isAnySaving}
-          variant="ghost-brand"
+          variant="brand"
         >
           {isAnySaving ? (
             <>

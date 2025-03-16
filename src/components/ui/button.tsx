@@ -18,7 +18,8 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        brand: "bg-brand text-brand-foreground hover:bg-brand-hover",
+        brand:
+          "bg-brand text-brand-foreground hover:bg-brand-hover shadow-sm hover:shadow-md transition-all duration-200",
         danger: "bg-danger text-danger-foreground hover:bg-danger-hover",
         enrolled:
           "bg-secondary border-2 border-[hsl(var(--brand)_/_0.3)] text-secondary-foreground hover:bg-secondary/90 hover:border-[hsl(var(--brand)_/_0.5)]",

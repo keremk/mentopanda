@@ -168,7 +168,7 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
           <Dialog>
             <DialogTrigger asChild>
               <Button
-                variant="secondary"
+                variant="ghost-danger"
                 size="sm"
                 className="flex-1"
                 disabled={!isMemberSelected}

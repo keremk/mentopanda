@@ -34,11 +34,12 @@ export async function TrainingSessionsHeatmap({
   const dayLabels = ["Mon", "", "Wed", "", "Fri", "", ""];
 
   const getColor = (count: number) => {
-    if (count === 0) return "bg-gray-100 dark:bg-gray-900";
-    if (count === 1) return "bg-blue-200 dark:bg-blue-900";
-    if (count === 2) return "bg-blue-300 dark:bg-blue-600";
-    if (count === 3) return "bg-blue-400 dark:bg-blue-400";
-    return "bg-blue-500 dark:bg-blue-300";
+    if (count === 0)
+      return "bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-800";
+    if (count === 1) return "bg-[hsl(175,70%,90%)] dark:bg-[hsl(175,70%,20%)]";
+    if (count === 2) return "bg-[hsl(175,70%,75%)] dark:bg-[hsl(175,70%,30%)]";
+    if (count === 3) return "bg-[hsl(175,70%,60%)] dark:bg-[hsl(175,70%,40%)]";
+    return "bg-[hsl(175,70%,45%)] dark:bg-[hsl(175,70%,50%)]";
   };
 
   return (
@@ -53,7 +54,7 @@ export async function TrainingSessionsHeatmap({
         <div className="flex justify-center">
           <div className="flex flex-col">
             <div className="flex">
-              <div className="mr-2 grid grid-rows-7 gap-1 text-sm text-gray-500">
+              <div className="mr-2 grid grid-rows-7 gap-1 text-sm text-muted-foreground">
                 {dayLabels.map((day, index) => (
                   <span key={index} className="h-4 flex items-center">
                     {day}
@@ -70,7 +71,9 @@ export async function TrainingSessionsHeatmap({
                         return (
                           <div
                             key={`${weekIndex}-${dayIndex}`}
-                            className={`w-4 h-4 ${getColor(count)} rounded-sm`}
+                            className={`w-4 h-4 ${getColor(
+                              count
+                            )} rounded-sm transition-all duration-200 hover:scale-110 hover:shadow-sm`}
                             title={`${format(
                               day,
                               "MMM d, yyyy"
@@ -81,7 +84,7 @@ export async function TrainingSessionsHeatmap({
                     </React.Fragment>
                   ))}
                 </div>
-                <div className="mt-2 flex text-sm text-gray-500">
+                <div className="mt-2 flex text-sm text-muted-foreground">
                   {weeks.map((week, index) => {
                     const firstDayOfWeek = week[0];
 
@@ -112,15 +115,17 @@ export async function TrainingSessionsHeatmap({
               </div>
             </div>
             <div className="mt-4 flex items-center text-sm">
-              <span className="mr-2">Less</span>
+              <span className="mr-2 text-muted-foreground">Less</span>
               {[0, 1, 2, 3, 4].map((level) => (
                 <div
                   key={level}
-                  className={`w-4 h-4 ${getColor(level)} rounded-sm mr-1`}
+                  className={`w-4 h-4 ${getColor(level)} rounded-sm mr-1 ${level === 0 ? "border border-gray-200 dark:border-gray-800" : ""}`}
                 />
               ))}
-              <span className="ml-1">More</span>
-              <span className="ml-16">{totalSessions} sessions</span>
+              <span className="ml-1 text-muted-foreground">More</span>
+              <span className="ml-auto font-medium text-[hsl(175,70%,41%)] dark:text-[hsl(175,70%,45%)]">
+                {totalSessions} sessions
+              </span>
             </div>
           </div>
         </div>

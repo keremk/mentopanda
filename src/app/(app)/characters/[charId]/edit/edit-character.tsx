@@ -71,7 +71,7 @@ export function EditCharacterForm() {
         {saveStatus === "error" && (
           <span className="text-sm text-red-500">Error saving</span>
         )}
-        <Button variant="ghost-brand" onClick={handleSave}>
+        <Button variant="brand" onClick={handleSave}>
           Save
         </Button>
       </div>
@@ -90,7 +90,7 @@ export function EditCharacterForm() {
               folder="character-avatars"
               onUploadComplete={handleAvatarUpload}
               buttonText={isAvatarUpdating ? "Uploading..." : "Upload Image"}
-              buttonVariant="outline"
+              buttonVariant="ghost-brand"
               buttonSize="default"
             />
           </div>

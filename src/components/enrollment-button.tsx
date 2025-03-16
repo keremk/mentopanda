@@ -21,12 +21,14 @@ interface EnrollmentButtonProps {
   trainingId: number;
   className?: string;
   isEnrolled?: boolean;
+  variant?: "ghost-brand" | "brand";
 }
 
 export function EnrollmentButton({
   trainingId,
   className,
   isEnrolled: initialEnrollmentStatus,
+  variant = "ghost-brand",
 }: EnrollmentButtonProps) {
   const [enrolled, setEnrolled] = useState(initialEnrollmentStatus ?? false);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +80,7 @@ export function EnrollmentButton({
   return (
     <>
       <Button
-        variant={enrolled ? "ghost-danger" : "outline"}
+        variant={enrolled ? "ghost-danger" : variant}
         onClick={handleClick}
         className={className}
         disabled={isLoading}

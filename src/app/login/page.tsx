@@ -3,11 +3,7 @@ import { Footer } from "@/app/footer";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { SiGoogle, SiGithub } from "@icons-pack/react-simple-icons";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
@@ -28,23 +24,25 @@ export default async function LoginPage(props: {
             alt="MentoPanda Logo"
             width={40}
             height={40}
+            className="transition-transform duration-300 hover:scale-110"
           />
           <span className="font-semibold text-xl">MentoPanda</span>
         </Link>
         <h1 className="text-2xl font-semibold">
           {isSignUp ? "Create your account" : "Welcome back"}
         </h1>
+        <div className="h-1 w-16 bg-brand rounded-full mt-4"></div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex items-start justify-center px-4 pb-8">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md border-t-4 border-t-brand shadow-md">
           <CardContent className="pt-6 pb-4 space-y-6">
             {/* OAuth Providers */}
             <form className="space-y-4">
               <Button
                 formAction={githubSignIn}
-                className="w-full"
+                className="w-full transition-all duration-200 hover:shadow-md"
                 variant="outline"
               >
                 <SiGithub className="mr-2 h-4 w-4" />
@@ -52,7 +50,7 @@ export default async function LoginPage(props: {
               </Button>
               <Button
                 formAction={googleSignIn}
-                className="w-full"
+                className="w-full transition-all duration-200 hover:shadow-md"
                 variant="outline"
               >
                 <SiGoogle className="mr-2 h-4 w-4" />
@@ -97,13 +95,16 @@ export default async function LoginPage(props: {
               {isSignUp && (
                 <div className="text-sm text-muted-foreground">
                   By clicking Continue, you agree to our{" "}
-                  <Link href="/terms" className="underline hover:text-primary">
+                  <Link
+                    href="/terms"
+                    className="underline hover:text-brand transition-colors"
+                  >
                     Terms of Service
                   </Link>{" "}
                   and{" "}
                   <Link
                     href="/privacy"
-                    className="underline hover:text-primary"
+                    className="underline hover:text-brand transition-colors"
                   >
                     Privacy Policy
                   </Link>
@@ -111,7 +112,11 @@ export default async function LoginPage(props: {
                 </div>
               )}
 
-              <Button formAction={isSignUp ? signup : login} className="w-full">
+              <Button
+                formAction={isSignUp ? signup : login}
+                className="w-full"
+                variant="brand"
+              >
                 {isSignUp ? "Create account" : "Sign in"}
               </Button>
             </form>
@@ -119,7 +124,7 @@ export default async function LoginPage(props: {
 
           <CardFooter className="flex flex-col gap-4">
             {searchParams?.message && (
-              <p className="text-sm text-red-500 text-center">
+              <p className="text-sm text-red-500 text-center w-full p-2 border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900 rounded-md">
                 {searchParams.message}
               </p>
             )}
@@ -129,7 +134,7 @@ export default async function LoginPage(props: {
                   Already have an account?{" "}
                   <Link
                     href="/login?mode=signin"
-                    className="underline hover:text-primary"
+                    className="underline hover:text-brand transition-colors"
                   >
                     Sign in
                   </Link>
@@ -139,7 +144,7 @@ export default async function LoginPage(props: {
                   Don&apos;t have an account?{" "}
                   <Link
                     href="/login?mode=signup"
-                    className="underline hover:text-primary"
+                    className="underline hover:text-brand transition-colors"
                   >
                     Sign up
                   </Link>

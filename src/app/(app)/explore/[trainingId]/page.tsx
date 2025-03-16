@@ -38,7 +38,6 @@ export default async function TrainingDetailsPage(props: {
   return (
     <div className="container mx-auto px-4 py-2">
       <div className="absolute top-0 right-0 p-4 z-10">
-        <EnrollmentButton className="mr-4" trainingId={training.id} />
         <Button asChild variant="ghost-brand">
           <Link
             href={`/explore/${training.id}/edit`}
@@ -48,6 +47,7 @@ export default async function TrainingDetailsPage(props: {
             Edit
           </Link>
         </Button>
+        <EnrollmentButton className="ml-4" trainingId={training.id} variant="brand" />
       </div>
 
       <div className="md:flex md:gap-8 mb-8">

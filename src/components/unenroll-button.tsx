@@ -75,7 +75,7 @@ export function UnenrollButton({
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>
         <Button
-          variant="secondary"
+          variant="ghost-danger"
           size="sm"
           className="flex-1"
           disabled={disabled || !trainingId || isLoading}
