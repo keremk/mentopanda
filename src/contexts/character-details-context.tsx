@@ -11,7 +11,6 @@ import {
 import { useDebounce } from "@/hooks/use-debounce";
 import { CharacterDetails, UpdateCharacterInput } from "@/data/characters";
 import { updateCharacterAction } from "@/app/actions/character-actions";
-import { useRouter } from "next/navigation";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -39,7 +38,6 @@ export function CharacterDetailsProvider({
   children,
   initialCharacter,
 }: CharacterDetailsProviderProps) {
-  const router = useRouter();
   const [character, setCharacter] =
     useState<CharacterDetails>(initialCharacter);
   const [lastSavedCharacter, setLastSavedCharacter] =
@@ -51,35 +49,31 @@ export function CharacterDetailsProvider({
   const debouncedCharacter = useDebounce(character, 1000);
 
   // Extracted common save logic
-  const performSave = useCallback(
-    async (characterData: CharacterDetails) => {
-      try {
-        setSaveStatus("saving");
-        await updateCharacterAction(characterData.id, {
-          name: characterData.name,
-          voice: characterData.voice || null,
-          aiModel: characterData.aiModel,
-          aiDescription: characterData.aiDescription || "",
-          description: characterData.description || "",
-        });
+  const performSave = useCallback(async (characterData: CharacterDetails) => {
+    try {
+      setSaveStatus("saving");
+      await updateCharacterAction(characterData.id, {
+        name: characterData.name,
+        voice: characterData.voice || null,
+        aiModel: characterData.aiModel,
+        aiDescription: characterData.aiDescription || "",
+        description: characterData.description || "",
+      });
 
-        // Update the last saved version with current values using deep clone
-        setLastSavedCharacter(structuredClone(characterData));
+      // Update the last saved version with current values using deep clone
+      setLastSavedCharacter(structuredClone(characterData));
 
-        setLastSavedAt(new Date());
-        setSaveStatus("saved");
-        router.refresh();
-        setTimeout(() => setSaveStatus("idle"), 2000);
-        return true;
-      } catch (error) {
-        console.error("Error saving character:", error);
-        setSaveStatus("error");
-        setTimeout(() => setSaveStatus("idle"), 3000);
-        return false;
-      }
-    },
-    [router]
-  );
+      setLastSavedAt(new Date());
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+      return true;
+    } catch (error) {
+      console.error("Error saving character:", error);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+      return false;
+    }
+  }, []);
 
   // Auto-save when character changes
   useEffect(() => {

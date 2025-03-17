@@ -6,11 +6,9 @@ import { Pencil } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export default async function CharacterPage(
-  props: {
-    params: Promise<{ charId: string }>;
-  }
-) {
+export default async function CharacterPage(props: {
+  params: Promise<{ charId: string }>;
+}) {
   const params = await props.params;
   const [character, user] = await Promise.all([
     getCharacterDetailsAction(params.charId),
@@ -27,13 +25,14 @@ export default async function CharacterPage(
             <Button asChild variant="outline">
               <Link
                 href={`/characters/${character.id}/edit`}
-            className="flex items-center"
-          >
-            <Pencil className="mr-2 h-4 w-4" />
-            Edit
-            </Link>
-          </Button>
-        )}
+                replace
+                className="flex items-center"
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </Link>
+            </Button>
+          )}
       </div>
       <CharacterDetailsView character={character} />
     </div>

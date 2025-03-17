@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AIModel } from "@/types/models";
 import { CharacterVoiceSelect } from "@/components/character-voice-select";
@@ -15,7 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { getInitials } from "@/lib/utils";
 
 export function EditCharacterForm() {
-  const router = useRouter();
   const { toast } = useToast();
   const { character, updateCharacterField, saveStatus, saveCharacter } =
     useCharacterDetails();
@@ -40,7 +38,6 @@ export function EditCharacterForm() {
       });
       if (response.success) {
         setAvatarUrl(url);
-        router.refresh();
       } else {
         toast({
           title: "Failed to update avatar",

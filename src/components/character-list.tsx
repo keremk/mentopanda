@@ -39,6 +39,7 @@ export function CharacterList({
   const [newCharacterName, setNewCharacterName] = useState("");
   const createDialogCloseRef = useRef<HTMLButtonElement>(null);
   const deleteDialogCloseRef = useRef<HTMLButtonElement>(null);
+  const hasRedirectedRef = useRef(false);
 
   const selectedCharacterData = characters.find(
     (c) => c.id.toString() === currentCharId
@@ -49,11 +50,25 @@ export function CharacterList({
   useEffect(() => {
     // Only run if we have characters but none is selected in the URL
     // and we're on the main characters page
-    if (characters.length > 0 && !currentCharId && pathname === "/characters") {
-      // Always navigate to the edit page of the first character
-      router.push(`/characters/${characters[0].id}/edit`);
+    // Use a ref to ensure we only redirect once
+    if (
+      characters.length > 0 &&
+      !currentCharId &&
+      pathname === "/characters" &&
+      !hasRedirectedRef.current
+    ) {
+      hasRedirectedRef.current = true;
+      // Use replace instead of push to avoid adding to history stack
+      router.replace(`/characters/${characters[0].id}/edit`);
     }
   }, [characters, currentCharId, pathname, router]);
+
+  // Reset the redirect flag when navigating away from characters page
+  useEffect(() => {
+    if (pathname !== "/characters") {
+      hasRedirectedRef.current = false;
+    }
+  }, [pathname]);
 
   async function handleCreateCharacter() {
     if (!newCharacterName.trim()) return;
@@ -62,7 +77,6 @@ export function CharacterList({
 
     if (result.success) {
       setNewCharacterName("");
-      router.refresh();
       // Close the dialog
       createDialogCloseRef.current?.click();
       // Navigate to the new character's edit page
@@ -80,8 +94,8 @@ export function CharacterList({
 
     if (result.success) {
       deleteDialogCloseRef.current?.click();
-      router.refresh();
-      router.push("/characters");
+      // Use replace instead of push to avoid adding to history stack
+      router.replace("/characters");
     } else {
       // TODO: Show error toast
       console.error("Failed to delete character:", result.error);
@@ -100,8 +114,8 @@ export function CharacterList({
                   ? "bg-muted"
                   : "hover:bg-muted/50"
               }`}
-              // Always navigate to edit mode when clicking a character
-              onClick={() => router.push(`/characters/${character.id}/edit`)}
+              // Use replace instead of push to avoid adding to history stack
+              onClick={() => router.replace(`/characters/${character.id}/edit`)}
             >
               <Avatar>
                 <AvatarImage
