@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -24,11 +24,17 @@ import { useModuleEdit } from "@/contexts/module-edit-context";
 import { useCharacterPrompt } from "@/contexts/character-prompt-context";
 import { Loader2 } from "lucide-react";
 
+// Define the custom event type
+interface ModuleFullscreenChangeEvent extends Event {
+  detail: { isFullScreen: boolean };
+}
+
 export function EditContainer() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isSaving, setIsSaving] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   // Get the active tab from URL or default to "details"
   const activeTab = searchParams.get("tab") || "details";
@@ -38,6 +44,33 @@ export function EditContainer() {
   const moduleList = useModuleList();
   const moduleEdit = useModuleEdit();
   const characterPrompt = useCharacterPrompt();
+
+  // Listen for fullscreen events from the EditModuleForm component
+  useEffect(() => {
+    const handleFullScreenChange = (event: ModuleFullscreenChangeEvent) => {
+      setIsFullScreen(event.detail.isFullScreen);
+    };
+
+    window.addEventListener(
+      "module-fullscreen-change",
+      handleFullScreenChange as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "module-fullscreen-change",
+        handleFullScreenChange as EventListener
+      );
+    };
+  }, []);
+
+  // Check URL for fullscreen state on initial load and changes
+  useEffect(() => {
+    const isFullScreenParam = searchParams.get("fullscreen") === "true";
+    if (isFullScreenParam !== isFullScreen) {
+      setIsFullScreen(isFullScreenParam);
+    }
+  }, [searchParams, isFullScreen]);
 
   // Function to update URL when tab changes
   const handleTabChange = (value: string) => {
@@ -100,73 +133,77 @@ export function EditContainer() {
 
   return (
     <div className="container h-full px-4 flex flex-col min-h-[calc(100vh-2rem)] pb-4">
-      <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex gap-3">
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="ghost-danger"
-              disabled={isAnySaving}
-              className="shadow-sm hover:shadow-md transition-all"
-            >
-              Delete Training
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent className="border-border/50 bg-background/95 backdrop-blur-sm">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the
-                training and all its modules.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="border-border/50 bg-secondary/30 hover:bg-secondary/50 shadow-sm">
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteTraining}
-                className="bg-danger text-danger-foreground hover:bg-danger/90 shadow-sm"
+      {!isFullScreen && (
+        <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex gap-3">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost-danger"
+                disabled={isAnySaving}
+                className="shadow-sm hover:shadow-md transition-all"
               >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        <Button
-          onClick={handleSaveAndExit}
-          disabled={isAnySaving}
-          variant="brand"
-        >
-          {isAnySaving ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            "Save & Exit"
-          )}
-        </Button>
-      </div>
+                Delete Training
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="border-border/50 bg-background/95 backdrop-blur-sm">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the
+                  training and all its modules.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="border-border/50 bg-secondary/30 hover:bg-secondary/50 shadow-sm">
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteTraining}
+                  className="bg-danger text-danger-foreground hover:bg-danger/90 shadow-sm"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <Button
+            onClick={handleSaveAndExit}
+            disabled={isAnySaving}
+            variant="brand"
+          >
+            {isAnySaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save & Exit"
+            )}
+          </Button>
+        </div>
+      )}
 
       <Tabs
         value={activeTab}
         onValueChange={handleTabChange}
-        className="w-full flex-1 flex flex-col mt-8"
+        className={`w-full flex-1 flex flex-col ${isFullScreen ? "mt-0" : "mt-8"} transition-all duration-300`}
       >
-        <TabsList className="grid w-full grid-cols-2 bg-secondary/30 p-1 rounded-lg border border-border/30">
-          <TabsTrigger
-            value="details"
-            className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
-            Training Details
-          </TabsTrigger>
-          <TabsTrigger
-            value="modules"
-            className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
-            Modules
-          </TabsTrigger>
-        </TabsList>
+        {!isFullScreen && (
+          <TabsList className="grid w-full grid-cols-2 bg-secondary/30 p-1 rounded-lg border border-border/30">
+            <TabsTrigger
+              value="details"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Training Details
+            </TabsTrigger>
+            <TabsTrigger
+              value="modules"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Modules
+            </TabsTrigger>
+          </TabsList>
+        )}
         <TabsContent value="details" className="flex-1 mt-6">
           <EditTrainingForm />
         </TabsContent>

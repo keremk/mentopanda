@@ -1,16 +1,22 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ModuleList } from "@/components/module-list";
 import { EditModuleForm } from "./edit-module-form";
 import { useModuleList } from "@/contexts/module-list-context";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 
+// Define the custom event type
+interface ModuleFullscreenChangeEvent extends Event {
+  detail: { isFullScreen: boolean };
+}
+
 export function EditModules() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const { modules, addModule, deleteModule } = useModuleList();
   const { selectedModuleId, selectModule } = useModuleEdit();
@@ -55,19 +61,51 @@ export function EditModules() {
     }
   }, [modules, moduleIdFromUrl, selectedModuleId, effectiveModuleId]);
   /* eslint-enable react-hooks/exhaustive-deps */
+
+  // Listen for fullscreen events from the EditModuleForm component
+  useEffect(() => {
+    const handleFullScreenChange = (event: ModuleFullscreenChangeEvent) => {
+      setIsFullScreen(event.detail.isFullScreen);
+    };
+
+    window.addEventListener(
+      "module-fullscreen-change",
+      handleFullScreenChange as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "module-fullscreen-change",
+        handleFullScreenChange as EventListener
+      );
+    };
+  }, []);
+
+  // Check URL for fullscreen state on initial load and changes
+  useEffect(() => {
+    const isFullScreenParam = searchParams.get("fullscreen") === "true";
+    if (isFullScreenParam !== isFullScreen) {
+      setIsFullScreen(isFullScreenParam);
+    }
+  }, [searchParams, isFullScreen]);
+
   return (
     <div className="flex flex-col md:flex-row gap-8 w-full">
-      <div className="w-full md:w-80 h-[calc(100vh-11rem)]">
-        <ModuleList
-          key={JSON.stringify(modules)}
-          modules={modules}
-          selectedModuleId={effectiveModuleId}
-          onSelectModule={handleSelectModule}
-          onAddModule={(title) => addModule(title)}
-          onDeleteModule={deleteModule}
-        />
-      </div>
-      <div className="flex-1 h-[calc(100vh-12rem)] overflow-auto">
+      {!isFullScreen && (
+        <div className="w-full md:w-80 h-[calc(100vh-11rem)]">
+          <ModuleList
+            key={JSON.stringify(modules)}
+            modules={modules}
+            selectedModuleId={effectiveModuleId}
+            onSelectModule={handleSelectModule}
+            onAddModule={(title) => addModule(title)}
+            onDeleteModule={deleteModule}
+          />
+        </div>
+      )}
+      <div
+        className={`${isFullScreen ? "w-full" : "flex-1"} h-[calc(100vh-12rem)] overflow-auto transition-all duration-300`}
+      >
         {currentModule ? (
           <EditModuleForm
             key={`module-${currentModule.id}`}
