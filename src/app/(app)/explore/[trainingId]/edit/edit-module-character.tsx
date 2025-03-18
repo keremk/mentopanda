@@ -160,7 +160,7 @@ export function EditModuleCharacter({
             onChange={(e) => handleCharacterPromptChange(e.target.value)}
             placeholder="Enter the prompt about how this character should behave in this scenario"
             rows={10}
-            className={`${isFullScreen ? "min-h-[calc(100vh-15rem)]" : "min-h-[calc(100vh-50rem)]"} bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300`}
+            className={`${isFullScreen ? "min-h-[calc(100vh-18rem)]" : "min-h-[calc(100vh-50rem)]"} bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300`}
           />
         </div>
       )}

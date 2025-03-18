@@ -9,7 +9,8 @@ import { Module } from "@/data/modules";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { EditModuleCharacter } from "./edit-module-character";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2, Sparkles } from "lucide-react";
+import { AIPane } from "@/components/aipane";
 
 // Define the custom event type
 interface ModuleFullscreenChangeDetail {
@@ -25,6 +26,7 @@ export function EditModuleForm({ module }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isAIPaneOpen, setIsAIPaneOpen] = useState(false);
 
   // Get the active tab from URL or default to "scenario"
   const activeTab = searchParams.get("moduleTab") || "scenario";
@@ -80,6 +82,8 @@ export function EditModuleForm({ module }: Props) {
       params.set("fullscreen", "true");
     } else {
       params.delete("fullscreen");
+      // Also close AI pane when exiting fullscreen
+      setIsAIPaneOpen(false);
     }
     router.push(`${pathname}?${params.toString()}`);
 
@@ -91,6 +95,10 @@ export function EditModuleForm({ module }: Props) {
       }
     );
     window.dispatchEvent(event);
+  };
+
+  const toggleAIPane = () => {
+    setIsAIPaneOpen(!isAIPaneOpen);
   };
 
   // Check URL for fullscreen state on initial load
@@ -149,16 +157,27 @@ export function EditModuleForm({ module }: Props) {
       )}
 
       <div
-        className={`${isFullScreen ? "mt-0" : "mt-8"} transition-all duration-300`}
+        className={`${isFullScreen ? "mt-0" : "mt-8"} transition-all duration-300 px-2`}
       >
-        <div className="flex justify-between items-center mb-4 pb-2 border-b border-border/30">
-          <h3 className="text-lg font-medium text-foreground">
+        <div className="flex justify-between items-center mb-4 pb-2 border-b border-border/30 px-2">
+          <h3 className="text-lg font-medium text-foreground px-6">
             AI Instructions
           </h3>
           <div className="flex items-center space-x-2">
             <Button variant="ghost-brand" onClick={handleQuickTest} size="sm">
               Quick Test
             </Button>
+            {isFullScreen && (
+              <Button
+                variant={isAIPaneOpen ? "brand" : "ghost-brand"}
+                size="sm"
+                onClick={toggleAIPane}
+                className="flex items-center gap-1"
+              >
+                <Sparkles className="h-4 w-4" />
+                
+              </Button>
+            )}
             <Button
               variant="ghost-brand"
               size="icon"
@@ -173,87 +192,87 @@ export function EditModuleForm({ module }: Props) {
             </Button>
           </div>
         </div>
-        <Tabs
-          value={activeTab}
-          onValueChange={handleTabChange}
-          className="w-full"
-        >
-          <TabsList className="grid w-full grid-cols-3 bg-secondary/50 p-1">
-            <TabsTrigger
-              value="scenario"
-              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              Scenario
-            </TabsTrigger>
-            {/* <TabsTrigger
-              value="moderator"
-              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              Moderator
-            </TabsTrigger> */}
-            <TabsTrigger
-              value="assessment"
-              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              Assessment
-            </TabsTrigger>
-            <TabsTrigger
-              value="character"
-              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              Character
-            </TabsTrigger>
-          </TabsList>
 
-          <TabsContent value="scenario" className="mt-4">
-            <Textarea
-              value={selectedModule.modulePrompt.scenario}
-              onChange={(e) => handlePromptChange(e, "scenario")}
-              rows={12}
-              placeholder="Enter the prompt for the AI to set up the overall scenario"
-              className={`${isFullScreen ? "min-h-[calc(100vh-10rem)]" : "min-h-[calc(100vh-41rem)]"} bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300`}
-            />
-          </TabsContent>
-
-          {/* <TabsContent value="moderator" className="mt-4">
-            <Textarea
-              value={selectedModule.modulePrompt.moderator || ""}
-              onChange={(e) => handlePromptChange(e, "moderator")}
-              rows={12}
-              placeholder="Enter the moderator instructions..."
-              className="min-h-[calc(100vh-41rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
-            />
-          </TabsContent> */}
-
-          <TabsContent value="assessment" className="mt-4">
-            <Textarea
-              value={selectedModule.modulePrompt.assessment}
-              onChange={(e) => handlePromptChange(e, "assessment")}
-              rows={12}
-              placeholder="Enter the prompt for the AI to assess the user's performance"
-              className={`${isFullScreen ? "min-h-[calc(100vh-10rem)]" : "min-h-[calc(100vh-41rem)]"} bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300`}
-            />
-          </TabsContent>
-
-          <TabsContent value="character" className="mt-4">
-            <EditModuleCharacter isFullScreen={isFullScreen} />
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {isFullScreen && (
-        <div className="fixed bottom-6 right-6">
-          <Button
-            variant="brand"
-            size="sm"
-            onClick={toggleFullScreen}
-            className="shadow-lg"
+        <div className="flex h-full">
+          <div
+            className={`flex-1 ${isAIPaneOpen && isFullScreen ? "md:w-2/3 pr-4" : "w-full"}`}
           >
-            <Minimize2 className="h-4 w-4 mr-2" />
-            Exit Full Screen
-          </Button>
+            <Tabs
+              value={activeTab}
+              onValueChange={handleTabChange}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-3 bg-secondary/50 p-1">
+                <TabsTrigger
+                  value="scenario"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  Scenario
+                </TabsTrigger>
+                {/* <TabsTrigger
+                  value="moderator"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  Moderator
+                </TabsTrigger> */}
+                <TabsTrigger
+                  value="assessment"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  Assessment
+                </TabsTrigger>
+                <TabsTrigger
+                  value="character"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  Character
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="scenario" className="mt-4">
+                <Textarea
+                  value={selectedModule.modulePrompt.scenario}
+                  onChange={(e) => handlePromptChange(e, "scenario")}
+                  rows={12}
+                  placeholder="Enter the prompt for the AI to set up the overall scenario"
+                  className={`${isFullScreen ? "min-h-[calc(100vh-10rem)]" : "min-h-[calc(100vh-41rem)]"} bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300`}
+                />
+              </TabsContent>
+
+              {/* <TabsContent value="moderator" className="mt-4">
+                <Textarea
+                  value={selectedModule.modulePrompt.moderator || ""}
+                  onChange={(e) => handlePromptChange(e, "moderator")}
+                  rows={12}
+                  placeholder="Enter the moderator instructions..."
+                  className="min-h-[calc(100vh-41rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
+                />
+              </TabsContent> */}
+
+              <TabsContent value="assessment" className="mt-4">
+                <Textarea
+                  value={selectedModule.modulePrompt.assessment}
+                  onChange={(e) => handlePromptChange(e, "assessment")}
+                  rows={12}
+                  placeholder="Enter the prompt for the AI to assess the user's performance"
+                  className={`${isFullScreen ? "min-h-[calc(100vh-10rem)]" : "min-h-[calc(100vh-41rem)]"} bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300`}
+                />
+              </TabsContent>
+
+              <TabsContent value="character" className="mt-4">
+                <EditModuleCharacter isFullScreen={isFullScreen} />
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {isFullScreen && isAIPaneOpen && (
+            <AIPane
+              isOpen={isAIPaneOpen}
+              onClose={() => setIsAIPaneOpen(false)}
+            />
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
