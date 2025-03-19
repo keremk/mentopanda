@@ -4,22 +4,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SendHorizontal, Globe, Lightbulb } from "lucide-react";
-
-type Message = {
-  id: string;
-  content: string;
-  role: "user" | "assistant";
-  timestamp: Date;
-};
+import { useAIPane } from "./ai-pane-context";
 
 type AIPanePromptBoxProps = {
   className?: string;
 };
 
 export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const { input, handleInputChange, handleSubmit, isLoading } = useAIPane();
   const [suggestions] = useState([
     "Improve my scenario description",
     "Help me create a more challenging assessment",
@@ -28,38 +20,26 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
   ]);
 
   const handleSuggestionClick = (suggestion: string) => {
-    // This will be implemented in future iterations
+    // This would be implemented in future iterations
     console.log(`Selected suggestion: ${suggestion}`);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+    handleSubmit(e);
+  };
 
-    // Add user message
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: input,
-      role: "user",
-      timestamp: new Date(),
-    };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setIsLoading(true);
-
-    // Simulate AI response (to be replaced with actual API call)
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content:
-          "This is a placeholder response. The AI integration will be implemented in future iterations.",
-        role: "assistant",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-      setIsLoading(false);
-    }, 1000);
+      // Simply submit the form directly
+      const formElement = e.currentTarget.closest("form");
+      if (formElement) {
+        formElement.requestSubmit();
+      }
+    }
   };
 
   return (
@@ -85,19 +65,14 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
       </div>
 
       <div className="mt-auto p-3">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={onSubmit}>
           <div className="rounded-2xl bg-secondary/30 border border-border/30 overflow-hidden flex flex-col group focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
             <Textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               placeholder="Ask anything..."
               className="flex-1 min-h-[40px] max-h-[120px] resize-none border-0 bg-transparent p-3 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
+              onKeyDown={handleKeyDown}
             />
             <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 border-t border-border/20">
               <div className="flex items-center gap-1">
@@ -118,7 +93,7 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
                 className="h-7 rounded-full px-3 flex items-center gap-1 text-xs"
               >
                 <SendHorizontal className="h-3.5 w-3.5" />
-                <span>Send</span>
+                <span>{isLoading ? "Sending..." : "Send"}</span>
               </Button>
             </div>
           </div>

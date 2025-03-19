@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { X, Sparkles } from "lucide-react";
 import { AIPanePromptBox } from "./aipane-prompt-box";
 import { AIPaneResponses } from "./aipane-responses";
+import { AIPaneProvider } from "./ai-pane-context";
+
 type AIPaneProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -31,15 +33,17 @@ export function AIPane({ isOpen, onClose }: AIPaneProps) {
       </div>
 
       {/* Main content area */}
-      <div className="flex-1 min-h-0 flex flex-col">
-        <div className="flex-1 overflow-y-auto">
-          <AIPaneResponses />
-        </div>
+      <AIPaneProvider>
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 overflow-y-auto">
+            <AIPaneResponses />
+          </div>
 
-        <div className="border-t border-border/20">
-          <AIPanePromptBox />
+          <div className="border-t border-border/20">
+            <AIPanePromptBox />
+          </div>
         </div>
-      </div>
+      </AIPaneProvider>
     </div>
   );
 }
