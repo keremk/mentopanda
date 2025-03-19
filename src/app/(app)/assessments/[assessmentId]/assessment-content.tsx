@@ -1,6 +1,6 @@
 "use client";
 
-import { useCompletion } from "ai/react";
+import { useCompletion } from "@ai-sdk/react";  
 import { useEffect, useState } from "react";
 import { updateHistoryEntryAction } from "@/app/actions/history-actions";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
