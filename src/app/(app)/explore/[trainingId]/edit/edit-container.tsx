@@ -24,7 +24,7 @@ import { useModuleEdit } from "@/contexts/module-edit-context";
 import { useCharacterPrompt } from "@/contexts/character-prompt-context";
 import { Loader2, Sparkles } from "lucide-react";
 import { AIPane } from "@/components/aipane";
-import { AIPaneProvider } from "@/components/ai-pane-context";
+import { AIPaneProvider } from "@/contexts/ai-pane-context";
 import {
   Tooltip,
   TooltipContent,

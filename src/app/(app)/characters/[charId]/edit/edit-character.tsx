@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getInitials } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
 import { AIPane } from "@/components/aipane";
-import { AIPaneProvider } from "@/components/ai-pane-context";
+import { AIPaneProvider } from "@/contexts/ai-pane-context";
 import {
   Tooltip,
   TooltipContent,
@@ -95,7 +95,12 @@ export function EditCharacterForm() {
           {saveStatus === "error" && (
             <span className="text-sm text-red-500">Error saving</span>
           )}
-          <Button variant="brand" onClick={handleSave} size="default" className="h-9">
+          <Button
+            variant="brand"
+            onClick={handleSave}
+            size="default"
+            className="h-9"
+          >
             Save
           </Button>
           <Tooltip>

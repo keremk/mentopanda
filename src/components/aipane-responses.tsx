@@ -1,6 +1,6 @@
 "use client";
 
-import { useAIPane } from "./ai-pane-context";
+import { useAIPane } from "../contexts/ai-pane-context";
 
 export function AIPaneResponses() {
   const { messages, messagesEndRef } = useAIPane();

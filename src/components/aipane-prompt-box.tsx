@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SendHorizontal, Globe, Lightbulb } from "lucide-react";
-import { useAIPane } from "./ai-pane-context";
+import { useAIPane } from "../contexts/ai-pane-context";
 
 type AIPanePromptBoxProps = {
   className?: string;
