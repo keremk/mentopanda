@@ -40,10 +40,8 @@ interface ModuleEditProviderProps {
   children: ReactNode;
 }
 
-export function ModuleEditProvider({
-  children,
-}: ModuleEditProviderProps) {
-  const { refreshModules } = useModuleList();
+export function ModuleEditProvider({ children }: ModuleEditProviderProps) {
+  const { refreshModules, modules } = useModuleList();
   const [selectedModuleId, setSelectedModuleId] = useState<
     number | undefined
   >();
@@ -139,18 +137,28 @@ export function ModuleEditProvider({
         return;
       }
 
+      // Find the module in the existing modules list
+      const existingModule = modules.find((m) => m.id === moduleId);
+      if (existingModule) {
+        setSelectedModule(existingModule);
+        setLastSavedModule(structuredClone(existingModule));
+        return;
+      }
+
+      // Only fetch from API if module is not in the list
       try {
         const trainingModule = await getModuleByIdAction2(moduleId);
         if (trainingModule) {
           setSelectedModule(trainingModule);
-          // Initialize last saved module with the fetched data
           setLastSavedModule(structuredClone(trainingModule));
+          // Update modules list with the fetched data
+          refreshModules([trainingModule]);
         }
       } catch (error) {
         console.error("Error loading module:", error);
       }
     },
-    [selectedModuleId]
+    [selectedModuleId, modules, refreshModules]
   );
 
   const updateModuleField = useCallback(

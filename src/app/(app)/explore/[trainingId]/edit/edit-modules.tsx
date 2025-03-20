@@ -39,39 +39,47 @@ export function EditModules({
     : null;
 
   const handleSelectModule = (moduleId: number) => {
-    // Update URL with the selected module ID
-    const params = new URLSearchParams(searchParams);
-    params.set("moduleId", moduleId.toString());
+    // Only update if the module ID is different
+    if (moduleId === effectiveModuleId) return;
 
-    // Update the context
+    // Update the context first
     selectModule(moduleId);
 
-    // Update the URL
-    router.push(`${pathname}?${params.toString()}`);
+    // Update URL without causing a navigation (replace instead of push)
+    const params = new URLSearchParams(searchParams);
+    params.set("moduleId", moduleId.toString());
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   useEffect(() => {
-    // Case 1: URL has moduleId that doesn't match context
-    if (moduleIdFromUrl && parseInt(moduleIdFromUrl) !== selectedModuleId) {
+    // Skip if no modules
+    if (modules.length === 0) return;
+
+    // Skip if we already have a valid module selected
+    if (selectedModuleId && modules.some((m) => m.id === selectedModuleId))
+      return;
+
+    // Case 1: URL has moduleId that exists in modules
+    if (moduleIdFromUrl) {
       const moduleId = parseInt(moduleIdFromUrl);
-      // Only update context if module exists (don't update URL)
       if (modules.some((m) => m.id === moduleId)) {
         selectModule(moduleId);
+      } else {
+        // If module doesn't exist, select first module
+        handleSelectModule(modules[0].id);
       }
     }
-    // Case 2: No moduleId in URL or context, but modules exist
-    else if (modules.length > 0 && !effectiveModuleId) {
-      const firstModuleId = modules[0].id;
-      handleSelectModule(firstModuleId);
+    // Case 2: No moduleId in URL but modules exist, select first module
+    else if (!effectiveModuleId) {
+      handleSelectModule(modules[0].id);
     }
-  }, [modules, moduleIdFromUrl, selectedModuleId, effectiveModuleId]);
+  }, [moduleIdFromUrl, modules]); // Only depend on URL changes and modules list
 
   return (
     <div className="flex flex-col md:flex-row gap-2 w-full">
       {!isFullScreen && (
         <div className="w-full md:w-80 h-[calc(100vh-11rem)]">
           <ModuleList
-            key={JSON.stringify(modules)}
             modules={modules}
             selectedModuleId={effectiveModuleId}
             onSelectModule={handleSelectModule}
@@ -85,7 +93,7 @@ export function EditModules({
       >
         {currentModule ? (
           <EditModuleForm
-            key={`module-${currentModule.id}`}
+            key={currentModule.id}
             module={currentModule}
             isFullScreen={isFullScreen}
             onToggleFullScreen={onToggleFullScreen}

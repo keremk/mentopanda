@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -109,7 +109,7 @@ export function EditContainer() {
     setIsAIPaneOpen(!isAIPaneOpen);
   };
 
-  const handleToggleFullScreen = () => {
+  const handleToggleFullScreen = useCallback(() => {
     const newState = !isFullScreen;
     setIsFullScreen(newState);
 
@@ -121,7 +121,7 @@ export function EditContainer() {
       params.delete("fullscreen");
     }
     router.push(`${pathname}?${params.toString()}`);
-  };
+  }, [isFullScreen, searchParams, pathname, router]);
 
   // Single keyboard shortcut handler for both toggles
   useEffect(() => {
@@ -142,7 +142,7 @@ export function EditContainer() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isAIPaneOpen, isFullScreen]);
+  }, [isAIPaneOpen, handleToggleFullScreen]);
 
   // Determine if any context is currently saving
   const isAnySaving =
