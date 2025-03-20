@@ -22,19 +22,22 @@ import { useTrainingDetails } from "@/contexts/training-details-context";
 import { useModuleList } from "@/contexts/module-list-context";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { useCharacterPrompt } from "@/contexts/character-prompt-context";
-import { Loader2 } from "lucide-react";
-
-// Define the custom event type
-interface ModuleFullscreenChangeEvent extends Event {
-  detail: { isFullScreen: boolean };
-}
+import { Loader2, Sparkles } from "lucide-react";
+import { AIPane } from "@/components/aipane";
+import { AIPaneProvider } from "@/components/ai-pane-context";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function EditContainer() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isSaving, setIsSaving] = useState(false);
+  const [isAIPaneOpen, setIsAIPaneOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Get the active tab from URL or default to "details"
   const activeTab = searchParams.get("tab") || "details";
@@ -45,32 +48,11 @@ export function EditContainer() {
   const moduleEdit = useModuleEdit();
   const characterPrompt = useCharacterPrompt();
 
-  // Listen for fullscreen events from the EditModuleForm component
-  useEffect(() => {
-    const handleFullScreenChange = (event: ModuleFullscreenChangeEvent) => {
-      setIsFullScreen(event.detail.isFullScreen);
-    };
-
-    window.addEventListener(
-      "module-fullscreen-change",
-      handleFullScreenChange as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        "module-fullscreen-change",
-        handleFullScreenChange as EventListener
-      );
-    };
-  }, []);
-
-  // Check URL for fullscreen state on initial load and changes
+  // Initialize fullscreen state from URL params
   useEffect(() => {
     const isFullScreenParam = searchParams.get("fullscreen") === "true";
-    if (isFullScreenParam !== isFullScreen) {
-      setIsFullScreen(isFullScreenParam);
-    }
-  }, [searchParams, isFullScreen]);
+    setIsFullScreen(isFullScreenParam);
+  }, [searchParams]);
 
   // Function to update URL when tab changes
   const handleTabChange = (value: string) => {
@@ -123,6 +105,45 @@ export function EditContainer() {
     }
   };
 
+  const handleToggleAIPane = () => {
+    setIsAIPaneOpen(!isAIPaneOpen);
+  };
+
+  const handleToggleFullScreen = () => {
+    const newState = !isFullScreen;
+    setIsFullScreen(newState);
+
+    // Update URL with fullscreen state
+    const params = new URLSearchParams(searchParams);
+    if (newState) {
+      params.set("fullscreen", "true");
+    } else {
+      params.delete("fullscreen");
+    }
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  // Single keyboard shortcut handler for both toggles
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle if Command/Control is pressed
+      if (event.metaKey || event.ctrlKey) {
+        const key = event.key.toLowerCase();
+
+        if (key === "k") {
+          event.preventDefault();
+          setIsAIPaneOpen(!isAIPaneOpen);
+        } else if (key === "f") {
+          event.preventDefault();
+          handleToggleFullScreen();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isAIPaneOpen, isFullScreen]);
+
   // Determine if any context is currently saving
   const isAnySaving =
     isSaving ||
@@ -132,15 +153,16 @@ export function EditContainer() {
     characterPrompt.saveStatus === "saving";
 
   return (
-    <div className="container h-full px-4 flex flex-col min-h-[calc(100vh-2rem)] pb-4">
-      {!isFullScreen && (
+    <AIPaneProvider>
+      <div className="container h-full px-4 flex flex-col min-h-[calc(100vh-2rem)] pb-4">
         <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex gap-3">
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
                 variant="ghost-danger"
                 disabled={isAnySaving}
-                className="shadow-sm hover:shadow-md transition-all"
+                size="default"
+                className="h-9 shadow-sm hover:shadow-md transition-all"
               >
                 Delete Training
               </Button>
@@ -170,6 +192,8 @@ export function EditContainer() {
             onClick={handleSaveAndExit}
             disabled={isAnySaving}
             variant="brand"
+            size="default"
+            className="h-9"
           >
             {isAnySaving ? (
               <>
@@ -180,37 +204,59 @@ export function EditContainer() {
               "Save & Exit"
             )}
           </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={isAIPaneOpen ? "brand" : "ghost-brand"}
+                size="icon"
+                onClick={handleToggleAIPane}
+                className="h-9 w-9"
+              >
+                <Sparkles className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Toggle AI Pane (⌘K)</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
-      )}
 
-      <Tabs
-        value={activeTab}
-        onValueChange={handleTabChange}
-        className={`w-full flex-1 flex flex-col ${isFullScreen ? "mt-0" : "mt-8"} transition-all duration-300`}
-      >
-        {!isFullScreen && (
-          <TabsList className="grid w-full grid-cols-2 bg-secondary/30 p-1 rounded-lg border border-border/30">
-            <TabsTrigger
-              value="details"
-              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              Training Details
-            </TabsTrigger>
-            <TabsTrigger
-              value="modules"
-              className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              Modules
-            </TabsTrigger>
-          </TabsList>
-        )}
-        <TabsContent value="details" className="flex-1 mt-6">
-          <EditTrainingForm />
-        </TabsContent>
-        <TabsContent value="modules" className="flex-1 flex mt-6">
-          <EditModules />
-        </TabsContent>
-      </Tabs>
-    </div>
+        <div className="flex-1 mt-8">
+          <Tabs
+            value={activeTab}
+            onValueChange={handleTabChange}
+            className="w-full flex-1 flex flex-col transition-all duration-300"
+          >
+            <TabsList className="grid w-full grid-cols-2 bg-secondary/30 p-1 rounded-lg border border-border/30">
+              <TabsTrigger
+                value="details"
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                Training Details
+              </TabsTrigger>
+              <TabsTrigger
+                value="modules"
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                Modules
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="details" className="flex-1 mt-6">
+              <EditTrainingForm />
+            </TabsContent>
+            <TabsContent value="modules" className="flex-1 flex mt-6">
+              <EditModules
+                isFullScreen={isFullScreen}
+                onToggleFullScreen={handleToggleFullScreen}
+                isAIPaneOpen={isAIPaneOpen}
+                onToggleAIPane={handleToggleAIPane}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        <AIPane isOpen={isAIPaneOpen} onClose={handleToggleAIPane} />
+      </div>
+    </AIPaneProvider>
   );
 }

@@ -4,29 +4,36 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Module } from "@/data/modules";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { EditModuleCharacter } from "./edit-module-character";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Maximize2, Minimize2, Sparkles } from "lucide-react";
-import { AIPane } from "@/components/aipane";
-
-// Define the custom event type
-interface ModuleFullscreenChangeDetail {
-  isFullScreen: boolean;
-}
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Props = {
   module: Module;
+  isFullScreen: boolean;
+  onToggleFullScreen: () => void;
+  isAIPaneOpen: boolean;
+  onToggleAIPane: () => void;
 };
 
-export function EditModuleForm({ module }: Props) {
+export function EditModuleForm({
+  module,
+  isFullScreen,
+  onToggleFullScreen,
+  isAIPaneOpen,
+  onToggleAIPane,
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isFullScreen, setIsFullScreen] = useState(false);
-  const [isAIPaneOpen, setIsAIPaneOpen] = useState(false);
 
   // Get the active tab from URL or default to "scenario"
   const activeTab = searchParams.get("moduleTab") || "scenario";
@@ -72,57 +79,11 @@ export function EditModuleForm({ module }: Props) {
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  const toggleFullScreen = () => {
-    const newState = !isFullScreen;
-    setIsFullScreen(newState);
-
-    // Update URL with fullscreen state
-    const params = new URLSearchParams(searchParams);
-    if (newState) {
-      params.set("fullscreen", "true");
-    } else {
-      params.delete("fullscreen");
-      // Also close AI pane when exiting fullscreen
-      setIsAIPaneOpen(false);
-    }
-    router.push(`${pathname}?${params.toString()}`);
-
-    // Dispatch custom event for parent components to listen to
-    const event = new CustomEvent<ModuleFullscreenChangeDetail>(
-      "module-fullscreen-change",
-      {
-        detail: { isFullScreen: newState },
-      }
-    );
-    window.dispatchEvent(event);
-  };
-
-  const toggleAIPane = () => {
-    setIsAIPaneOpen(!isAIPaneOpen);
-  };
-
-  // Check URL for fullscreen state on initial load
-  useEffect(() => {
-    const isFullScreenParam = searchParams.get("fullscreen") === "true";
-    if (isFullScreenParam !== isFullScreen) {
-      setIsFullScreen(isFullScreenParam);
-
-      // Dispatch event to notify parent components
-      const event = new CustomEvent<ModuleFullscreenChangeDetail>(
-        "module-fullscreen-change",
-        {
-          detail: { isFullScreen: isFullScreenParam },
-        }
-      );
-      window.dispatchEvent(event);
-    }
-  }, [searchParams, isFullScreen]);
-
   if (!selectedModule) return null;
 
   return (
     <div
-      className={`h-full space-y-6 px-2 ${isFullScreen ? "fixed inset-0 z-50 bg-background p-6" : ""}`}
+      className={`h-full space-y-6 px-2 ${isFullScreen ? "fixed inset-0 z-40 bg-background p-6" : ""}`}
     >
       {!isFullScreen && (
         <>
@@ -167,36 +128,45 @@ export function EditModuleForm({ module }: Props) {
             <Button variant="ghost-brand" onClick={handleQuickTest} size="sm">
               Quick Test
             </Button>
-            {isFullScreen && (
-              <Button
-                variant={isAIPaneOpen ? "brand" : "ghost-brand"}
-                size="sm"
-                onClick={toggleAIPane}
-                className="flex items-center gap-1"
-              >
-                <Sparkles className="h-4 w-4" />
-                
-              </Button>
-            )}
-            <Button
-              variant="ghost-brand"
-              size="icon"
-              onClick={toggleFullScreen}
-              className="h-8 w-8"
-            >
-              {isFullScreen ? (
-                <Minimize2 className="h-4 w-4" />
-              ) : (
-                <Maximize2 className="h-4 w-4" />
-              )}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isAIPaneOpen ? "brand" : "ghost-brand"}
+                  size="icon"
+                  onClick={onToggleAIPane}
+                  className="h-8 w-8"
+                >
+                  <Sparkles className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle AI Pane (⌘K)</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost-brand"
+                  size="icon"
+                  onClick={onToggleFullScreen}
+                  className="h-8 w-8"
+                >
+                  {isFullScreen ? (
+                    <Minimize2 className="h-4 w-4" />
+                  ) : (
+                    <Maximize2 className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle Fullscreen (⌘F)</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
         <div className="flex h-full">
-          <div
-            className={`flex-1 ${isAIPaneOpen && isFullScreen ? "md:w-2/3 pr-4" : "w-full"}`}
-          >
+          <div className="w-full">
             <Tabs
               value={activeTab}
               onValueChange={handleTabChange}
@@ -209,12 +179,6 @@ export function EditModuleForm({ module }: Props) {
                 >
                   Scenario
                 </TabsTrigger>
-                {/* <TabsTrigger
-                  value="moderator"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                >
-                  Moderator
-                </TabsTrigger> */}
                 <TabsTrigger
                   value="assessment"
                   className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
@@ -239,16 +203,6 @@ export function EditModuleForm({ module }: Props) {
                 />
               </TabsContent>
 
-              {/* <TabsContent value="moderator" className="mt-4">
-                <Textarea
-                  value={selectedModule.modulePrompt.moderator || ""}
-                  onChange={(e) => handlePromptChange(e, "moderator")}
-                  rows={12}
-                  placeholder="Enter the moderator instructions..."
-                  className="min-h-[calc(100vh-41rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base"
-                />
-              </TabsContent> */}
-
               <TabsContent value="assessment" className="mt-4">
                 <Textarea
                   value={selectedModule.modulePrompt.assessment}
@@ -264,13 +218,6 @@ export function EditModuleForm({ module }: Props) {
               </TabsContent>
             </Tabs>
           </div>
-
-          {isFullScreen && isAIPaneOpen && (
-            <AIPane
-              isOpen={isAIPaneOpen}
-              onClose={() => setIsAIPaneOpen(false)}
-            />
-          )}
         </div>
       </div>
     </div>

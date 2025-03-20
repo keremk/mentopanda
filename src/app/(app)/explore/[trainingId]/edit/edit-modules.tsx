@@ -1,22 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ModuleList } from "@/components/module-list";
 import { EditModuleForm } from "./edit-module-form";
 import { useModuleList } from "@/contexts/module-list-context";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 
-// Define the custom event type
-interface ModuleFullscreenChangeEvent extends Event {
-  detail: { isFullScreen: boolean };
-}
+type Props = {
+  isFullScreen: boolean;
+  onToggleFullScreen: () => void;
+  isAIPaneOpen: boolean;
+  onToggleAIPane: () => void;
+};
 
-export function EditModules() {
+export function EditModules({
+  isFullScreen,
+  onToggleFullScreen,
+  isAIPaneOpen,
+  onToggleAIPane,
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const { modules, addModule, deleteModule } = useModuleList();
   const { selectedModuleId, selectModule } = useModuleEdit();
@@ -44,7 +50,6 @@ export function EditModules() {
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     // Case 1: URL has moduleId that doesn't match context
     if (moduleIdFromUrl && parseInt(moduleIdFromUrl) !== selectedModuleId) {
@@ -60,37 +65,9 @@ export function EditModules() {
       handleSelectModule(firstModuleId);
     }
   }, [modules, moduleIdFromUrl, selectedModuleId, effectiveModuleId]);
-  /* eslint-enable react-hooks/exhaustive-deps */
-
-  // Listen for fullscreen events from the EditModuleForm component
-  useEffect(() => {
-    const handleFullScreenChange = (event: ModuleFullscreenChangeEvent) => {
-      setIsFullScreen(event.detail.isFullScreen);
-    };
-
-    window.addEventListener(
-      "module-fullscreen-change",
-      handleFullScreenChange as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        "module-fullscreen-change",
-        handleFullScreenChange as EventListener
-      );
-    };
-  }, []);
-
-  // Check URL for fullscreen state on initial load and changes
-  useEffect(() => {
-    const isFullScreenParam = searchParams.get("fullscreen") === "true";
-    if (isFullScreenParam !== isFullScreen) {
-      setIsFullScreen(isFullScreenParam);
-    }
-  }, [searchParams, isFullScreen]);
 
   return (
-    <div className="flex flex-col md:flex-row gap-8 w-full">
+    <div className="flex flex-col md:flex-row gap-2 w-full">
       {!isFullScreen && (
         <div className="w-full md:w-80 h-[calc(100vh-11rem)]">
           <ModuleList
@@ -110,6 +87,10 @@ export function EditModules() {
           <EditModuleForm
             key={`module-${currentModule.id}`}
             module={currentModule}
+            isFullScreen={isFullScreen}
+            onToggleFullScreen={onToggleFullScreen}
+            isAIPaneOpen={isAIPaneOpen}
+            onToggleAIPane={onToggleAIPane}
           />
         ) : (
           <div className="flex items-center justify-center h-full border rounded-lg p-8 bg-muted/10">
