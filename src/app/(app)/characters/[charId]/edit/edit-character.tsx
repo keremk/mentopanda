@@ -1,12 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
 import { AIModel } from "@/types/models";
 import { CharacterVoiceSelect } from "@/components/character-voice-select";
-import { Textarea } from "@/components/ui/textarea";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import { updateCharacterAvatarAction } from "@/app/actions/character-actions";
 import { useCharacterDetails } from "@/contexts/character-details-context";
@@ -20,6 +18,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AIFocusTextarea } from "@/components/ai-focus-textarea";
+import { AIFocusInput } from "@/components/ai-focus-input";
 
 export function EditCharacterForm() {
   const { toast } = useToast();
@@ -28,6 +28,30 @@ export function EditCharacterForm() {
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(character.avatarUrl);
   const [isAIPaneOpen, setIsAIPaneOpen] = useState(false);
+
+  // Use character-specific AI context
+  const getAIPaneContext = () => {
+    return {
+      contextType: "character" as const,
+      contextData: {
+        currentContent: character.aiDescription || "",
+        relatedContent: {
+          characterName: character.name,
+          characterDescription: character.description || "",
+        },
+      },
+      onApplyContent: (content: string, targetField: string) => {
+        if (targetField === "aiDescription") {
+          updateCharacterField("aiDescription", content);
+        } else if (targetField === "description") {
+          updateCharacterField("description", content);
+        }
+      },
+    };
+  };
+
+  // Get AI pane context
+  const aiPaneContext = getAIPaneContext();
 
   // Keyboard shortcut handler for AI Pane toggle
   useEffect(() => {
@@ -83,7 +107,11 @@ export function EditCharacterForm() {
   }
 
   return (
-    <AIPaneProvider>
+    <AIPaneProvider
+      contextType={aiPaneContext.contextType}
+      contextData={aiPaneContext.contextData}
+      onApplyContent={aiPaneContext.onApplyContent}
+    >
       <div className="h-full space-y-6 px-6">
         <div className="absolute top-0 right-0 p-4 z-10 flex items-center gap-3">
           {saveStatus === "saving" && (
@@ -147,8 +175,10 @@ export function EditCharacterForm() {
                 <label className="text-sm font-medium text-muted-foreground">
                   Name
                 </label>
-                <Input
-                  name="name"
+                <AIFocusInput
+                  fieldId="character-name"
+                  fieldType="title"
+                  placeholder="Character Name"
                   value={character.name}
                   onChange={(e) => updateCharacterField("name", e.target.value)}
                   className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
@@ -174,12 +204,14 @@ export function EditCharacterForm() {
             <label className="text-sm font-medium text-muted-foreground">
               Description
             </label>
-            <Textarea
+            <AIFocusTextarea
+              fieldId="character-description"
+              fieldType="description"
+              placeholder="Enter character description visible to users"
               value={character.description || ""}
               onChange={(e) =>
                 updateCharacterField("description", e.target.value)
               }
-              placeholder="Enter character description visible to users"
               className="min-h-[300px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
             />
           </div>
@@ -188,12 +220,14 @@ export function EditCharacterForm() {
             <label className="text-sm font-medium text-muted-foreground">
               AI Description
             </label>
-            <Textarea
+            <AIFocusTextarea
+              fieldId="character-ai-description"
+              fieldType="aiDescription"
+              placeholder="Enter character prompt for the AI model"
               value={character.aiDescription || ""}
               onChange={(e) =>
                 updateCharacterField("aiDescription", e.target.value)
               }
-              placeholder="Enter character prompt for the AI model"
               className="min-h-[400px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
             />
           </div>

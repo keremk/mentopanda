@@ -1,33 +1,78 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SendHorizontal, Globe, Lightbulb } from "lucide-react";
-import { useAIPane } from "../contexts/ai-pane-context";
+import { useAIPane, FocusedField } from "@/contexts/ai-pane-context";
 
 type AIPanePromptBoxProps = {
   className?: string;
 };
 
-export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
-  const { input, handleInputChange, handleSubmit, isLoading } = useAIPane();
-  const [suggestions] = useState([
-    "Improve my scenario description",
-    "Help me create a more challenging assessment",
-    "Generate realistic dialogue for my character",
-    "Make my instructions clearer for users",
-  ]);
+export type AIAssistOption = {
+  id: string;
+  label: string;
+  targetField: string;
+};
 
-  const handleSuggestionClick = (suggestion: string) => {
-    // This would be implemented in future iterations
-    console.log(`Selected suggestion: ${suggestion}`);
+export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
+  const {
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    contextType,
+    focusedField,
+  } = useAIPane();
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+
+  // Define options based on context
+  const options: AIAssistOption[] = getOptionsForContext(contextType);
+
+  // Auto-select appropriate option when focused field changes
+  useEffect(() => {
+    if (focusedField) {
+      const matchingOption = findOptionForField(options, focusedField);
+      if (matchingOption) {
+        setSelectedOption(matchingOption.id);
+      }
+    }
+  }, [focusedField, options]);
+
+  const handleOptionClick = (optionId: string) => {
+    // Always set the selected option, never unselect
+    setSelectedOption(optionId);
+
+    // Focus the textarea automatically with a delay to ensure the DOM is updated
+    setTimeout(() => {
+      const form = document.querySelector(".aipane-form");
+      if (form) {
+        const textareaElement = form.querySelector("textarea");
+        if (textareaElement) {
+          textareaElement.focus();
+        }
+      }
+    }, 50);
   };
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    handleSubmit(e);
+
+    // Add the selected option to the request body
+    const selectedOptionObj = options.find((opt) => opt.id === selectedOption);
+    const enhancedRequest = {
+      selectedOption: selectedOptionObj
+        ? {
+            id: selectedOptionObj.id,
+            label: selectedOptionObj.label,
+            targetField: selectedOptionObj.targetField,
+          }
+        : null,
+    };
+
+    handleSubmit(e, enhancedRequest);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -47,29 +92,33 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
       <div className="p-2 border-b border-border/20 bg-secondary/10">
         <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1 px-1">
           <Lightbulb className="h-3 w-3" />
-          Suggestions
+          What would you like help with?
         </h4>
-        <div className="flex flex-wrap gap-1.5">
-          {suggestions.map((suggestion, index) => (
+        <div className="flex flex-wrap gap-1.5 aipane-options">
+          {options.map((option) => (
             <Button
-              key={index}
-              variant="ghost-brand"
+              key={option.id}
+              variant={selectedOption === option.id ? "brand" : "ghost-brand"}
               size="sm"
               className="text-xs h-7 px-2 py-0"
-              onClick={() => handleSuggestionClick(suggestion)}
+              onClick={() => handleOptionClick(option.id)}
             >
-              {suggestion}
+              {option.label}
             </Button>
           ))}
         </div>
       </div>
 
-      <form onSubmit={onSubmit} className="p-3">
+      <form onSubmit={onSubmit} className="p-3 aipane-form">
         <div className="rounded-2xl bg-secondary/30 border border-border/30 overflow-hidden flex flex-col group focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
           <Textarea
             value={input}
             onChange={handleInputChange}
-            placeholder="Ask anything..."
+            placeholder={
+              selectedOption
+                ? `Additional instructions for ${options.find((o) => o.id === selectedOption)?.label.toLowerCase()}...`
+                : "Select an option above and add any specific instructions..."
+            }
             className="flex-1 h-[40px] max-h-[80px] resize-none border-0 bg-transparent p-3 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
             onKeyDown={handleKeyDown}
           />
@@ -88,7 +137,7 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
               type="submit"
               variant="ghost-brand"
               size="sm"
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || !selectedOption}
               className="h-7 rounded-full px-3 flex items-center gap-1 text-xs"
             >
               <SendHorizontal className="h-3.5 w-3.5" />
@@ -99,6 +148,119 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
       </form>
     </div>
   );
+}
+
+// Function to get options based on context
+function getOptionsForContext(contextType?: string): AIAssistOption[] {
+  switch (contextType) {
+    case "scenario":
+    case "assessment":
+    case "module":
+      // For module editing context
+      return [
+        {
+          id: "generateModuleTitle",
+          label: "Generate a title",
+          targetField: "title",
+        },
+        {
+          id: "generateModuleInstructions",
+          label: "Generate user facing instructions",
+          targetField: "instructions",
+        },
+        {
+          id: "generateScenario",
+          label: "Generate a scenario",
+          targetField: "scenario",
+        },
+        {
+          id: "generateAssessment",
+          label: "Generate assessment instructions",
+          targetField: "assessment",
+        },
+        {
+          id: "generateCharacterPrompt",
+          label: "Generate character prompt",
+          targetField: "characterPrompt",
+        },
+      ];
+    case "character":
+      // Character editing options
+      return [
+        {
+          id: "generateCharacterName",
+          label: "Generate character name",
+          targetField: "title",
+        },
+        {
+          id: "generateCharacterDescription",
+          label: "Generate character description",
+          targetField: "description",
+        },
+        {
+          id: "generateAIDescription",
+          label: "Generate AI description",
+          targetField: "aiDescription",
+        },
+      ];
+    case "training":
+      return [
+        {
+          id: "generateTrainingTitle",
+          label: "Generate a title",
+          targetField: "title",
+        },
+        {
+          id: "generateTrainingTagline",
+          label: "Generate a tagline",
+          targetField: "tagline",
+        },
+        {
+          id: "generateTrainingDescription",
+          label: "Generate a training description",
+          targetField: "description",
+        },
+      ];
+    default:
+      return [];
+  }
+}
+
+// Find the matching option for a focused field
+function findOptionForField(
+  options: AIAssistOption[],
+  focusedField: FocusedField
+): AIAssistOption | undefined {
+  // Direct match by target field
+  const directMatch = options.find(
+    (option) => option.targetField === focusedField.fieldType
+  );
+  if (directMatch) return directMatch;
+
+  // Fuzzy match by looking at the field ID
+  if (focusedField.fieldId.includes("title")) {
+    return options.find((option) => option.targetField === "title");
+  }
+  if (focusedField.fieldId.includes("tagline")) {
+    return options.find((option) => option.targetField === "tagline");
+  }
+  if (focusedField.fieldId.includes("description")) {
+    return options.find((option) => option.targetField === "description");
+  }
+  if (focusedField.fieldId.includes("instructions")) {
+    return options.find((option) => option.targetField === "instructions");
+  }
+  if (focusedField.fieldId.includes("scenario")) {
+    return options.find((option) => option.targetField === "scenario");
+  }
+  if (focusedField.fieldId.includes("assessment")) {
+    return options.find((option) => option.targetField === "assessment");
+  }
+  if (focusedField.fieldId.includes("character-prompt")) {
+    return options.find((option) => option.targetField === "characterPrompt");
+  }
+
+  return undefined;
 }
 
 export default AIPanePromptBox;

@@ -1,10 +1,11 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useTrainingDetails } from "@/contexts/training-details-context";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import Image from "next/image";
+import { AIFocusInput } from "@/components/ai-focus-input";
+import { AIFocusTextarea } from "@/components/ai-focus-textarea";
 
 export function EditTrainingForm() {
   const { training, updateTrainingField } = useTrainingDetails();
@@ -50,7 +51,9 @@ export function EditTrainingForm() {
             <label className="text-sm font-medium text-muted-foreground">
               Title
             </label>
-            <Input
+            <AIFocusInput
+              fieldId="training-title"
+              fieldType="title"
               name="title"
               value={training.title}
               onChange={(e) => updateTrainingField("title", e.target.value)}
@@ -63,7 +66,9 @@ export function EditTrainingForm() {
             <label className="text-sm font-medium text-muted-foreground">
               Tagline
             </label>
-            <Input
+            <AIFocusInput
+              fieldId="training-tagline"
+              fieldType="tagline"
               name="tagline"
               value={training.tagline}
               onChange={(e) => updateTrainingField("tagline", e.target.value)}
@@ -93,7 +98,9 @@ export function EditTrainingForm() {
         <label className="text-sm font-medium text-muted-foreground mb-2">
           Description
         </label>
-        <Textarea
+        <AIFocusTextarea
+          fieldId="training-description"
+          fieldType="description"
           value={training.description || ""}
           onChange={(e) => updateTrainingField("description", e.target.value)}
           className="min-h-[calc(100vh-36rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"

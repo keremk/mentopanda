@@ -5,6 +5,7 @@ import { X, Sparkles } from "lucide-react";
 import { AIPanePromptBox } from "./aipane-prompt-box";
 import { AIPaneResponses } from "./aipane-responses";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 type AIPaneProps = {
   isOpen: boolean;
@@ -12,6 +13,20 @@ type AIPaneProps = {
 };
 
 export function AIPane({ isOpen, onClose }: AIPaneProps) {
+  // When the pane opens, focus the first option
+  useEffect(() => {
+    if (isOpen) {
+      // Use a small delay to ensure DOM is updated
+      setTimeout(() => {
+        // Select the first option button
+        const firstButton = document.querySelector(".aipane-options button");
+        if (firstButton) {
+          (firstButton as HTMLButtonElement).click();
+        }
+      }, 100);
+    }
+  }, [isOpen]);
+
   return (
     <div
       className={cn(

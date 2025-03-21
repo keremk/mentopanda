@@ -1,7 +1,5 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
@@ -15,6 +13,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AIFocusInput } from "@/components/ai-focus-input";
+import { AIFocusTextarea } from "@/components/ai-focus-textarea";
 
 type Props = {
   module: Module;
@@ -75,6 +75,22 @@ export function EditModuleForm({
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  const handleModuleKeyDown = (
+    e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => {
+    // CMD+K / CTRL+K shortcut when field is focused will open AI pane
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      // This will also trigger the global keyboard handler in edit-container
+    }
+
+    // CMD+F / CTRL+F shortcut for fullscreen
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
+      e.preventDefault();
+      onToggleFullScreen();
+    }
+  };
+
   if (!selectedModule) return null;
 
   return (
@@ -87,12 +103,15 @@ export function EditModuleForm({
             <label className="text-sm font-medium text-muted-foreground">
               Title
             </label>
-            <Input
+            <AIFocusInput
+              fieldId="module-title"
+              fieldType="title"
               name="title"
               value={selectedModule.title}
               onChange={handleInputChange}
               placeholder="Enter module title"
               className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50"
+              onKeyDown={handleModuleKeyDown}
             />
           </div>
 
@@ -100,7 +119,9 @@ export function EditModuleForm({
             <label className="text-sm font-medium text-muted-foreground">
               Instructions
             </label>
-            <Textarea
+            <AIFocusTextarea
+              fieldId="module-instructions"
+              fieldType="instructions"
               name="instructions"
               value={selectedModule.instructions || ""}
               onChange={(e) =>
@@ -108,6 +129,7 @@ export function EditModuleForm({
               }
               className="min-h-[200px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
               placeholder="Enter module instructions visible to the user, use markdown for formatting"
+              onKeyDown={handleModuleKeyDown}
             />
           </div>
         </>
@@ -175,22 +197,28 @@ export function EditModuleForm({
               </TabsList>
 
               <TabsContent value="scenario" className="mt-4">
-                <Textarea
+                <AIFocusTextarea
+                  fieldId="module-scenario"
+                  fieldType="scenario"
                   value={selectedModule.modulePrompt.scenario}
                   onChange={(e) => handlePromptChange(e, "scenario")}
                   rows={12}
                   placeholder="Enter the prompt for the AI to set up the overall scenario"
                   className={`${isFullScreen ? "min-h-[calc(100vh-10rem)]" : "min-h-[calc(100vh-41rem)]"} bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300`}
+                  onKeyDown={handleModuleKeyDown}
                 />
               </TabsContent>
 
               <TabsContent value="assessment" className="mt-4">
-                <Textarea
+                <AIFocusTextarea
+                  fieldId="module-assessment"
+                  fieldType="assessment"
                   value={selectedModule.modulePrompt.assessment}
                   onChange={(e) => handlePromptChange(e, "assessment")}
                   rows={12}
                   placeholder="Enter the prompt for the AI to assess the user's performance"
                   className={`${isFullScreen ? "min-h-[calc(100vh-10rem)]" : "min-h-[calc(100vh-41rem)]"} bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300`}
+                  onKeyDown={handleModuleKeyDown}
                 />
               </TabsContent>
 

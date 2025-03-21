@@ -24,7 +24,11 @@ import { useModuleEdit } from "@/contexts/module-edit-context";
 import { useCharacterPrompt } from "@/contexts/character-prompt-context";
 import { Loader2, Sparkles } from "lucide-react";
 import { AIPane } from "@/components/aipane";
-import { AIPaneProvider } from "@/contexts/ai-pane-context";
+import {
+  AIPaneProvider,
+  ContextType,
+  ContextData,
+} from "@/contexts/ai-pane-context";
 import {
   Tooltip,
   TooltipContent,
@@ -41,6 +45,7 @@ export function EditContainer() {
 
   // Get the active tab from URL or default to "details"
   const activeTab = searchParams.get("tab") || "details";
+  const moduleTab = searchParams.get("moduleTab");
 
   // Access all contexts for saving
   const trainingDetails = useTrainingDetails();
@@ -152,8 +157,124 @@ export function EditContainer() {
     moduleList.saveStatus === "saving" ||
     characterPrompt.saveStatus === "saving";
 
+  // Determine context type and data for AI pane based on active tabs and focused field
+  const getAIPaneContext = () => {
+    return {
+      contextType: determineContextType(),
+      contextData: determineContextData(),
+      onApplyContent: (content: string, targetField: string) => {
+        applyGeneratedContent(content, targetField);
+      },
+    };
+  };
+
+  // Determine the context type based on active tab
+  const determineContextType = (): ContextType => {
+    // Fall back to tab-based context
+    if (activeTab === "details") {
+      return "training";
+    }
+
+    if (activeTab === "modules") {
+      // Always return "module" for consistency in options display
+      return "module";
+    }
+
+    return undefined;
+  };
+
+  // Determine the context data based on the context type
+  const determineContextData = (): ContextData => {
+    // Fall back to tab-based context data
+    if (activeTab === "details") {
+      return {
+        currentContent: trainingDetails.training.description || "",
+        relatedContent: {
+          trainingTitle: trainingDetails.training.title,
+          trainingTagline: trainingDetails.training.tagline || "",
+        },
+      };
+    }
+
+    if (activeTab === "modules" && moduleEdit.selectedModule) {
+      if (moduleTab === "character") {
+        return {
+          currentContent: characterPrompt.characterPrompt,
+          relatedContent: {
+            moduleTitle: moduleEdit.selectedModule.title,
+            character:
+              moduleEdit.selectedModule.modulePrompt.characters.length > 0
+                ? moduleEdit.selectedModule.modulePrompt.characters[0].name
+                : "New Character",
+            scenario: moduleEdit.selectedModule.modulePrompt.scenario,
+          },
+        };
+      } else if (moduleTab === "scenario") {
+        return {
+          currentContent: moduleEdit.selectedModule.modulePrompt.scenario,
+          relatedContent: {
+            moduleTitle: moduleEdit.selectedModule.title,
+            moduleInstructions: moduleEdit.selectedModule.instructions || "",
+          },
+        };
+      } else if (moduleTab === "assessment") {
+        return {
+          currentContent: moduleEdit.selectedModule.modulePrompt.assessment,
+          relatedContent: {
+            moduleTitle: moduleEdit.selectedModule.title,
+            moduleInstructions: moduleEdit.selectedModule.instructions || "",
+            scenario: moduleEdit.selectedModule.modulePrompt.scenario,
+          },
+        };
+      }
+    }
+
+    return {
+      currentContent: "",
+      relatedContent: {},
+    };
+  };
+
+  // Apply generated content to the appropriate field
+  const applyGeneratedContent = (content: string, targetField: string) => {
+    if (activeTab === "details") {
+      if (targetField === "title") {
+        trainingDetails.updateTrainingField("title", content);
+      } else if (targetField === "tagline") {
+        trainingDetails.updateTrainingField("tagline", content);
+      } else if (targetField === "description") {
+        trainingDetails.updateTrainingField("description", content);
+      }
+    } else if (activeTab === "modules" && moduleEdit.selectedModule) {
+      if (targetField === "title") {
+        moduleEdit.updateModuleField("title", content);
+      } else if (targetField === "instructions") {
+        moduleEdit.updateModuleField("instructions", content);
+      } else if (targetField === "scenario") {
+        moduleEdit.updateModuleField("modulePrompt", {
+          ...moduleEdit.selectedModule.modulePrompt,
+          scenario: content,
+        });
+      } else if (targetField === "assessment") {
+        moduleEdit.updateModuleField("modulePrompt", {
+          ...moduleEdit.selectedModule.modulePrompt,
+          assessment: content,
+        });
+      } else if (targetField === "characterPrompt") {
+        characterPrompt.updateCharacterPrompt(content);
+      }
+    }
+  };
+
+  // Use the AIPaneContext properly
+  const aiPaneContext = getAIPaneContext();
+
   return (
-    <AIPaneProvider>
+    <AIPaneProvider
+      contextType={aiPaneContext.contextType}
+      contextData={aiPaneContext.contextData}
+      onApplyContent={aiPaneContext.onApplyContent}
+    >
       <div className="container h-full px-4 flex flex-col min-h-[calc(100vh-2rem)] pb-4">
         <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex gap-3">
           <AlertDialog>

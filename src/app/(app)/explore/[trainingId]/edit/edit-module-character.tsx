@@ -1,7 +1,6 @@
 "use client";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -18,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getInitials } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
+import { AIFocusTextarea } from "@/components/ai-focus-textarea";
 
 type EditModuleCharacterProps = {
   isFullScreen?: boolean;
@@ -81,6 +81,14 @@ export function EditModuleCharacter({
         title: "Error selecting character",
         description: "Please try again",
       });
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // CMD+K / CTRL+K shortcut when field is focused will open AI pane
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      // This will also trigger the global keyboard handler
     }
   };
 
@@ -155,12 +163,15 @@ export function EditModuleCharacter({
           <label className="text-sm font-medium text-muted-foreground">
             Character Prompt
           </label>
-          <Textarea
+          <AIFocusTextarea
+            fieldId="character-prompt"
+            fieldType="characterPrompt"
             value={characterPrompt}
             onChange={(e) => handleCharacterPromptChange(e.target.value)}
             placeholder="Enter the prompt about how this character should behave in this scenario"
             rows={10}
             className={`${isFullScreen ? "min-h-[calc(100vh-19rem)]" : "min-h-[calc(100vh-50rem)]"} bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300`}
+            onKeyDown={handleKeyDown}
           />
         </div>
       )}
