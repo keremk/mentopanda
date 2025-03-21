@@ -248,8 +248,6 @@ export function EditContainer() {
               <EditModules
                 isFullScreen={isFullScreen}
                 onToggleFullScreen={handleToggleFullScreen}
-                isAIPaneOpen={isAIPaneOpen}
-                onToggleAIPane={handleToggleAIPane}
               />
             </TabsContent>
           </Tabs>

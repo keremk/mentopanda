@@ -10,15 +10,11 @@ import { useModuleEdit } from "@/contexts/module-edit-context";
 type Props = {
   isFullScreen: boolean;
   onToggleFullScreen: () => void;
-  isAIPaneOpen: boolean;
-  onToggleAIPane: () => void;
 };
 
 export function EditModules({
   isFullScreen,
   onToggleFullScreen,
-  isAIPaneOpen,
-  onToggleAIPane,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -97,8 +93,6 @@ export function EditModules({
             module={currentModule}
             isFullScreen={isFullScreen}
             onToggleFullScreen={onToggleFullScreen}
-            isAIPaneOpen={isAIPaneOpen}
-            onToggleAIPane={onToggleAIPane}
           />
         ) : (
           <div className="flex items-center justify-center h-full border rounded-lg p-8 bg-muted/10">

@@ -9,7 +9,7 @@ import { Module } from "@/data/modules";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { EditModuleCharacter } from "./edit-module-character";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Maximize2, Minimize2, Sparkles } from "lucide-react";
+import { Maximize2, Minimize2 } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -20,16 +20,12 @@ type Props = {
   module: Module;
   isFullScreen: boolean;
   onToggleFullScreen: () => void;
-  isAIPaneOpen: boolean;
-  onToggleAIPane: () => void;
 };
 
 export function EditModuleForm({
   module,
   isFullScreen,
   onToggleFullScreen,
-  isAIPaneOpen,
-  onToggleAIPane,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -128,21 +124,6 @@ export function EditModuleForm({
             <Button variant="ghost-brand" onClick={handleQuickTest} size="sm">
               Quick Test
             </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={isAIPaneOpen ? "brand" : "ghost-brand"}
-                  size="icon"
-                  onClick={onToggleAIPane}
-                  className="h-8 w-8"
-                >
-                  <Sparkles className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Toggle AI Pane (⌘K)</p>
-              </TooltipContent>
-            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
