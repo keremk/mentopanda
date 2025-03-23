@@ -60,6 +60,7 @@ interface AIPaneContextType {
   applyGeneratedContent?: (content: string, targetField: string) => void;
   focusedField?: FocusedField;
   setFocusedField: (field: FocusedField | undefined) => void;
+  clearMessages: () => void;
 }
 
 const AIPaneContext = createContext<AIPaneContextType | undefined>(undefined);
@@ -85,6 +86,8 @@ export function AIPaneProvider({
     handleInputChange,
     handleSubmit: chatHandleSubmit,
     isLoading,
+    setMessages,
+    setInput,
   } = useChat({
     api: "/api/chat",
     body: {
@@ -126,6 +129,12 @@ export function AIPaneProvider({
     }
   };
 
+  // Function to clear all messages and start a fresh chat
+  const clearMessages = () => {
+    setMessages([]);
+    setInput("");
+  };
+
   // Create context value with type assertion
   const value = {
     messages,
@@ -139,6 +148,7 @@ export function AIPaneProvider({
     applyGeneratedContent,
     focusedField,
     setFocusedField: setInternalFocusedField,
+    clearMessages,
   } as AIPaneContextType;
 
   return (

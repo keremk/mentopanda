@@ -1,16 +1,20 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Sparkles, Plus } from "lucide-react";
 import { AIPanePromptBox } from "./aipane-prompt-box";
 import { AIPaneResponses } from "./aipane-responses";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
+import { Button } from "./ui/button";
+import { useAIPane } from "@/contexts/ai-pane-context";
 
 type AIPaneProps = {
   isOpen: boolean;
 };
 
 export function AIPane({ isOpen }: AIPaneProps) {
+  const { clearMessages } = useAIPane();
+
   // When the pane opens, focus the first option
   useEffect(() => {
     if (isOpen) {
@@ -25,6 +29,10 @@ export function AIPane({ isOpen }: AIPaneProps) {
     }
   }, [isOpen]);
 
+  const handleNewChat = () => {
+    clearMessages();
+  };
+
   return (
     <div
       className={cn(
@@ -38,6 +46,16 @@ export function AIPane({ isOpen }: AIPaneProps) {
           <Sparkles className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium">AI Assistant</span>
         </div>
+        <Button
+          variant="ghost-brand"
+          size="sm"
+          className="h-7 px-3 rounded-full text-xs flex items-center gap-1"
+          onClick={handleNewChat}
+          title="New Chat"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          <span>New Chat</span>
+        </Button>
       </div>
 
       {/* Main content area */}

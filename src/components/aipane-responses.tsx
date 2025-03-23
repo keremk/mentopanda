@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAIPane } from "../contexts/ai-pane-context";
 import { Button } from "@/components/ui/button";
 import { Check, Copy } from "lucide-react";
@@ -23,6 +23,14 @@ export function AIPaneResponses() {
   const [copiedMessageIds, setCopiedMessageIds] = useState<Set<string>>(
     new Set()
   );
+
+  // Reset applied and copied message IDs when messages are cleared
+  useEffect(() => {
+    if (messages.length === 0) {
+      setAppliedMessageIds(new Set());
+      setCopiedMessageIds(new Set());
+    }
+  }, [messages]);
 
   if (messages.length === 0) {
     return (
