@@ -374,7 +374,7 @@ export function EditContainer() {
           </Tabs>
         </div>
 
-        <AIPane isOpen={isAIPaneOpen} onClose={handleToggleAIPane} />
+        <AIPane isOpen={isAIPaneOpen} />
       </div>
     </AIPaneProvider>
   );

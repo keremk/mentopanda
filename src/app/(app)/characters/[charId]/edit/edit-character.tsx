@@ -233,7 +233,7 @@ export function EditCharacterForm() {
           </div>
         </div>
 
-        <AIPane isOpen={isAIPaneOpen} onClose={handleToggleAIPane} />
+        <AIPane isOpen={isAIPaneOpen} />
       </div>
     </AIPaneProvider>
   );
