@@ -4,19 +4,11 @@ import { useState, useEffect } from "react";
 import { useAIPane } from "../contexts/ai-pane-context";
 import { Button } from "@/components/ui/button";
 import { Check, Copy } from "lucide-react";
-import { Message } from "@ai-sdk/react";
-
-// Added for type safety
-interface ExtendedMessage extends Omit<Message, "data"> {
-  data?: {
-    selectedOption?: {
-      targetField?: string;
-    };
-  };
-}
 
 export function AIPaneResponses() {
-  const { messages, messagesEndRef, applyGeneratedContent } = useAIPane();
+  const { messages, messagesEndRef, applyGeneratedContent, selectedOption } =
+    useAIPane();
+
   const [appliedMessageIds, setAppliedMessageIds] = useState<Set<string>>(
     new Set()
   );
@@ -42,15 +34,26 @@ export function AIPaneResponses() {
     );
   }
 
-  const handleApplyContent = (
-    messageId: string,
-    content: string,
-    targetField?: string
-  ) => {
-    if (!targetField || !applyGeneratedContent) return;
+  const handleApplyContent = (messageId: string, content: string) => {
+    if (!selectedOption || !applyGeneratedContent) {
+      console.error(
+        "Cannot apply content: selectedOption or applyGeneratedContent is undefined"
+      );
+      return;
+    }
 
-    applyGeneratedContent(content, targetField);
-    setAppliedMessageIds((prev) => new Set([...prev, messageId]));
+    try {
+      console.log("Applying content to:", selectedOption.targetField);
+      console.log("Content being applied:", content);
+
+      // Use the targetField from the selected option in context
+      applyGeneratedContent(content, selectedOption.targetField);
+
+      // Mark this message as applied
+      setAppliedMessageIds((prev) => new Set([...prev, messageId]));
+    } catch (error) {
+      console.error("Error applying content:", error);
+    }
   };
 
   const handleCopyContent = (messageId: string, content: string) => {
@@ -69,16 +72,7 @@ export function AIPaneResponses() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      {messages.map((message, index) => {
-        // Get targetField if this is an assistant message responding to a user message
-        let targetField: string | undefined = undefined;
-
-        if (message.role === "assistant" && index > 0) {
-          // Try to get the targetField from the previous message's data
-          const prevMessage = messages[index - 1] as ExtendedMessage;
-          targetField = prevMessage.data?.selectedOption?.targetField;
-        }
-
+      {messages.map((message) => {
         const isApplied = appliedMessageIds.has(message.id);
         const isCopied = copiedMessageIds.has(message.id);
 
@@ -112,16 +106,12 @@ export function AIPaneResponses() {
                   {isCopied ? "Copied" : "Copy"}
                 </Button>
 
-                {targetField && applyGeneratedContent && (
+                {applyGeneratedContent && selectedOption && (
                   <Button
                     size="sm"
                     variant={isApplied ? "brand" : "ghost-brand"}
                     onClick={() =>
-                      handleApplyContent(
-                        message.id,
-                        message.content,
-                        targetField
-                      )
+                      handleApplyContent(message.id, message.content)
                     }
                     className="h-7 px-2 text-xs"
                     disabled={isApplied}

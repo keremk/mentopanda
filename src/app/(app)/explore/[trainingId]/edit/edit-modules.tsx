@@ -12,10 +12,7 @@ type Props = {
   onToggleFullScreen: () => void;
 };
 
-export function EditModules({
-  isFullScreen,
-  onToggleFullScreen,
-}: Props) {
+export function EditModules({ isFullScreen, onToggleFullScreen }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

@@ -237,32 +237,58 @@ export function EditContainer() {
 
   // Apply generated content to the appropriate field
   const applyGeneratedContent = (content: string, targetField: string) => {
+    console.log(`📝 Applying content to field: ${targetField}`, {
+      content,
+      activeTab,
+      moduleTab,
+    });
+
+    // Handle applying content based on active tab and target field
     if (activeTab === "details") {
+      // Training details tab
       if (targetField === "title") {
+        console.log("Updating training title:", content);
         trainingDetails.updateTrainingField("title", content);
       } else if (targetField === "tagline") {
+        console.log("Updating training tagline:", content);
         trainingDetails.updateTrainingField("tagline", content);
       } else if (targetField === "description") {
+        console.log("Updating training description:", content);
         trainingDetails.updateTrainingField("description", content);
+      } else {
+        console.warn("Unknown targetField for details tab:", targetField);
       }
     } else if (activeTab === "modules" && moduleEdit.selectedModule) {
+      // Module editing tab
       if (targetField === "title") {
+        console.log("Updating module title:", content);
         moduleEdit.updateModuleField("title", content);
       } else if (targetField === "instructions") {
+        console.log("Updating module instructions:", content);
         moduleEdit.updateModuleField("instructions", content);
       } else if (targetField === "scenario") {
+        console.log("Updating module scenario:", content);
         moduleEdit.updateModuleField("modulePrompt", {
           ...moduleEdit.selectedModule.modulePrompt,
           scenario: content,
         });
       } else if (targetField === "assessment") {
+        console.log("Updating module assessment:", content);
         moduleEdit.updateModuleField("modulePrompt", {
           ...moduleEdit.selectedModule.modulePrompt,
           assessment: content,
         });
       } else if (targetField === "characterPrompt") {
+        console.log("Updating character prompt:", content);
         characterPrompt.updateCharacterPrompt(content);
+      } else {
+        console.warn("Unknown targetField for modules tab:", targetField);
       }
+    } else {
+      console.warn("Cannot update content: Unknown tab or missing module", {
+        activeTab,
+        hasSelectedModule: !!moduleEdit.selectedModule,
+      });
     }
   };
 

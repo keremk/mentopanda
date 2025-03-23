@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SendHorizontal, Globe, Lightbulb } from "lucide-react";
-import { useAIPane, FocusedField } from "@/contexts/ai-pane-context";
+import {
+  useAIPane,
+  FocusedField,
+  SelectedOption,
+} from "@/contexts/ai-pane-context";
 
 type AIPanePromptBoxProps = {
   className?: string;
@@ -24,8 +28,9 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
     isLoading,
     contextType,
     focusedField,
+    selectedOption,
+    setSelectedOption,
   } = useAIPane();
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   // Define options based on context
   const options: AIAssistOption[] = getOptionsForContext(contextType);
@@ -35,14 +40,29 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
     if (focusedField) {
       const matchingOption = findOptionForField(options, focusedField);
       if (matchingOption) {
-        setSelectedOption(matchingOption.id);
+        // Only update if different from current selection to prevent infinite loops
+        if (!selectedOption || selectedOption.id !== matchingOption.id) {
+          const option: SelectedOption = {
+            id: matchingOption.id,
+            label: matchingOption.label,
+            targetField: matchingOption.targetField,
+          };
+          setSelectedOption(option);
+        }
       }
     }
-  }, [focusedField, options]);
+  }, [focusedField, options, setSelectedOption, selectedOption]);
 
   const handleOptionClick = (optionId: string) => {
-    // Always set the selected option, never unselect
-    setSelectedOption(optionId);
+    // Find the selected option object and set it in context
+    const option = options.find((opt) => opt.id === optionId);
+    if (option) {
+      setSelectedOption({
+        id: option.id,
+        label: option.label,
+        targetField: option.targetField,
+      });
+    }
 
     // Focus the textarea automatically with a delay to ensure the DOM is updated
     setTimeout(() => {
@@ -60,19 +80,8 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    // Add the selected option to the request body
-    const selectedOptionObj = options.find((opt) => opt.id === selectedOption);
-    const enhancedRequest = {
-      selectedOption: selectedOptionObj
-        ? {
-            id: selectedOptionObj.id,
-            label: selectedOptionObj.label,
-            targetField: selectedOptionObj.targetField,
-          }
-        : null,
-    };
-
-    handleSubmit(e, enhancedRequest);
+    // Just submit with the regular form - we don't need to pass selectedOption here anymore
+    handleSubmit(e);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -98,7 +107,9 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
           {options.map((option) => (
             <Button
               key={option.id}
-              variant={selectedOption === option.id ? "brand" : "ghost-brand"}
+              variant={
+                selectedOption?.id === option.id ? "brand" : "ghost-brand"
+              }
               size="sm"
               className="text-xs h-7 px-2 py-0"
               onClick={() => handleOptionClick(option.id)}
@@ -116,7 +127,7 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
             onChange={handleInputChange}
             placeholder={
               selectedOption
-                ? `Additional instructions for ${options.find((o) => o.id === selectedOption)?.label.toLowerCase()}...`
+                ? `Additional instructions for ${selectedOption.label.toLowerCase()}...`
                 : "Select an option above and add any specific instructions..."
             }
             className="flex-1 h-[40px] max-h-[80px] resize-none border-0 bg-transparent p-3 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"

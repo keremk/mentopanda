@@ -26,14 +26,14 @@ function generateSystemPrompt(
 Please generate a concise, catchy title for this training:
 ${relatedContent}
 Current title: "${currentContent}"
-Your response should be a single, clear title. It should be concise but descriptive.`;
+Your response should be a single, clear title. It should be concise not more than few words but descriptive. Do not include any other text. Do not wrap the title in quotes.`;
 
       case "generateTrainingTagline":
         return `You are an expert at creating catchy marketing taglines for training programs.
 Please generate a short, impactful tagline for this training:
 ${relatedContent}
 Current tagline: "${currentContent}"
-Your response should be a single catchy tagline, ideally under 10 words.`;
+Your response should be a single catchy tagline, ideally under 10 words. Do not include any other text.`;
 
       case "generateTrainingDescription":
         return `You are an expert at creating engaging, informative descriptions for training programs.

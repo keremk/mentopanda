@@ -48,20 +48,22 @@ type SubmitHandler = (
   additionalData?: Record<string, unknown>
 ) => void;
 
-interface AIPaneContextType {
+type AIPaneContextType = {
   messages: Message[];
   input: string;
   handleInputChange: InputHandler;
   handleSubmit: SubmitHandler;
   isLoading: boolean;
-  messagesEndRef: React.RefObject<HTMLDivElement>;
+  messagesEndRef: React.RefObject<HTMLDivElement | null>;
   contextType?: ContextType;
   contextData?: ContextData;
   applyGeneratedContent?: (content: string, targetField: string) => void;
   focusedField?: FocusedField;
   setFocusedField: (field: FocusedField | undefined) => void;
   clearMessages: () => void;
-}
+  selectedOption?: SelectedOption;
+  setSelectedOption: (option: SelectedOption | undefined) => void;
+};
 
 const AIPaneContext = createContext<AIPaneContextType | undefined>(undefined);
 
@@ -100,6 +102,9 @@ export function AIPaneProvider({
   const [internalFocusedField, setInternalFocusedField] = useState<
     FocusedField | undefined
   >(undefined);
+  const [selectedOption, setSelectedOption] = useState<
+    SelectedOption | undefined
+  >(undefined);
 
   // Use external focused field if provided, otherwise use internal state
   const focusedField = externalFocusedField || internalFocusedField;
@@ -135,8 +140,8 @@ export function AIPaneProvider({
     setInput("");
   };
 
-  // Create context value with type assertion
-  const value = {
+  // Create context value
+  const value: AIPaneContextType = {
     messages,
     input,
     handleInputChange,
@@ -149,7 +154,9 @@ export function AIPaneProvider({
     focusedField,
     setFocusedField: setInternalFocusedField,
     clearMessages,
-  } as AIPaneContextType;
+    selectedOption,
+    setSelectedOption,
+  };
 
   return (
     <AIPaneContext.Provider value={value}>{children}</AIPaneContext.Provider>
