@@ -17,11 +17,17 @@ import {
   removeCharacterFromModule,
   type RemoveCharacterFromModuleInput,
 } from "@/data/characters";
+import { cache } from "react";
 
 export async function getCharactersAction() {
   const supabase = await createClient();
   return await getCharacters(supabase);
 }
+
+export const getCharactersActionCached = cache(async () => {
+  const supabase = await createClient();
+  return await getCharacters(supabase);
+});
 
 export async function getCharacterDetailsAction(characterId: string) {
   const supabase = await createClient();

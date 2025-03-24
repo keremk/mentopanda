@@ -1,4 +1,4 @@
-import { getCharactersAction } from "@/app/actions/character-actions";
+import { getCharactersActionCached } from "@/app/actions/character-actions";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 import { CharacterList } from "@/components/character-list";
 
@@ -8,7 +8,7 @@ export default async function CharactersLayout({
   children: React.ReactNode;
 }) {
   const [characters, user] = await Promise.all([
-    getCharactersAction(),
+    getCharactersActionCached(),
     getCurrentUserAction(),
   ]);
 
