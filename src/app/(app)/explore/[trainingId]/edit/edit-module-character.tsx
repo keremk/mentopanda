@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getInitials } from "@/lib/utils";
-import { useSearchParams } from "next/navigation";
 import { AIFocusTextarea } from "@/components/ai-focus-textarea";
 
 type EditModuleCharacterProps = {
@@ -28,9 +27,8 @@ export function EditModuleCharacter({
 }: EditModuleCharacterProps) {
   const { toast } = useToast();
   const { selectedModule } = useModuleEdit();
-  const searchParams = useSearchParams();
-  const moduleTab = searchParams.get("moduleTab");
-  // Use a ref to track if we've already initialized for this tab change
+
+  // Use a ref to track if we've already initialized once
   const hasInitializedRef = useRef(false);
 
   const {
@@ -41,26 +39,21 @@ export function EditModuleCharacter({
     initializeCharacter,
   } = useCharacterPrompt();
 
-  // Initialize character when module changes or when tab is switched to character
+  // Initialize character when module changes - one time only
   useEffect(() => {
-    if (!selectedModule) return;
+    if (!selectedModule || hasInitializedRef.current) return;
 
-    // Only refresh and initialize when the tab is "character" and we haven't initialized yet
-    if (moduleTab === "character" && !hasInitializedRef.current) {
-      hasInitializedRef.current = true;
+    // Initialize only once
+    hasInitializedRef.current = true;
 
-      // Get the first character if available
-      const character =
-        selectedModule.modulePrompt.characters.length > 0
-          ? selectedModule.modulePrompt.characters[0]
-          : null;
+    // Get the first character if available
+    const character =
+      selectedModule.modulePrompt.characters.length > 0
+        ? selectedModule.modulePrompt.characters[0]
+        : null;
 
-      initializeCharacter(character);
-    } else if (moduleTab !== "character") {
-      // Reset the flag when we switch away from the character tab
-      hasInitializedRef.current = false;
-    }
-  }, [selectedModule, moduleTab, initializeCharacter]);
+    initializeCharacter(character);
+  }, [selectedModule, initializeCharacter]);
 
   const handleCharacterPromptChange = (value: string) => {
     if (!selectedModule?.modulePrompt.characters.length) return;

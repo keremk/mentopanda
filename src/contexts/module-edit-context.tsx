@@ -94,7 +94,8 @@ export function ModuleEditProvider({ children }: ModuleEditProviderProps) {
       !debouncedModule ||
       saveStatus !== "idle" ||
       !lastSavedModule ||
-      !userModified
+      !userModified ||
+      debouncedModule.id !== selectedModuleId // Skip if we're in the middle of switching modules
     )
       return;
 
@@ -121,7 +122,14 @@ export function ModuleEditProvider({ children }: ModuleEditProviderProps) {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [debouncedModule, lastSavedModule, saveStatus, performSave, userModified]);
+  }, [
+    debouncedModule,
+    lastSavedModule,
+    saveStatus,
+    performSave,
+    userModified,
+    selectedModuleId,
+  ]);
 
   const selectModule = useCallback(
     async (moduleId: number | undefined) => {
@@ -145,20 +153,10 @@ export function ModuleEditProvider({ children }: ModuleEditProviderProps) {
         return;
       }
 
-      // Only fetch from API if module is not in the list
-      try {
-        const trainingModule = await getModuleByIdAction2(moduleId);
-        if (trainingModule) {
-          setSelectedModule(trainingModule);
-          setLastSavedModule(structuredClone(trainingModule));
-          // Update modules list with the fetched data
-          refreshModules([trainingModule]);
-        }
-      } catch (error) {
-        console.error("Error loading module:", error);
-      }
+      // Log error if module not found in local data (shouldn't happen)
+      console.error(`Module ${moduleId} not found in local data`);
     },
-    [selectedModuleId, modules, refreshModules]
+    [selectedModuleId, modules]
   );
 
   const updateModuleField = useCallback(

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,15 +37,28 @@ import {
 
 export function EditContainer() {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isAIPaneOpen, setIsAIPaneOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("details");
+  const [moduleTab, setModuleTab] = useState<string>("scenario");
+
+  // Get initial tab from URL on first render
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+
+    const moduleTabFromUrl = searchParams.get("moduleTab");
+    if (moduleTabFromUrl) {
+      setModuleTab(moduleTabFromUrl);
+    }
+  }, [searchParams]);
 
   // Get the active tab from URL or default to "details"
-  const activeTab = searchParams.get("tab") || "details";
-  const moduleTab = searchParams.get("moduleTab");
+  // const activeTab = searchParams.get("tab") || "details";
 
   // Access all contexts for saving
   const trainingDetails = useTrainingDetails();
@@ -59,11 +72,9 @@ export function EditContainer() {
     setIsFullScreen(isFullScreenParam);
   }, [searchParams]);
 
-  // Function to update URL when tab changes
+  // Function to update tab state without changing URL
   const handleTabChange = (value: string) => {
-    const params = new URLSearchParams(searchParams);
-    params.set("tab", value);
-    router.push(`${pathname}?${params.toString()}`);
+    setActiveTab(value);
   };
 
   const handleDeleteTraining = async () => {
@@ -118,15 +129,8 @@ export function EditContainer() {
     const newState = !isFullScreen;
     setIsFullScreen(newState);
 
-    // Update URL with fullscreen state
-    const params = new URLSearchParams(searchParams);
-    if (newState) {
-      params.set("fullscreen", "true");
-    } else {
-      params.delete("fullscreen");
-    }
-    router.push(`${pathname}?${params.toString()}`);
-  }, [isFullScreen, searchParams, pathname, router]);
+    // No need to update URL anymore, just use state
+  }, [isFullScreen]);
 
   // Single keyboard shortcut handler for both toggles
   useEffect(() => {
@@ -295,6 +299,11 @@ export function EditContainer() {
   // Use the AIPaneContext properly
   const aiPaneContext = getAIPaneContext();
 
+  // Update the module tab state from child component
+  const handleModuleTabChange = (value: string) => {
+    setModuleTab(value);
+  };
+
   return (
     <AIPaneProvider
       contextType={aiPaneContext.contextType}
@@ -395,6 +404,8 @@ export function EditContainer() {
               <EditModules
                 isFullScreen={isFullScreen}
                 onToggleFullScreen={handleToggleFullScreen}
+                onModuleTabChange={handleModuleTabChange}
+                moduleTab={moduleTab}
               />
             </TabsContent>
           </Tabs>

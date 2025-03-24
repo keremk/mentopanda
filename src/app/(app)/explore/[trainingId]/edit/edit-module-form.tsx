@@ -2,11 +2,11 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Module } from "@/data/modules";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { EditModuleCharacter } from "./edit-module-character";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Maximize2, Minimize2 } from "lucide-react";
 import {
   Tooltip,
@@ -20,19 +20,30 @@ type Props = {
   module: Module;
   isFullScreen: boolean;
   onToggleFullScreen: () => void;
+  moduleTab?: string;
+  onModuleTabChange?: (value: string) => void;
 };
 
 export function EditModuleForm({
   module,
   isFullScreen,
   onToggleFullScreen,
+  moduleTab: externalModuleTab,
+  onModuleTabChange,
 }: Props) {
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [localActiveTab, setLocalActiveTab] = useState<string>("scenario");
 
-  // Get the active tab from URL or default to "scenario"
-  const activeTab = searchParams.get("moduleTab") || "scenario";
+  // Use external tab state if provided, local state otherwise
+  const activeTab = externalModuleTab || localActiveTab;
+
+  // Get initial tab from URL or default to "scenario", but only on first render
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("moduleTab");
+    if (tabFromUrl) {
+      setLocalActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
 
   // Use the contexts
   const { updateModuleField, selectModule, selectedModule } = useModuleEdit();
@@ -68,11 +79,13 @@ export function EditModuleForm({
     }
   };
 
-  // Function to update URL when tab changes
+  // Function to update tab state
   const handleTabChange = (value: string) => {
-    const params = new URLSearchParams(searchParams);
-    params.set("moduleTab", value);
-    router.push(`${pathname}?${params.toString()}`);
+    setLocalActiveTab(value);
+    // Pass the change up to parent if callback is provided
+    if (onModuleTabChange) {
+      onModuleTabChange(value);
+    }
   };
 
   const handleModuleKeyDown = (

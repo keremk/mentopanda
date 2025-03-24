@@ -10,9 +10,16 @@ import { useModuleEdit } from "@/contexts/module-edit-context";
 type Props = {
   isFullScreen: boolean;
   onToggleFullScreen: () => void;
+  moduleTab?: string;
+  onModuleTabChange?: (value: string) => void;
 };
 
-export function EditModules({ isFullScreen, onToggleFullScreen }: Props) {
+export function EditModules({
+  isFullScreen,
+  onToggleFullScreen,
+  moduleTab = "scenario",
+  onModuleTabChange,
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -90,6 +97,8 @@ export function EditModules({ isFullScreen, onToggleFullScreen }: Props) {
             module={currentModule}
             isFullScreen={isFullScreen}
             onToggleFullScreen={onToggleFullScreen}
+            moduleTab={moduleTab}
+            onModuleTabChange={onModuleTabChange}
           />
         ) : (
           <div className="flex items-center justify-center h-full border rounded-lg p-8 bg-muted/10">
