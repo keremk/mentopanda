@@ -30,7 +30,7 @@ export default async function TrainingDetailsPage(props: {
 }) {
   const params = await props.params;
   const training = await getTrainingByIdAction(params.trainingId);
- 
+
   if (!training) {
     notFound();
   }
@@ -47,7 +47,11 @@ export default async function TrainingDetailsPage(props: {
             Edit
           </Link>
         </Button>
-        <EnrollmentButton className="ml-4" trainingId={training.id} variant="brand" />
+        <EnrollmentButton
+          className="ml-4"
+          trainingId={training.id}
+          variant="brand"
+        />
       </div>
 
       <div className="md:flex md:gap-8 mb-8">
@@ -59,6 +63,7 @@ export default async function TrainingDetailsPage(props: {
                 alt={training.title}
                 fill
                 className="rounded-lg object-cover"
+                sizes="(max-width: 768px) 100vw, 45vw"
               />
             </div>
           </div>
@@ -74,7 +79,6 @@ export default async function TrainingDetailsPage(props: {
           <YouTubeEmbed url={training.previewUrl} />
         </div>
       )}
-
     </div>
   );
 }

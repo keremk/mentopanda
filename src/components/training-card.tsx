@@ -17,6 +17,7 @@ interface TrainingCardProps {
   tagline?: string;
   imageUrl?: string;
   isEnrolled: boolean;
+  priority?: boolean;
 }
 
 export function TrainingCard({
@@ -25,6 +26,7 @@ export function TrainingCard({
   tagline,
   imageUrl,
   isEnrolled,
+  priority = false,
 }: TrainingCardProps) {
   const router = useRouter();
   const fallbackImage = "/placeholder.svg?height=200&width=300";
@@ -43,8 +45,8 @@ export function TrainingCard({
             alt={`Cover image for ${title}`}
             fill
             className="object-cover"
-            // layout="fill"
-            // objectFit="cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={priority}
           />
         </CardHeader>
         <CardContent className="p-4">

@@ -42,6 +42,7 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
             width={200}
             height={200}
             className="rounded-lg"
+            sizes="200px"
           />
           {randomModuleId ? (
             <Link href={`/simulation/${randomModuleId}`}>
@@ -116,6 +117,7 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
                             width={100}
                             height={100}
                             className="rounded-full"
+                            sizes="100px"
                           />
                           <div>
                             <h5 className="font-semibold">

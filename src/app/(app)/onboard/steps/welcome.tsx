@@ -11,6 +11,7 @@ export function Welcome() {
           fill
           priority
           className="object-cover"
+          sizes="100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-transparent via-background/50 to-background/90" />
         <div className="absolute top-4 right-4 text-4xl">🐼</div>

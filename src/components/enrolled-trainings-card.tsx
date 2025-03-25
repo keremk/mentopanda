@@ -10,7 +10,9 @@ type EnrolledTrainingsCardProps = {
   trainings: TrainingSummary[];
 };
 
-export async function EnrolledTrainingsCard({ trainings }: EnrolledTrainingsCardProps) {
+export async function EnrolledTrainingsCard({
+  trainings,
+}: EnrolledTrainingsCardProps) {
   return (
     <Card className="w-full h-[310px] flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">

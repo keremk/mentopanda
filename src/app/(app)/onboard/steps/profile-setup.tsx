@@ -68,6 +68,7 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
           fill
           priority
           className="object-cover"
+          sizes="100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-transparent via-background/50 to-background/90" />
         <div className="absolute top-4 right-4 text-4xl">🐼</div>
@@ -120,7 +121,8 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
         <div className="bg-muted/50 p-4 rounded-lg">
           <p className="text-sm text-muted-foreground">
             Your display name will be updated when you complete the setup
-            process. Your avatar is updated immediately. You can always update these later in the settings page.
+            process. Your avatar is updated immediately. You can always update
+            these later in the settings page.
           </p>
         </div>
       </div>

@@ -220,6 +220,7 @@ export function FeaturesSection() {
                       index === activeFeature ? "opacity-100" : "opacity-0"
                     }`}
                     priority={index === 0}
+                    sizes="(max-width: 768px) 100vw, 50vw"
                   />
                 ))}
               </div>
@@ -319,6 +320,7 @@ export function FeaturesSection() {
                       index === activeFeature ? "opacity-100" : "opacity-0"
                     }`}
                     priority={index === 0}
+                    sizes="(max-width: 768px) 100vw, 50vw"
                   />
                 ))}
               </div>

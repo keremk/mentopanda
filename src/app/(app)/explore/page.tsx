@@ -23,7 +23,7 @@ export default async function ExplorePage() {
       )}
 
       <div className="grid gap-6 px-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 border-t py-6">
-        {trainings.map((training) => (
+        {trainings.map((training, index) => (
           <TrainingCard
             key={training.id}
             id={training.id}
@@ -31,6 +31,7 @@ export default async function ExplorePage() {
             tagline={training.tagline}
             imageUrl={training.imageUrl}
             isEnrolled={training.isEnrolled}
+            priority={index < 6}
           />
         ))}
       </div>
