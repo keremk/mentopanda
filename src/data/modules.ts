@@ -38,6 +38,14 @@ export type ModuleProgress = ModuleSummary & {
   history: HistorySummary[];
 };
 
+export type ModuleContextForAI = {
+  title: string;
+  instructions: string | null;
+  scenario: string;
+  assessment: string;
+  moderator: string | null;
+};
+
 // Add this new function to get modules for a training
 export async function getModulesByTrainingId(
   supabase: SupabaseClient,

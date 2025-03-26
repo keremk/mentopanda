@@ -37,6 +37,12 @@ export type TrainingEdit = TrainingSummary & {
   modules: Module[];
 };
 
+export type TrainingDetailsContextForAI = {
+  title: string;
+  tagline: string;
+  description: string;
+};
+
 export async function getTrainingById(
   supabase: SupabaseClient,
   trainingId: number

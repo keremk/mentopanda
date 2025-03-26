@@ -49,6 +49,12 @@ export type CharacterDetails = CharacterSummary & {
   updatedAt: Date;
 };
 
+export type CharacterContextForAI = {
+  name: string;
+  aiDescription: string | null;
+  description: string | null;
+};
+
 export async function getCharacterDetails(
   supabase: SupabaseClient,
   characterId: string

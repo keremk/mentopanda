@@ -24,11 +24,7 @@ import { useModuleEdit } from "@/contexts/module-edit-context";
 import { useCharacterPrompt } from "@/contexts/character-prompt-context";
 import { Loader2, Sparkles } from "lucide-react";
 import { AIPane } from "@/components/aipane";
-import {
-  AIPaneProvider,
-  ContextType,
-  ContextData,
-} from "@/contexts/ai-pane-context";
+import { AIPaneProvider, ContextType } from "@/contexts/ai-pane-context";
 import {
   Tooltip,
   TooltipContent,
@@ -165,7 +161,15 @@ export function EditContainer() {
   const getAIPaneContext = () => {
     return {
       contextType: determineContextType(),
-      contextData: determineContextData(),
+      contextData: {
+        trainingId: String(trainingDetails.training.id),
+        moduleId: moduleEdit.selectedModuleId
+          ? String(moduleEdit.selectedModuleId)
+          : undefined,
+        characterId: characterPrompt.selectedCharacterId
+          ? String(characterPrompt.selectedCharacterId)
+          : undefined,
+      },
       onApplyContent: (content: string, targetField: string) => {
         applyGeneratedContent(content, targetField);
       },
@@ -174,126 +178,61 @@ export function EditContainer() {
 
   // Determine the context type based on active tab
   const determineContextType = (): ContextType => {
-    // Fall back to tab-based context
-    if (activeTab === "details") {
-      return "training";
-    }
-
-    if (activeTab === "modules") {
-      // Always return "module" for consistency in options display
-      return "module";
-    }
-
-    return undefined;
-  };
-
-  // Determine the context data based on the context type
-  const determineContextData = (): ContextData => {
-    // Fall back to tab-based context data
-    if (activeTab === "details") {
-      return {
-        currentContent: trainingDetails.training.description || "",
-        relatedContent: {
-          trainingTitle: trainingDetails.training.title,
-          trainingTagline: trainingDetails.training.tagline || "",
-        },
-      };
-    }
-
-    if (activeTab === "modules" && moduleEdit.selectedModule) {
-      if (moduleTab === "character") {
-        return {
-          currentContent: characterPrompt.characterPrompt,
-          relatedContent: {
-            moduleTitle: moduleEdit.selectedModule.title,
-            character:
-              moduleEdit.selectedModule.modulePrompt.characters.length > 0
-                ? moduleEdit.selectedModule.modulePrompt.characters[0].name
-                : "New Character",
-            scenario: moduleEdit.selectedModule.modulePrompt.scenario,
-          },
-        };
-      } else if (moduleTab === "scenario") {
-        return {
-          currentContent: moduleEdit.selectedModule.modulePrompt.scenario,
-          relatedContent: {
-            moduleTitle: moduleEdit.selectedModule.title,
-            moduleInstructions: moduleEdit.selectedModule.instructions || "",
-          },
-        };
-      } else if (moduleTab === "assessment") {
-        return {
-          currentContent: moduleEdit.selectedModule.modulePrompt.assessment,
-          relatedContent: {
-            moduleTitle: moduleEdit.selectedModule.title,
-            moduleInstructions: moduleEdit.selectedModule.instructions || "",
-            scenario: moduleEdit.selectedModule.modulePrompt.scenario,
-          },
-        };
-      }
-    }
-
-    return {
-      currentContent: "",
-      relatedContent: {},
-    };
+    return activeTab === "details" ? "training" : "module";
   };
 
   // Apply generated content to the appropriate field
   const applyGeneratedContent = (content: string, targetField: string) => {
-    console.log(`📝 Applying content to field: ${targetField}`, {
-      content,
-      activeTab,
-      moduleTab,
-    });
-
-    // Handle applying content based on active tab and target field
     if (activeTab === "details") {
-      // Training details tab
-      if (targetField === "title") {
-        console.log("Updating training title:", content);
-        trainingDetails.updateTrainingField("title", content);
-      } else if (targetField === "tagline") {
-        console.log("Updating training tagline:", content);
-        trainingDetails.updateTrainingField("tagline", content);
-      } else if (targetField === "description") {
-        console.log("Updating training description:", content);
-        trainingDetails.updateTrainingField("description", content);
-      } else {
-        console.warn("Unknown targetField for details tab:", targetField);
+      switch (targetField) {
+        case "title":
+          trainingDetails.updateTrainingField("title", content);
+          break;
+        case "tagline":
+          trainingDetails.updateTrainingField("tagline", content);
+          break;
+        case "description":
+          trainingDetails.updateTrainingField("description", content);
+          break;
+        default:
+          console.warn("Unknown targetField for details tab:", targetField);
       }
-    } else if (activeTab === "modules" && moduleEdit.selectedModule) {
-      // Module editing tab
-      if (targetField === "title") {
-        console.log("Updating module title:", content);
-        moduleEdit.updateModuleField("title", content);
-      } else if (targetField === "instructions") {
-        console.log("Updating module instructions:", content);
-        moduleEdit.updateModuleField("instructions", content);
-      } else if (targetField === "scenario") {
-        console.log("Updating module scenario:", content);
-        moduleEdit.updateModuleField("modulePrompt", {
-          ...moduleEdit.selectedModule.modulePrompt,
-          scenario: content,
-        });
-      } else if (targetField === "assessment") {
-        console.log("Updating module assessment:", content);
-        moduleEdit.updateModuleField("modulePrompt", {
-          ...moduleEdit.selectedModule.modulePrompt,
-          assessment: content,
-        });
-      } else if (targetField === "characterPrompt") {
-        console.log("Updating character prompt:", content);
-        characterPrompt.updateCharacterPrompt(content);
-      } else {
-        console.warn("Unknown targetField for modules tab:", targetField);
-      }
-    } else {
-      console.warn("Cannot update content: Unknown tab or missing module", {
-        activeTab,
-        hasSelectedModule: !!moduleEdit.selectedModule,
-      });
+      return;
     }
+
+    if (activeTab === "modules" && moduleEdit.selectedModule) {
+      switch (targetField) {
+        case "title":
+          moduleEdit.updateModuleField("title", content);
+          break;
+        case "instructions":
+          moduleEdit.updateModuleField("instructions", content);
+          break;
+        case "scenario":
+          moduleEdit.updateModuleField("modulePrompt", {
+            ...moduleEdit.selectedModule.modulePrompt,
+            scenario: content,
+          });
+          break;
+        case "assessment":
+          moduleEdit.updateModuleField("modulePrompt", {
+            ...moduleEdit.selectedModule.modulePrompt,
+            assessment: content,
+          });
+          break;
+        case "characterPrompt":
+          characterPrompt.updateCharacterPrompt(content);
+          break;
+        default:
+          console.warn("Unknown targetField for modules tab:", targetField);
+      }
+      return;
+    }
+
+    console.warn("Cannot update content: Unknown tab or missing module", {
+      activeTab,
+      hasSelectedModule: !!moduleEdit.selectedModule,
+    });
   };
 
   // Use the AIPaneContext properly

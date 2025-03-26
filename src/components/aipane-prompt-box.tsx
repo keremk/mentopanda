@@ -80,7 +80,7 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    // Just submit with the regular form - we don't need to pass selectedOption here anymore
+    // Submit with the selected option
     handleSubmit(e);
   };
 

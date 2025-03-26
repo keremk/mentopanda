@@ -34,11 +34,7 @@ export function EditCharacterForm() {
     return {
       contextType: "character" as const,
       contextData: {
-        currentContent: character.aiDescription || "",
-        relatedContent: {
-          characterName: character.name,
-          characterDescription: character.description || "",
-        },
+        characterId: String(character.id),
       },
       onApplyContent: (content: string, targetField: string) => {
         if (targetField === "aiDescription") {

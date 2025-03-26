@@ -10,32 +10,26 @@ import {
 } from "react";
 import { useChat, Message } from "@ai-sdk/react";
 
-export type ContextType =
-  | "scenario"
-  | "assessment"
-  | "module"
-  | "character"
-  | "training"
-  | undefined;
+export type ContextType = "module" | "character" | "training";
 
-export interface ContextData {
-  currentContent?: string;
-  relatedContent?: Record<string, string | undefined>;
-  [key: string]: string | Record<string, string | undefined> | undefined;
-}
+export type ContextData = {
+  trainingId?: string;
+  moduleId?: string;
+  characterId?: string;
+};
 
 // For passing selected option information to the API
-export interface SelectedOption {
+export type SelectedOption = {
   id: string;
   label: string;
   targetField: string;
-}
+};
 
 // Field focus tracking for automatically selecting options
-export interface FocusedField {
+export type FocusedField = {
   fieldId: string;
   fieldType: string;
-}
+};
 
 type InputHandler = (
   e:
@@ -116,6 +110,7 @@ export function AIPaneProvider({
         ...additionalData,
         contextType,
         contextData,
+        selectedOption,
       },
     });
   };
