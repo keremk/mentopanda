@@ -34,7 +34,7 @@ type DBTraining = {
 export async function getAIContextDataForTraining(
   supabase: SupabaseClient,
   trainingId: number,
-  moduleId: number
+  moduleId?: number
 ): Promise<TrainingContextData | null> {
   const query = supabase
     .from("trainings")
@@ -61,7 +61,10 @@ export async function getAIContextDataForTraining(
       `
     )
     .eq("id", trainingId)
-    .eq("modules.id", moduleId);
+  
+  if (moduleId) {
+    query.eq("modules.id", moduleId);
+  }
 
   const { data: training, error: trainingError } = await query.single();
 

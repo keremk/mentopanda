@@ -121,6 +121,7 @@ export async function POST(req: Request) {
   } = await req.json();
 
   console.log(`selectedOption: ${JSON.stringify(selectedOption)}`);
+  console.log(`contextData: ${JSON.stringify(contextData)}`);
 
   let characterContext: CharacterContextForAI | null = null;
   let trainingContext: TrainingContextData | null = null;
@@ -138,9 +139,9 @@ export async function POST(req: Request) {
       : null;
     const moduleId = contextData?.moduleId
       ? parseInt(contextData.moduleId)
-      : null;
+      : undefined;
     trainingContext =
-      trainingId && moduleId
+      trainingId
         ? await getAIContextDataForTrainingAction(trainingId, moduleId)
         : null;
   }

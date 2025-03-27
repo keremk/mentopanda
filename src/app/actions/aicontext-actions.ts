@@ -4,7 +4,7 @@ import { getAIContextDataForCharacter, getAIContextDataForTraining } from "@/dat
 import { CharacterContextForAI } from "@/data/characters";
 import { createClient } from "@/utils/supabase/server";
 
-export async function getAIContextDataForTrainingAction(trainingId: number, moduleId: number) {
+export async function getAIContextDataForTrainingAction(trainingId: number, moduleId?: number) {
   const supabase = await createClient();
   return await getAIContextDataForTraining(supabase, trainingId, moduleId);
 }
