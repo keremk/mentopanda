@@ -4,18 +4,16 @@ import { useRef, useState } from "react";
 import { Textarea, TextareaProps } from "@/components/ui/textarea";
 import { useAIPane } from "@/contexts/ai-pane-context";
 
-interface AIFocusTextareaProps extends TextareaProps {
-  fieldType: string;
-}
-
-export function AIFocusTextarea({ fieldType, ...props }: AIFocusTextareaProps) {
+export function AIFocusTextarea({ name, ...props }: TextareaProps) {
   const { setFocusedField } = useAIPane();
   const [hasFocus, setHasFocus] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
     setHasFocus(true);
-    setFocusedField({ fieldType });
+    if (name) {
+      setFocusedField({ fieldType: name });
+    }
     props.onFocus?.(e);
   };
 
@@ -28,6 +26,7 @@ export function AIFocusTextarea({ fieldType, ...props }: AIFocusTextareaProps) {
   return (
     <Textarea
       ref={textareaRef}
+      name={name}
       {...props}
       onFocus={handleFocus}
       onBlur={handleBlur}

@@ -52,7 +52,6 @@ export function EditTrainingForm() {
               Title
             </label>
             <AIFocusInput
-              fieldType="title"
               name="title"
               value={training.title}
               onChange={(e) => updateTrainingField("title", e.target.value)}
@@ -66,7 +65,6 @@ export function EditTrainingForm() {
               Tagline
             </label>
             <AIFocusInput
-              fieldType="tagline"
               name="tagline"
               value={training.tagline}
               onChange={(e) => updateTrainingField("tagline", e.target.value)}
@@ -97,7 +95,6 @@ export function EditTrainingForm() {
           Description
         </label>
         <AIFocusTextarea
-          fieldType="description"
           name="description"
           value={training.description || ""}
           onChange={(e) => updateTrainingField("description", e.target.value)}

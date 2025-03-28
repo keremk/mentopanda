@@ -12,7 +12,7 @@ export async function insertModuleCharacter(
 ): Promise<void> {
   const { error } = await supabase.from("modules_characters").insert({
     module_id: data.moduleId,
-    character_id: data.characterId
+    character_id: data.characterId,
   });
   if (error) handleError(error);
 }

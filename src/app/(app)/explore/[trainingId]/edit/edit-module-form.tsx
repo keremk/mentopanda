@@ -119,7 +119,6 @@ export function EditModuleForm({
               Title
             </label>
             <AIFocusInput
-              fieldType="title"
               name="title"
               value={selectedModule.title}
               onChange={handleModuleFieldChange}
@@ -134,7 +133,6 @@ export function EditModuleForm({
               Instructions
             </label>
             <AIFocusTextarea
-              fieldType="instructions"
               name="instructions"
               value={selectedModule.instructions || ""}
               onChange={handleModuleFieldChange}
@@ -209,7 +207,7 @@ export function EditModuleForm({
 
               <TabsContent value="scenario" className="mt-4">
                 <AIFocusTextarea
-                  fieldType="scenario"
+                  name="scenario"
                   value={selectedModule.modulePrompt.scenario}
                   onChange={(e) => handleModulePromptFieldChange(e, "scenario")}
                   rows={12}
@@ -221,7 +219,7 @@ export function EditModuleForm({
 
               <TabsContent value="assessment" className="mt-4">
                 <AIFocusTextarea
-                  fieldType="assessment"
+                  name="assessment"
                   value={selectedModule.modulePrompt.assessment}
                   onChange={(e) =>
                     handleModulePromptFieldChange(e, "assessment")

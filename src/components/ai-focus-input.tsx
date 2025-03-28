@@ -4,18 +4,16 @@ import { useRef, useState } from "react";
 import { Input, InputProps } from "@/components/ui/input";
 import { useAIPane } from "@/contexts/ai-pane-context";
 
-interface AIFocusInputProps extends InputProps {
-  fieldType: string;
-}
-
-export function AIFocusInput({ fieldType, ...props }: AIFocusInputProps) {
+export function AIFocusInput({ name, ...props }: InputProps) {
   const { setFocusedField } = useAIPane();
   const [hasFocus, setHasFocus] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     setHasFocus(true);
-    setFocusedField({ fieldType });
+    if (name) {
+      setFocusedField({ fieldType: name });
+    }
     props.onFocus?.(e);
   };
 
@@ -28,6 +26,7 @@ export function AIFocusInput({ fieldType, ...props }: AIFocusInputProps) {
   return (
     <Input
       ref={inputRef}
+      name={name}
       {...props}
       onFocus={handleFocus}
       onBlur={handleBlur}

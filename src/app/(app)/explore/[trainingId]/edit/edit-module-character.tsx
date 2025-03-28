@@ -11,7 +11,7 @@ import {
 import { CharacterSummary } from "@/data/characters";
 import { useModuleEdit } from "@/contexts/module-edit-context";
 import { useCharacterPrompt } from "@/contexts/character-prompt-context";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -28,32 +28,36 @@ export function EditModuleCharacter({
   const { toast } = useToast();
   const { selectedModule } = useModuleEdit();
 
-  // Use a ref to track if we've already initialized once
-  const hasInitializedRef = useRef(false);
-
   const {
     characterPrompt,
     updateCharacterPrompt,
     selectCharacter,
     characters,
     initializeCharacter,
+    selectedCharacterId,
   } = useCharacterPrompt();
 
-  // Initialize character when module changes - one time only
+  // Initialize character conditionally when module or its character changes
   useEffect(() => {
-    if (!selectedModule || hasInitializedRef.current) return;
+    if (!selectedModule) return;
 
-    // Initialize only once
-    hasInitializedRef.current = true;
-
-    // Get the first character if available
-    const character =
+    // Get the potential new character from the module prop
+    const characterFromModule =
       selectedModule.modulePrompt.characters.length > 0
         ? selectedModule.modulePrompt.characters[0]
         : null;
+    const newCharacterId = characterFromModule?.id;
 
-    initializeCharacter(character);
-  }, [selectedModule, initializeCharacter]);
+    // Only initialize if the character ID has changed OR if the user hasn't made edits
+    if (newCharacterId !== selectedCharacterId) {
+      initializeCharacter(characterFromModule);
+    }
+    // Dependencies updated to include the check conditions
+  }, [
+    selectedModule,
+    selectedCharacterId, // Add context's character ID
+    initializeCharacter,
+  ]);
 
   const handleCharacterPromptChange = (value: string) => {
     if (!selectedModule?.modulePrompt.characters.length) return;
@@ -157,7 +161,7 @@ export function EditModuleCharacter({
             Character Prompt
           </label>
           <AIFocusTextarea
-            fieldType="characterPrompt"
+            name="characterPrompt"
             value={characterPrompt}
             onChange={(e) => handleCharacterPromptChange(e.target.value)}
             placeholder="Enter the prompt about how this character should behave in this scenario"
