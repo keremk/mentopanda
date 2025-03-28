@@ -157,7 +157,6 @@ export function EditModuleCharacter({
             Character Prompt
           </label>
           <AIFocusTextarea
-            fieldId="character-prompt"
             fieldType="characterPrompt"
             value={characterPrompt}
             onChange={(e) => handleCharacterPromptChange(e.target.value)}

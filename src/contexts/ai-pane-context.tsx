@@ -27,7 +27,6 @@ export type SelectedOption = {
 
 // Field focus tracking for automatically selecting options
 export type FocusedField = {
-  fieldId: string;
   fieldType: string;
 };
 

@@ -53,14 +53,16 @@ export function EditModuleForm({
     selectModule(module.id);
   }, [module.id, selectModule]);
 
-  const handleInputChange = (
+  // Handle changes to direct module fields (title, instructions, etc.)
+  const handleModuleFieldChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     updateModuleField(name as keyof Module, value);
   };
 
-  const handlePromptChange = (
+  // Handle changes to nested modulePrompt fields (scenario, assessment)
+  const handleModulePromptFieldChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>,
     field: string
   ) => {
@@ -117,11 +119,10 @@ export function EditModuleForm({
               Title
             </label>
             <AIFocusInput
-              fieldId="module-title"
               fieldType="title"
               name="title"
               value={selectedModule.title}
-              onChange={handleInputChange}
+              onChange={handleModuleFieldChange}
               placeholder="Enter module title"
               className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50"
               onKeyDown={handleModuleKeyDown}
@@ -133,13 +134,10 @@ export function EditModuleForm({
               Instructions
             </label>
             <AIFocusTextarea
-              fieldId="module-instructions"
               fieldType="instructions"
               name="instructions"
               value={selectedModule.instructions || ""}
-              onChange={(e) =>
-                updateModuleField("instructions", e.target.value)
-              }
+              onChange={handleModuleFieldChange}
               className="min-h-[200px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
               placeholder="Enter module instructions visible to the user, use markdown for formatting"
               onKeyDown={handleModuleKeyDown}
@@ -211,10 +209,9 @@ export function EditModuleForm({
 
               <TabsContent value="scenario" className="mt-4">
                 <AIFocusTextarea
-                  fieldId="module-scenario"
                   fieldType="scenario"
                   value={selectedModule.modulePrompt.scenario}
-                  onChange={(e) => handlePromptChange(e, "scenario")}
+                  onChange={(e) => handleModulePromptFieldChange(e, "scenario")}
                   rows={12}
                   placeholder="Enter the prompt for the AI to set up the overall scenario"
                   className={`${isFullScreen ? "min-h-[calc(100vh-10rem)]" : "min-h-[calc(100vh-41rem)]"} bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300`}
@@ -224,10 +221,11 @@ export function EditModuleForm({
 
               <TabsContent value="assessment" className="mt-4">
                 <AIFocusTextarea
-                  fieldId="module-assessment"
                   fieldType="assessment"
                   value={selectedModule.modulePrompt.assessment}
-                  onChange={(e) => handlePromptChange(e, "assessment")}
+                  onChange={(e) =>
+                    handleModulePromptFieldChange(e, "assessment")
+                  }
                   rows={12}
                   placeholder="Enter the prompt for the AI to assess the user's performance"
                   className={`${isFullScreen ? "min-h-[calc(100vh-10rem)]" : "min-h-[calc(100vh-41rem)]"} bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300`}

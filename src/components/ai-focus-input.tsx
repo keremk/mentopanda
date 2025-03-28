@@ -5,22 +5,17 @@ import { Input, InputProps } from "@/components/ui/input";
 import { useAIPane } from "@/contexts/ai-pane-context";
 
 interface AIFocusInputProps extends InputProps {
-  fieldId: string;
   fieldType: string;
 }
 
-export function AIFocusInput({
-  fieldId,
-  fieldType,
-  ...props
-}: AIFocusInputProps) {
+export function AIFocusInput({ fieldType, ...props }: AIFocusInputProps) {
   const { setFocusedField } = useAIPane();
   const [hasFocus, setHasFocus] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     setHasFocus(true);
-    setFocusedField({ fieldId, fieldType });
+    setFocusedField({ fieldType });
     props.onFocus?.(e);
   };
 

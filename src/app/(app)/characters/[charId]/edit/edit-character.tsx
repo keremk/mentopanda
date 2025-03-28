@@ -41,6 +41,8 @@ export function EditCharacterForm() {
           updateCharacterField("aiDescription", content);
         } else if (targetField === "description") {
           updateCharacterField("description", content);
+        } else if (targetField === "name") {
+          updateCharacterField("name", content);
         }
       },
     };
@@ -172,8 +174,7 @@ export function EditCharacterForm() {
                   Name
                 </label>
                 <AIFocusInput
-                  fieldId="character-name"
-                  fieldType="title"
+                  fieldType="name"
                   placeholder="Character Name"
                   value={character.name}
                   onChange={(e) => updateCharacterField("name", e.target.value)}
@@ -201,7 +202,6 @@ export function EditCharacterForm() {
               Description
             </label>
             <AIFocusTextarea
-              fieldId="character-description"
               fieldType="description"
               placeholder="Enter character description visible to users"
               value={character.description || ""}
@@ -217,7 +217,6 @@ export function EditCharacterForm() {
               AI Description
             </label>
             <AIFocusTextarea
-              fieldId="character-ai-description"
               fieldType="aiDescription"
               placeholder="Enter character prompt for the AI model"
               value={character.aiDescription || ""}

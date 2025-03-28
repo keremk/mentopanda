@@ -201,7 +201,7 @@ function getOptionsForContext(contextType?: string): AIAssistOption[] {
         {
           id: "generateCharacterName",
           label: "Generate character name",
-          targetField: "title",
+          targetField: "name",
         },
         {
           id: "generateCharacterDescription",
@@ -243,35 +243,9 @@ function findOptionForField(
   focusedField: FocusedField
 ): AIAssistOption | undefined {
   // Direct match by target field
-  const directMatch = options.find(
+  return options.find(
     (option) => option.targetField === focusedField.fieldType
   );
-  if (directMatch) return directMatch;
-
-  // Fuzzy match by looking at the field ID
-  if (focusedField.fieldId.includes("title")) {
-    return options.find((option) => option.targetField === "title");
-  }
-  if (focusedField.fieldId.includes("tagline")) {
-    return options.find((option) => option.targetField === "tagline");
-  }
-  if (focusedField.fieldId.includes("description")) {
-    return options.find((option) => option.targetField === "description");
-  }
-  if (focusedField.fieldId.includes("instructions")) {
-    return options.find((option) => option.targetField === "instructions");
-  }
-  if (focusedField.fieldId.includes("scenario")) {
-    return options.find((option) => option.targetField === "scenario");
-  }
-  if (focusedField.fieldId.includes("assessment")) {
-    return options.find((option) => option.targetField === "assessment");
-  }
-  if (focusedField.fieldId.includes("character-prompt")) {
-    return options.find((option) => option.targetField === "characterPrompt");
-  }
-
-  return undefined;
 }
 
 export default AIPanePromptBox;

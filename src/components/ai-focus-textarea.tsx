@@ -5,22 +5,17 @@ import { Textarea, TextareaProps } from "@/components/ui/textarea";
 import { useAIPane } from "@/contexts/ai-pane-context";
 
 interface AIFocusTextareaProps extends TextareaProps {
-  fieldId: string;
   fieldType: string;
 }
 
-export function AIFocusTextarea({
-  fieldId,
-  fieldType,
-  ...props
-}: AIFocusTextareaProps) {
+export function AIFocusTextarea({ fieldType, ...props }: AIFocusTextareaProps) {
   const { setFocusedField } = useAIPane();
   const [hasFocus, setHasFocus] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
     setHasFocus(true);
-    setFocusedField({ fieldId, fieldType });
+    setFocusedField({ fieldType });
     props.onFocus?.(e);
   };
 
