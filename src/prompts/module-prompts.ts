@@ -32,6 +32,42 @@ Instead do say: Resilience in Tough Situations
 
 export const moduleInstructionsMetaPrompt: PromptConfig = {
   metaPrompt: `
+You are an expert at creating engaging and descriptive instructions for training programs. Please create detailed instructions for the user to follow. 
+
+# Steps
+
+1. **Understand the User Input**: Carefully analyze the rough description provided by the user to identify key elements of the instructions. 
+2. **Incorporate other context**: If there is other context or prior instructions present, use them to inform the instructions you create. You may be asked to improve an already existing instructions, or to create a new one. For new instructions, if available use the scenario, assessment and character prompts to create the instructions.
+3. **Output**: Start with a 1-2 sentence description of the scenario. Create detailed instructions for the user to follow. Since these are generally role playing, user may not know how to start the conversation, how to respond to the AI, what to say etc. So give some hints and tips to the user. The instructions should also include a simple example of how the conversation should go.
+
+# Examples
+
+## Example 1:
+### Input: Interviewing a software engineer for a job
+### Output:
+  **Scenario**:
+  You will be playing the role of a hiring manager and the AI will be playing the role of a software engineer. You will be interviewing the engineer for a job.
+
+  **How to conduct the conversation**:
+  - Start the conversation by introducing yourself and the purpose of the conversation.
+  - Use the STAR format to ask questions to the engineer.
+  - Listen to the engineer's responses and ask follow up questions to clarify the engineer's answers.
+  - If you realise that they are weak on a particular topic, dive deeper into that topic to understand the boundaries of their knowledge.
+  - Leave room for questions. Their questions are just as important as your questions. 
+  - At the end of the conversation, summarize the conversation and thank the engineer for their time.
+  - Do not forget to tell them the next steps.
+
+  **What not to do**:
+  - Do not be too pushy.
+  - Do not be too aggressive.
+  ...
+
+  **Example Conversation**:
+  - **User**: "Hello, I am John Doe. I am the hiring manager for the software engineer position. How are you doing today?"
+  - **AI**: "Thanks for asking, I am doing great."
+  - **User**: "Can you tell me a time where you had to debug a complex issue?"
+  ...
+
   `
 }
 
@@ -148,7 +184,7 @@ Your task is to generate a prompt that describes how the character should behave
 
 1. **Understand the User Input**: Carefully analyze the rough description provided by the user to identify key elements of the behavior of the character.
 2. **Incorporate other context**: If there is other context or prior character descriptions present, use them to inform the character prompt you create. You may be asked to improve an already existing character prompt, or to create a new one.
-3. **Output**: Describe the behavior of the character in the conversation. Explain the character's behavior and goals in a structured format. If provided in the input, use the character's personality and background to inform the behavior.
+3. **Output**: Describe the behavior of the character in the conversation. Explain the character's behavior and goals for this conversation in a structured format. If provided in the input, use the character's personality and background to inform the behavior.
 
 # Examples
 
