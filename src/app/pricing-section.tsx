@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Check } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -10,6 +10,13 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface PricingFeature {
   text: string;
@@ -41,11 +48,12 @@ const pricingTiers: PricingTier[] = [
     name: "PRO",
     monthlyPrice: 20,
     yearlyPrice: 16,
-    description: "Ideal for growing businesses and teams",
+    description: "COMING SOON: Ideal for growing businesses and teams",
     features: [
-      { text: "50 hours of lessons per month" },
-      { text: "5 Premium Lessons" },
-      { text: "Create and customize your own lessons, characters" },
+      { text: "Everything in FREE" },
+      { text: "No need for API Key" },
+      { text: "Manage team members" },
+      { text: "Manage multiple projects" },
       { text: "Email Support" },
     ],
     isPopular: true,
@@ -56,7 +64,6 @@ const pricingTiers: PricingTier[] = [
     yearlyPrice: null,
     description: "For your custom needs",
     features: [
-      { text: "100 hours of lessons per month" },
       { text: "Custom lesson development for your needs" },
       { text: "Premium Support" },
     ],
@@ -65,45 +72,9 @@ const pricingTiers: PricingTier[] = [
 
 export function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(1); // Start with PRO card
 
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    // Center on PRO card initially
-    const scrollToCenter = () => {
-      const cardWidth = container.clientWidth * 0.7;
-      container.scrollLeft = cardWidth;
-    };
-
-    scrollToCenter();
-    window.addEventListener("resize", scrollToCenter);
-
-    let lastScrollLeft = container.scrollLeft;
-
-    const handleScroll = () => {
-      const currentScrollLeft = container.scrollLeft;
-
-      // Determine scroll direction
-      if (currentScrollLeft > lastScrollLeft) {
-        // Scrolling right
-        setActiveIndex((prev) => Math.min(prev + 1, pricingTiers.length - 1));
-      } else if (currentScrollLeft < lastScrollLeft) {
-        // Scrolling left
-        setActiveIndex((prev) => Math.max(prev - 1, 0));
-      }
-
-      lastScrollLeft = currentScrollLeft;
-    };
-
-    container.addEventListener("scrollend", handleScroll);
-    return () => {
-      window.removeEventListener("resize", scrollToCenter);
-      container.removeEventListener("scrollend", handleScroll);
-    };
-  }, []);
+  // Find the index of the popular (PRO) plan to set as initial
+  const popularPlanIndex = pricingTiers.findIndex((tier) => tier.isPopular);
 
   return (
     <section id="pricing" className="py-16 px-4 sm:px-6 lg:px-8">
@@ -136,41 +107,52 @@ export function PricingSection() {
         {/* Desktop Layout */}
         <div className="hidden md:grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {pricingTiers.map((tier) => (
-            <PricingCard key={tier.name} tier={tier} isYearly={isYearly} />
+            <PricingCard
+              key={tier.name}
+              tier={tier}
+              isYearly={isYearly}
+              disabled={tier.name === "PRO"}
+            />
           ))}
         </div>
 
-        {/* Mobile Layout */}
+        {/* Mobile Layout with Carousel */}
         <div className="relative md:hidden">
-          <div className="overflow-hidden">
-            <div
-              ref={scrollContainerRef}
-              className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
-              style={{
-                margin: "0 -20%",
-                padding: "0 20%",
-                scrollBehavior: "smooth",
-                WebkitOverflowScrolling: "touch",
-              }}
-            >
-              {pricingTiers.map((tier, index) => (
-                <div
+          <Carousel
+            opts={{
+              align: "center",
+              loop: true,
+              startIndex: popularPlanIndex !== -1 ? popularPlanIndex : 1,
+            }}
+            className="w-full mx-auto"
+          >
+            <CarouselContent>
+              {pricingTiers.map((tier) => (
+                <CarouselItem
                   key={tier.name}
-                  data-index={index}
-                  className="w-[70%] flex-shrink-0 snap-center px-4"
+                  className="basis-[85%] sm:basis-4/5 pl-4"
                 >
-                  <div
-                    className="transition-opacity duration-300"
-                    style={{
-                      opacity: activeIndex !== index ? 0.3 : 1,
-                    }}
-                  >
-                    <PricingCard tier={tier} isYearly={isYearly} />
+                  <div>
+                    <PricingCard
+                      tier={tier}
+                      isYearly={isYearly}
+                      disabled={tier.name === "PRO"}
+                    />
                   </div>
-                </div>
+                </CarouselItem>
               ))}
+            </CarouselContent>
+            <div className="flex justify-center gap-4 mt-6">
+              <CarouselPrevious
+                className="relative inline-flex h-10 w-10 bg-background border-muted-foreground/20"
+                variant="outline"
+              />
+              <CarouselNext
+                className="relative inline-flex h-10 w-10 bg-background border-muted-foreground/20"
+                variant="outline"
+              />
             </div>
-          </div>
+          </Carousel>
         </div>
       </div>
     </section>
@@ -181,9 +163,11 @@ export function PricingSection() {
 function PricingCard({
   tier,
   isYearly,
+  disabled = false,
 }: {
   tier: PricingTier;
   isYearly: boolean;
+  disabled?: boolean;
 }) {
   return (
     <Card
@@ -227,6 +211,7 @@ function PricingCard({
               : ""
           }`}
           variant={tier.isPopular ? "default" : "outline"}
+          disabled={disabled}
         >
           {(isYearly ? tier.yearlyPrice : tier.monthlyPrice) === null
             ? "Contact Us"

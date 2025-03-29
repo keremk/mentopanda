@@ -1,3 +1,26 @@
+import { LayoutGrid, Users, Workflow } from "lucide-react";
+
+export const solutions = [
+  {
+    id: 1,
+    title: "Engineering Managers",
+    description: "Practice how to: interview candidates, communicate design decisions, communicate with stakeholders, say no when necessary, motivate your team, give constructive feedback, and more...",
+    icon: <LayoutGrid className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+  },
+  {
+    id: 2,
+    title: "Product Managers, Designers",
+    description: "Practice how to: practice stakeholder communications, learn to pitch ideas effectively, learn to give and receive feedback, get better at gathering user feedback, and more...",
+    icon: <Workflow className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+  },
+  {
+    id: 3,
+    title: "People Teams",
+    description: "Reach out to us to discuss your specific needs and we will build a custom set of lessons for your employees.",
+    icon: <Users className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+  },
+];
+
 export function SolutionSection() {
   return (
     <section id="solutions" className="py-16 px-4 sm:px-6 lg:px-8">

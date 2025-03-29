@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import { ThemedImage } from "@/components/themed-image";
 
 export function HeroSection() {
+  // Define light and dark theme image URLs
+  const lightImageUrl =
+    "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/simulation-light.png";
+  const darkImageUrl =
+    "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/simulation.png";
+
   return (
     <section className="container mx-auto px-4 pt-32 pb-20 md:pt-40 md:pb-28">
       <div className="flex flex-col items-center space-y-16 md:space-y-28">
@@ -14,12 +20,13 @@ export function HeroSection() {
 
         <div className="w-full max-w-4xl relative aspect-[16/10] image-container-enhanced group">
           <div className="image-inner">
-            <Image
-              src="/simulation.png"
+            <ThemedImage
+              lightSrc={lightImageUrl}
+              darkSrc={darkImageUrl}
               alt="Simulation Picture"
               fill
-              className="object-cover rounded-2xl"
               priority
+              className="rounded-2xl"
             />
           </div>
         </div>

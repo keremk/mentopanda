@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import Image from "next/image";
 import { BarChart3, Brain, LineChart, FileText } from "lucide-react";
 import { ProgressBar } from "./progress-bar";
+import { ThemedImage } from "@/components/themed-image";
 
 const AUTOPLAY_DELAY = 5000; // 5 seconds per feature
 const PROGRESS_INTERVAL = 50; // Update progress every 50ms
@@ -14,44 +14,60 @@ interface Feature {
   description: string;
   icon: React.ReactNode;
   image: string;
+  imageLight: string;
 }
 
-const features: Feature[] = [
+export const features: Feature[] = [
   {
     id: 1,
     title: "Pre-built Lessons",
     description: "Lots of pre-built lessons to get you started.",
-    icon: <BarChart3 className="w-6 h-6 text-teal-600 dark:text-teal-400" />,
-    image: "/catalog.png",
+    icon: <BarChart3 className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+    image:
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//catalog.png",
+    imageLight:
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//catalog-light.png",
   },
   {
     id: 2,
     title: "Build your unique characters",
     description: "Create your own characters and use them in your lessons.",
-    icon: <Brain className="w-6 h-6 text-teal-600 dark:text-teal-400" />,
-    image: "/characters.png",
+    icon: <Brain className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+    image:
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//characters.png",
+    imageLight:
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//characters-light.png",
   },
   {
     id: 3,
     title: "Customize your lessons",
     description: "Add your own lessons and use them.",
-    icon: <LineChart className="w-6 h-6 text-teal-600 dark:text-teal-400" />,
-    image: "/customise.png",
+    icon: <LineChart className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+    image:
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//edit-trainings.png",
+    imageLight:
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//edit-trainings-light.png",
   },
   {
     id: 4,
     title: "Manage your enrollments",
     description: "Enroll yourself or your students and track their progress.",
-    icon: <FileText className="w-6 h-6 text-teal-600 dark:text-teal-400" />,
-    image: "/enrollments.png",
+    icon: <FileText className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+    image:
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//enrollments.png",
+    imageLight:
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//enrollments-light.png",
   },
   {
     id: 5,
     title: "Simulate conversations",
     description:
       "Use SOTA AI models to simulate conversations and get feedback.",
-    icon: <FileText className="w-6 h-6 text-teal-600 dark:text-teal-400" />,
-    image: "/simulation.png",
+    icon: <FileText className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+    image:
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/simulation.png",
+    imageLight:
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/simulation-light.png",
   },
 ];
 
@@ -208,15 +224,18 @@ export function FeaturesSection() {
           {/* Mobile Layout */}
           <div className="md:hidden">
             {/* Image section - shown on top for mobile */}
-            <div className="relative w-full aspect-[16/9] max-w-4xl mx-auto image-container-enhanced mb-8">
+            <div className="relative w-full aspect-[16/10] max-w-4xl mx-auto image-container-enhanced mb-8">
               <div className="image-inner">
                 {features.map((feature, index) => (
-                  <Image
+                  <ThemedImage
                     key={feature.id}
-                    src={feature.image || "/placeholder.svg"}
+                    darkSrc={feature.image || "/placeholder.svg"}
+                    lightSrc={
+                      feature.imageLight || feature.image || "/placeholder.svg"
+                    }
                     alt={feature.title}
                     fill
-                    className={`object-cover transition-opacity duration-300 ${
+                    className={`transition-opacity duration-300 rounded-2xl ${
                       index === activeFeature ? "opacity-100" : "opacity-0"
                     }`}
                     priority={index === 0}
@@ -308,15 +327,18 @@ export function FeaturesSection() {
               ))}
             </div>
 
-            <div className="relative w-full aspect-[16/9] max-w-4xl mx-auto image-container-enhanced">
+            <div className="relative w-full aspect-[16/10] max-w-4xl mx-auto image-container-enhanced">
               <div className="image-inner">
                 {features.map((feature, index) => (
-                  <Image
+                  <ThemedImage
                     key={feature.id}
-                    src={feature.image || "/placeholder.svg"}
+                    darkSrc={feature.image || "/placeholder.svg"}
+                    lightSrc={
+                      feature.imageLight || feature.image || "/placeholder.svg"
+                    }
                     alt={feature.title}
                     fill
-                    className={`object-cover transition-opacity duration-300 ${
+                    className={`transition-opacity duration-300 rounded-2xl ${
                       index === activeFeature ? "opacity-100" : "opacity-0"
                     }`}
                     priority={index === 0}

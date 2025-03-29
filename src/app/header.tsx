@@ -10,7 +10,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { LayoutGrid, Menu, Workflow } from "lucide-react";
+import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Image from "next/image";
@@ -22,31 +22,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-const features = [
-  {
-    title: "Task Automation",
-    description: "Automate repetitive tasks and save time.",
-    icon: <LayoutGrid className="w-5 h-5" />,
-  },
-  {
-    title: "Workflow Optimization",
-    description: "Optimize your processes with AI-driven insights.",
-    icon: <Workflow className="w-5 h-5" />,
-  },
-];
-
-const solutions = [
-  {
-    title: "AI-Powered Automation",
-    description: "Streamline your workflow with intelligent automation.",
-    icon: <LayoutGrid className="w-5 h-5" />,
-  },
-  {
-    title: "Intelligent Scheduling",
-    description: "AI-powered scheduling for maximum efficiency.",
-    icon: <Workflow className="w-5 h-5" />,
-  },
-];
+import { features } from "./features-section";
+import { solutions } from "./solution-section";
 
 export function Header() {
   const scrollToSection = (id: string) => {
@@ -72,6 +49,7 @@ export function Header() {
     onClick,
     ...props
   }: ListItemProps) => {
+    const { id, ...anchorProps } = props; // eslint-disable-line @typescript-eslint/no-unused-vars
     return (
       <li>
         <NavigationMenuLink asChild>
@@ -81,7 +59,7 @@ export function Header() {
               className
             )}
             onClick={onClick}
-            {...props}
+            {...anchorProps}
           >
             <div className="flex items-center gap-2 mb-1">
               {icon}
@@ -159,7 +137,9 @@ export function Header() {
                     {features.map((feature, index) => (
                       <ListItem
                         key={index}
-                        {...feature}
+                        title={feature.title}
+                        description={feature.description}
+                        icon={feature.icon}
                         onClick={() => scrollToSection("features")}
                       />
                     ))}
@@ -177,7 +157,9 @@ export function Header() {
                     {solutions.map((solution, index) => (
                       <ListItem
                         key={index}
-                        {...solution}
+                        title={solution.title}
+                        description={solution.description}
+                        icon={solution.icon}
                         onClick={() => scrollToSection("solutions")}
                       />
                     ))}
