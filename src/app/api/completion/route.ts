@@ -1,5 +1,5 @@
 import { streamText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { getModuleByIdAction2 } from "@/app/actions/moduleActions";
 import { getHistoryEntryAction } from "@/app/actions/history-actions";
 
@@ -7,8 +7,13 @@ import { getHistoryEntryAction } from "@/app/actions/history-actions";
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-  const { moduleId, entryId }: { moduleId: number; entryId: number } =
-    await req.json();
+  const {
+    moduleId,
+    entryId,
+    apiKey,
+  }: { moduleId: number; entryId: number; apiKey?: string } = await req.json();
+
+  const finalApiKey = apiKey || process.env.OPENAI_API_KEY;
 
   const [module, historyEntry] = await Promise.all([
     getModuleByIdAction2(moduleId),
@@ -19,6 +24,10 @@ export async function POST(req: Request) {
   if (!historyEntry) throw new Error("History entry not found");
 
   const assessmentPrompt = module.modulePrompt.assessment;
+
+  const openai = createOpenAI({
+    apiKey: finalApiKey,
+  });
 
   const systemPrompt = `
     You are an expert in assessing human communication skills. Below you will find the specific instructions for this assessment:\n

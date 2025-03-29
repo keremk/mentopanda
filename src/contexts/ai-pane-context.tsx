@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { useChat, Message } from "@ai-sdk/react";
-
+import { useApiKey } from "@/hooks/use-api-key";
 export type ContextType = "module" | "character" | "training";
 
 export type ContextData = {
@@ -75,6 +75,7 @@ export function AIPaneProvider({
   onApplyContent,
   focusedField: externalFocusedField,
 }: AIPaneProviderProps) {
+  const { apiKey } = useApiKey();
   const {
     messages,
     input,
@@ -88,6 +89,7 @@ export function AIPaneProvider({
     body: {
       contextType,
       contextData,
+      apiKey,
     },
   });
 

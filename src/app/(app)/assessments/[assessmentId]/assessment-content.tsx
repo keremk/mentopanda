@@ -1,10 +1,11 @@
 "use client";
 
-import { useCompletion } from "@ai-sdk/react";  
+import { useCompletion } from "@ai-sdk/react";
 import { useEffect, useState } from "react";
 import { updateHistoryEntryAction } from "@/app/actions/history-actions";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { useRouter } from "next/navigation";
+import { useApiKey } from "@/hooks/use-api-key";
 
 type Props = {
   moduleId: number;
@@ -18,14 +19,16 @@ export default function AssessmentContent({
   entryId,
   assessmentText,
   assessmentCreated,
-}: Props) 
-{
+}: Props) {
   const router = useRouter();
+  const { apiKey } = useApiKey();
+
   const { completion, complete } = useCompletion({
     api: "/api/completion",
     body: {
       moduleId: moduleId,
       entryId: entryId,
+      apiKey: apiKey,
     },
     onFinish: (prompt, completion) => {
       updateHistoryEntryAction({
@@ -42,10 +45,11 @@ export default function AssessmentContent({
 
   const [hasTriggered, setHasTriggered] = useState(false);
   const [streamedContent, setStreamedContent] = useState("");
-  const [isAssessmentCreated, setIsAssessmentCreated] = useState(assessmentCreated);
-  const [currentAssessmentText, setCurrentAssessmentText] = useState(assessmentText);
+  const [isAssessmentCreated, setIsAssessmentCreated] =
+    useState(assessmentCreated);
+  const [currentAssessmentText, setCurrentAssessmentText] =
+    useState(assessmentText);
 
-  // Update streamed content with a small delay to reduce render frequency
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setStreamedContent(completion);
@@ -53,24 +57,19 @@ export default function AssessmentContent({
     return () => clearTimeout(timeoutId);
   }, [completion]);
 
-  // Trigger completion once
   useEffect(() => {
-    if (!hasTriggered && !isAssessmentCreated) {
+    if (apiKey && !hasTriggered && !isAssessmentCreated) {
       setHasTriggered(true);
       void complete("");
     }
-  }, [hasTriggered, complete, isAssessmentCreated]);
+  }, [apiKey, hasTriggered, complete, isAssessmentCreated]);
 
   return (
     <div className="prose space-y-2">
       {isAssessmentCreated ? (
-        <MemoizedMarkdown
-          content={currentAssessmentText || ""}
-        />
+        <MemoizedMarkdown content={currentAssessmentText || ""} />
       ) : (
-        <MemoizedMarkdown
-          content={streamedContent}
-        />
+        <MemoizedMarkdown content={streamedContent} />
       )}
     </div>
   );

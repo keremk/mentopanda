@@ -1,5 +1,5 @@
 import { type CoreMessage, streamText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import {
   ContextType,
   ContextData,
@@ -88,10 +88,6 @@ async function generateSystemPrompt(
   selectedOption?: SelectedOption
 ): Promise<string> {
   const basePrompt = "You are a helpful assistant.";
-  console.log(`contextType: ${contextType}`);
-  console.log(`selectedOption: ${selectedOption}`);
-  console.log(`characterContext: ${characterContext}`);
-  console.log(`trainingContext: ${trainingContext}`);
 
   if (!selectedOption) return basePrompt;
 
@@ -113,15 +109,16 @@ export async function POST(req: Request) {
     contextType,
     contextData,
     selectedOption,
+    apiKey,
   }: {
     messages: CoreMessage[];
     contextType?: ContextType;
     contextData?: ContextData;
     selectedOption?: SelectedOption;
+    apiKey?: string;
   } = await req.json();
 
-  console.log(`selectedOption: ${JSON.stringify(selectedOption)}`);
-  console.log(`contextData: ${JSON.stringify(contextData)}`);
+  const finalApiKey = apiKey || process.env.OPENAI_API_KEY;
 
   let characterContext: CharacterContextForAI | null = null;
   let trainingContext: TrainingContextData | null = null;
@@ -140,10 +137,9 @@ export async function POST(req: Request) {
     const moduleId = contextData?.moduleId
       ? parseInt(contextData.moduleId)
       : undefined;
-    trainingContext =
-      trainingId
-        ? await getAIContextDataForTrainingAction(trainingId, moduleId)
-        : null;
+    trainingContext = trainingId
+      ? await getAIContextDataForTrainingAction(trainingId, moduleId)
+      : null;
   }
 
   const systemPrompt = await generateSystemPrompt(
@@ -153,11 +149,17 @@ export async function POST(req: Request) {
     selectedOption
   );
 
-  console.log(systemPrompt);
+
+  // Create a configured OpenAI client instance
+  const openai = createOpenAI({
+    apiKey: finalApiKey,
+  });
+
   const result = await streamText({
-    model: openai("gpt-4o"),
+    model: openai.chat("gpt-4o"),
     system: systemPrompt,
     messages,
+    temperature: 0.3,
   });
 
   return result.toDataStreamResponse();
