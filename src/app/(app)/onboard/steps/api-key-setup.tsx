@@ -32,7 +32,7 @@ export function ApiKeySetup({ updateData }: ApiKeySetupProps) {
     <>
       <div className="relative w-full h-56 overflow-hidden rounded-t-lg">
         <Image
-          src="/images/onboarding-apikey.jpg"
+          src="https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/onboarding//onboarding-apikey.jpg"
           alt="API key setup visualization"
           fill
           priority

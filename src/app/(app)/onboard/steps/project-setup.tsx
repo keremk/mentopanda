@@ -23,7 +23,7 @@ export function ProjectSetup({ data, updateData }: ProjectSetupProps) {
     <>
       <div className="relative w-full h-56 overflow-hidden rounded-t-lg">
         <Image
-          src="/images/onboarding-project.jpg"
+          src="https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/onboarding//onboarding-project.jpg"
           alt="Project setup visualization"
           fill
           priority

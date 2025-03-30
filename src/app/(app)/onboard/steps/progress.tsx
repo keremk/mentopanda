@@ -12,7 +12,7 @@ export function Progress({ status }: ProgressProps) {
     <>
       <div className="relative w-full h-56 overflow-hidden rounded-t-lg">
         <Image
-          src="/images/onboarding-progress.jpg"
+          src="https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/onboarding//onboarding-progress.jpg"
           alt="Setup progress visualization"
           fill
           priority

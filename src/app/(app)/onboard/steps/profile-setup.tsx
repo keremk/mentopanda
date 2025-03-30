@@ -63,7 +63,7 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
     <>
       <div className="relative w-full h-56 overflow-hidden rounded-t-lg">
         <Image
-          src="/images/onboarding-profile-setup.jpg"
+          src="https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/onboarding//onboarding-profile-setup.jpg"
           alt="Profile setup visualization"
           fill
           priority

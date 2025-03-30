@@ -14,7 +14,7 @@ export function Summary({ data }: SummaryProps) {
     <>
       <div className="relative w-full h-56 overflow-hidden rounded-t-lg">
         <Image
-          src="/images/onboarding-summary.jpg"
+          src="https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/onboarding//onboarding-summary.jpg"
           alt="Setup summary visualization"
           fill
           priority

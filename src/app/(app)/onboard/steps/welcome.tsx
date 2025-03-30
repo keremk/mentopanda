@@ -6,7 +6,7 @@ export function Welcome() {
     <>
       <div className="relative w-full h-56 overflow-hidden rounded-t-lg">
         <Image
-          src="/images/onboarding-welcome.jpg"
+          src="https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/onboarding//onboarding-welcome.jpg"
           alt="AI training visualization"
           fill
           priority
