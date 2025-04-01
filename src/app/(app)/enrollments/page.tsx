@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default async function TrainingPage() {
   const trainings = await getEnrolledTrainingsActionCached();
 
-  if (trainings.length > 0) {
+  if (trainings && trainings.length > 0 && trainings[0]?.id) {
     redirect(`/enrollments/${trainings[0].id}`);
   }
 
