@@ -32,7 +32,7 @@ export default function NotFound() {
             </h1>
             <h2 className="text-2xl font-semibold">Page Not Found</h2>
             <p className="text-muted-foreground">
-              Oops! The page you're looking for seems to have wandered off.
+              Oops! The page you&apos;re looking for seems to have wandered off.
             </p>
           </div>
 
