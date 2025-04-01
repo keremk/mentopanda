@@ -9,13 +9,15 @@ export const metadata: Metadata = {
 export default async function TrainingPage() {
   const trainings = await getEnrolledTrainingsActionCached();
 
-  if (trainings && trainings.length > 0 && trainings[0]?.id) {
-    redirect(`/enrollments/${trainings[0].id}`);
+  // If there are no trainings at all, show the default message
+  if (!trainings || trainings.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-muted-foreground">
+        Select a training to view details
+      </div>
+    );
   }
 
-  return (
-    <div className="flex items-center justify-center h-full text-muted-foreground">
-      Select a training to view details
-    </div>
-  );
+  // Redirect to the first training
+  redirect(`/enrollments/${trainings[0].id}`);
 }
