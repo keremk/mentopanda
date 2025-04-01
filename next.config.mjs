@@ -15,8 +15,8 @@ const nextConfig = {
   headers: async () => {
     const connectSrc =
       process.env.NODE_ENV === "development"
-        ? "'self' http://localhost:54321 http://127.0.0.1:54321 ws://localhost:54321 ws://127.0.0.1:54321 https://api.openai.com https://*.supabase.co"
-        : "'self' https://api.openai.com https://*.supabase.co";
+        ? "'self' http://localhost:54321 http://127.0.0.1:54321 ws://localhost:54321 ws://127.0.0.1:54321 https://api.openai.com https://*.supabase.co https://eu.i.posthog.com"
+        : "'self' https://api.openai.com https://*.supabase.co https://eu.i.posthog.com";
 
     const imgSrc =
       process.env.NODE_ENV === "development"
