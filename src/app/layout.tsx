@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { PostHogProvider } from "./posthog";
-
+import { Banner } from "./banner";
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -43,6 +43,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             {children}
+            <Banner />
           </ThemeProvider>
           <Toaster />
         </PostHogProvider>

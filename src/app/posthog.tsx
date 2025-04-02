@@ -7,6 +7,7 @@ import { usePostHog } from "posthog-js/react";
 
 import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
+import { cookieConsentGiven } from "./banner";
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -15,6 +16,8 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
       person_profiles: "identified_only", // or 'always' to create profiles for anonymous users as well
       capture_pageview: false, // Disable automatic pageview capture, as we capture manually
+      persistence:
+        cookieConsentGiven() === "yes" ? "localStorage+cookie" : "memory",
     });
   }, []);
 
