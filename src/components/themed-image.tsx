@@ -28,7 +28,7 @@ export function ThemedImage({
   priority = false,
   sizes,
 }: ThemedImageProps) {
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   // Wait until mounted to avoid hydration mismatch
@@ -37,7 +37,7 @@ export function ThemedImage({
   }, []);
 
   // Use appropriate image based on current theme
-  const src = !mounted ? darkSrc : theme === "dark" ? darkSrc : lightSrc;
+  const src = !mounted ? darkSrc : resolvedTheme === "dark" ? darkSrc : lightSrc;
 
   return (
     <Image
