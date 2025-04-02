@@ -1,3 +1,38 @@
+Business Source License 1.1
+
+Licensee: Any individual or entity using this software.
+
+Licensor: Kerem Karatal (or Coding Ventures pending formation)
+
+Software: MentoPanda
+
+Initial Release Date: April 2, 2025 (or specify your intended release date)
+
+Change Date: April 2, 2030 (5 years from Initial Release Date)
+
+Change License: Apache License, Version 2.0
+
+Terms and Conditions
+
+1. Grant of License
+   Licensor hereby grants to Licensee a non-exclusive, royalty-free, worldwide license to use, copy, modify, and distribute the Software, subject to the Additional Use Restriction below, until the Change Date. This license includes the right to sublicense, provided all sublicensees comply with these terms.
+2. Additional Use Restriction
+   Only Kerem Karatal (or Coding Ventures pending formation) may use the Software to provide a commercial hosted service (e.g., Software as a Service). Any other commercial hosting or offering of the Software as a service by Licensee or any third party is prohibited until the Change Date.
+3. Source Code Availability
+   The source code of the Software is made available by Licensor under this license. Licensee may modify and distribute the Software, provided that all modifications and derivative works are also licensed under these terms until the Change Date.
+4. Change Date and License Conversion
+   On and after April 2, 2030 (the "Change Date"), this license automatically converts to the Apache License, Version 2.0 (attached as Exhibit A). From that date forward, the Additional Use Restriction no longer applies, and the Software is governed solely by the terms of the Apache License, Version 2.0.
+5. Attribution
+   Licensee must retain all copyright, patent, trademark, and attribution notices present in the Software.
+6. Warranty Disclaimer
+   The Software is provided "as is," without warranty of any kind, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement. Licensor shall not be liable for any claim, damages, or other liability arising from the use of the Software.
+7. Termination
+   This license terminates automatically if Licensee breaches any of its terms. Upon termination, Licensee must cease all use and distribution of the Software.
+8. Miscellaneous
+   This license is governed by the laws of Spain. If any provision is found unenforceable, the remaining provisions remain in effect.
+
+Exhibit A: Apache License, Version 2.0
+
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
