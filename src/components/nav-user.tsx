@@ -1,6 +1,13 @@
 "use client";
 
-import { Settings, LogOut, Sun, Moon, ChevronRight } from "lucide-react";
+import {
+  Settings,
+  LogOut,
+  Sun,
+  Moon,
+  ChevronRight,
+  FolderKanban,
+} from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -31,6 +38,7 @@ export function NavUser({
     name: string;
     email: string;
     avatarUrl: string;
+    projectName: string;
   };
 }) {
   const { isMobile, state } = useSidebar();
@@ -101,6 +109,16 @@ export function NavUser({
                 </div>
               </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem asChild className="flex items-center gap-2">
+                <Link href="/settings/account">
+                  <FolderKanban className="h-4 w-4" />
+                  <span className="truncate">{user.projectName}</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem

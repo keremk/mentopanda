@@ -15,6 +15,12 @@ import { ProjectDialog } from "@/components/project-dialog";
 import { ApiKeyInput } from "@/components/api-key-input";
 import { useToast } from "@/hooks/use-toast";
 import { getInitials } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type AccountFormProps = {
   user: User;
@@ -157,6 +163,38 @@ export function AccountForm({ user }: AccountFormProps) {
 
       {/* API Key Field */}
       <ApiKeyInput className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm" />
+
+      <div className="flex flex-col gap-y-2">
+        <Label className="text-muted-foreground">Current Subscription</Label>
+        <div className="flex gap-4">
+          <Input
+            value={
+              user.pricingPlan.charAt(0).toUpperCase() +
+              user.pricingPlan.slice(1)
+            }
+            disabled
+            className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
+          />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    type="button"
+                    variant="ghost-brand"
+                    disabled={true}
+                  >
+                    Manage Subscription
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Coming Soon</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
 
       <div className="flex justify-end pt-6">
         <Button

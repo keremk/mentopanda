@@ -43,7 +43,7 @@ export function ApiKeyInput({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <Label htmlFor="apiKey">OpenAI API Key</Label>
+      <Label className="text-muted-foreground" htmlFor="apiKey">OpenAI API Key</Label>
       <div className="flex gap-4">
         <Input
           id="apiKey"

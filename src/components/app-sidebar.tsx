@@ -28,6 +28,7 @@ export async function AppSidebar({ ...props }: React.ComponentProps<typeof Sideb
             name: userInfo.displayName,
             email: userInfo.email,
             avatarUrl: userInfo.avatarUrl,
+            projectName: userInfo.currentProject.name,
           }}
         />
       </SidebarFooter>
