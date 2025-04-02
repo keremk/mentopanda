@@ -40,7 +40,7 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
       <div className="flex flex-row items-start space-x-4">
         <div className="flex flex-col space-y-4">
           <Image
-            src={training.imageUrl || "/placeholder.svg"}
+            src={training.imageUrl || "/placeholder-training.svg"}
             alt={`${training.title} cover`}
             width={200}
             height={200}

@@ -229,10 +229,8 @@ export function FeaturesSection() {
                 {features.map((feature, index) => (
                   <ThemedImage
                     key={feature.id}
-                    darkSrc={feature.image || "/placeholder.svg"}
-                    lightSrc={
-                      feature.imageLight || feature.image || "/placeholder.svg"
-                    }
+                    darkSrc={feature.image}
+                    lightSrc={feature.imageLight || feature.image}
                     alt={feature.title}
                     fill
                     className={`transition-opacity duration-300 rounded-2xl ${
@@ -332,10 +330,8 @@ export function FeaturesSection() {
                 {features.map((feature, index) => (
                   <ThemedImage
                     key={feature.id}
-                    darkSrc={feature.image || "/placeholder.svg"}
-                    lightSrc={
-                      feature.imageLight || feature.image || "/placeholder.svg"
-                    }
+                    darkSrc={feature.image}
+                    lightSrc={feature.imageLight || feature.image}
                     alt={feature.title}
                     fill
                     className={`transition-opacity duration-300 rounded-2xl ${

@@ -29,7 +29,7 @@ export function TrainingCard({
   priority = false,
 }: TrainingCardProps) {
   const router = useRouter();
-  const fallbackImage = "/placeholder.svg?height=200&width=300";
+  const fallbackImage = "/placeholder-training.svg?height=200&width=300";
 
   const navigateToDetails = () => {
     router.push(`/explore/${id}`);

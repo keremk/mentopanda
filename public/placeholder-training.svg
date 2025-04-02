@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="200" height="200" fill="#f4f4f5"/>
+  
+  <!-- Decorative pattern -->
+  <path d="M0 0L200 200M200 0L0 200" stroke="#e4e4e7" stroke-width="1"/>
+  
+  <!-- Icon container circle -->
+  <circle cx="100" cy="100" r="40" fill="#71717a" opacity="0.2"/>
+  
+  <!-- Stylized book/graduation cap icon -->
+  <path d="M80 90L100 80L120 90L100 100L80 90ZM100 100V115M80 90V105L100 115L120 105V90" 
+        stroke="#18181b" 
+        stroke-width="2" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+  
+  <!-- Text -->
+  <text x="100" y="150" 
+        font-family="ui-sans-serif, system-ui, sans-serif" 
+        font-size="12" 
+        fill="#71717a" 
+        text-anchor="middle">
+    Training
+  </text>
+</svg> 
