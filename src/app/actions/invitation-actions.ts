@@ -6,20 +6,26 @@ import {
   deleteInvitation,
   Invitation,
   acceptInvitation,
+  getInvitation,
+  getTrialInvitations,
 } from "@/data/invitations";
 import { UserRole } from "@/data/user";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
 import { Resend } from "resend";
 import InviteEmail from "@/emails/invite-email";
-
+import React from "react";
+import TrialInviteEmail from "@/emails/trial-invite";
 const createInvitationSchema = z.object({
   inviteeEmail: z.string().email(),
 });
 
 export async function createInvitationAction(
   inviteeEmail: string,
-  role: UserRole
+  role: UserRole,
+  subject: string,
+  isTrial: boolean = false,
+  isPromoInvitation: boolean = false
 ) {
   const supabase = await createClient();
   const validated = createInvitationSchema.parse({ inviteeEmail });
@@ -29,15 +35,56 @@ export async function createInvitationAction(
     invitation = await createInvitation(
       supabase,
       validated.inviteeEmail,
-      role
+      role,
+      isTrial,
+      isPromoInvitation
     );
-    await sendInviteEmailAction(invitation, "Join my project on MentoPanda");
+    const emailTemplate = getInviteEmailTemplate(invitation, isPromoInvitation);
+    await sendInviteEmailAction(invitation, subject, emailTemplate);
   } catch (error) {
     console.error("Failed to create invitation", error);
     if (invitation) {
       await deleteInvitation(supabase, invitation.id);
     }
     throw new Error("Failed to create invitation");
+  }
+}
+
+export async function resendInviteEmailAction(
+  invitationId: number,
+  isPromoInvitation: boolean = false
+) {
+  const supabase = await createClient();
+  const invitation = await getInvitation(supabase, invitationId);
+  if (!invitation) {
+    throw new Error("Invitation not found");
+  }
+  const emailTemplate = getInviteEmailTemplate(invitation, isPromoInvitation);
+  return await sendInviteEmailAction(
+    invitation,
+    "Join my project on MentoPanda",
+    emailTemplate
+  );
+}
+
+function getInviteEmailTemplate(
+  invitation: Invitation,
+  isPromoInvitation: boolean
+) {
+  if (isPromoInvitation) {
+    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/login/mode=signup&invite=${invitation.id}`;
+    return TrialInviteEmail({
+      inviterName: invitation.inviterDisplayName,
+      inviterEmail: invitation.inviterEmail,
+      inviteLink: inviteLink,
+    });
+  } else {
+    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/login/mode=signup&invite=${invitation.id}`;
+    return InviteEmail({
+      inviterName: invitation.inviterDisplayName,
+      inviterEmail: invitation.inviterEmail,
+      inviteLink: inviteLink,
+    });
   }
 }
 
@@ -61,9 +108,10 @@ export async function declineInvitationAction(invitation: Invitation) {
   return await deleteInvitation(supabase, invitation.id);
 }
 
-export async function sendInviteEmailAction(
+async function sendInviteEmailAction(
   invitation: Invitation,
-  subject: string
+  subject: string,
+  emailTemplate: React.JSX.Element
 ): Promise<string> {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -74,11 +122,7 @@ export async function sendInviteEmailAction(
     from: "MentoPanda <onboarding@transactional.mentopanda.com>",
     to: [invitation.inviteeEmail],
     subject: subject,
-    react: InviteEmail({
-      inviterName: invitation.inviterDisplayName,
-      inviterEmail: invitation.inviterEmail,
-      inviteLink: inviteLink,
-    }),
+    react: emailTemplate,
   });
 
   console.log("data", data);
@@ -95,4 +139,9 @@ export async function sendInviteEmailAction(
   }
 
   return data.id;
+}
+
+export async function getTrialInvitationsAction(): Promise<Invitation[]> {
+  const supabase = await createClient();
+  return await getTrialInvitations(supabase);
 }

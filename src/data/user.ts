@@ -7,7 +7,8 @@ export type AppPermission =
   | "enrollment.manage"
   | "project.manage"
   | "project.member.manage"
-  | "basic.access";
+  | "basic.access"
+  | "trials.manage";
 
 export type UserRole = "admin" | "manager" | "member" | "super_admin";
 

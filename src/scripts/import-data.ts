@@ -460,7 +460,7 @@ async function createTestProjects(
         .insert({
           project_id: 1,
           profile_id: user.id,
-          role: "admin",
+          role: "super_admin",
         });
       if (projectError) throw projectError;
     }

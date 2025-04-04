@@ -55,7 +55,7 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
   async function handleInviteMember() {
     if (!newMemberEmail.trim()) return;
     try {
-      await createInvitationAction(newMemberEmail, selectedRole);
+      await createInvitationAction(newMemberEmail, selectedRole, "Join my project on MentoPanda");
       toast({
         title: "Success",
         description:

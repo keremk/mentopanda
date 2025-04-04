@@ -10,6 +10,7 @@ export type Invitation = {
   inviterDisplayName: string;
   inviterEmail: string;
   role: UserRole;
+  isTrial: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -17,23 +18,33 @@ export type Invitation = {
 export async function createInvitation(
   supabase: SupabaseClient,
   inviteeEmail: string,
-  role: UserRole
+  role: UserRole = "admin",
+  isTrial: boolean = false,
+  isPromoInvitation: boolean = false
 ): Promise<Invitation> {
   const user = await getCurrentUserInfo(supabase);
 
-  if (!user.currentProject) {
-    throw new Error("User must belong to a project to invite others");
+  let projectId: number | null;
+  if (isPromoInvitation) {
+    // No need for a project id or a user role, they will create their own project
+    projectId = null;
+  } else {
+    if (!user.currentProject) {
+      throw new Error("User must belong to a project to invite others");
+    }
+    projectId = user.currentProject.id;
   }
 
   const { data, error } = await supabase
     .from("invitations")
     .insert({
-      project_id: user.currentProject.id,
+      project_id: projectId,
       inviter_id: user.id,
       invitee_email: inviteeEmail,
       inviter_display_name: user.displayName,
       inviter_email: user.email,
       role: role,
+      is_trial: isTrial,
     })
     .select()
     .single();
@@ -49,19 +60,21 @@ export async function createInvitation(
     inviterDisplayName: data.inviter_display_name,
     inviterEmail: data.inviter_email,
     role: data.role,
+    isTrial: data.is_trial,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
 }
 
 export async function checkCurrentUserInvitations(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient
 ): Promise<Invitation[] | null> {
   const user = await getCurrentUserInfo(supabase);
 
   const { data, error } = await supabase
     .from("invitations")
-    .select(`
+    .select(
+      `
       id,
       project_id,
       inviter_id,
@@ -71,8 +84,9 @@ export async function checkCurrentUserInvitations(
       role,
       created_at,
       updated_at
-    `)
-    .eq("invitee_email", user.email)
+    `
+    )
+    .eq("invitee_email", user.email);
 
   if (error) handleError(error);
   if (!data) return null;
@@ -86,17 +100,47 @@ export async function checkCurrentUserInvitations(
     inviterDisplayName: invitation.inviter_display_name,
     inviterEmail: invitation.inviter_email,
     role: invitation.role,
+    isTrial: invitation.is_trial,
     createdAt: invitation.created_at,
     updatedAt: invitation.updated_at,
   }));
   // eslint-enable @typescript-eslint/no-explicit-any
 }
 
+export async function getInvitation(
+  supabase: SupabaseClient,
+  invitationId: number
+): Promise<Invitation | null> {
+  const { data, error } = await supabase
+    .from("invitations")
+    .select()
+    .eq("id", invitationId)
+    .single();
+  if (error) handleError(error);
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    projectId: data.project_id,
+    inviterId: data.inviter_id,
+    inviteeEmail: data.invitee_email,
+    inviterDisplayName: data.inviter_display_name,
+    inviterEmail: data.inviter_email,
+    role: data.role,
+    isTrial: data.is_trial,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
+}
+
 export async function deleteInvitation(
   supabase: SupabaseClient,
   invitationId: number
 ) {
-  const { error } = await supabase.from("invitations").delete().eq("id", invitationId);
+  const { error } = await supabase
+    .from("invitations")
+    .delete()
+    .eq("id", invitationId);
   if (error) handleError(error);
 }
 
@@ -115,4 +159,30 @@ export async function acceptInvitation(
   if (data === null) throw new Error("Failed to accept invitation");
 
   return data;
+}
+
+export async function getTrialInvitations(
+  supabase: SupabaseClient
+): Promise<Invitation[]> {
+  const { data, error } = await supabase
+    .from("invitations")
+    .select()
+    .eq("is_trial", true)
+    .order("created_at", { ascending: false });
+
+  if (error) handleError(error);
+  if (!data) return [];
+
+  return data.map((item) => ({
+    id: item.id,
+    projectId: item.project_id,
+    inviterId: item.inviter_id,
+    inviteeEmail: item.invitee_email,
+    inviterDisplayName: item.inviter_display_name,
+    inviterEmail: item.inviter_email,
+    role: item.role,
+    isTrial: item.is_trial,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+  }));
 }

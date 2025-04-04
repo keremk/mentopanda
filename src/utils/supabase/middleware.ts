@@ -74,6 +74,7 @@ export async function updateSession(
         // Onboarding is not completed unless it is the super admin (which is the admin for the first project - starter project)
         if (
           projectRole !== "admin" &&
+          projectRole !== "super_admin" &&
           request.nextUrl.pathname !== "/onboard"
         ) {
           // Add your logic here

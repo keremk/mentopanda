@@ -9,6 +9,7 @@ import {
   Users,
   GraduationCap,
   Bot,
+  LayoutDashboard,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -39,6 +40,7 @@ const iconMap: Record<string, LucideIcon> = {
   users: Users,
   settings: Settings2,
   piechart: PieChart,
+  dashboard: LayoutDashboard,
 };
 
 export const navItems: NavItem[] = [
@@ -77,6 +79,12 @@ export const navItems: NavItem[] = [
     url: "/settings/account",
     iconKey: "settings",
     permissions: ["basic.access"],
+  },
+  {
+    title: "Manage",
+    url: "/manage",
+    iconKey: "dashboard",
+    permissions: ["trials.manage"],
   },
 ];
 
