@@ -1,15 +1,15 @@
 "use server";
 
 import {
-  checkCurrentUserInvitations,
   createInvitation,
   deleteInvitation,
   Invitation,
   acceptInvitation,
-  getInvitation,
+  getInvitationById,
   getTrialInvitations,
+  getInvitationsForUser,
 } from "@/data/invitations";
-import { UserRole } from "@/data/user";
+import { User, UserRole } from "@/data/user";
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
 import { Resend } from "resend";
@@ -55,7 +55,7 @@ export async function resendInviteEmailAction(
   isPromoInvitation: boolean = false
 ) {
   const supabase = await createClient();
-  const invitation = await getInvitation(supabase, invitationId);
+  const invitation = await getInvitationById(supabase, invitationId);
   if (!invitation) {
     throw new Error("Invitation not found");
   }
@@ -93,9 +93,11 @@ export async function deleteInvitationAction(invitationId: number) {
   return await deleteInvitation(supabase, invitationId);
 }
 
-export async function checkCurrentUserInvitationsAction() {
+export async function getInvitationsForUserAction(
+  user: User
+): Promise<Invitation[] | null> {
   const supabase = await createClient();
-  return await checkCurrentUserInvitations(supabase);
+  return await getInvitationsForUser(supabase, user);
 }
 
 export async function acceptInvitationAction(invitation: Invitation) {

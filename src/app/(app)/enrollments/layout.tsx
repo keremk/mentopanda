@@ -1,12 +1,14 @@
 import { getEnrolledTrainingsActionCached } from "@/app/actions/enrollment-actions";
 import { EnrolledTrainingsList } from "@/components/enrolled-trainings-list";
+import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 
 export default async function TrainingsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const trainings = await getEnrolledTrainingsActionCached();
+  const user = await getCurrentUserActionCached();
+  const trainings = await getEnrolledTrainingsActionCached(user);
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] py-2">

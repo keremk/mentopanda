@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
-import { getCurrentUserInfo, getUserId, UserRole } from "./user";
+import { getUserId, UserRole, User, getCurrentUserInfo } from "./user";
 
 export type Invitation = {
   id: number;
@@ -66,11 +66,10 @@ export async function createInvitation(
   };
 }
 
-export async function checkCurrentUserInvitations(
-  supabase: SupabaseClient
+export async function getInvitationsForUser(
+  supabase: SupabaseClient,
+  user: User
 ): Promise<Invitation[] | null> {
-  const user = await getCurrentUserInfo(supabase);
-
   const { data, error } = await supabase
     .from("invitations")
     .select(
@@ -107,7 +106,7 @@ export async function checkCurrentUserInvitations(
   // eslint-enable @typescript-eslint/no-explicit-any
 }
 
-export async function getInvitation(
+export async function getInvitationById(
   supabase: SupabaseClient,
   invitationId: number
 ): Promise<Invitation | null> {

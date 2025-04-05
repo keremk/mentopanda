@@ -25,6 +25,8 @@ export type User = {
   };
   projectRole: UserRole;
   permissions: AppPermission[];
+  trialStartDate: Date | null;
+  trialEndDate: Date | null;
 };
 
 export async function getUserId(supabase: SupabaseClient): Promise<string> {
@@ -57,6 +59,8 @@ export async function getCurrentUserInfo(
     currentProject: data.current_project,
     projectRole: data.project_role,
     permissions: data.permissions || [],
+    trialStartDate: data.trial_start ? new Date(data.trial_start) : null,
+    trialEndDate: data.trial_end ? new Date(data.trial_end) : null,
   };
 
   return userData;
@@ -120,6 +124,30 @@ export async function updateCurrentProject(
     id: data.id,
     currentProjectId: data.current_project_id,
   };
+}
+
+export async function updateUserTrial(
+  supabase: SupabaseClient,
+  startDate: Date,
+  endDate: Date
+) {
+  const userId = await getUserId(supabase);
+  const { error } = await supabase
+    .from("profiles")
+    .update({ trial_start_date: startDate, trial_end_date: endDate })
+    .eq("id", userId);
+  
+  if (error) handleError(error);
+
+  return await getCurrentUserInfo(supabase);
+}
+
+export async function isUserOnTrial(supabase: SupabaseClient): Promise<boolean> {
+  const user = await getCurrentUserInfo(supabase);
+
+  if (!user.trialStartDate || !user.trialEndDate) return false;
+  const now = new Date();
+  return now >= user.trialStartDate && now <= user.trialEndDate;
 }
 
 export async function hasPermission({

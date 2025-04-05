@@ -3,17 +3,20 @@ import { TrainingHistory } from "@/components/training-history";
 import { EnrolledTrainingsCard } from "@/components/enrolled-trainings-card";
 import { InvitationNotifications } from "@/components/invitation-notifications";
 import { Metadata } from "next";
-import { getEnrolledTrainingsAction } from "@/app/actions/enrollment-actions";
-import { checkCurrentUserInvitationsAction } from "@/app/actions/invitation-actions";
-
+import { getEnrolledTrainingsActionCached } from "@/app/actions/enrollment-actions";
+import { getInvitationsForUserAction } from "@/app/actions/invitation-actions";
+import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 export const metadata: Metadata = {
   title: "Home",
 };
 
 export default async function HomePage() {
+  const user = await getCurrentUserActionCached();
+  console.log(JSON.stringify(user, null, 2));
+
   const [trainings, invitations] = await Promise.all([
-    getEnrolledTrainingsAction(),
-    checkCurrentUserInvitationsAction(),
+    getEnrolledTrainingsActionCached(user),
+    getInvitationsForUserAction(user),
   ]);
 
   return (

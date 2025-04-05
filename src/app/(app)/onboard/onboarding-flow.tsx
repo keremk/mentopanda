@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Welcome } from "./steps/welcome";
@@ -11,9 +11,14 @@ import { Progress } from "./steps/progress";
 import { ApiKeySetup } from "./steps/api-key-setup";
 import { useRouter } from "next/navigation";
 import { setupProjectAction } from "@/app/actions/project-actions";
-import { updateProfileAction } from "@/app/actions/user-actions";
+import {
+  startTrialAction,
+  updateProfileAction,
+} from "@/app/actions/user-actions";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/data/user";
+import { Invitation } from "@/data/invitations";
+import { acceptInvitationAction } from "@/app/actions/invitation-actions";
 
 export type OnboardingData = {
   projectName: string;
@@ -35,9 +40,13 @@ type Step = (typeof STEPS)[number];
 
 type OnboardingFlowProps = {
   user: User;
+  invitations: Invitation[] | null;
 };
 
-export function OnboardingFlow({ user }: OnboardingFlowProps) {
+export function OnboardingFlow({ user, invitations }: OnboardingFlowProps) {
+  const isTrialUser =
+    invitations && invitations.length > 0 && invitations[0].isTrial;
+
   const [currentStep, setCurrentStep] = useState<Step>("Welcome");
   const [status, setStatus] = useState<string | null>(null);
   const [data, setData] = useState<OnboardingData>({
@@ -50,23 +59,43 @@ export function OnboardingFlow({ user }: OnboardingFlowProps) {
   const router = useRouter();
   const { toast } = useToast();
 
-  const currentStepIndex = STEPS.indexOf(currentStep);
+  // Set isApiKeyEntered to true for trial users
+  useEffect(() => {
+    if (isTrialUser) {
+      setData((prev) => ({ ...prev, isApiKeyEntered: true }));
+    }
+  }, [isTrialUser]);
+
+  // Get the sequence of steps for this user
+  const getStepSequence = () => {
+    if (isTrialUser) {
+      return STEPS.filter((step) => step !== "API Setup");
+    }
+    return [...STEPS];
+  };
+
+  const currentStepIndex = getStepSequence().indexOf(currentStep);
 
   async function goToNextStep() {
     if (currentStep === "Summary") {
       setCurrentStep("Progress");
       return;
     }
+
+    const steps = getStepSequence();
     const nextIndex = currentStepIndex + 1;
-    if (nextIndex < STEPS.length) {
-      setCurrentStep(STEPS[nextIndex]);
+
+    if (nextIndex < steps.length) {
+      setCurrentStep(steps[nextIndex]);
     }
   }
 
   function goToPreviousStep() {
+    const steps = getStepSequence();
     const previousIndex = currentStepIndex - 1;
+
     if (previousIndex >= 0) {
-      setCurrentStep(STEPS[previousIndex]);
+      setCurrentStep(steps[previousIndex]);
     }
   }
 
@@ -94,6 +123,21 @@ export function OnboardingFlow({ user }: OnboardingFlowProps) {
         copyStarterContent: data.copyStarterContent,
       });
 
+      if (invitations && invitations.length > 0 && invitations[0].isTrial) {
+        setStatus("Accepting trial invitation...");
+        try {
+          await startTrialAction(invitations[0]);
+        } catch (error) {
+          console.error("Error starting trial:", error);
+          toast({
+            title: "Error starting trial",
+            description: "Please try again.",
+          });
+        }
+
+        await acceptInvitationAction(invitations[0]);
+      }
+
       router.push("/home");
     } catch (error) {
       console.log("Setup failed:", error);
@@ -105,6 +149,9 @@ export function OnboardingFlow({ user }: OnboardingFlowProps) {
       setStatus("Setup failed. Please try again.");
     }
   }
+
+  // Get current steps to determine "Next" button visibility
+  const currentSteps = getStepSequence();
 
   return (
     <div className="container max-w-2xl py-8">
@@ -130,7 +177,7 @@ export function OnboardingFlow({ user }: OnboardingFlowProps) {
               Back
             </Button>
           )}
-          {currentStepIndex < STEPS.length - 2 && (
+          {currentStepIndex < currentSteps.length - 2 && (
             <Button
               className="ml-auto bg-brand text-brand-foreground hover:bg-brand-hover"
               onClick={goToNextStep}

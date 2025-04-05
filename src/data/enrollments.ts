@@ -1,7 +1,8 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
 import { TrainingSummary } from "./trainings";
-import { getUserId, getCurrentUserInfo } from "./user";
+import { getUserId } from "./user";
+import { User } from "./user";
 export interface Enrollment {
   id: number;
   trainingTitle: string;
@@ -12,9 +13,10 @@ export interface Enrollment {
 }
 
 export async function getEnrolledTrainings(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  user: User
 ): Promise<TrainingSummary[]> {
-  const user = await getCurrentUserInfo(supabase);
+  // const user = await getCurrentUserInfo(supabase);
 
   const { data, error } = await supabase
     .from("enrollments")

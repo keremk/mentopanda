@@ -5,9 +5,11 @@ import {
   getCurrentUserInfo,
   updateUserProfile,
   updateUserAvatar,
+  updateUserTrial,
 } from "@/data/user";
 import { z } from "zod";
 import { cache } from "react";
+import { Invitation } from "@/data/invitations";
 const updateProfileSchema = z.object({
   displayName: z.string().min(2).max(50),
 });
@@ -61,4 +63,21 @@ export async function updateAvatarAction(data: { avatarUrl: string }) {
     }
     return { success: false, error: "Failed to update avatar" };
   }
+}
+
+export async function startTrialAction(invitation: Invitation) {
+  if (!invitation.isTrial) {
+    throw new Error("Invitation is not a trial");
+  }
+
+  const supabase = await createClient();
+  const user = await getCurrentUserInfo(supabase);
+  if (user.trialStartDate || user.trialEndDate) {
+    throw new Error("User is already on a trial");
+  }
+
+  const trialLengthInDays = 30;
+  const startDate = new Date();
+  const endDate = new Date(startDate.getTime() + trialLengthInDays * 24 * 60 * 60 * 1000);
+  return await updateUserTrial(supabase, startDate, endDate);
 }

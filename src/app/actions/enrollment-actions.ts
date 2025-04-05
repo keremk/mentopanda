@@ -8,15 +8,16 @@ import {
 } from "@/data/enrollments";
 import { getEnrolledTrainings } from "@/data/enrollments";
 import { cache } from "react";
+import { User } from "@/data/user";
 
-export async function getEnrolledTrainingsAction() {
+export async function getEnrolledTrainingsAction(user: User) {
   const supabase = await createClient();
-  return await getEnrolledTrainings(supabase);
+  return await getEnrolledTrainings(supabase, user);
 }
 
-export const getEnrolledTrainingsActionCached = cache(async () => {
+export const getEnrolledTrainingsActionCached = cache(async (user: User) => {
   const supabase = await createClient();
-  return await getEnrolledTrainings(supabase);
+  return await getEnrolledTrainings(supabase, user);
 });
 
 export async function isEnrolledAction(trainingId: number) {

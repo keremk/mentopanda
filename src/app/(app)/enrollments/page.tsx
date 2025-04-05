@@ -1,13 +1,14 @@
 import { Metadata } from "next";
 import { getEnrolledTrainingsActionCached } from "@/app/actions/enrollment-actions";
 import { redirect } from "next/navigation";
-
+import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 export const metadata: Metadata = {
   title: "Enrollments",
 };
 
 export default async function TrainingPage() {
-  const trainings = await getEnrolledTrainingsActionCached();
+  const user = await getCurrentUserActionCached();
+  const trainings = await getEnrolledTrainingsActionCached(user);
 
   // If there are no trainings at all, show the default message
   if (!trainings || trainings.length === 0) {
