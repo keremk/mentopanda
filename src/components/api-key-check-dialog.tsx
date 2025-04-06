@@ -12,28 +12,38 @@ import {
 } from "@/components/ui/alert-dialog";
 import Link from "next/link";
 import { hasStoredApiKey } from "@/lib/apikey";
+import { User } from "@/data/user";
 
 type ApiKeyCheckDialogProps = {
   isOpenAIModule: boolean;
-  isFreePlan: boolean;
+  user: User;
 };
 
 export function ApiKeyCheckDialog({
   isOpenAIModule,
-  isFreePlan,
+  user,
 }: ApiKeyCheckDialogProps) {
   const [showDialog, setShowDialog] = useState(false);
+  const isFreePlan = user.pricingPlan === "free";
 
   useEffect(() => {
     async function checkApiKey() {
-      if (isOpenAIModule && isFreePlan) {
+      // Only check for API key if it's an OpenAI module and user is on free plan with no active trial
+      if (isOpenAIModule && isFreePlan && !hasActiveTrial(user)) {
         const hasApiKey = await hasStoredApiKey();
         setShowDialog(!hasApiKey);
       }
     }
 
     checkApiKey();
-  }, [isOpenAIModule, isFreePlan]);
+  }, [isOpenAIModule, user, isFreePlan]);
+
+  // Check if user has an active trial
+  function hasActiveTrial(user: User): boolean {
+    if (!user.trialStartDate || !user.trialEndDate) return false;
+    const now = new Date();
+    return now >= user.trialStartDate && now <= user.trialEndDate;
+  }
 
   return showDialog ? (
     <AlertDialog open={showDialog}>

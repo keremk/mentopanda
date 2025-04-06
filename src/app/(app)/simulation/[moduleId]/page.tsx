@@ -40,13 +40,12 @@ export default async function Page(props: Props) {
 
   const isOpenAIModule =
     currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI;
-  const isFreePlan = currentUser.pricingPlan === "free";
 
   return (
     <div className="container mx-auto w-full">
       <ApiKeyCheckDialog
         isOpenAIModule={isOpenAIModule}
-        isFreePlan={isFreePlan}
+        user={currentUser}
       />
 
       {isOpenAIModule && (
