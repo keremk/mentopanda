@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EnrollmentButton } from "@/components/enrollment-button";
-
+import { useTheme } from "next-themes";
 interface TrainingCardProps {
   id: number;
   title: string;
@@ -29,7 +29,8 @@ export function TrainingCard({
   priority = false,
 }: TrainingCardProps) {
   const router = useRouter();
-  const fallbackImage = "/placeholder-training.svg?height=200&width=300";
+  const { resolvedTheme } = useTheme();
+  const fallbackImage = resolvedTheme === "dark" ? "/placeholder-training-dark.svg?height=200&width=300" : "/placeholder-training.svg?height=200&width=300";
 
   const navigateToDetails = () => {
     router.push(`/explore/${id}`);

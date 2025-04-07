@@ -19,6 +19,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
+import { useTheme } from "next-themes";
 
 interface TrainingDetailsProps {
   training: TrainingWithProgress;
@@ -33,6 +34,12 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
       .id;
   };
 
+  const { resolvedTheme } = useTheme();
+  const fallbackImage =
+    resolvedTheme === "dark"
+      ? "/placeholder-training-dark.svg"
+      : "/placeholder-training.svg";
+
   const randomModuleId = getRandomModuleId();
 
   return (
@@ -40,7 +47,7 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
       <div className="flex flex-row items-start space-x-4">
         <div className="flex flex-col space-y-4">
           <Image
-            src={training.imageUrl || "/placeholder-training.svg"}
+            src={training.imageUrl || fallbackImage}
             alt={`${training.title} cover`}
             width={200}
             height={200}

@@ -296,14 +296,14 @@ export async function getTrainingsWithEnrollment(
 
 export type BaseTrainingInput = {
   title: string;
-  tagline: string;
-  description: string;
-  imageUrl: string;
-  previewUrl: string | null;
 };
 
 export type UpdateTrainingInput = BaseTrainingInput & {
   id: number;
+  tagline: string;
+  description: string;
+  imageUrl: string;
+  previewUrl: string | null;
 };
 
 export async function updateTraining(
@@ -351,10 +351,6 @@ export async function createTraining(
     .from("trainings")
     .insert({
       title: training.title,
-      tagline: training.tagline,
-      description: training.description,
-      image_url: training.imageUrl,
-      preview_url: training.previewUrl,
       created_by: userId,
       project_id: currentProject.id,
     })

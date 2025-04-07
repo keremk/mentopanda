@@ -42,10 +42,6 @@ export async function createTrainingAction() {
   const supabase = await createClient();
   const training = await createTraining(supabase, {
     title: "New Training",
-    tagline: "Training description goes here",
-    description: "",
-    imageUrl: "/course-images/meetings.jpg", // default image
-    previewUrl: null,
   });
 
   redirect(`/explore/${training.id}/edit`);

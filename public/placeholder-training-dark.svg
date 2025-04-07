@@ -5,51 +5,50 @@
   
   <!-- Subtle dot grid pattern -->
   <pattern id="dots" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse">
-    <circle cx="2" cy="2" r="0.7" fill="#e4e4e7" opacity="0.5"/>
+    <circle cx="2" cy="2" r="0.7" fill="#1e293b" opacity="0.4"/>
   </pattern>
   <rect width="200" height="200" fill="url(#dots)"/>
 
   <!-- Center decorative elements -->
   <g transform="translate(100 100)">
     <!-- Outer glow circle -->
-    <circle cx="0" cy="0" r="48" fill="url(#glowGradient)" opacity="0.12"/>
+    <circle cx="0" cy="0" r="48" fill="url(#glowGradient)" opacity="0.15"/>
     
     <!-- Inner circle with stroke -->
-    <circle cx="0" cy="0" r="40" fill="url(#circleGradient)" opacity="0.08"/>
-    <circle cx="0" cy="0" r="40" stroke="url(#circleStroke)" stroke-width="1.5" opacity="0.15"/>
+    <circle cx="0" cy="0" r="40" fill="url(#circleGradient)" opacity="0.1"/>
+    <circle cx="0" cy="0" r="40" stroke="url(#circleStroke)" stroke-width="1.5" opacity="0.2"/>
     
     <!-- Graduation cap icon -->
     <path d="M-20 -5L0 -15L20 -5L0 5L-20 -5Z
              M0 5V20
              M-20 -5V10L0 20L20 10V-5" 
-          stroke="#18181b" 
+          stroke="#e2e8f0" 
           stroke-width="2"
           stroke-linecap="round" 
           stroke-linejoin="round"
           fill="none"/>
   </g>
   
-
   <!-- Gradient definitions -->
   <defs>
     <linearGradient id="backgroundGradient" x1="0" y1="0" x2="200" y2="200">
-      <stop offset="0%" stop-color="#fafafa"/>
-      <stop offset="100%" stop-color="#f4f4f5"/>
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#030712"/>
     </linearGradient>
     
     <radialGradient id="glowGradient" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0%" stop-color="#71717a" stop-opacity="0.2"/>
-      <stop offset="100%" stop-color="#71717a" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#94a3b8" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#94a3b8" stop-opacity="0"/>
     </radialGradient>
     
     <radialGradient id="circleGradient" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0%" stop-color="#71717a"/>
-      <stop offset="100%" stop-color="#71717a" stop-opacity="0.5"/>
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#94a3b8" stop-opacity="0.5"/>
     </radialGradient>
     
     <linearGradient id="circleStroke" x1="0" y1="0" x2="80" y2="80">
-      <stop offset="0%" stop-color="#71717a"/>
-      <stop offset="100%" stop-color="#71717a" stop-opacity="0.3"/>
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#94a3b8" stop-opacity="0.3"/>
     </linearGradient>
   </defs>
 </svg> 

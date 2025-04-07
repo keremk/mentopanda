@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { EnrollmentButton } from "@/components/enrollment-button";
 import { getTrainingByIdAction } from "@/app/actions/trainingActions";
 import { Pencil } from "lucide-react";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
+import { ThemedImage } from "@/components/themed-image";
 
 function YouTubeEmbed({ url }: { url: string }) {
   const videoId = url.split("v=")[1];
@@ -58,18 +58,19 @@ export default async function TrainingDetailsPage(props: {
         <div className="flex-1">
           <div className="md:float-right md:ml-8 md:mb-4 w-full md:w-[45%] mb-6">
             <div className="aspect-video relative">
-              <Image
-                src={training.imageUrl}
+              <ThemedImage
+                lightSrc={training.imageUrl || "/placeholder-training.svg"}
+                darkSrc={training.imageUrl || "/placeholder-training-dark.svg"}
                 alt={training.title}
                 fill
-                className="rounded-lg object-cover"
+                className="rounded-lg"
                 sizes="(max-width: 768px) 100vw, 45vw"
               />
             </div>
           </div>
           <h1 className="text-3xl font-bold mb-1">{training.title}</h1>
-          <p className="text-xl text-gray-600 mb-6">{training.tagline}</p>
-          <MemoizedMarkdown content={training.description} />
+          <p className="text-xl text-gray-600 mb-6">{training.tagline || ""}</p>
+          <MemoizedMarkdown content={training.description || ""} />
         </div>
       </div>
 

@@ -66,7 +66,7 @@ export function EditTrainingForm() {
             </label>
             <AIFocusInput
               name="tagline"
-              value={training.tagline}
+              value={training.tagline || ""}
               onChange={(e) => updateTrainingField("tagline", e.target.value)}
               placeholder="Enter catchy, short tagline"
               className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50"
