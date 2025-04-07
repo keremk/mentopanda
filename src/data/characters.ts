@@ -11,17 +11,13 @@ export type CharacterSummary = {
 };
 
 export async function getCharacters(
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
+  projectId: number
 ): Promise<CharacterSummary[]> {  
-  const { currentProject } = await getCurrentUserInfo(supabase);
-
-  if (!currentProject)
-    throw new Error("User must belong to a project to get characters");
-
   const { data, error } = await supabase
     .from("characters")
     .select("id, name, avatar_url, ai_model")
-    .eq("project_id", currentProject.id)
+    .eq("project_id", projectId)
     .order("name");
 
   if (error) handleError(error);

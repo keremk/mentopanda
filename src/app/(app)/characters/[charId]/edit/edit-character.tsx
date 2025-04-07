@@ -20,8 +20,14 @@ import {
 } from "@/components/ui/tooltip";
 import { AIFocusTextarea } from "@/components/ai-focus-textarea";
 import { AIFocusInput } from "@/components/ai-focus-input";
+import { ApiKeyCheckDialog } from "@/components/api-key-check-dialog";
+import { User } from "@/data/user";
 
-export function EditCharacterForm() {
+type EditCharacterFormProps = {
+  user: User;
+};
+
+export function EditCharacterForm({ user }: EditCharacterFormProps) {
   const { toast } = useToast();
   const { character, updateCharacterField, saveStatus, saveCharacter } =
     useCharacterDetails();
@@ -111,6 +117,7 @@ export function EditCharacterForm() {
       onApplyContent={aiPaneContext.onApplyContent}
     >
       <div className="h-full space-y-6 px-6">
+        <ApiKeyCheckDialog isOpenAIModule={true} user={user} />
         <div className="absolute top-0 right-0 p-4 z-10 flex items-center gap-3">
           {saveStatus === "saving" && (
             <span className="text-sm text-muted-foreground">Saving...</span>

@@ -6,10 +6,10 @@ export default async function CharactersLayout({
   children,
 }: {
   children: React.ReactNode;
-}) {
-  const [characters, user] = await Promise.all([
-    getCharactersActionCached(),
-    getCurrentUserAction(),
+  }) {
+  const user  = await getCurrentUserAction();
+  const [characters ] = await Promise.all([
+    getCharactersActionCached(user.currentProject.id),
   ]);
 
   const canManageCharacters = user.permissions.includes("training.manage");

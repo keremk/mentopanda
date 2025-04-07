@@ -19,14 +19,9 @@ import {
 } from "@/data/characters";
 import { cache } from "react";
 
-export async function getCharactersAction() {
+export const getCharactersActionCached = cache(async (projectId: number) => {
   const supabase = await createClient();
-  return await getCharacters(supabase);
-}
-
-export const getCharactersActionCached = cache(async () => {
-  const supabase = await createClient();
-  return await getCharacters(supabase);
+  return await getCharacters(supabase, projectId);
 });
 
 export async function getCharacterDetailsAction(characterId: string) {

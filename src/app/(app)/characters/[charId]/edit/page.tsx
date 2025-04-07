@@ -3,6 +3,7 @@ import { getCharacterDetailsAction } from "@/app/actions/character-actions";
 import { EditCharacterForm } from "./edit-character";
 import { Metadata } from "next";
 import { CharacterDetailsProvider } from "@/contexts/character-details-context";
+import { getCurrentUserAction } from "@/app/actions/user-actions";
 
 export const metadata: Metadata = {
   title: "Characters Catalog",
@@ -12,7 +13,10 @@ export default async function EditCharacterPage(props: {
   params: Promise<{ charId: string }>;
 }) {
   const params = await props.params;
-  const character = await getCharacterDetailsAction(params.charId);
+  const [character, user] = await Promise.all([
+    getCharacterDetailsAction(params.charId),
+    getCurrentUserAction(),
+  ]);
 
   if (!character) {
     notFound();
@@ -20,7 +24,7 @@ export default async function EditCharacterPage(props: {
 
   return (
     <CharacterDetailsProvider initialCharacter={character}>
-      <EditCharacterForm />
+      <EditCharacterForm user={user} />
     </CharacterDetailsProvider>
   );
 }

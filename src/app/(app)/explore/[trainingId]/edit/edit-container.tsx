@@ -30,8 +30,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ApiKeyCheckDialog } from "@/components/api-key-check-dialog";
+import { User } from "@/data/user";
 
-export function EditContainer() {
+type EditContainerProps = {
+  user: User;
+};
+
+export function EditContainer({ user }: EditContainerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isAIPaneOpen, setIsAIPaneOpen] = useState(false);
@@ -52,9 +58,6 @@ export function EditContainer() {
       setModuleTab(moduleTabFromUrl);
     }
   }, [searchParams]);
-
-  // Get the active tab from URL or default to "details"
-  // const activeTab = searchParams.get("tab") || "details";
 
   // Access all contexts for saving
   const trainingDetails = useTrainingDetails();
@@ -250,6 +253,7 @@ export function EditContainer() {
       onApplyContent={aiPaneContext.onApplyContent}
     >
       <div className="container h-full px-4 flex flex-col min-h-[calc(100vh-2rem)] pb-4">
+        <ApiKeyCheckDialog isOpenAIModule={true} user={user} />
         <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex gap-3">
           <AlertDialog>
             <AlertDialogTrigger asChild>
