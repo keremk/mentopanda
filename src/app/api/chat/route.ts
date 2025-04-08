@@ -31,7 +31,6 @@ Character Description: ${characterContext?.description}
 Character AI Meta Prompt: ${characterContext?.aiDescription}
   `;
 
-  console.log(characterPrompt);
   return characterPrompt;
 };
 
@@ -55,7 +54,6 @@ Module Moderator: ${trainingContext?.module.moderator}
 Module CharacterPrompts: ${trainingContext?.characters.map((character) => `Character Name: ${character.name}\nCharacter Description: ${character.description}\nCharacter AI Meta Prompt: ${character.aiDescription} \n`).join("\n")}  
   `;
 
-  console.log(modulePrompt);
   return modulePrompt;
 };
 
@@ -76,7 +74,6 @@ Training Description: ${trainingContext?.training.description}
 
   `;
 
-  console.log(trainingPrompt);
   return trainingPrompt;
 };
 
@@ -123,7 +120,6 @@ export async function POST(req: Request) {
   let characterContext: CharacterContextForAI | null = null;
   let trainingContext: TrainingContextData | null = null;
 
-  console.log(`contextData: ${JSON.stringify(contextData, null, 2)}`);
   if (contextType && contextType === "character") {
     const characterId = contextData?.characterId
       ? parseInt(contextData.characterId)
@@ -131,8 +127,6 @@ export async function POST(req: Request) {
     characterContext = characterId
       ? await getAIContextDataForCharacterAction(characterId)
       : null;
-    console.log("characterContext:");
-    console.log(JSON.stringify(characterContext, null, 2));
   } else {
     const trainingId = contextData?.trainingId
       ? parseInt(contextData.trainingId)
@@ -143,8 +137,6 @@ export async function POST(req: Request) {
     trainingContext = trainingId
       ? await getAIContextDataForTrainingAction(trainingId, moduleId)
       : null;
-    console.log("trainingContext:");
-    console.log(JSON.stringify(trainingContext, null, 2));
   }
 
   const systemPrompt = await generateSystemPrompt(
@@ -153,7 +145,6 @@ export async function POST(req: Request) {
     contextType,
     selectedOption
   );
-
 
   // Create a configured OpenAI client instance
   const openai = createOpenAI({
@@ -165,7 +156,22 @@ export async function POST(req: Request) {
     system: systemPrompt,
     messages,
     temperature: 0.3,
+    onError: (error) => {
+      console.error(error);
+    },
+    onFinish: (result) => {
+      const usage = result.usage;
+      console.log(usage.totalTokens);
+      console.log(usage.promptTokens);
+      console.log(usage.completionTokens);
+      // console.log(JSON.stringify(result, null, 2));
+    },
   });
 
-  return result.toDataStreamResponse();
+  return result.toDataStreamResponse({
+    getErrorMessage: (error: unknown) => {
+      console.error("Stream error:", error);
+      return `${error}`;
+    },
+  });
 }

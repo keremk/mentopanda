@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 import { Button } from "./ui/button";
 import { useAIPane } from "@/contexts/ai-pane-context";
+import { AIPaneStatusIndicator } from "./ai-pane-status-indicator";
 
 type AIPaneProps = {
   isOpen: boolean;
@@ -64,6 +65,7 @@ export function AIPane({ isOpen }: AIPaneProps) {
           <AIPaneResponses />
         </div>
         <div className="shrink-0">
+          <AIPaneStatusIndicator />
           <AIPanePromptBox />
         </div>
       </div>

@@ -56,6 +56,7 @@ type AIPaneContextType = {
   clearMessages: () => void;
   selectedOption?: SelectedOption;
   setSelectedOption: (option: SelectedOption | undefined) => void;
+  error?: Error;
 };
 
 const AIPaneContext = createContext<AIPaneContextType | undefined>(undefined);
@@ -84,6 +85,7 @@ export function AIPaneProvider({
     isLoading,
     setMessages,
     setInput,
+    error,
   } = useChat({
     api: "/api/chat",
     body: {
@@ -152,6 +154,7 @@ export function AIPaneProvider({
     clearMessages,
     selectedOption,
     setSelectedOption,
+    error,
   };
 
   return (
