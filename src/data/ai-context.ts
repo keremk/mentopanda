@@ -43,13 +43,13 @@ export async function getAIContextDataForTraining(
       title,
       tagline,
       description,
-      modules!inner (
+      modules!left (
         title,
         instructions,
         scenario_prompt,
         assessment_prompt,
         moderator_prompt,
-        modules_characters!inner (
+        modules_characters!left (
           characters (
             id, 
             name,
@@ -60,8 +60,8 @@ export async function getAIContextDataForTraining(
       )
       `
     )
-    .eq("id", trainingId)
-  
+    .eq("id", trainingId);
+
   if (moduleId) {
     query.eq("modules.id", moduleId);
   }
@@ -88,18 +88,27 @@ export async function getAIContextDataForTraining(
       tagline: typedTraining.tagline ?? "",
       description: typedTraining.description ?? "",
     },
-    module: {
-      title: typedTraining.modules[0].title,
-      instructions: typedTraining.modules[0].instructions,
-      scenario: typedTraining.modules[0].scenario_prompt,
-      assessment: typedTraining.modules[0].assessment_prompt,
-      moderator: typedTraining.modules[0].moderator_prompt,
-    },
-    characters: typedTraining.modules[0].modules_characters.map((mc) => ({
-      name: mc.characters.name,
-      description: mc.characters.description,
-      aiDescription: mc.characters.ai_description,
-    })),
+    module: typedTraining.modules?.[0]
+      ? {
+          title: typedTraining.modules[0].title,
+          instructions: typedTraining.modules[0].instructions,
+          scenario: typedTraining.modules[0].scenario_prompt,
+          assessment: typedTraining.modules[0].assessment_prompt,
+          moderator: typedTraining.modules[0].moderator_prompt,
+        }
+      : {
+          title: "",
+          instructions: null,
+          scenario: "",
+          assessment: "",
+          moderator: null,
+        },
+    characters:
+      typedTraining.modules?.[0]?.modules_characters?.map((mc) => ({
+        name: mc.characters.name,
+        description: mc.characters.description,
+        aiDescription: mc.characters.ai_description,
+      })) ?? [],
   };
 }
 

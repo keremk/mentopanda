@@ -123,6 +123,7 @@ export async function POST(req: Request) {
   let characterContext: CharacterContextForAI | null = null;
   let trainingContext: TrainingContextData | null = null;
 
+  console.log(`contextData: ${JSON.stringify(contextData, null, 2)}`);
   if (contextType && contextType === "character") {
     const characterId = contextData?.characterId
       ? parseInt(contextData.characterId)
@@ -130,6 +131,8 @@ export async function POST(req: Request) {
     characterContext = characterId
       ? await getAIContextDataForCharacterAction(characterId)
       : null;
+    console.log("characterContext:");
+    console.log(JSON.stringify(characterContext, null, 2));
   } else {
     const trainingId = contextData?.trainingId
       ? parseInt(contextData.trainingId)
@@ -140,6 +143,8 @@ export async function POST(req: Request) {
     trainingContext = trainingId
       ? await getAIContextDataForTrainingAction(trainingId, moduleId)
       : null;
+    console.log("trainingContext:");
+    console.log(JSON.stringify(trainingContext, null, 2));
   }
 
   const systemPrompt = await generateSystemPrompt(
