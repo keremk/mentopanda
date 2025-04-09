@@ -75,7 +75,9 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
         </div>
         <div>
           <h1 className="text-2xl font-bold">{training.title}</h1>
-          <p className="my-4 text-muted-foreground">{training.description}</p>
+          <div className="my-4 text-muted-foreground">
+            <MemoizedMarkdown content={training.description} />
+          </div>
         </div>
       </div>
       <div>
