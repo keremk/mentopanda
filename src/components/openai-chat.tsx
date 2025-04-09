@@ -26,6 +26,7 @@ import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { TranscriptDisplay } from "@/components/transcript-display";
 import { useOpenAIRealtime } from "@/hooks/use-openai-realtime";
 import { useTranscript } from "@/contexts/transcript";
+import { toast } from "@/hooks/use-toast";
 
 type ChatProps = {
   module: Module;
@@ -98,7 +99,16 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
       setShowEndDialog(true);
     } else {
       const micStream = await startMicrophone();
-      await connect(micStream);
+      try {
+        await connect(micStream);
+      } catch (error) {
+        console.log("Failed to connect to OpenAI:", error);
+        toast({
+          title: `Failed to connect to OpenAI, make sure your API key is correct or you have enough credits`,
+          description: "Please try again.",
+        });
+        return;
+      }
 
       const newHistoryEntryId = await createHistoryEntryAction(module.id);
       setHistoryEntryId(newHistoryEntryId);
@@ -120,13 +130,26 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   };
 
   const handleEndAndSave = async () => {
-    disconnect();
-    stopMicrophone();
-    setIsConversationActive(false);
-    await saveAndComplete();
-    setShowEndDialog(false);
-    if (historyEntryId) {
-      router.push(`/assessments/${historyEntryId}`);
+    try {
+      disconnect();
+      stopMicrophone();
+      setIsConversationActive(false);
+      await saveAndComplete();
+      setShowEndDialog(false);
+      if (historyEntryId) {
+        router.push(`/assessments/${historyEntryId}`);
+      }
+    } catch (error) {
+      console.error("Failed to save and complete:", error);
+      toast({
+        title: `Failed to save and complete, make sure you have enough credits`,
+        description: "Please try again.",
+      });
+      // Still dismiss dialog and redirect even if save fails
+      setShowEndDialog(false);
+      if (historyEntryId) {
+        router.push(`/assessments/${historyEntryId}`);
+      }
     }
   };
 

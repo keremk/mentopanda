@@ -122,16 +122,28 @@ export async function updateHistoryEntry(
 ): Promise<void> {
   const userId = await getUserId(supabase);
 
+  // Build update object with only defined fields
+  const updateData: Record<string, unknown> = {};
+  if (updates.recordingUrl !== undefined)
+    updateData.recording_url = updates.recordingUrl;
+  if (updates.transcriptText !== undefined)
+    updateData.transcript_text = updates.transcriptText;
+  if (updates.transcript !== undefined)
+    updateData.transcript_json = updates.transcript;
+  if (updates.assessmentText !== undefined)
+    updateData.assessment_text = updates.assessmentText;
+  if (updates.assessmentCreated !== undefined)
+    updateData.assessment_created = updates.assessmentCreated;
+  if (updates.completedAt !== undefined) {
+    if (!(updates.completedAt instanceof Date)) {
+      throw new Error("completedAt must be a valid Date object");
+    }
+    updateData.completed_at = updates.completedAt.toISOString();
+  }
+
   const { error } = await supabase
     .from("history")
-    .update({
-      recording_url: updates.recordingUrl,
-      transcript_text: updates.transcriptText,
-      transcript_json: updates.transcript,
-      assessment_text: updates.assessmentText,
-      assessment_created: updates.assessmentCreated,
-      completed_at: updates.completedAt?.toISOString(),
-    })
+    .update(updateData)
     .eq("id", id)
     .eq("user_id", userId); // Security: ensure user owns this entry
 

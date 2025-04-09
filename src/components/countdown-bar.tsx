@@ -19,37 +19,45 @@ export function CountdownBar({
 }: CountdownBarProps) {
   const [timeLeft, setTimeLeft] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   // Reset timer when isActive changes
   useEffect(() => {
-    if (isActive && !hasStarted) {
+    if (isActive && !hasStarted && !isCompleted) {
       setTimeLeft(initialMinutes * 60);
       setHasStarted(true);
     } else if (!isActive) {
       setTimeLeft(0);
       setHasStarted(false);
+      setIsCompleted(false);
     }
-  }, [isActive, initialMinutes, hasStarted]);
+  }, [isActive, initialMinutes, hasStarted, isCompleted]);
 
   // Handle countdown
   useEffect(() => {
-    if (!isActive || !hasStarted || timeLeft <= 0) return;
+    if (!isActive || !hasStarted || timeLeft <= 0 || isCompleted) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         const newTime = prev - 1;
         if (newTime === 0) {
-          onCountdownComplete();
+          setIsCompleted(true);
+          // Use setTimeout to ensure state updates are completed
+          setTimeout(() => {
+            onCountdownComplete();
+          }, 0);
         }
         return newTime;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, onCountdownComplete, isActive, hasStarted]);
+  }, [timeLeft, onCountdownComplete, isActive, hasStarted, isCompleted]);
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
+
+  if (isCompleted) return null;
 
   return (
     <div

@@ -30,28 +30,21 @@ export function useTranscriptSave({
       // Only save if transcript has changed
       if (formattedTranscript === lastSavedTranscript.current) {
         if (isComplete) {
-          try {
-            await updateHistoryEntryAction({
-              id: historyEntryId,
-              completedAt: new Date(),
-            });
-          } catch (error) {
-            console.error("Failed to save the completed transcript:", error);
-          }
+          await updateHistoryEntryAction({
+            id: historyEntryId,
+            completedAt: new Date(),
+          });
         }
         return;
       }
-      try {
-        await updateHistoryEntryAction({
-          id: historyEntryId,
-          transcript: transcriptBuffer,
-          transcriptText: formattedTranscript,
-          ...(isComplete ? { completedAt: new Date() } : {}),
-        });
-        lastSavedTranscript.current = formattedTranscript;
-      } catch (error) {
-        console.error("Failed to save transcript:", error);
-      }
+
+      await updateHistoryEntryAction({
+        id: historyEntryId,
+        transcript: transcriptBuffer,
+        transcriptText: formattedTranscript,
+        ...(isComplete ? { completedAt: new Date() } : {}),
+      });
+      lastSavedTranscript.current = formattedTranscript;
     },
     [historyEntryId, transcriptBuffer, formatTranscript]
   );
