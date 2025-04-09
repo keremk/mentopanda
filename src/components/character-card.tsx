@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getInitials } from "@/lib/utils";
 interface CharacterCardProps {
   name: string;
-  avatarUrl: string;
+  avatarUrl?: string;
   children: ReactNode;
   isActive?: boolean;
   isInConversation: boolean;

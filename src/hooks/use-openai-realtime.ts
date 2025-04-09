@@ -54,7 +54,7 @@ export function useOpenAIRealtime({
   voice,
   audioRef,
   userName,
-  agentName,  
+  agentName,
 }: OpenAIRealtimeProps) {
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
@@ -92,7 +92,7 @@ export function useOpenAIRealtime({
     }
   };
   /* eslint-enable @typescript-eslint/no-explicit-any */
-  
+
   const updateSession = () => {
     sendClientEvent({ type: "input_audio_buffer.clear" });
 
@@ -138,9 +138,7 @@ export function useOpenAIRealtime({
       content_index: 0,
       audio_end_ms: Date.now() - mostRecentAgentMessage.createdAtMs,
     });
-    sendClientEvent(
-      { type: "response.cancel" },
-    );
+    sendClientEvent({ type: "response.cancel" });
   };
 
   const handleMessage = (event: MessageEvent) => {
@@ -206,7 +204,7 @@ export function useOpenAIRealtime({
           }
           break;
         }
-          
+
         case "response.output_item.done": {
           const entryId = serverEvent.item?.id;
           if (entryId) {

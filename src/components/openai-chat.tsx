@@ -2,7 +2,7 @@
 
 import { Module } from "@/data/modules";
 import { User } from "@/data/user";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useCallback, useMemo } from "react";
 import { useMicrophone } from "@/hooks/use-microphone";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -27,6 +27,7 @@ import { TranscriptDisplay } from "@/components/transcript-display";
 import { useOpenAIRealtime } from "@/hooks/use-openai-realtime";
 import { useTranscript } from "@/contexts/transcript";
 import { toast } from "@/hooks/use-toast";
+import { TranscriptProvider } from "@/contexts/transcript";
 
 type ChatProps = {
   module: Module;
@@ -60,10 +61,22 @@ function createPrompt(modulePrompt: ModulePrompt) {
 }
 
 export default function OpenAIChat({ module, currentUser }: ChatProps) {
+  return (
+    <TranscriptProvider>
+      <OpenAIChatContent module={module} currentUser={currentUser} />
+    </TranscriptProvider>
+  );
+}
+
+function OpenAIChatContent({ module, currentUser }: ChatProps) {
   const audioRef = useRef<HTMLAudioElement>(
     null
   ) as React.RefObject<HTMLAudioElement>;
-  const [isConversationActive, setIsConversationActive] = useState(false);
+  const [chatState, setChatState] = useState({
+    isConversationActive: false,
+    isTimeout: false,
+    showEndDialog: false,
+  });
   const [historyEntryId, setHistoryEntryId] = useState<number>();
   const { transcriptEntries, clearTranscript } = useTranscript();
   const { saveAndComplete } = useTranscriptSave({
@@ -71,9 +84,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
     transcriptBuffer: transcriptEntries,
     saveInterval: 20000,
   });
-  const [showEndDialog, setShowEndDialog] = useState(false);
   const router = useRouter();
-  const [isTimeout, setIsTimeout] = useState(false);
   const HARD_TIMEOUT_MINUTES = process.env.NEXT_PUBLIC_CHAT_HARD_TIMEOUT_MINUTES
     ? parseInt(process.env.NEXT_PUBLIC_CHAT_HARD_TIMEOUT_MINUTES)
     : 2;
@@ -94,9 +105,9 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
     agentName: module.modulePrompt.characters[0]?.name || "agent",
   });
 
-  const handleToggleConversation = async () => {
-    if (isConversationActive) {
-      setShowEndDialog(true);
+  const handleToggleConversation = useCallback(async () => {
+    if (chatState.isConversationActive) {
+      setChatState((prev) => ({ ...prev, showEndDialog: true }));
     } else {
       const micStream = await startMicrophone();
       try {
@@ -113,11 +124,22 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
       const newHistoryEntryId = await createHistoryEntryAction(module.id);
       setHistoryEntryId(newHistoryEntryId);
 
-      setIsConversationActive(true);
+      setChatState((prev) => ({ ...prev, isConversationActive: true }));
     }
-  };
+  }, [chatState.isConversationActive, startMicrophone, connect, module.id]);
 
-  const handleEndWithoutSaving = async () => {
+  const handleCountdownComplete = useCallback(() => {
+    disconnect();
+    stopMicrophone();
+    setChatState((prev) => ({
+      ...prev,
+      isConversationActive: false,
+      isTimeout: true,
+      showEndDialog: true,
+    }));
+  }, [disconnect, stopMicrophone]);
+
+  const handleEndWithoutSaving = useCallback(async () => {
     disconnect();
     stopMicrophone();
     if (historyEntryId) {
@@ -125,52 +147,60 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
       setHistoryEntryId(undefined);
     }
     clearTranscript();
-    setIsConversationActive(false);
-    setShowEndDialog(false);
-  };
+    setChatState((prev) => ({
+      ...prev,
+      isConversationActive: false,
+      isTimeout: false,
+      showEndDialog: false,
+    }));
+  }, [disconnect, stopMicrophone, historyEntryId, clearTranscript]);
 
-  const handleEndAndSave = async () => {
+  const handleEndAndSave = useCallback(async () => {
     try {
       disconnect();
       stopMicrophone();
-      setIsConversationActive(false);
       await saveAndComplete();
-      setShowEndDialog(false);
+      setChatState((prev) => ({
+        ...prev,
+        isConversationActive: false,
+        isTimeout: false,
+        showEndDialog: false,
+      }));
       if (historyEntryId) {
         router.push(`/assessments/${historyEntryId}`);
       }
     } catch (error) {
       console.error("Failed to save and complete:", error);
       toast({
-        title: `Failed to save and complete, make sure you have enough credits`,
+        title: "Failed to save and complete",
         description: "Please try again.",
       });
-      // Still dismiss dialog and redirect even if save fails
-      setShowEndDialog(false);
+      setChatState((prev) => ({
+        ...prev,
+        showEndDialog: false,
+      }));
       if (historyEntryId) {
         router.push(`/assessments/${historyEntryId}`);
       }
     }
-  };
+  }, [disconnect, stopMicrophone, saveAndComplete, historyEntryId, router]);
 
-  const handleCountdownComplete = () => {
-    disconnect();
-    stopMicrophone();
-    setIsTimeout(true);
-    setShowEndDialog(true);
-  };
-
-  const rolePlayers: RolePlayer[] = module.modulePrompt.characters.map(
-    (character) => ({
-      name: character.name,
-      agentName: "agent",
-      avatarUrl: character.avatarUrl || "/placeholder.png",
-    })
+  const handleSendMessage = useCallback(
+    (message: string) => {
+      sendTextMessage(message);
+    },
+    [sendTextMessage]
   );
 
-  const handleSendMessage = (message: string) => {
-    sendTextMessage(message);
-  };
+  const rolePlayers: RolePlayer[] = useMemo(
+    () =>
+      module.modulePrompt.characters.map((character) => ({
+        name: character.name,
+        agentName: "agent",
+        avatarUrl: character.avatarUrl || undefined,
+      })),
+    [module.modulePrompt.characters]
+  );
 
   return (
     <div className="grid lg:grid-cols-[max-content,1fr] grid-cols-1 gap-4 lg:gap-4 h-[calc(100vh-4rem)] grid-rows-[auto,1fr] lg:grid-rows-1 p-4">
@@ -180,7 +210,7 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
             <CountdownBar
               initialMinutes={HARD_TIMEOUT_MINUTES}
               onCountdownComplete={handleCountdownComplete}
-              isActive={isConversationActive}
+              isActive={chatState.isConversationActive}
             />
           </CardHeader>
           <CardContent className="space-y-4 pb-6">
@@ -188,18 +218,18 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
             <RolePlayersContainer
               rolePlayers={rolePlayers}
               activeRolePlayer={rolePlayers[0]?.name ?? ""}
-              isInConversation={isConversationActive}
+              isInConversation={chatState.isConversationActive}
             >
               <AudioVisualiser audioRef={audioRef} />
             </RolePlayersContainer>
             <div className="flex justify-center gap-4">
               <Button
                 size="lg"
-                variant={isConversationActive ? "danger" : "brand"}
+                variant={chatState.isConversationActive ? "danger" : "brand"}
                 onClick={handleToggleConversation}
                 className="w-48"
               >
-                {isConversationActive ? (
+                {chatState.isConversationActive ? (
                   <span className="flex items-center">
                     <PhoneOff className="mr-2 h-4 w-4" />
                     End Conversation
@@ -234,15 +264,17 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
 
             <ChatTextEntry
               onSendMessage={handleSendMessage}
-              isEnabled={isConversationActive}
+              isEnabled={chatState.isConversationActive}
             />
           </CardContent>
           <EndChatDialog
-            isOpen={showEndDialog}
-            onOpenChange={setShowEndDialog}
+            isOpen={chatState.showEndDialog}
+            onOpenChange={(open) =>
+              setChatState((prev) => ({ ...prev, showEndDialog: open }))
+            }
             onEndChat={handleEndWithoutSaving}
             onEndAndSave={handleEndAndSave}
-            isTimeout={isTimeout}
+            isTimeout={chatState.isTimeout}
           />
         </Card>
       </div>

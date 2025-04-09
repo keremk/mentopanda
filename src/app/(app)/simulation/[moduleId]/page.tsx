@@ -5,7 +5,6 @@ import { getCurrentUserAction } from "@/app/actions/user-actions";
 import { AI_MODELS } from "@/types/models";
 import { Metadata } from "next";
 import { ApiKeyCheckDialog } from "@/components/api-key-check-dialog";
-import { TranscriptProvider } from "@/contexts/transcript";
 
 type Props = {
   params: Promise<{
@@ -43,15 +42,9 @@ export default async function Page(props: Props) {
 
   return (
     <div className="container mx-auto w-full">
-      <ApiKeyCheckDialog
-        isOpenAIModule={isOpenAIModule}
-        user={currentUser}
-      />
-
+      <ApiKeyCheckDialog isOpenAIModule={isOpenAIModule} user={currentUser} />
       {isOpenAIModule && (
-        <TranscriptProvider>
-          <OpenAIChat module={currentModule} currentUser={currentUser} />
-        </TranscriptProvider>
+        <OpenAIChat module={currentModule} currentUser={currentUser} />
       )}
     </div>
   );

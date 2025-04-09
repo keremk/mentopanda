@@ -13,7 +13,13 @@ export function useTranscriptSave({
   transcriptBuffer,
   saveInterval = 30000, // default to 30 seconds
 }: UseTranscriptSaveProps) {
-  const lastSavedTranscript = useRef<string>("");
+  const lastSavedTranscriptRef = useRef<string>("");
+  const transcriptBufferRef = useRef<TranscriptEntry[]>(transcriptBuffer);
+
+  // Keep transcriptBufferRef updated with the latest transcriptBuffer
+  useEffect(() => {
+    transcriptBufferRef.current = transcriptBuffer;
+  }, [transcriptBuffer]);
 
   const formatTranscript = useCallback((buffer: TranscriptEntry[]) => {
     return buffer
@@ -23,30 +29,45 @@ export function useTranscriptSave({
 
   const saveTranscript = useCallback(
     async (isComplete = false) => {
-      if (!historyEntryId || transcriptBuffer.length === 0) return;
+      if (!historyEntryId) return;
 
-      const formattedTranscript = formatTranscript(transcriptBuffer);
+      const currentBuffer = transcriptBufferRef.current;
+      if (currentBuffer.length === 0 && !isComplete) return; // Don't save empty buffer unless completing
 
-      // Only save if transcript has changed
-      if (formattedTranscript === lastSavedTranscript.current) {
-        if (isComplete) {
-          await updateHistoryEntryAction({
-            id: historyEntryId,
-            completedAt: new Date(),
-          });
-        }
-        return;
+      const formattedTranscript = formatTranscript(currentBuffer);
+      const currentTranscriptString = JSON.stringify(currentBuffer);
+
+      // Only save if transcript has changed, using JSON.stringify for comparison
+      if (
+        currentTranscriptString === lastSavedTranscriptRef.current &&
+        !isComplete
+      ) {
+        return; // Skip save if content is identical and not completing
       }
 
+      // Always update completion status if isComplete is true
+      if (
+        currentTranscriptString === lastSavedTranscriptRef.current &&
+        isComplete
+      ) {
+        await updateHistoryEntryAction({
+          id: historyEntryId,
+          completedAt: new Date(),
+        });
+        return; // Only update completion status
+      }
+
+      // Perform the update
       await updateHistoryEntryAction({
         id: historyEntryId,
-        transcript: transcriptBuffer,
+        transcript: currentBuffer,
         transcriptText: formattedTranscript,
         ...(isComplete ? { completedAt: new Date() } : {}),
       });
-      lastSavedTranscript.current = formattedTranscript;
+      lastSavedTranscriptRef.current = currentTranscriptString;
     },
-    [historyEntryId, transcriptBuffer, formatTranscript]
+    // Dependencies: historyEntryId and formatTranscript. transcriptBufferRef is stable.
+    [historyEntryId, formatTranscript]
   );
 
   // Set up periodic saving
@@ -59,12 +80,16 @@ export function useTranscriptSave({
     return () => clearInterval(intervalId);
   }, [saveTranscript, saveInterval]);
 
-  // Save when component unmounts
+  // Save when component unmounts or historyEntryId changes (e.g., on first save)
   useEffect(() => {
     return () => {
-      saveTranscript(false).catch(console.error);
+      // Ensure final save attempt on unmount if historyEntryId exists
+      if (historyEntryId) {
+        saveTranscript(false).catch(console.error);
+      }
     };
-  }, [saveTranscript]);
+    // Run cleanup only when component unmounts or saveTranscript changes
+  }, [saveTranscript, historyEntryId]);
 
   return {
     saveTranscript,
