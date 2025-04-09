@@ -162,10 +162,12 @@ You are an expert in assessing the user's performance based on the criteria prov
     - **Criteria**: Evaluate the appropriateness of the user's tone throughout the conversation.
     - **Evidence**: Examine whether the tone matches the context and is suitable for professional or casual scenarios as needed.
     - **Rating Guidelines**: Excellent (consistent and appropriate), Good (mostly appropriate), Needs Improvement (inconsistent or inappropriate).
+    - **How to improve**: What can the user do to improve their tone? Give suggestions based on some of the examples from the transcript.
   2. Empathy
     - **Criteria**: Assess the user's ability to exhibit empathy during the conversation.
     - **Evidence**: Look for instances where the user acknowledges the AI's input, responds with understanding, and demonstrates active listening.
     - **Rating Guidelines**: Excellent (highly empathetic), Good (moderately empathetic), Needs Improvement (lacks empathy).
+    - **How to improve**: What can the user do to improve their empathy? Give suggestions based on some of the examples from the transcript.
 
 Make sure to provide a summary of the assessment criteria at the end.
 
@@ -173,6 +175,7 @@ Make sure to provide a summary of the assessment criteria at the end.
   - Always start with the statement "You are an expert in assessing the user's performance based on the criteria provided. You will be given a transcript of the conversation and you will need to evaluate the user's performance on each criterion. Be as thorough as possible in your assessment."
   - Always provide examples of supporting evidence for each criterion.
   - Always have a statement to instruct to provide a summary of the assessment criteria at the end.
+  - Always provide suggestions on how to improve the user's performance based on the examples from the transcript.
   `,
 };
 
