@@ -20,6 +20,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
 import { useTheme } from "next-themes";
+import { MemoizedMarkdown } from "@/components/memoized-markdown";
 
 interface TrainingDetailsProps {
   training: TrainingWithProgress;
@@ -114,9 +115,14 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
                     <AccordionItem value="instructions">
                       <AccordionTrigger>Instructions</AccordionTrigger>
                       <AccordionContent>
-                        <p className="text-sm text-muted-foreground">
-                          {module.instructions || "No instructions available."}
-                        </p>
+                        <div className="text-sm text-muted-foreground">
+                          <MemoizedMarkdown
+                            content={
+                              module.instructions ||
+                              "No instructions available."
+                            }
+                          />
+                        </div>
                       </AccordionContent>
                     </AccordionItem>
 
@@ -140,10 +146,14 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
                               <h5 className="font-semibold">
                                 {module.characters[0].name}
                               </h5>
-                              <p className="text-sm text-muted-foreground">
-                                {module.characters[0].description ||
-                                  "No description available."}
-                              </p>
+                              <div className="text-sm text-muted-foreground">
+                                <MemoizedMarkdown
+                                  content={
+                                    module.characters[0].description ||
+                                    "No description available."
+                                  }
+                                />
+                              </div>
                             </div>
                           </div>
                         ) : (
