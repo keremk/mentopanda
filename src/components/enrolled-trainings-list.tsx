@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import { UnenrollButton } from "@/components/unenroll-button";
 import { useParams } from "next/navigation";
+import { useTheme } from "next-themes";
 
 type EnrolledTrainingsListProps = {
   trainings: TrainingSummary[];
@@ -17,6 +18,11 @@ export function EnrolledTrainingsList({
 }: EnrolledTrainingsListProps) {
   const params = useParams();
   const selectedTrainingId = params.trainingId as string;
+  const { resolvedTheme } = useTheme();
+  const fallbackImage =
+    resolvedTheme === "dark"
+      ? "/placeholder-training-dark.svg"
+      : "/placeholder-training.svg";
 
   const selectedTrainingIndex = trainings.findIndex(
     (t) => t.id.toString() === selectedTrainingId
@@ -48,7 +54,7 @@ export function EnrolledTrainingsList({
             >
               <div className="relative w-12 h-12 flex-shrink-0">
                 <Image
-                  src={training.imageUrl}
+                  src={training.imageUrl || fallbackImage}
                   alt={training.title}
                   fill
                   className="object-cover rounded-md"

@@ -21,6 +21,8 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { useTheme } from "next-themes";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { getInitials } from "@/lib/utils";
 
 interface TrainingDetailsProps {
   training: TrainingWithProgress;
@@ -76,7 +78,7 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
         <div>
           <h1 className="text-2xl font-bold">{training.title}</h1>
           <div className="my-4 text-muted-foreground">
-            <MemoizedMarkdown content={training.description} />
+            <MemoizedMarkdown content={training.description || ""} />
           </div>
         </div>
       </div>
@@ -133,17 +135,17 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
                       <AccordionContent>
                         {module.characters?.[0] ? (
                           <div className="flex items-start space-x-4">
-                            <Image
-                              src={
-                                module.characters[0].avatarUrl ||
-                                "/placeholder-avatar.svg"
-                              }
-                              alt={module.characters[0].name}
-                              width={100}
-                              height={100}
-                              className="rounded-full"
-                              sizes="100px"
-                            />
+                            <Avatar>
+                              <AvatarImage
+                                src={
+                                  module.characters[0].avatarUrl ?? undefined
+                                }
+                                alt={module.characters[0].name}
+                              />
+                              <AvatarFallback>
+                                {getInitials(module.characters[0].name)}
+                              </AvatarFallback>
+                            </Avatar>
                             <div>
                               <h5 className="font-semibold">
                                 {module.characters[0].name}
