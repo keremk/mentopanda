@@ -89,6 +89,11 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
     ? parseInt(process.env.NEXT_PUBLIC_CHAT_HARD_TIMEOUT_MINUTES)
     : 2;
 
+  // State for adjustable session duration
+  const [sessionDurationMinutes, setSessionDurationMinutes] = useState(
+    Math.floor(HARD_TIMEOUT_MINUTES / 2) || 1 // Default to half, min 1
+  );
+
   const {
     startMicrophone,
     stopMicrophone,
@@ -104,6 +109,11 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
     userName: currentUser.displayName,
     agentName: module.modulePrompt.characters[0]?.name || "agent",
   });
+
+  // Callback to update duration state from CountdownBar
+  const handleDurationChange = useCallback((newDuration: number) => {
+    setSessionDurationMinutes(newDuration);
+  }, []);
 
   const handleToggleConversation = useCallback(async () => {
     if (chatState.isConversationActive) {
@@ -208,8 +218,10 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
         <Card className="w-[448px] max-w-full">
           <CardHeader className="pb-0">
             <CountdownBar
-              initialMinutes={HARD_TIMEOUT_MINUTES}
+              initialMinutes={sessionDurationMinutes}
+              maxDurationMinutes={HARD_TIMEOUT_MINUTES}
               onCountdownComplete={handleCountdownComplete}
+              onDurationChange={handleDurationChange}
               isActive={chatState.isConversationActive}
             />
           </CardHeader>
