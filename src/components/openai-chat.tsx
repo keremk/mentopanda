@@ -289,7 +289,7 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
             value="instructions"
             className="flex-1 mt-4 overflow-auto"
           >
-            <Card className="h-full">
+            <Card>
               <CardContent className="pt-6">
                 {module.instructions ? (
                   <MemoizedMarkdown content={module.instructions} />
@@ -302,7 +302,7 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
             </Card>
           </TabsContent>
           <TabsContent value="transcript" className="flex-1 mt-4 overflow-auto">
-            <Card className="h-full">
+            <Card>
               <CardContent className="pt-6">
                 <TranscriptDisplay transcriptEntries={transcriptEntries} />
               </CardContent>
