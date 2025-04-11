@@ -66,7 +66,7 @@ export function ModuleListProvider({
           },
         });
 
-        // Update local state with the new module
+        // *** Update local state SYNCHRONOUSLY before returning ***
         setModules((prev) => [...prev, newModule]);
 
         setLastSavedAt(new Date());

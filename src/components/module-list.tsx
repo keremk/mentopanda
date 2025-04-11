@@ -15,13 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { PlusIcon, TrashIcon } from "lucide-react";
-import { Module, ModuleSummary } from "@/data/modules";
+import { ModuleSummary } from "@/data/modules";
 
 type ModuleListProps = {
   modules: ModuleSummary[];
   selectedModuleId?: number;
   onSelectModule: (moduleId: number) => void;
-  onAddModule: (title: string) => Promise<Module | null>;
+  onAddModule: (title: string) => Promise<void>;
   onDeleteModule: (moduleId: number) => Promise<boolean>;
 };
 

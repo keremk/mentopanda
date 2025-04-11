@@ -43,7 +43,6 @@ export function TrainingEditProvider({
   );
 }
 
-// Helper component to access module ID from context
 function ModuleEditConsumer({
   children,
 }: {
@@ -52,7 +51,6 @@ function ModuleEditConsumer({
     refreshModule: () => Promise<void>
   ) => ReactNode;
 }) {
-  // Access module context to get selected module ID and refresh function
   const { selectedModuleId, refreshCurrentModule } = useModuleEdit();
   return <>{children(selectedModuleId, refreshCurrentModule)}</>;
 }

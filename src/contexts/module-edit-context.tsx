@@ -51,6 +51,36 @@ export function ModuleEditProvider({ children }: ModuleEditProviderProps) {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [userModified, setUserModified] = useState(false);
 
+  // *** NEW useEffect to sync selectedModule with modules list ***
+  useEffect(() => {
+    if (!selectedModuleId) {
+      // If no ID is selected, ensure module data is also cleared
+      if (selectedModule) setSelectedModule(undefined);
+      if (lastSavedModule) setLastSavedModule(undefined);
+      return;
+    }
+
+    // Find the module in the current list
+    const moduleFromList = modules.find((m) => m.id === selectedModuleId);
+
+    // If the module exists in the list AND
+    // (no module is currently loaded OR the loaded module ID doesn't match)
+    if (
+      moduleFromList &&
+      (!selectedModule || selectedModule.id !== selectedModuleId)
+    ) {
+      setSelectedModule(moduleFromList);
+      setLastSavedModule(structuredClone(moduleFromList));
+      setUserModified(false); // Reset modified flag when loading from list
+    }
+    // Optional: Handle case where selectedModuleId exists but module is NOT in the list?
+    // Could happen if module was deleted elsewhere. Maybe clear selectedModuleId?
+    // else if (!moduleFromList && selectedModule) {
+    //   setSelectedModule(undefined);
+    //   setLastSavedModule(undefined);
+    // }
+  }, [selectedModuleId, modules, selectedModule, lastSavedModule]); // Depend on ID and modules list
+
   const debouncedModule = useDebounce(selectedModule, 1000);
 
   // Extracted common save logic
@@ -135,28 +165,14 @@ export function ModuleEditProvider({ children }: ModuleEditProviderProps) {
     async (moduleId: number | undefined) => {
       if (moduleId === selectedModuleId) return;
 
-      // Reset the user modified flag when selecting a new module
       setUserModified(false);
       setSelectedModuleId(moduleId);
 
-      if (!moduleId) {
-        setSelectedModule(undefined);
-        setLastSavedModule(undefined);
-        return;
-      }
-
-      // Find the module in the existing modules list
-      const existingModule = modules.find((m) => m.id === moduleId);
-      if (existingModule) {
-        setSelectedModule(existingModule);
-        setLastSavedModule(structuredClone(existingModule));
-        return;
-      }
-
-      // Log error if module not found in local data (shouldn't happen)
-      console.error(`Module ${moduleId} not found in local data`);
+      // Immediately clear module data; the useEffect above will load it
+      setSelectedModule(undefined);
+      setLastSavedModule(undefined);
     },
-    [selectedModuleId, modules]
+    [selectedModuleId] // Only depends on selectedModuleId now for the initial check
   );
 
   const updateModuleField = useCallback(

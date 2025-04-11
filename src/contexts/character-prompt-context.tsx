@@ -79,6 +79,10 @@ export function CharacterPromptProvider({
         setLastSavedPrompt(textToSave);
         setLastSavedAt(new Date());
         setSaveStatus("saved");
+
+        // *** After successful save, trigger the module refresh ***
+        refreshModule?.();
+
         setTimeout(() => setSaveStatus("idle"), 2000);
       } catch (error) {
         console.error("Error saving character prompt:", error);
@@ -86,7 +90,7 @@ export function CharacterPromptProvider({
         setTimeout(() => setSaveStatus("idle"), 3000);
       }
     },
-    [moduleId, characterId]
+    [moduleId, characterId, refreshModule]
   );
 
   // Auto-save when prompt changes (debounced)
@@ -110,10 +114,11 @@ export function CharacterPromptProvider({
   useEffect(() => {
     // Check if the module ID has actually changed
     if (moduleId !== prevModuleIdRef.current) {
+      // Only reset character ID and internal reference. Prompt is handled by initializeCharacter.
       setCharacterId(undefined);
-      setPrompt("");
-      setLastSavedPrompt("");
-      setUserModified(false);
+      // setPrompt(""); // <-- DO NOT CLEAR PROMPT HERE
+      // setLastSavedPrompt(""); // <-- DO NOT CLEAR LAST SAVED PROMPT
+      // setUserModified(false); // <-- DO NOT CLEAR MODIFIED FLAG
       prevModuleIdRef.current = moduleId;
     }
   }, [moduleId]);
@@ -183,7 +188,10 @@ export function CharacterPromptProvider({
   // Initialize with existing character data
   const initializeCharacter = useCallback(
     (character: ModuleCharacter | null) => {
-      if (!character) {
+      const newCharacterId = character?.id;
+
+      // Reset fully if no character provided
+      if (!character || newCharacterId === undefined) {
         setCharacterId(undefined);
         setPrompt("");
         setLastSavedPrompt("");
@@ -191,14 +199,25 @@ export function CharacterPromptProvider({
         return;
       }
 
-      setCharacterId(character.id);
-      // Ensure we set the prompt from the character data
+      // If it's the same character AND user has modified the prompt, keep the edits
+      if (newCharacterId === characterId && userModified) {
+        // Update lastSavedPrompt if the underlying data changed (e.g., saved elsewhere)
+        const incomingPrompt = character.prompt || "";
+        if (incomingPrompt !== lastSavedPrompt) {
+          setLastSavedPrompt(incomingPrompt);
+        }
+        return; // Keep current prompt and userModified=true
+      }
+
+      // Otherwise (different character OR same character but prompt wasn't user-modified),
+      // load the state from the incoming character data.
+      setCharacterId(newCharacterId);
       const characterPrompt = character.prompt || "";
       setPrompt(characterPrompt);
       setLastSavedPrompt(characterPrompt);
-      setUserModified(false); // Reset the user modified flag when initializing
+      setUserModified(false);
     },
-    []
+    [characterId, userModified, lastSavedPrompt] // Update dependencies
   );
 
   const saveCharacterPrompt = useCallback(async () => {

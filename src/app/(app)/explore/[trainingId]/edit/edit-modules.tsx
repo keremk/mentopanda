@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ModuleList } from "@/components/module-list";
 import { EditModuleForm } from "./edit-module-form";
@@ -38,42 +38,57 @@ export function EditModules({
     ? modules.find((m) => m.id === effectiveModuleId)
     : null;
 
-  const handleSelectModule = (moduleId: number) => {
-    // Only update if the module ID is different
-    if (moduleId === effectiveModuleId) return;
+  const handleSelectModule = useCallback(
+    (moduleId: number) => {
+      if (moduleId === effectiveModuleId) return;
 
-    // Update the context first
-    selectModule(moduleId);
+      // Step 1: Update context state first
+      selectModule(moduleId);
 
-    // Update URL without causing a navigation (replace instead of push)
-    const params = new URLSearchParams(searchParams);
-    params.set("moduleId", moduleId.toString());
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  };
+      // Step 2: Update URL using router.replace
+      const params = new URLSearchParams(searchParams);
+      params.set("moduleId", moduleId.toString());
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [selectModule, searchParams, router, pathname, effectiveModuleId]
+  );
 
   useEffect(() => {
     // Skip if no modules
     if (modules.length === 0) return;
 
-    // Skip if we already have a valid module selected
-    if (selectedModuleId && modules.some((m) => m.id === selectedModuleId))
-      return;
+    const urlModuleId = moduleIdFromUrl ? parseInt(moduleIdFromUrl) : null;
+    const moduleExists = (id: number) => modules.some((m) => m.id === id);
 
-    // Case 1: URL has moduleId that exists in modules
-    if (moduleIdFromUrl) {
-      const moduleId = parseInt(moduleIdFromUrl);
-      if (modules.some((m) => m.id === moduleId)) {
-        selectModule(moduleId);
+    // Case 1: URL has a moduleId
+    if (urlModuleId) {
+      if (moduleExists(urlModuleId)) {
+        // If URL module exists and isn't selected, select it
+        if (urlModuleId !== selectedModuleId) {
+          selectModule(urlModuleId);
+        }
       } else {
-        // If module doesn't exist, select first module
+        // If URL module doesn't exist, select the first available module
         handleSelectModule(modules[0].id);
       }
     }
-    // Case 2: No moduleId in URL but modules exist, select first module
-    else if (!effectiveModuleId) {
-      handleSelectModule(modules[0].id);
+    // Case 2: No moduleId in URL
+    else {
+      // If no module is currently selected, select the first one
+      if (!selectedModuleId && modules.length > 0) {
+        handleSelectModule(modules[0].id);
+      } else if (selectedModuleId && !moduleExists(selectedModuleId)) {
+        // If selected module ID is somehow invalid (not in modules), select first one
+        handleSelectModule(modules[0].id);
+      }
     }
-  }, [moduleIdFromUrl, modules]); // Only depend on URL changes and modules list
+  }, [
+    moduleIdFromUrl,
+    modules,
+    selectedModuleId,
+    selectModule,
+    handleSelectModule,
+  ]); // Added missing dependencies
 
   return (
     <div className="flex flex-col md:flex-row gap-2 w-full">
@@ -83,7 +98,13 @@ export function EditModules({
             modules={modules}
             selectedModuleId={effectiveModuleId}
             onSelectModule={handleSelectModule}
-            onAddModule={(title) => addModule(title)}
+            onAddModule={async (title) => {
+              const newModule = await addModule(title); // Call context addModule
+              if (newModule) {
+                handleSelectModule(newModule.id); // Select AFTER creation completes
+              }
+              // Return value might be needed if ModuleList expected it, but it seems unused
+            }}
             onDeleteModule={deleteModule}
           />
         </div>
