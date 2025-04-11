@@ -150,6 +150,11 @@ export function CharacterList({
               <Input
                 value={newCharacterName}
                 onChange={(e) => setNewCharacterName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newCharacterName.trim()) {
+                    handleCreateCharacter();
+                  }
+                }}
                 placeholder="Character name"
                 className="my-4"
               />
