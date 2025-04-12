@@ -1,18 +1,37 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { useTrainingDetails } from "@/contexts/training-details-context";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import Image from "next/image";
 import { AIFocusInput } from "@/components/ai-focus-input";
 import { AIFocusTextarea } from "@/components/ai-focus-textarea";
+import { useTrainingEdit } from "@/contexts/training-edit-context";
 
 export function EditTrainingForm() {
-  const { training, updateTrainingField } = useTrainingDetails();
+  const { state, dispatch } = useTrainingEdit();
+  const { training } = state;
 
   if (!training) {
     return <div>Loading training details...</div>;
   }
+
+  const handleFieldChange = (
+    field: keyof typeof training,
+    value: string | null
+  ) => {
+    if (
+      field === "title" ||
+      field === "tagline" ||
+      field === "description" ||
+      field === "imageUrl" ||
+      field === "previewUrl"
+    ) {
+      dispatch({
+        type: "UPDATE_TRAINING_FIELD",
+        payload: { field, value },
+      });
+    }
+  };
 
   return (
     <>
@@ -36,7 +55,7 @@ export function EditTrainingForm() {
           </div>
           <ImageUploadButton
             onUploadComplete={async (url) => {
-              updateTrainingField("imageUrl", url);
+              handleFieldChange("imageUrl", url);
             }}
             bucket="trainings"
             folder="covers"
@@ -54,7 +73,7 @@ export function EditTrainingForm() {
             <AIFocusInput
               name="title"
               value={training.title}
-              onChange={(e) => updateTrainingField("title", e.target.value)}
+              onChange={(e) => handleFieldChange("title", e.target.value)}
               placeholder="Enter training title"
               className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50"
             />
@@ -67,7 +86,7 @@ export function EditTrainingForm() {
             <AIFocusInput
               name="tagline"
               value={training.tagline || ""}
-              onChange={(e) => updateTrainingField("tagline", e.target.value)}
+              onChange={(e) => handleFieldChange("tagline", e.target.value)}
               placeholder="Enter catchy, short tagline"
               className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50"
             />
@@ -80,9 +99,7 @@ export function EditTrainingForm() {
             <Input
               name="previewUrl"
               value={training.previewUrl || ""}
-              onChange={(e) =>
-                updateTrainingField("previewUrl", e.target.value)
-              }
+              onChange={(e) => handleFieldChange("previewUrl", e.target.value)}
               placeholder="Enter video link, e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ"
               className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50"
             />
@@ -97,7 +114,7 @@ export function EditTrainingForm() {
         <AIFocusTextarea
           name="description"
           value={training.description || ""}
-          onChange={(e) => updateTrainingField("description", e.target.value)}
+          onChange={(e) => handleFieldChange("description", e.target.value)}
           className="min-h-[calc(100vh-36rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
           placeholder="Enter training description, use markdown for formatting"
         />

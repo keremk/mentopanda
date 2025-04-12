@@ -9,14 +9,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CharacterSummary } from "@/data/characters";
-import { useModuleEdit } from "@/contexts/module-edit-context";
-import { useCharacterPrompt } from "@/contexts/character-prompt-context";
-import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getInitials } from "@/lib/utils";
 import { AIFocusTextarea } from "@/components/ai-focus-textarea";
+import { useTrainingEdit } from "@/contexts/training-edit-context";
+import {
+  replaceModuleCharacterAction,
+  insertModuleCharacterAction,
+} from "@/app/actions/modules-characters-actions";
+import { ModuleCharacter } from "@/data/modules";
 
 type EditModuleCharacterProps = {
   isFullScreen?: boolean;
@@ -26,76 +29,93 @@ export function EditModuleCharacter({
   isFullScreen = false,
 }: EditModuleCharacterProps) {
   const { toast } = useToast();
-  const { selectedModule } = useModuleEdit();
+  const { state, dispatch, getModuleById } = useTrainingEdit();
+  const { selectedModuleId, availableCharacters } = state;
 
-  const {
-    characterPrompt,
-    updateCharacterPrompt,
-    selectCharacter,
-    characters,
-    initializeCharacter,
-    selectedCharacterId,
-  } = useCharacterPrompt();
-
-  // Initialize character conditionally when module or its character changes
-  useEffect(() => {
-    if (!selectedModule) return;
-
-    // Get the potential new character from the module prop
-    const characterFromModule =
-      selectedModule.modulePrompt.characters.length > 0
-        ? selectedModule.modulePrompt.characters[0]
-        : null;
-    const newCharacterId = characterFromModule?.id;
-
-    // Only initialize if the character ID has changed OR if the user hasn't made edits
-    if (newCharacterId !== selectedCharacterId) {
-      initializeCharacter(characterFromModule);
-    }
-    // Dependencies updated to include the check conditions
-  }, [
-    selectedModule,
-    selectedCharacterId, // Add context's character ID
-    initializeCharacter,
-  ]);
+  const selectedModule = getModuleById(selectedModuleId);
 
   const handleCharacterPromptChange = (value: string) => {
     if (!selectedModule?.modulePrompt.characters.length) return;
+    const characterId = selectedModule.modulePrompt.characters[0].id;
 
-    updateCharacterPrompt(value);
+    dispatch({
+      type: "UPDATE_MODULE_CHARACTER_PROMPT",
+      payload: {
+        moduleId: selectedModule.id,
+        characterId: characterId,
+        prompt: value,
+      },
+    });
   };
 
   const handleCharacterChange = async (value: string) => {
     if (!selectedModule || !value) return;
 
     const newCharacterId = parseInt(value);
+    const currentCharacter = selectedModule.modulePrompt.characters[0];
+    const newCharacterSummary = availableCharacters.find(
+      (c) => c.id === newCharacterId
+    );
 
-    try {
-      await selectCharacter(newCharacterId);
-    } catch (error) {
-      console.error("Error selecting character:", error);
+    if (!newCharacterSummary) {
+      console.error("Selected character not found in available list");
       toast({
         title: "Error selecting character",
-        description: "Please try again",
+        description: "Character not found.",
+      });
+      return;
+    }
+
+    const newModuleCharacterData = {
+      id: newCharacterSummary.id,
+      name: newCharacterSummary.name,
+      avatarUrl: newCharacterSummary.avatarUrl,
+      aiModel: newCharacterSummary.aiModel,
+      prompt: "",
+    };
+
+    try {
+      if (currentCharacter) {
+        await replaceModuleCharacterAction({
+          moduleId: selectedModule.id,
+          oldCharacterId: currentCharacter.id,
+          newCharacterId: newCharacterId,
+        });
+      } else {
+        await insertModuleCharacterAction({
+          moduleId: selectedModule.id,
+          characterId: newCharacterId,
+        });
+      }
+      dispatch({
+        type: "SELECT_MODULE_CHARACTER",
+        payload: {
+          moduleId: selectedModule.id,
+          character: newModuleCharacterData as ModuleCharacter,
+        },
+      });
+
+      toast({ title: "Character assigned" });
+    } catch (error) {
+      console.error("Error assigning character:", error);
+      toast({
+        title: "Error assigning character",
+        description: "Please try again.",
       });
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // CMD+K / CTRL+K shortcut when field is focused will open AI pane
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
-      // This will also trigger the global keyboard handler
     }
   };
 
   if (!selectedModule) return null;
 
-  // Get current character ID or null
-  const currentCharacterId =
-    selectedModule.modulePrompt.characters.length > 0
-      ? selectedModule.modulePrompt.characters[0].id.toString()
-      : null;
+  const currentCharacter = selectedModule.modulePrompt.characters[0];
+  const currentCharacterId = currentCharacter?.id.toString();
+  const currentCharacterPrompt = currentCharacter?.prompt || "";
 
   return (
     <div className="space-y-6">
@@ -107,35 +127,26 @@ export function EditModuleCharacter({
           >
             <SelectTrigger className="w-full bg-background/90 border-border/50">
               <SelectValue placeholder="Assign Character">
-                {currentCharacterId && (
+                {currentCharacter ? (
                   <div className="flex items-center space-x-2">
                     <Avatar className="h-6 w-6 border border-border/30">
                       <AvatarImage
-                        src={
-                          selectedModule.modulePrompt.characters[0].avatarUrl ||
-                          undefined
-                        }
+                        src={currentCharacter.avatarUrl || undefined}
                       />
                       <AvatarFallback className="bg-primary/10 text-primary">
-                        {getInitials(
-                          selectedModule.modulePrompt.characters[0].name
-                        )}
+                        {getInitials(currentCharacter.name)}
                       </AvatarFallback>
                     </Avatar>
-                    <span>
-                      {selectedModule.modulePrompt.characters[0].name}
-                    </span>
+                    <span>{currentCharacter.name}</span>
                   </div>
+                ) : (
+                  "Assign Character"
                 )}
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="border-border/50 bg-background/95 backdrop-blur-sm">
-              {characters.map((character: CharacterSummary) => (
-                <SelectItem
-                  key={character.id}
-                  value={character.id.toString()}
-                  className="flex items-center space-x-2"
-                >
+              {availableCharacters.map((character: CharacterSummary) => (
+                <SelectItem key={character.id} value={character.id.toString()}>
                   <div className="flex items-center space-x-2">
                     <Avatar className="h-6 w-6 border border-border/30">
                       <AvatarImage src={character.avatarUrl || undefined} />
@@ -155,14 +166,14 @@ export function EditModuleCharacter({
         </div>
       </div>
 
-      {selectedModule.modulePrompt.characters.length > 0 && (
+      {currentCharacter && (
         <div className="flex flex-col gap-y-2">
           <label className="text-sm font-medium text-muted-foreground">
             Character Prompt
           </label>
           <AIFocusTextarea
             name="characterPrompt"
-            value={characterPrompt}
+            value={currentCharacterPrompt}
             onChange={(e) => handleCharacterPromptChange(e.target.value)}
             placeholder="Enter the prompt about how this character should behave in this scenario"
             rows={10}

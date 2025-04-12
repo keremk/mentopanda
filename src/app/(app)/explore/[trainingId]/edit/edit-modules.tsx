@@ -4,8 +4,14 @@ import { useEffect, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ModuleList } from "@/components/module-list";
 import { EditModuleForm } from "./edit-module-form";
-import { useModuleList } from "@/contexts/module-list-context";
-import { useModuleEdit } from "@/contexts/module-edit-context";
+import { useTrainingEdit } from "@/contexts/training-edit-context";
+// Import server actions needed for direct calls if necessary (e.g., create, delete)
+// We'll primarily rely on dispatch and the provider's save logic, but keep actions available
+import {
+  createModuleAction,
+  deleteModuleAction,
+} from "@/app/actions/moduleActions";
+import { AI_MODELS } from "@/types/models"; // Needed for default module creation
 
 type Props = {
   isFullScreen: boolean;
@@ -24,71 +30,142 @@ export function EditModules({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const { modules, addModule, deleteModule } = useModuleList();
-  const { selectedModuleId, selectModule } = useModuleEdit();
+  // Use the centralized context
+  const { state, dispatch, getModuleById } = useTrainingEdit();
+  const { training, selectedModuleId } = state;
+  const modules = training.modules; // Get modules from training state
 
-  // Get moduleId from URL or context
-  const moduleIdFromUrl = searchParams.get("moduleId");
-  const effectiveModuleId = moduleIdFromUrl
-    ? parseInt(moduleIdFromUrl)
-    : selectedModuleId;
+  // Determine the currently active module based on context's selectedModuleId
+  const currentModule = getModuleById(selectedModuleId);
 
-  // This ensures we're always using the most up-to-date module data
-  const currentModule = effectiveModuleId
-    ? modules.find((m) => m.id === effectiveModuleId)
-    : null;
-
+  // --- Simplified handleSelectModule ---
+  // Just dispatches the action. URL sync is handled by an effect.
   const handleSelectModule = useCallback(
     (moduleId: number) => {
-      if (moduleId === effectiveModuleId) return;
-
-      // Step 1: Update context state first
-      selectModule(moduleId);
-
-      // Step 2: Update URL using router.replace
-      const params = new URLSearchParams(searchParams);
-      params.set("moduleId", moduleId.toString());
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      if (moduleId !== selectedModuleId) {
+        dispatch({ type: "SELECT_MODULE", payload: { moduleId } });
+      }
     },
-    [selectModule, searchParams, router, pathname, effectiveModuleId]
+    [selectedModuleId, dispatch]
   );
 
-  useEffect(() => {
-    // Skip if no modules
-    if (modules.length === 0) return;
+  // --- handleAddModule (modified return type) ---
+  const handleAddModule = useCallback(
+    async (title: string): Promise<void> => {
+      if (!training) return;
+      try {
+        const newModule = await createModuleAction(training.id, {
+          title: title || "New Module",
+          instructions: "",
+          ordinal: modules.length,
+          modulePrompt: {
+            aiModel: AI_MODELS.OPENAI,
+            scenario: "",
+            assessment: "",
+            moderator: "",
+            characters: [],
+          },
+        });
+        // Dispatch ADD, the reducer handles setting selectedModuleId
+        dispatch({ type: "ADD_MODULE", payload: newModule });
+        // The useEffect listening to selectedModuleId will update the URL
+      } catch (error) {
+        console.error("Error adding module:", error);
+      }
+    },
+    [training, modules.length, dispatch] // Removed handleSelectModule dependency
+  );
 
-    const urlModuleId = moduleIdFromUrl ? parseInt(moduleIdFromUrl) : null;
-    const moduleExists = (id: number) => modules.some((m) => m.id === id);
+  // --- handleDeleteModule (keeps direct URL update for now) ---
+  const handleDeleteModule = useCallback(
+    async (moduleId: number) => {
+      if (!training) return false;
+      try {
+        await deleteModuleAction(moduleId, training.id);
+        // Dispatch DELETE, the reducer handles selecting the next/first module
+        dispatch({ type: "DELETE_MODULE", payload: { moduleId } });
 
-    // Case 1: URL has a moduleId
-    if (urlModuleId) {
-      if (moduleExists(urlModuleId)) {
-        // If URL module exists and isn't selected, select it
-        if (urlModuleId !== selectedModuleId) {
-          selectModule(urlModuleId);
+        // We might still need direct URL manipulation here because the *next* selectedId
+        // isn't immediately available after dispatch. The reducer handles the state update,
+        // but the effect syncs the *final* state to the URL later.
+        // If the deleted module *was* the one in the URL, clear/update the URL param.
+        const currentParams = new URLSearchParams(searchParams);
+        const currentUrlModuleId = currentParams.get("moduleId");
+        if (currentUrlModuleId === moduleId.toString()) {
+          // Find the potential next selected module ID *after* deletion
+          const remainingModules = training.modules.filter(
+            (m) => m.id !== moduleId
+          );
+          const nextSelectedId = remainingModules[0]?.id;
+          if (nextSelectedId) {
+            currentParams.set("moduleId", nextSelectedId.toString());
+          } else {
+            currentParams.delete("moduleId");
+          }
+          router.replace(`${pathname}?${currentParams.toString()}`, {
+            scroll: false,
+          });
         }
-      } else {
-        // If URL module doesn't exist, select the first available module
-        handleSelectModule(modules[0].id);
+
+        return true;
+      } catch (error) {
+        console.error("Error deleting module:", error);
+        return false;
       }
-    }
-    // Case 2: No moduleId in URL
-    else {
-      // If no module is currently selected, select the first one
-      if (!selectedModuleId && modules.length > 0) {
-        handleSelectModule(modules[0].id);
-      } else if (selectedModuleId && !moduleExists(selectedModuleId)) {
-        // If selected module ID is somehow invalid (not in modules), select first one
-        handleSelectModule(modules[0].id);
+    },
+    [training, dispatch, router, pathname, searchParams]
+  );
+
+  // --- Effect for Initial Module Selection ---
+  useEffect(() => {
+    // Only run if modules are loaded and selection isn't already set
+    if (modules.length > 0 && selectedModuleId === undefined) {
+      const urlModuleIdStr = searchParams.get("moduleId");
+      const urlModuleId = urlModuleIdStr ? parseInt(urlModuleIdStr) : null;
+      const firstModuleId = modules[0]?.id;
+      let initialSelectionId: number | undefined = undefined;
+
+      if (urlModuleId && modules.some((m) => m.id === urlModuleId)) {
+        initialSelectionId = urlModuleId;
+      } else if (firstModuleId) {
+        initialSelectionId = firstModuleId;
       }
+
+      if (initialSelectionId) {
+        // Directly dispatch to set the initial state
+        dispatch({
+          type: "SELECT_MODULE",
+          payload: { moduleId: initialSelectionId },
+        });
+      }
+    } else if (modules.length === 0 && selectedModuleId !== undefined) {
+      // Clear selection if modules disappear
+      dispatch({ type: "SELECT_MODULE", payload: { moduleId: undefined } });
     }
-  }, [
-    moduleIdFromUrl,
-    modules,
-    selectedModuleId,
-    selectModule,
-    handleSelectModule,
-  ]); // Added missing dependencies
+    // Dependencies: Run when modules list loads/changes, or searchParams change initially.
+    // Avoid selectedModuleId here to prevent loops with the sync effect.
+  }, [modules, searchParams, dispatch]);
+
+  // --- Effect for Syncing Context Selection to URL ---
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    const currentUrlModuleId = params.get("moduleId");
+    const selectedModuleIdStr = selectedModuleId?.toString();
+
+    // If context has a selection different from URL, update URL
+    if (
+      selectedModuleId !== undefined &&
+      currentUrlModuleId !== selectedModuleIdStr
+    ) {
+      params.set("moduleId", selectedModuleIdStr!);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+    // If context has no selection but URL does, clear URL param
+    else if (selectedModuleId === undefined && currentUrlModuleId !== null) {
+      params.delete("moduleId");
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+  }, [selectedModuleId, searchParams, router, pathname]); // Run when context selection changes
 
   return (
     <div className="flex flex-col md:flex-row gap-2 w-full">
@@ -96,16 +173,10 @@ export function EditModules({
         <div className="w-full md:w-80 h-[calc(100vh-11rem)]">
           <ModuleList
             modules={modules}
-            selectedModuleId={effectiveModuleId}
-            onSelectModule={handleSelectModule}
-            onAddModule={async (title) => {
-              const newModule = await addModule(title); // Call context addModule
-              if (newModule) {
-                handleSelectModule(newModule.id); // Select AFTER creation completes
-              }
-              // Return value might be needed if ModuleList expected it, but it seems unused
-            }}
-            onDeleteModule={deleteModule}
+            selectedModuleId={selectedModuleId}
+            onSelectModule={handleSelectModule} // Use simplified handler
+            onAddModule={handleAddModule}
+            onDeleteModule={handleDeleteModule}
           />
         </div>
       )}
@@ -124,7 +195,9 @@ export function EditModules({
         ) : (
           <div className="flex items-center justify-center h-full border rounded-lg p-8 bg-muted/10">
             <p className="text-muted-foreground text-center">
-              Select a module to edit or create a new one
+              {modules.length > 0
+                ? "Select a module to edit"
+                : "Create a new module to get started"}
             </p>
           </div>
         )}

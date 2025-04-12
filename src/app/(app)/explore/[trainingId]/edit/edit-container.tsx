@@ -18,10 +18,6 @@ import {
 import { EditTrainingForm } from "./edit-training-form";
 import { EditModules } from "./edit-modules";
 import { deleteTrainingAction } from "@/app/actions/trainingActions";
-import { useTrainingDetails } from "@/contexts/training-details-context";
-import { useModuleList } from "@/contexts/module-list-context";
-import { useModuleEdit } from "@/contexts/module-edit-context";
-import { useCharacterPrompt } from "@/contexts/character-prompt-context";
 import { Loader2, Sparkles } from "lucide-react";
 import { AIPane } from "@/components/aipane";
 import { AIPaneProvider, ContextType } from "@/contexts/ai-pane-context";
@@ -32,234 +28,217 @@ import {
 } from "@/components/ui/tooltip";
 import { ApiKeyCheckDialog } from "@/components/api-key-check-dialog";
 import { User } from "@/data/user";
+// Import the new context provider and hook
+import {
+  TrainingEditProvider,
+  useTrainingEdit,
+} from "@/contexts/training-edit-context";
+import { TrainingEdit } from "@/data/trainings";
+import { CharacterSummary } from "@/data/characters";
 
+// --- Prop Types ---
+// Ensure this type definition is correct and includes the necessary props
 type EditContainerProps = {
   user: User;
+  initialTraining: TrainingEdit;
+  initialCharacters: CharacterSummary[];
 };
 
-export function EditContainer({ user }: EditContainerProps) {
+// --- Inner Component ---
+// Create an inner component to access the context after the provider
+function EditContainerContent({ user }: { user: User }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isAIPaneOpen, setIsAIPaneOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("details");
   const [moduleTab, setModuleTab] = useState<string>("scenario");
 
-  // Get initial tab from URL on first render
+  // Use the context provided by the outer component
+  const { state, dispatch, saveNow, getModuleById } = useTrainingEdit();
+  const { training, selectedModuleId, isSaving } = state;
+
+  // useEffects and handlers remain largely the same, using state and dispatch from context
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
-    if (tabFromUrl) {
-      setActiveTab(tabFromUrl);
-    }
+    if (tabFromUrl) setActiveTab(tabFromUrl);
 
     const moduleTabFromUrl = searchParams.get("moduleTab");
-    if (moduleTabFromUrl) {
-      setModuleTab(moduleTabFromUrl);
-    }
+    if (moduleTabFromUrl) setModuleTab(moduleTabFromUrl);
   }, [searchParams]);
 
-  // Access all contexts for saving
-  const trainingDetails = useTrainingDetails();
-  const moduleList = useModuleList();
-  const moduleEdit = useModuleEdit();
-  const characterPrompt = useCharacterPrompt();
-
-  // Initialize fullscreen state from URL params
   useEffect(() => {
     const isFullScreenParam = searchParams.get("fullscreen") === "true";
     setIsFullScreen(isFullScreenParam);
   }, [searchParams]);
 
-  // Function to update tab state without changing URL
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
+  const handleTabChange = (value: string) => setActiveTab(value);
 
   const handleDeleteTraining = async () => {
-    await deleteTrainingAction(trainingDetails.training.id);
-    router.push("/explore");
+    if (!training) return;
+    try {
+      await deleteTrainingAction(training.id);
+      router.push("/explore");
+    } catch (error) {
+      console.error("Error deleting training:", error);
+      // Add user feedback
+    }
   };
 
   const handleSaveAndExit = async () => {
     if (isSaving) return;
-
-    setIsSaving(true);
     try {
-      // Save training details if they've changed
-      if (
-        trainingDetails.saveStatus === "idle" ||
-        trainingDetails.saveStatus === "error"
-      ) {
-        await trainingDetails.saveTraining();
+      const saveSuccessful = await saveNow();
+      if (saveSuccessful) {
+        router.push(`/explore/`);
+      } else {
+        console.error("Save failed before exiting.");
+        // Add user feedback
       }
-
-      // Save current module if it's selected and has changes
-      if (
-        moduleEdit.selectedModuleId &&
-        (moduleEdit.saveStatus === "idle" || moduleEdit.saveStatus === "error")
-      ) {
-        await moduleEdit.saveModule();
-      }
-
-      // Save current character prompt if selected and has changes
-      if (
-        characterPrompt.selectedCharacterId &&
-        (characterPrompt.saveStatus === "idle" ||
-          characterPrompt.saveStatus === "error")
-      ) {
-        await characterPrompt.saveCharacterPrompt();
-      }
-
-      // Navigate to training page
-      router.push(`/explore/`);
     } catch (error) {
-      console.error("Error while saving:", error);
-    } finally {
-      setIsSaving(false);
+      console.error("Error during save and exit:", error);
+      // Add user feedback
     }
   };
 
-  const handleToggleAIPane = () => {
-    setIsAIPaneOpen(!isAIPaneOpen);
-  };
+  const handleToggleAIPane = () => setIsAIPaneOpen((prev) => !prev);
 
-  const handleToggleFullScreen = useCallback(() => {
-    const newState = !isFullScreen;
-    setIsFullScreen(newState);
+  const handleToggleFullScreen = useCallback(
+    () => setIsFullScreen((prev) => !prev),
+    []
+  );
 
-    // No need to update URL anymore, just use state
-  }, [isFullScreen]);
-
-  // Single keyboard shortcut handler for both toggles
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Only handle if Command/Control is pressed
-      if (event.metaKey || event.ctrlKey) {
-        const key = event.key.toLowerCase();
-
-        if (key === "k") {
-          event.preventDefault();
-          setIsAIPaneOpen(!isAIPaneOpen);
-        } else if (key === "f") {
-          event.preventDefault();
-          handleToggleFullScreen();
-        }
+      if (!event.metaKey && !event.ctrlKey) return;
+      const key = event.key.toLowerCase();
+      if (key === "k") {
+        event.preventDefault();
+        setIsAIPaneOpen((prev) => !prev);
+      } else if (key === "f") {
+        event.preventDefault();
+        handleToggleFullScreen();
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isAIPaneOpen, handleToggleFullScreen]);
+  }, [handleToggleFullScreen]);
 
-  // Determine if any context is currently saving
-  const isAnySaving =
-    isSaving ||
-    trainingDetails.saveStatus === "saving" ||
-    moduleEdit.saveStatus === "saving" ||
-    moduleList.saveStatus === "saving" ||
-    characterPrompt.saveStatus === "saving";
+  const determineContextType = (): ContextType =>
+    activeTab === "details" ? "training" : "module";
 
-  // Determine context type and data for AI pane based on active tabs and focused field
   const getAIPaneContext = () => {
+    const contextType = determineContextType();
+    const currentModule = getModuleById(selectedModuleId);
+    const currentCharacter = currentModule?.modulePrompt.characters[0];
     return {
-      contextType: determineContextType(),
+      contextType,
       contextData: {
-        trainingId: String(trainingDetails.training.id),
-        moduleId: moduleEdit.selectedModuleId
-          ? String(moduleEdit.selectedModuleId)
-          : undefined,
-        characterId: characterPrompt.selectedCharacterId
-          ? String(characterPrompt.selectedCharacterId)
-          : undefined,
+        trainingId: String(training.id),
+        moduleId: currentModule ? String(currentModule.id) : undefined,
+        characterId: currentCharacter ? String(currentCharacter.id) : undefined,
       },
       onApplyContent: (content: string, targetField: string) => {
-        applyGeneratedContent(content, targetField);
+        applyGeneratedContent(
+          content,
+          targetField,
+          currentModule?.id,
+          currentCharacter?.id
+        );
       },
     };
   };
 
-  // Determine the context type based on active tab
-  const determineContextType = (): ContextType => {
-    return activeTab === "details" ? "training" : "module";
-  };
-
-  // Apply generated content to the appropriate field
-  const applyGeneratedContent = (content: string, targetField: string) => {
+  const applyGeneratedContent = (
+    content: string,
+    targetField: string,
+    currentModuleId: number | undefined,
+    currentCharacterId: number | undefined
+  ) => {
     if (activeTab === "details") {
       switch (targetField) {
         case "title":
-          trainingDetails.updateTrainingField("title", content);
-          break;
         case "tagline":
-          trainingDetails.updateTrainingField("tagline", content);
-          break;
         case "description":
-          trainingDetails.updateTrainingField("description", content);
+          dispatch({
+            type: "UPDATE_TRAINING_FIELD",
+            payload: { field: targetField, value: content },
+          });
           break;
         default:
           console.warn("Unknown targetField for details tab:", targetField);
       }
-      return;
-    }
-
-    if (activeTab === "modules" && moduleEdit.selectedModule) {
+    } else if (activeTab === "modules" && currentModuleId) {
       switch (targetField) {
         case "title":
-          moduleEdit.updateModuleField("title", content);
-          break;
         case "instructions":
-          moduleEdit.updateModuleField("instructions", content);
-          break;
-        case "scenario":
-          moduleEdit.updateModuleField("modulePrompt", {
-            ...moduleEdit.selectedModule.modulePrompt,
-            scenario: content,
+          dispatch({
+            type: "UPDATE_MODULE_FIELD",
+            payload: {
+              moduleId: currentModuleId,
+              field: targetField,
+              value: content,
+            },
           });
           break;
+        case "scenario":
         case "assessment":
-          moduleEdit.updateModuleField("modulePrompt", {
-            ...moduleEdit.selectedModule.modulePrompt,
-            assessment: content,
+          dispatch({
+            type: "UPDATE_MODULE_PROMPT_FIELD",
+            payload: {
+              moduleId: currentModuleId,
+              field: targetField,
+              value: content,
+            },
           });
           break;
         case "characterPrompt":
-          characterPrompt.updateCharacterPrompt(content);
+          if (currentCharacterId) {
+            dispatch({
+              type: "UPDATE_MODULE_CHARACTER_PROMPT",
+              payload: {
+                moduleId: currentModuleId,
+                characterId: currentCharacterId,
+                prompt: content,
+              },
+            });
+          } else {
+            console.warn(
+              "Cannot apply character prompt: No character selected."
+            );
+          }
           break;
         default:
           console.warn("Unknown targetField for modules tab:", targetField);
       }
-      return;
+    } else {
+      console.warn(
+        "Cannot update content: Unknown tab or missing module/character",
+        { activeTab, currentModuleId, currentCharacterId }
+      );
     }
-
-    console.warn("Cannot update content: Unknown tab or missing module", {
-      activeTab,
-      hasSelectedModule: !!moduleEdit.selectedModule,
-    });
   };
 
-  // Use the AIPaneContext properly
-  const aiPaneContext = getAIPaneContext();
+  const aiPaneContextValue = getAIPaneContext();
+  const handleModuleTabChange = (value: string) => setModuleTab(value);
 
-  // Update the module tab state from child component
-  const handleModuleTabChange = (value: string) => {
-    setModuleTab(value);
-  };
+  if (!training) return <div>Loading...</div>; // Should ideally not happen if provider initializes correctly
 
   return (
     <AIPaneProvider
-      contextType={aiPaneContext.contextType}
-      contextData={aiPaneContext.contextData}
-      onApplyContent={aiPaneContext.onApplyContent}
+      contextType={aiPaneContextValue.contextType}
+      contextData={aiPaneContextValue.contextData}
+      onApplyContent={aiPaneContextValue.onApplyContent}
     >
       <div className="container h-full px-4 flex flex-col min-h-[calc(100vh-2rem)] pb-4">
         <ApiKeyCheckDialog isOpenAIModule={true} user={user} />
         <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex gap-3">
+          {/* Delete Button */}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
                 variant="ghost-danger"
-                disabled={isAnySaving}
+                disabled={isSaving}
                 size="default"
                 className="h-9 shadow-sm hover:shadow-md transition-all"
               >
@@ -287,14 +266,15 @@ export function EditContainer({ user }: EditContainerProps) {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          {/* Save & Exit Button */}
           <Button
             onClick={handleSaveAndExit}
-            disabled={isAnySaving}
+            disabled={isSaving}
             variant="brand"
             size="default"
             className="h-9"
           >
-            {isAnySaving ? (
+            {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving...
@@ -303,6 +283,7 @@ export function EditContainer({ user }: EditContainerProps) {
               "Save & Exit"
             )}
           </Button>
+          {/* AI Pane Toggle Button */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -320,6 +301,7 @@ export function EditContainer({ user }: EditContainerProps) {
           </Tooltip>
         </div>
 
+        {/* Main Content Area */}
         <div className="flex-1 mt-8">
           <Tabs
             value={activeTab}
@@ -354,8 +336,27 @@ export function EditContainer({ user }: EditContainerProps) {
           </Tabs>
         </div>
 
+        {/* AI Pane */}
         <AIPane isOpen={isAIPaneOpen} />
       </div>
     </AIPaneProvider>
+  );
+}
+
+// --- Exported Wrapper Component ---
+// Ensure this component accepts the correct props matching EditContainerProps
+export function EditContainer({
+  user,
+  initialTraining,
+  initialCharacters,
+}: EditContainerProps) {
+  // Wrap the actual content component with the Provider
+  return (
+    <TrainingEditProvider
+      initialTraining={initialTraining}
+      initialCharacters={initialCharacters}
+    >
+      <EditContainerContent user={user} />
+    </TrainingEditProvider>
   );
 }

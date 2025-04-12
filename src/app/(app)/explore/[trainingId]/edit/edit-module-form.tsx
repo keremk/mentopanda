@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { Module } from "@/data/modules";
-import { useModuleEdit } from "@/contexts/module-edit-context";
+import { useTrainingEdit } from "@/contexts/training-edit-context";
 import { EditModuleCharacter } from "./edit-module-character";
 import { useSearchParams } from "next/navigation";
 import { Maximize2, Minimize2 } from "lucide-react";
@@ -34,6 +34,9 @@ export function EditModuleForm({
   const searchParams = useSearchParams();
   const [localActiveTab, setLocalActiveTab] = useState<string>("scenario");
 
+  // Use the new context hook for dispatching actions
+  const { dispatch } = useTrainingEdit();
+
   // Use external tab state if provided, local state otherwise
   const activeTab = externalModuleTab || localActiveTab;
 
@@ -45,46 +48,47 @@ export function EditModuleForm({
     }
   }, [searchParams]);
 
-  // Use the contexts
-  const { updateModuleField, selectModule, selectedModule } = useModuleEdit();
-
-  // Initialize the module in context
-  useEffect(() => {
-    selectModule(module.id);
-  }, [module.id, selectModule]);
-
   // Handle changes to direct module fields (title, instructions, etc.)
   const handleModuleFieldChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    updateModuleField(name as keyof Module, value);
+    // Dispatch action to update the specific module field
+    dispatch({
+      type: "UPDATE_MODULE_FIELD",
+      payload: {
+        moduleId: module.id, // Use ID from prop
+        field: name as keyof Module, // Assert type
+        value: value,
+      },
+    });
   };
 
   // Handle changes to nested modulePrompt fields (scenario, assessment)
   const handleModulePromptFieldChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>,
-    field: string
+    field: "scenario" | "assessment" // Be specific
   ) => {
-    if (!selectedModule) return;
     const { value } = e.target;
-    updateModuleField("modulePrompt", {
-      ...selectedModule.modulePrompt,
-      [field]: value,
+    // Dispatch action to update the specific module prompt field
+    dispatch({
+      type: "UPDATE_MODULE_PROMPT_FIELD",
+      payload: {
+        moduleId: module.id, // Use ID from prop
+        field: field,
+        value: value,
+      },
     });
   };
 
   const handleQuickTest = () => {
-    if (selectedModule) {
-      // Open in a new tab
-      window.open(`/simulation/${selectedModule.id}`, "_blank");
-    }
+    // Open in a new tab
+    window.open(`/simulation/${module.id}`, "_blank");
   };
 
   // Function to update tab state
   const handleTabChange = (value: string) => {
     setLocalActiveTab(value);
-    // Pass the change up to parent if callback is provided
     if (onModuleTabChange) {
       onModuleTabChange(value);
     }
@@ -93,20 +97,16 @@ export function EditModuleForm({
   const handleModuleKeyDown = (
     e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>
   ) => {
-    // CMD+K / CTRL+K shortcut when field is focused will open AI pane
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
-      // This will also trigger the global keyboard handler in edit-container
+      // Global handler in edit-container will still trigger AIPane
     }
 
-    // CMD+F / CTRL+F shortcut for fullscreen
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
       e.preventDefault();
       onToggleFullScreen();
     }
   };
-
-  if (!selectedModule) return null;
 
   return (
     <div
@@ -120,7 +120,7 @@ export function EditModuleForm({
             </label>
             <AIFocusInput
               name="title"
-              value={selectedModule.title}
+              value={module.title}
               onChange={handleModuleFieldChange}
               placeholder="Enter module title"
               className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50"
@@ -134,7 +134,7 @@ export function EditModuleForm({
             </label>
             <AIFocusTextarea
               name="instructions"
-              value={selectedModule.instructions || ""}
+              value={module.instructions || ""}
               onChange={handleModuleFieldChange}
               className="min-h-[200px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
               placeholder="Enter module instructions visible to the user, use markdown for formatting"
@@ -208,7 +208,7 @@ export function EditModuleForm({
               <TabsContent value="scenario" className="mt-4">
                 <AIFocusTextarea
                   name="scenario"
-                  value={selectedModule.modulePrompt.scenario}
+                  value={module.modulePrompt.scenario}
                   onChange={(e) => handleModulePromptFieldChange(e, "scenario")}
                   rows={12}
                   placeholder="Enter the prompt for the AI to set up the overall scenario"
@@ -220,7 +220,7 @@ export function EditModuleForm({
               <TabsContent value="assessment" className="mt-4">
                 <AIFocusTextarea
                   name="assessment"
-                  value={selectedModule.modulePrompt.assessment}
+                  value={module.modulePrompt.assessment}
                   onChange={(e) =>
                     handleModulePromptFieldChange(e, "assessment")
                   }

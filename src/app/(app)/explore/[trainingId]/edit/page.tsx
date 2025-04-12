@@ -2,7 +2,10 @@ import { notFound } from "next/navigation";
 import { getTrainingByIdForEditAction } from "@/app/actions/trainingActions";
 import { EditContainer } from "./edit-container";
 import { getCharactersActionCached } from "@/app/actions/character-actions";
-import { TrainingEditProvider } from "@/contexts/training-edit-provider";
+// Remove the old multi-context provider
+// import { TrainingEditProvider } from "@/contexts/training-edit-provider";
+// Import the new centralized provider
+// import { TrainingEditProvider } from "@/contexts/training-edit-context";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 
 export default async function EditTrainingPage(props: {
@@ -19,12 +22,12 @@ export default async function EditTrainingPage(props: {
     notFound();
   }
 
+  // Pass data as props to the client component
   return (
-    <TrainingEditProvider
+    <EditContainer
+      user={user}
       initialTraining={training}
       initialCharacters={characters}
-    >
-      <EditContainer user={user} />
-    </TrainingEditProvider>
+    />
   );
 }
