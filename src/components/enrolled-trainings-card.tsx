@@ -1,11 +1,10 @@
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Search, GripVertical, PlayIcon } from "lucide-react";
 import { EnrollmentButton } from "@/components/enrollment-button";
 import { TrainingSummary } from "@/data/trainings";
-
+import { ThemedImage } from "@/components/themed-image";
 type EnrolledTrainingsCardProps = {
   trainings: TrainingSummary[];
 };
@@ -29,8 +28,9 @@ export async function EnrolledTrainingsCard({
                 <div className="flex gap-4 items-center min-w-0">
                   <div className="flex min-w-0 items-center">
                     <div className="relative h-12 w-12 mr-4 flex-shrink-0">
-                      <Image
-                        src={training.imageUrl || "/placeholder.png"}
+                      <ThemedImage
+                        lightSrc={training.imageUrl || "/placeholder-training.svg"}
+                        darkSrc={training.imageUrl || "/placeholder-training-dark.svg"}
                         alt={training.title}
                         fill
                         className="object-cover rounded"
