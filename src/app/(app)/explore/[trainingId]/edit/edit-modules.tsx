@@ -5,13 +5,6 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ModuleList } from "@/components/module-list";
 import { EditModuleForm } from "./edit-module-form";
 import { useTrainingEdit } from "@/contexts/training-edit-context";
-// Import server actions needed for direct calls if necessary (e.g., create, delete)
-// We'll primarily rely on dispatch and the provider's save logic, but keep actions available
-import {
-  createModuleAction,
-  deleteModuleAction,
-} from "@/app/actions/moduleActions";
-import { AI_MODELS } from "@/types/models"; // Needed for default module creation
 
 type Props = {
   isFullScreen: boolean;
@@ -30,8 +23,9 @@ export function EditModules({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Use the centralized context
-  const { state, dispatch, getModuleById } = useTrainingEdit();
+  // Use the centralized context, including the new methods (addModule, deleteModule)
+  const { state, dispatch, getModuleById, addModule, deleteModule } =
+    useTrainingEdit(); // Assuming addModule/deleteModule are added to context value
   const { training, selectedModuleId } = state;
   const modules = training.modules; // Get modules from training state
 
@@ -49,71 +43,39 @@ export function EditModules({
     [selectedModuleId, dispatch]
   );
 
-  // --- handleAddModule (modified return type) ---
+  // --- handleAddModule (Refactored) ---
   const handleAddModule = useCallback(
     async (title: string): Promise<void> => {
-      if (!training) return;
+      // Call the context method to handle creation and state update
       try {
-        const newModule = await createModuleAction(training.id, {
-          title: title || "New Module",
-          instructions: "",
-          ordinal: modules.length,
-          modulePrompt: {
-            aiModel: AI_MODELS.OPENAI,
-            scenario: "",
-            assessment: "",
-            moderator: "",
-            characters: [],
-          },
-        });
-        // Dispatch ADD, the reducer handles setting selectedModuleId
-        dispatch({ type: "ADD_MODULE", payload: newModule });
-        // The useEffect listening to selectedModuleId will update the URL
+        // Default title logic might be better inside the context method itself
+        await addModule(title || "New Module");
+        // No dispatch needed here, context handles it internally
+        // No URL update needed here, effect handles it
       } catch (error) {
-        console.error("Error adding module:", error);
+        console.error("Error adding module via context:", error);
+        // Optionally show a user-facing error
       }
     },
-    [training, modules.length, dispatch] // Removed handleSelectModule dependency
+    [addModule] // Dependency is now the context method
   );
 
-  // --- handleDeleteModule (keeps direct URL update for now) ---
+  // --- handleDeleteModule (Refactored) ---
   const handleDeleteModule = useCallback(
-    async (moduleId: number) => {
-      if (!training) return false;
+    async (moduleId: number): Promise<boolean> => {
+      // Call the context method to handle deletion and state update
       try {
-        await deleteModuleAction(moduleId, training.id);
-        // Dispatch DELETE, the reducer handles selecting the next/first module
-        dispatch({ type: "DELETE_MODULE", payload: { moduleId } });
-
-        // We might still need direct URL manipulation here because the *next* selectedId
-        // isn't immediately available after dispatch. The reducer handles the state update,
-        // but the effect syncs the *final* state to the URL later.
-        // If the deleted module *was* the one in the URL, clear/update the URL param.
-        const currentParams = new URLSearchParams(searchParams);
-        const currentUrlModuleId = currentParams.get("moduleId");
-        if (currentUrlModuleId === moduleId.toString()) {
-          // Find the potential next selected module ID *after* deletion
-          const remainingModules = training.modules.filter(
-            (m) => m.id !== moduleId
-          );
-          const nextSelectedId = remainingModules[0]?.id;
-          if (nextSelectedId) {
-            currentParams.set("moduleId", nextSelectedId.toString());
-          } else {
-            currentParams.delete("moduleId");
-          }
-          router.replace(`${pathname}?${currentParams.toString()}`, {
-            scroll: false,
-          });
-        }
-
+        await deleteModule(moduleId);
+        // No dispatch needed here, context handles it internally
+        // No manual URL update needed here, effect handles it
         return true;
       } catch (error) {
-        console.error("Error deleting module:", error);
+        console.error("Error deleting module via context:", error);
+        // Optionally show a user-facing error
         return false;
       }
     },
-    [training, dispatch, router, pathname, searchParams]
+    [deleteModule] // Dependency is now the context method
   );
 
   // --- Effect for Initial Module Selection ---
@@ -142,9 +104,7 @@ export function EditModules({
       // Clear selection if modules disappear
       dispatch({ type: "SELECT_MODULE", payload: { moduleId: undefined } });
     }
-    // Dependencies: Run when modules list loads/changes, or searchParams change initially.
-    // Avoid selectedModuleId here to prevent loops with the sync effect.
-  }, [modules, searchParams, dispatch]);
+  }, [modules, searchParams, dispatch, selectedModuleId]);
 
   // --- Effect for Syncing Context Selection to URL ---
   useEffect(() => {

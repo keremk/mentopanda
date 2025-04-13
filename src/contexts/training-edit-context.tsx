@@ -14,8 +14,13 @@ import { Module, ModulePrompt, ModuleCharacter } from "@/data/modules";
 import { CharacterSummary } from "@/data/characters";
 import { useDebounce } from "@/hooks/use-debounce";
 import { updateTrainingAction } from "@/app/actions/trainingActions";
-import { updateModuleAction } from "@/app/actions/moduleActions";
+import {
+  updateModuleAction,
+  createModuleAction,
+  deleteModuleAction,
+} from "@/app/actions/moduleActions";
 import { updateModuleCharacterPromptAction } from "@/app/actions/modules-characters-actions";
+import { AI_MODELS } from "@/types/models";
 
 // --- State Definition ---
 
@@ -119,11 +124,8 @@ function trainingEditReducer(
         ...state,
         training: newTrainingState,
         selectedModuleId: action.payload.id,
-        lastSavedState: structuredClone(newTrainingState),
-        lastSavedAt: new Date(),
-        isSaving: false,
-        saveStatus: "saved",
-        userModified: false,
+        userModified: true,
+        saveStatus: "idle",
       };
     }
     case "DELETE_MODULE": {
@@ -148,7 +150,8 @@ function trainingEditReducer(
           modules: updatedModules,
         },
         selectedModuleId: newSelectedModuleId,
-        ...baseStateUpdate,
+        userModified: true,
+        saveStatus: "idle",
       };
     }
     case "REORDER_MODULES": {
@@ -169,8 +172,8 @@ function trainingEditReducer(
       return {
         ...state,
         selectedModuleId: action.payload.moduleId,
-        userModified: false, // Reset modified flag
-        saveStatus: "idle", // Keep status idle
+        userModified: false,
+        saveStatus: "idle",
       };
 
     // --- Module Details ---
@@ -254,8 +257,7 @@ function trainingEditReducer(
           ...state.training,
           modules: updatedModules,
         },
-        ...baseStateUpdate, // Apply base updates (userModified=true, etc.)
-        // Keep userModified = true because the *selection* changed, even if prompt text looks the same
+        ...baseStateUpdate,
       };
     }
     case "UPDATE_MODULE_CHARACTER_PROMPT": {
@@ -331,10 +333,11 @@ function trainingEditReducer(
     case "SAVE_ERROR":
       return { ...state, isSaving: false, saveStatus: "error" };
     case "RESET_MODIFIED_FLAG":
-      return { ...state, userModified: false };
+      if (state.isSaving || state.saveStatus === "error") return state;
+      return { ...state, userModified: false, saveStatus: "idle" };
 
     default:
-      return { ...state, userModified: false }; // Return current state, ensure modified is false
+      return state;
   }
 }
 
@@ -345,6 +348,8 @@ type TrainingEditContextType = {
   dispatch: React.Dispatch<TrainingEditAction>;
   saveNow: () => Promise<boolean>;
   getModuleById: (moduleId: number | undefined) => Module | undefined;
+  addModule: (title: string) => Promise<void>;
+  deleteModule: (moduleId: number) => Promise<void>;
 };
 
 const TrainingEditContext = createContext<TrainingEditContextType | undefined>(
@@ -378,18 +383,67 @@ export function TrainingEditProvider({
   const [state, dispatch] = useReducer(trainingEditReducer, initialState);
   const debouncedTrainingState = useDebounce(state.training, 1500);
   const savePromiseRef = useRef<Promise<unknown> | null>(null);
-  // Ref to track the previous debounced state, initialized to undefined
   const prevDebouncedStateRef = useRef<TrainingEdit | undefined>(undefined);
+
+  // --- Add Module Logic ---
+  const addModule = useCallback(
+    async (title: string): Promise<void> => {
+      const currentTraining = state.training;
+      if (!currentTraining) {
+        console.error("Cannot add module: training data not loaded.");
+        throw new Error("Training data not available.");
+      }
+      try {
+        const newModule = await createModuleAction(currentTraining.id, {
+          title: title,
+          instructions: "",
+          ordinal: currentTraining.modules.length,
+          modulePrompt: {
+            aiModel: AI_MODELS.OPENAI,
+            scenario: "",
+            assessment: "",
+            moderator: "",
+            characters: [],
+          },
+        });
+        dispatch({ type: "ADD_MODULE", payload: newModule });
+      } catch (error) {
+        console.error("Failed to add module:", error);
+        throw error;
+      }
+    },
+    [state.training, dispatch]
+  );
+
+  // --- Delete Module Logic ---
+  const deleteModule = useCallback(
+    async (moduleId: number): Promise<void> => {
+      const currentTraining = state.training;
+      if (!currentTraining) {
+        console.error("Cannot delete module: training data not loaded.");
+        throw new Error("Training data not available.");
+      }
+      try {
+        await deleteModuleAction(moduleId, currentTraining.id);
+        dispatch({ type: "DELETE_MODULE", payload: { moduleId } });
+      } catch (error) {
+        console.error("Failed to delete module:", error);
+        throw error;
+      }
+    },
+    [state.training, dispatch]
+  );
 
   // --- Auto-Save Logic ---
   const performSave = useCallback(async () => {
-    // Prevent concurrent saves
     if (state.isSaving || savePromiseRef.current) {
       console.log("Auto-save skipped: Already saving.");
       return;
     }
     if (!state.userModified || !state.lastSavedState) {
-      console.log("Auto-save skipped: No modifications detected.");
+      console.log(
+        "Auto-save skipped: No modifications detected since last save."
+      );
       if (state.saveStatus !== "saved") {
         dispatch({ type: "RESET_MODIFIED_FLAG" });
       }
@@ -399,7 +453,16 @@ export function TrainingEditProvider({
     dispatch({ type: "SAVE_STARTED" });
 
     const currentState = state.training;
-    const lastSaved = state.lastSavedState;
+    const lastSaved = state.lastSavedState
+      ? structuredClone(state.lastSavedState)
+      : null;
+
+    if (!lastSaved) {
+      console.error("Auto-save error: Last saved state is missing.");
+      dispatch({ type: "SAVE_ERROR" });
+      return;
+    }
+
     const saveOperations: Promise<unknown>[] = [];
 
     // 1. Check Training Details Changes
@@ -428,37 +491,116 @@ export function TrainingEditProvider({
     }
 
     // 2. Check Module Changes (Updates, Character Prompts)
+    const lastSavedModuleIds = new Set(lastSaved.modules.map((m) => m.id));
+
     currentState.modules.forEach((currentModule) => {
       const lastSavedModule = lastSaved.modules.find(
         (m) => m.id === currentModule.id
       );
 
-      if (!lastSavedModule) {
-        console.warn(
-          `Module ${currentModule.id} not in last saved state during auto-save.`
+      if (!lastSavedModuleIds.has(currentModule.id)) {
+        console.log(
+          `Module ${currentModule.id} identified as potentially new or modified shortly after add.`
         );
-        return; // Skip module if it wasn't in the last save (should be handled by ADD)
       }
 
-      // Check module fields
-      const moduleFields: (keyof Module)[] = [
-        "title",
-        "instructions",
-        "ordinal",
-      ];
-      const modulePropsChanged = moduleFields.some(
-        (field) => currentModule[field] !== lastSavedModule[field]
-      );
-      // Check module prompt fields
-      const promptFields: (keyof ModulePrompt)[] = ["scenario", "assessment"];
-      const modulePromptChanged = promptFields.some(
-        (field) =>
-          currentModule.modulePrompt[field] !==
-          lastSavedModule.modulePrompt[field]
-      );
+      if (lastSavedModule) {
+        const moduleFields: (keyof Module)[] = [
+          "title",
+          "instructions",
+          "ordinal",
+        ];
+        const modulePropsChanged = moduleFields.some(
+          (field) => currentModule[field] !== lastSavedModule[field]
+        );
 
-      if (modulePropsChanged || modulePromptChanged) {
-        console.log(`Auto-saving Module ${currentModule.id} Details...`);
+        const promptFields: (keyof ModulePrompt)[] = [
+          "aiModel",
+          "scenario",
+          "assessment",
+          "moderator",
+        ];
+        const modulePromptBaseChanged = promptFields.some(
+          (field) =>
+            currentModule.modulePrompt[field] !==
+            lastSavedModule.modulePrompt[field]
+        );
+
+        const currentCharacter = currentModule.modulePrompt.characters[0];
+        const lastSavedCharacter = lastSavedModule.modulePrompt.characters[0];
+        let characterChanged = false;
+        if (
+          currentCharacter?.id !== lastSavedCharacter?.id ||
+          (currentCharacter &&
+            lastSavedCharacter &&
+            currentCharacter.prompt !== lastSavedCharacter.prompt)
+        ) {
+          characterChanged = true;
+        }
+
+        // If any part of the module or its prompt/character changed, determine the correct action
+        if (modulePropsChanged || modulePromptBaseChanged || characterChanged) {
+          // If module properties or base prompt properties changed, use the main update action
+          if (modulePropsChanged || modulePromptBaseChanged) {
+            console.log(
+              `Auto-saving Module ${currentModule.id} Details (Props or Base Prompt change detected)...`
+            );
+            saveOperations.push(
+              updateModuleAction({
+                id: currentModule.id,
+                trainingId: currentState.id,
+                title: currentModule.title,
+                instructions: currentModule.instructions,
+                ordinal: currentModule.ordinal,
+                modulePrompt: {
+                  aiModel: currentModule.modulePrompt.aiModel,
+                  scenario: currentModule.modulePrompt.scenario,
+                  assessment: currentModule.modulePrompt.assessment,
+                  moderator: currentModule.modulePrompt.moderator,
+                  // Send the current character array - updateModuleAction MUST handle this
+                  characters: currentModule.modulePrompt.characters,
+                },
+              })
+            );
+          }
+          // If ONLY the character changed (likely just the prompt)
+          else if (characterChanged) {
+            if (currentCharacter) {
+              // Ensure character exists to update
+              console.log(
+                `Auto-saving Character Prompt for Module ${currentModule.id}, Character ${currentCharacter.id}...`
+              );
+              saveOperations.push(
+                updateModuleCharacterPromptAction({
+                  moduleId: currentModule.id,
+                  characterId: currentCharacter.id,
+                  prompt: currentCharacter.prompt || null, // Ensure null if empty
+                })
+              );
+            } else {
+              // This might occur if a character was selected then immediately removed before save?
+              console.warn(
+                `Character prompt changed for module ${currentModule.id}, but currentCharacter is null/undefined.`
+              );
+            }
+          }
+
+          // Optional: Log specific case where only prompt changed (for debugging)
+          if (
+            !modulePropsChanged &&
+            !modulePromptBaseChanged &&
+            characterChanged &&
+            currentCharacter
+          ) {
+            console.log(
+              `Character prompt specifically changed for Module ${currentModule.id}, Character ${currentCharacter.id}. Handled by specific action.`
+            );
+          }
+        }
+      } else if (lastSavedModuleIds.has(currentModule.id)) {
+        console.warn(
+          `Module ${currentModule.id} found in current state but not in lastSavedState array. Attempting save.`
+        );
         saveOperations.push(
           updateModuleAction({
             id: currentModule.id,
@@ -466,50 +608,25 @@ export function TrainingEditProvider({
             title: currentModule.title,
             instructions: currentModule.instructions,
             ordinal: currentModule.ordinal,
-            modulePrompt: {
-              // Pass the whole prompt object, assuming updateModuleAction handles it
-              aiModel: currentModule.modulePrompt.aiModel,
-              scenario: currentModule.modulePrompt.scenario,
-              assessment: currentModule.modulePrompt.assessment,
-              moderator: currentModule.modulePrompt.moderator,
-              // Pass the full characters array directly
-              characters: currentModule.modulePrompt.characters,
-            },
+            modulePrompt: currentModule.modulePrompt,
           })
         );
       }
-
-      // Check character prompt changes specifically
-      const currentCharacter = currentModule.modulePrompt.characters[0];
-      const lastSavedCharacter = lastSavedModule.modulePrompt.characters[0];
-      if (
-        currentCharacter &&
-        lastSavedCharacter &&
-        currentCharacter.id === lastSavedCharacter.id &&
-        currentCharacter.prompt !== lastSavedCharacter.prompt
-      ) {
-        // Avoid duplicate saves if the entire module was already saved
-        if (!modulePropsChanged && !modulePromptChanged) {
-          console.log(
-            `Auto-saving Character Prompt for Module ${currentModule.id}, Character ${currentCharacter.id}...`
-          );
-          saveOperations.push(
-            updateModuleCharacterPromptAction({
-              moduleId: currentModule.id,
-              characterId: currentCharacter.id,
-              prompt: currentCharacter.prompt || null,
-            })
-          );
-        } else {
-          console.log(
-            `Skipping separate character prompt save for Module ${currentModule.id} as module update includes it.`
-          );
-        }
-      }
     });
 
-    if (saveOperations.length === 0) {
-      console.log("Auto-save: No specific changes detected to save.");
+    if (saveOperations.length === 0 && state.userModified) {
+      console.log(
+        "Auto-save: No specific property changes detected, but userModified was true (likely due to add/delete/reorder). Finalizing save state."
+      );
+      dispatch({
+        type: "SAVE_SUCCESS",
+        payload: { savedState: structuredClone(currentState) },
+      });
+      return;
+    } else if (saveOperations.length === 0 && !state.userModified) {
+      console.log(
+        "Auto-save: No specific changes detected and userModified is false."
+      );
       dispatch({ type: "RESET_MODIFIED_FLAG" });
       return;
     }
@@ -517,7 +634,7 @@ export function TrainingEditProvider({
     try {
       savePromiseRef.current = Promise.all(saveOperations);
       await savePromiseRef.current;
-      console.log("Auto-save successful.");
+      console.log("Auto-save successful for detected changes.");
       dispatch({
         type: "SAVE_SUCCESS",
         payload: { savedState: structuredClone(currentState) },
@@ -538,12 +655,10 @@ export function TrainingEditProvider({
 
   // Effect to trigger auto-save
   useEffect(() => {
-    // Check if the debounced state has actually changed since the last run
     const hasDebouncedStateChanged =
       JSON.stringify(debouncedTrainingState) !==
       JSON.stringify(prevDebouncedStateRef.current);
 
-    // Only proceed if the debounced state changed AND the user has modified
     if (hasDebouncedStateChanged && state.userModified) {
       console.log(
         "Debounced state changed and user modified, triggering auto-save check."
@@ -554,11 +669,8 @@ export function TrainingEditProvider({
         "Debounced state changed, but userModified is false. Skipping save trigger."
       );
     }
-    // Update the ref to the current debounced state *after* the check
     prevDebouncedStateRef.current = debouncedTrainingState;
-
-    // Keep dependencies stable, check condition inside
-  }, [debouncedTrainingState, state.userModified, performSave]); // Add performSave, userModified back
+  }, [debouncedTrainingState, state.userModified, performSave]);
 
   // --- Helper Functions ---
   const getModuleById = useCallback(
@@ -572,20 +684,32 @@ export function TrainingEditProvider({
   const saveNow = useCallback(async (): Promise<boolean> => {
     if (savePromiseRef.current) {
       try {
+        console.log("SaveNow: Waiting for ongoing auto-save...");
         await savePromiseRef.current;
-      } catch {
-        // Ignore error from ongoing save; let the new attempt handle it
+        console.log("SaveNow: Ongoing auto-save finished.");
+      } catch (e) {
+        console.warn("SaveNow: Ongoing auto-save finished with error.", e);
       }
     }
-    if (!state.userModified && !state.isSaving) {
-      console.log("SaveNow: No modifications or ongoing save.");
+    if (
+      !state.userModified &&
+      !state.isSaving &&
+      state.saveStatus !== "error"
+    ) {
+      console.log(
+        "SaveNow: No modifications or ongoing save, and no error state."
+      );
       return true;
     }
 
-    console.log("SaveNow: Performing save...");
+    console.log("SaveNow: Performing explicit save...");
     await performSave();
 
-    return savePromiseRef.current === null && state.saveStatus !== "error";
+    const success = !savePromiseRef.current && state.saveStatus !== "error";
+    console.log(
+      `SaveNow finished. Success: ${success}, Status: ${state.saveStatus}`
+    );
+    return success;
   }, [performSave, state.userModified, state.isSaving, state.saveStatus]);
 
   // --- Status Reset Effect ---
@@ -596,14 +720,21 @@ export function TrainingEditProvider({
         if (state.saveStatus === "saved" || state.saveStatus === "error") {
           dispatch({ type: "RESET_MODIFIED_FLAG" });
         }
-      }, 2000);
+      }, 3000);
     }
     return () => clearTimeout(timerId);
   }, [state.saveStatus]);
 
   return (
     <TrainingEditContext.Provider
-      value={{ state, dispatch, saveNow, getModuleById }}
+      value={{
+        state,
+        dispatch,
+        saveNow,
+        getModuleById,
+        addModule,
+        deleteModule,
+      }}
     >
       {children}
     </TrainingEditContext.Provider>
@@ -611,7 +742,6 @@ export function TrainingEditProvider({
 }
 
 // --- Hook ---
-
 export function useTrainingEdit() {
   const context = useContext(TrainingEditContext);
   if (!context) {
