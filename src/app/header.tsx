@@ -118,10 +118,12 @@ export function Header() {
             alt="MentoPanda Logo"
             width={32}
             height={32}
-            className="w-8 h-8 sm:w-10 sm:h-10"
+            className="w-7 h-auto sm:w-7 sm:h-auto"
             priority
           />
-          <span className="font-semibold text-sm sm:text-xl">MentoPanda</span>
+          <span className="font-semibold text-sm sm:text-xl pl-2">
+            MentoPanda
+          </span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-4">
           <NavigationMenu className="hidden lg:block">
