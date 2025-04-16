@@ -118,7 +118,7 @@ export function Header() {
             alt="MentoPanda Logo"
             width={32}
             height={32}
-            className="w-7 h-auto sm:w-7 sm:h-auto"
+            className="w-8 h-auto sm:w-10 sm:h-auto"
             priority
           />
           <span className="font-semibold text-sm sm:text-xl pl-2">

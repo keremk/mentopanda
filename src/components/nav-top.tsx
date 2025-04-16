@@ -25,7 +25,7 @@ export function NavTop({ title }: { title: string }) {
             alt="MentoPanda Logo"
             width={32}
             height={32}
-            className="w-7 h-auto"
+            className="w-10 h-auto"
           />
         </div>
         <div
