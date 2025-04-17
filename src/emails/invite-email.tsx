@@ -6,6 +6,7 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -18,61 +19,110 @@ type InviteEmailProps = {
   inviterName: string;
   inviterEmail: string;
   inviteLink: string;
+  isTrial: boolean;
 };
 
 export default function InviteEmail({
   inviterName = "Sarah Chen",
   inviterEmail = "sarah@example.com",
   inviteLink = "https://mentopanda.com/invite/abc123",
+  isTrial = false,
 }: InviteEmailProps) {
+  // HSL values extracted from globals.css for better email client compatibility
+  const primaryColor = "hsl(222.2, 47.4%, 11.2%)";
+  const brandColor = "hsl(175, 70%, 41%)";
+  const brandForegroundColor = "hsl(0, 0%, 100%)";
+  const borderColor = "hsl(214.3, 31.8%, 91.4%)";
+  const mutedForegroundColor = "hsl(215.4, 16.3%, 46.9%)";
+  const foregroundColor = "hsl(222.2, 84%, 4.9%)"; // Default text color
+
+  // Conditional text
+  const previewText = isTrial
+    ? "You&apos;re invited! Try MentoPanda Free"
+    : `${inviterName} invited you to MentoPanda!`;
+  const introText = isTrial ? (
+    <>
+      {inviterName} ({inviterEmail}) invited you to a free 2-week trial of
+      MentoPanda. Practice and improve your communication skills for challenging
+      workplace scenarios.
+    </>
+  ) : (
+    <>
+      {inviterName} ({inviterEmail}) invited you to join MentoPanda. Practice
+      and improve your communication skills for challenging workplace scenarios.
+    </>
+  );
+  const buttonText = isTrial ? "Start 2-Week Free Trial" : "Join MentoPanda";
+
   return (
     <Html>
       <Head />
-      <Preview>Join {inviterName}&apos;s project on MentoPanda</Preview>
-      <Tailwind>
+      <Preview>{previewText}</Preview>
+      <Tailwind
+        config={{
+          theme: {
+            extend: {
+              colors: {
+                brand: brandColor,
+                "brand-foreground": brandForegroundColor,
+                primary: primaryColor,
+                border: borderColor,
+                foreground: foregroundColor,
+                "muted-foreground": mutedForegroundColor,
+              },
+            },
+          },
+        }}
+      >
         <Body className="bg-white font-sans">
-          <Container className="mx-auto py-8 px-4">
-            <Section className="bg-white rounded-lg border border-gray-200 p-8 shadow-sm">
-              <Heading className="text-2xl font-bold text-[#3A3B7B] mb-4 text-center">
-                You&apos;re invited to join a project on MentoPanda
+          <Container className="mx-auto py-8 px-4 max-w-lg">
+            <Section className="bg-white rounded-lg border border-gray-200 p-8 shadow-sm text-center">
+              <Img
+                src="https://www.mentopanda.com/panda-light.png"
+                width="80"
+                height="80"
+                alt="MentoPanda Logo"
+                className="mx-auto mb-6"
+              />
+              <Heading className="text-2xl font-bold text-primary mb-4 text-center">
+                {inviterName} invited you to MentoPanda!
               </Heading>
 
               <Text className="text-gray-700 mb-6 text-center">
-                {inviterName} ({inviterEmail}) has invited you to collaborate on
-                their training project
+                {introText}
               </Text>
 
               <Section className="bg-gray-50 rounded-lg p-6 mb-6">
-                <Text className="text-l font-semibold text-[#3A3B7B] text-center mb-2">
-                  MentoPanda is a platform where you can practice with AI
-                  characters to improve your communication skills.
+                <Text className="text-l font-semibold text-primary text-center mb-2">
+                  Master difficult conversations by practicing with AI
+                  characters.
                 </Text>
               </Section>
 
               <Section className="text-center mb-8">
                 <Button
-                  className="bg-[#F45B69] text-white font-bold py-3 px-12 rounded-full"
+                  className="bg-brand text-brand-foreground font-bold py-3 px-12 rounded-full"
                   href={inviteLink}
                 >
-                  Join Project
+                  {buttonText}
                 </Button>
               </Section>
 
-              <Hr className="border-gray-200 my-6" />
+              <Hr className="border-border my-6" />
 
               <Text className="text-sm text-gray-500 text-center">
-                For security: Please verify that you know {inviterName} before
-                accepting this invitation.
+                For your security: Please ensure you know {inviterName} before
+                accepting.
               </Text>
             </Section>
 
             <Section className="mt-8 text-center">
-              <Text className="text-xs text-gray-400">
+              <Text className="text-xs text-muted-foreground">
                 MentoPanda - Your AI mentor for communication skills
               </Text>
               <Link
                 href="https://mentopanda.com"
-                className="text-xs text-[#F45B69]"
+                className="text-xs text-brand"
               >
                 mentopanda.com
               </Link>

@@ -15,7 +15,6 @@ import { z } from "zod";
 import { Resend } from "resend";
 import InviteEmail from "@/emails/invite-email";
 import React from "react";
-import TrialInviteEmail from "@/emails/trial-invite";
 const createInvitationSchema = z.object({
   inviteeEmail: z.string().email(),
 });
@@ -71,21 +70,12 @@ function getInviteEmailTemplate(
   invitation: Invitation,
   isPromoInvitation: boolean
 ) {
-  if (isPromoInvitation) {
-    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/login/mode=signup&invite=${invitation.id}`;
-    return TrialInviteEmail({
-      inviterName: invitation.inviterDisplayName,
-      inviterEmail: invitation.inviterEmail,
-      inviteLink: inviteLink,
-    });
-  } else {
-    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/login/mode=signup&invite=${invitation.id}`;
-    return InviteEmail({
-      inviterName: invitation.inviterDisplayName,
-      inviterEmail: invitation.inviterEmail,
-      inviteLink: inviteLink,
-    });
-  }
+  return InviteEmail({
+    inviterName: invitation.inviterDisplayName,
+    inviterEmail: invitation.inviterEmail,
+    inviteLink: `${process.env.NEXT_PUBLIC_APP_URL}/login/mode=signup&invite=${invitation.id}`,
+    isTrial: isPromoInvitation,
+  });
 }
 
 export async function deleteInvitationAction(invitationId: number) {
