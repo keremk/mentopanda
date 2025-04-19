@@ -73,7 +73,7 @@ function getInviteEmailTemplate(
   return InviteEmail({
     inviterName: invitation.inviterDisplayName,
     inviterEmail: invitation.inviterEmail,
-    inviteLink: `${process.env.NEXT_PUBLIC_APP_URL}/login/mode=signup&invite=${invitation.id}`,
+    inviteLink: `${process.env.NEXT_PUBLIC_SITE_URL}/login/mode=signup&invite=${invitation.id}`,
     isTrial: isPromoInvitation,
   });
 }

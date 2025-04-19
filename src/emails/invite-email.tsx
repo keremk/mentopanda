@@ -26,7 +26,7 @@ export default function InviteEmail({
   inviterName = "Sarah Chen",
   inviterEmail = "sarah@example.com",
   inviteLink = "https://mentopanda.com/invite/abc123",
-  isTrial = false,
+  isTrial = true,
 }: InviteEmailProps) {
   // HSL values extracted from globals.css for better email client compatibility
   const primaryColor = "hsl(222.2, 47.4%, 11.2%)";
@@ -106,6 +106,16 @@ export default function InviteEmail({
                 >
                   {buttonText}
                 </Button>
+              </Section>
+
+              <Section className="text-center mt-4">
+                <Text className="text-xs text-muted-foreground">
+                  Or type this link into your browser:
+                  <br />
+                  <Link href={inviteLink} className="text-brand underline">
+                    {inviteLink}
+                  </Link>
+                </Text>
               </Section>
 
               <Hr className="border-border my-6" />
