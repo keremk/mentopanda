@@ -52,7 +52,11 @@ export function TrialInvitationsTable({
   const handleResend = async (invitationId: number) => {
     setIsLoading((prev) => ({ ...prev, [invitationId]: true }));
     try {
-      await resendInviteEmailAction(invitationId, true);
+      await resendInviteEmailAction(
+        invitationId,
+        "You've been invited to try MentoPanda",
+        true
+      );
       toast({
         title: "Success",
         description: "Invitation email resent successfully",

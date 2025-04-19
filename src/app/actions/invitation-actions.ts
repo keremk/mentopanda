@@ -51,6 +51,7 @@ export async function createInvitationAction(
 
 export async function resendInviteEmailAction(
   invitationId: number,
+  subject: string,
   isPromoInvitation: boolean = false
 ) {
   const supabase = await createClient();
@@ -61,7 +62,7 @@ export async function resendInviteEmailAction(
   const emailTemplate = getInviteEmailTemplate(invitation, isPromoInvitation);
   return await sendInviteEmailAction(
     invitation,
-    "Join my project on MentoPanda",
+    subject,
     emailTemplate
   );
 }

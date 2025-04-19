@@ -38,7 +38,7 @@ export default function InviteEmail({
 
   // Conditional text
   const previewText = isTrial
-    ? "You&apos;re invited! Try MentoPanda Free"
+    ? "You're invited! Try MentoPanda Free"
     : `${inviterName} invited you to MentoPanda!`;
   const introText = isTrial ? (
     <>
@@ -101,7 +101,14 @@ export default function InviteEmail({
 
               <Section className="text-center mb-8">
                 <Button
-                  className="bg-brand text-brand-foreground font-bold py-3 px-12 rounded-full"
+                  style={{
+                    backgroundColor: brandColor,
+                    color: brandForegroundColor,
+                    fontWeight: "bold",
+                    padding: "12px 48px", // Equivalent to py-3 px-12
+                    borderRadius: "9999px", // Equivalent to rounded-full
+                    textDecoration: "none", // Ensure no underline on the button itself
+                  }}
                   href={inviteLink}
                 >
                   {buttonText}
