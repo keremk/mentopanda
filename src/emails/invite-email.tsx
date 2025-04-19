@@ -116,7 +116,10 @@ export default function InviteEmail({
               </Section>
 
               <Section className="text-center mt-4">
-                <Text className="text-xs text-muted-foreground">
+                <Text
+                  className="text-xs"
+                  style={{ color: mutedForegroundColor }}
+                >
                   Or type this link into your browser:
                   <br />
                   <Link href={inviteLink} className="text-brand underline">
@@ -134,7 +137,7 @@ export default function InviteEmail({
             </Section>
 
             <Section className="mt-8 text-center">
-              <Text className="text-xs text-muted-foreground">
+              <Text className="text-xs" style={{ color: mutedForegroundColor }}>
                 MentoPanda - Your AI mentor for communication skills
               </Text>
               <Link
