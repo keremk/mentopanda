@@ -30,11 +30,11 @@ export default function InviteEmail({
 }: InviteEmailProps) {
   // HSL values extracted from globals.css for better email client compatibility
   const primaryColor = "#121C2D";
-  const brandColor = "hsl(175, 70%, 41%)";
-  const brandForegroundColor = "hsl(0, 0%, 100%)";
-  const borderColor = "hsl(214.3, 31.8%, 91.4%)";
-  const mutedForegroundColor = "hsl(215.4, 16.3%, 46.9%)";
-  const foregroundColor = "hsl(222.2, 84%, 4.9%)"; // Default text color
+  const brandColor = "#21B0A2";
+  const brandForegroundColor = "#FFFFFF";
+  const borderColor = "#E4E7EB";
+  const mutedForegroundColor = "#6B7280";
+  const foregroundColor = "#030712"; // Default text color
 
   // Conditional text
   const previewText = isTrial
