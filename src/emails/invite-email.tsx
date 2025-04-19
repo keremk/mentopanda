@@ -29,7 +29,7 @@ export default function InviteEmail({
   isTrial = true,
 }: InviteEmailProps) {
   // HSL values extracted from globals.css for better email client compatibility
-  const primaryColor = "hsl(222.2, 47.4%, 11.2%)";
+  const primaryColor = "#121C2D";
   const brandColor = "hsl(175, 70%, 41%)";
   const brandForegroundColor = "hsl(0, 0%, 100%)";
   const borderColor = "hsl(214.3, 31.8%, 91.4%)";
