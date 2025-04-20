@@ -134,7 +134,7 @@ export async function updateUserTrial(
   const userId = await getUserId(supabase);
   const { error } = await supabase
     .from("profiles")
-    .update({ trial_start_date: startDate, trial_end_date: endDate })
+    .update({ trial_start: startDate, trial_end: endDate })
     .eq("id", userId);
   
   if (error) handleError(error);

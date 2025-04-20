@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { createProject } from "@/data/projects";
+import { createProject, ProjectSummary } from "@/data/projects";
 import { revalidatePath } from "next/cache";
 import { updateCurrentProject, getUserId } from "@/data/user";
 export type ProjectSetupData = {
@@ -18,7 +18,7 @@ import {
 import { UserRole } from "@/data/user";
 import { cache } from "react";
 
-export async function setupProjectAction(data: ProjectSetupData) {
+export async function setupProjectAction(data: ProjectSetupData): Promise<ProjectSummary> {
   const supabase = await createClient();
 
   console.log("Creating project:", data.projectName);

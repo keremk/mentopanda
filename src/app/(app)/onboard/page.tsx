@@ -15,5 +15,6 @@ export default async function OnboardPage() {
   if (projects.length > 1) redirect("/home");
 
   const invitations = await getInvitationsForUserAction(user);
+  console.log(`Invitations: ${JSON.stringify(invitations)}`);
   return <OnboardingFlow user={user} invitations={invitations} />;
 }

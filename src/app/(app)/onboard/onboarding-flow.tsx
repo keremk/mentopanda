@@ -11,10 +11,7 @@ import { Progress } from "./steps/progress";
 import { ApiKeySetup } from "./steps/api-key-setup";
 import { useRouter } from "next/navigation";
 import { setupProjectAction } from "@/app/actions/project-actions";
-import {
-  startTrialAction,
-  updateProfileAction,
-} from "@/app/actions/user-actions";
+import { updateProfileAction } from "@/app/actions/user-actions";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/data/user";
 import { Invitation } from "@/data/invitations";
@@ -46,6 +43,9 @@ type OnboardingFlowProps = {
 export function OnboardingFlow({ user, invitations }: OnboardingFlowProps) {
   const isTrialUser =
     invitations && invitations.length > 0 && invitations[0].isTrial;
+  console.log(
+    `Invitations: ${JSON.stringify(invitations)}, isTrial: ${isTrialUser}`
+  );
 
   const [currentStep, setCurrentStep] = useState<Step>("Welcome");
   const [status, setStatus] = useState<string | null>(null);
@@ -62,6 +62,7 @@ export function OnboardingFlow({ user, invitations }: OnboardingFlowProps) {
   // Set isApiKeyEntered to true for trial users
   useEffect(() => {
     if (isTrialUser) {
+      console.log("Setting isApiKeyEntered to true");
       setData((prev) => ({ ...prev, isApiKeyEntered: true }));
     }
   }, [isTrialUser]);
@@ -118,24 +119,14 @@ export function OnboardingFlow({ user, invitations }: OnboardingFlowProps) {
 
       // Set up project
       setStatus("Creating your project...");
-      await setupProjectAction({
+      const project = await setupProjectAction({
         projectName: data.projectName,
         copyStarterContent: data.copyStarterContent,
       });
 
       if (invitations && invitations.length > 0 && invitations[0].isTrial) {
         setStatus("Accepting trial invitation...");
-        try {
-          await startTrialAction(invitations[0]);
-        } catch (error) {
-          console.error("Error starting trial:", error);
-          toast({
-            title: "Error starting trial",
-            description: "Please try again.",
-          });
-        }
-
-        await acceptInvitationAction(invitations[0]);
+        await acceptInvitationAction(invitations[0], project.id);
       }
 
       router.push("/home");
@@ -143,7 +134,7 @@ export function OnboardingFlow({ user, invitations }: OnboardingFlowProps) {
       console.log("Setup failed:", error);
       toast({
         title: "Setup failed",
-        description: "Please try again.",
+        description: `Error: ${error}`,
         variant: "destructive",
       });
       setStatus("Setup failed. Please try again.");

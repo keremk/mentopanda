@@ -15,6 +15,7 @@ import { z } from "zod";
 import { Resend } from "resend";
 import InviteEmail from "@/emails/invite-email";
 import React from "react";
+import { startTrialAction } from "./user-actions";
 const createInvitationSchema = z.object({
   inviteeEmail: z.string().email(),
 });
@@ -74,7 +75,7 @@ function getInviteEmailTemplate(
   return InviteEmail({
     inviterName: invitation.inviterDisplayName,
     inviterEmail: invitation.inviterEmail,
-    inviteLink: `${process.env.NEXT_PUBLIC_SITE_URL}/login/mode=signup&invite=${invitation.id}`,
+    inviteLink: `${process.env.NEXT_PUBLIC_SITE_URL}/login?mode=signup`,
     isTrial: isPromoInvitation,
   });
 }
@@ -91,9 +92,12 @@ export async function getInvitationsForUserAction(
   return await getInvitationsForUser(supabase, user);
 }
 
-export async function acceptInvitationAction(invitation: Invitation) {
+export async function acceptInvitationAction(invitation: Invitation, projectId?: number) {
   const supabase = await createClient();
-  return await acceptInvitation(supabase, invitation.id);
+  if (invitation.isTrial) {
+    await startTrialAction(invitation);
+  }
+  return await acceptInvitation(supabase, invitation.id, projectId);
 }
 
 export async function declineInvitationAction(invitation: Invitation) {
@@ -106,10 +110,11 @@ async function sendInviteEmailAction(
   subject: string,
   emailTemplate: React.JSX.Element
 ): Promise<string> {
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  if (process.env.NODE_ENV === "development") {
+    return "123";
+  }
 
-  const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/login/mode=signup&invite=${invitation.id}`;
-  console.log("inviteLink", inviteLink);
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const { data, error } = await resend.emails.send({
     from: "MentoPanda <onboarding@transactional.mentopanda.com>",

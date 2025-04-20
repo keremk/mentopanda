@@ -81,6 +81,7 @@ export async function getInvitationsForUser(
       inviter_display_name,
       inviter_email,
       role,
+      is_trial,
       created_at,
       updated_at
     `
@@ -145,13 +146,16 @@ export async function deleteInvitation(
 
 export async function acceptInvitation(
   supabase: SupabaseClient,
-  invitationId: number
+  invitationId: number,
+  projectId?: number
 ): Promise<boolean> {
   const userId = await getUserId(supabase);
 
+  console.log(`Accepting invitation ${invitationId} for user ${userId}`);
   const { data, error } = await supabase.rpc("accept_invitation", {
     invitation_id: invitationId,
     user_id: userId,
+    p_project_id: projectId,
   });
 
   if (error) handleError(error);
