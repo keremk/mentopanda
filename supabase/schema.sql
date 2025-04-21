@@ -37,23 +37,18 @@ CREATE EXTENSION IF NOT EXISTS "pg_net" WITH SCHEMA "extensions";
 
 
 
-CREATE EXTENSION IF NOT EXISTS "pgsodium" WITH SCHEMA "pgsodium";
+CREATE EXTENSION IF NOT EXISTS "pgsodium";
 
 
 
 
 
 
-CREATE SCHEMA IF NOT EXISTS "test_overrides";
+CREATE EXTENSION IF NOT EXISTS "hstore" WITH SCHEMA "public";
 
 
-ALTER SCHEMA "test_overrides" OWNER TO "postgres";
 
 
-CREATE SCHEMA IF NOT EXISTS "tests";
-
-
-ALTER SCHEMA "tests" OWNER TO "postgres";
 
 
 CREATE EXTENSION IF NOT EXISTS "http" WITH SCHEMA "extensions";
@@ -110,7 +105,9 @@ CREATE TYPE "public"."app_permission" AS ENUM (
     'enrollment.manage',
     'project.manage',
     'project.member.manage',
-    'basic.access'
+    'training.history',
+    'basic.access',
+    'trials.manage'
 );
 
 
@@ -139,21 +136,95 @@ CREATE TYPE "public"."user_role" AS ENUM (
 ALTER TYPE "public"."user_role" OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."authorize"("requested_permission" "public"."app_permission") RETURNS boolean
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+CREATE OR REPLACE FUNCTION "public"."accept_invitation"("invitation_id" bigint, "user_id" "uuid", "p_project_id" bigint DEFAULT NULL::bigint) RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
-    AS $$ BEGIN RETURN requested_permission = ANY(
-    ARRAY(
-      SELECT jsonb_array_elements_text((auth.jwt()->'permissions')::jsonb)
-    )::public.app_permission []
-  );
+    AS $$
+DECLARE
+  v_invitation_project_id BIGINT; -- Project ID from the invitation record (can be NULL)
+  v_target_project_id BIGINT; -- The final project ID to use
+  v_role USER_ROLE;
+  v_email TEXT;
+BEGIN
+  -- Get user email
+  SELECT email INTO v_email FROM auth.users WHERE id = user_id;
+  
+  IF v_email IS NULL THEN
+    RAISE EXCEPTION 'User not found: %', user_id;
+  END IF;
+  
+  -- Get the invitation details (role is required, project_id might be null)
+  SELECT project_id, role 
+  INTO v_invitation_project_id, v_role
+  FROM invitations
+  WHERE id = invitation_id
+  AND invitee_email = v_email;
+  
+  -- Check if invitation exists and belongs to the user
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Invitation not found or not for this user (ID: %, Email: %)', invitation_id, v_email;
+  END IF;
 
+  -- Determine the target project ID
+  IF p_project_id IS NOT NULL THEN
+    v_target_project_id := p_project_id; -- Use provided project ID
+  ELSE
+    v_target_project_id := v_invitation_project_id; -- Fallback to invitation's project ID
+  END IF;
+
+  -- Ensure we have a project ID to proceed
+  IF v_target_project_id IS NULL THEN
+    RAISE EXCEPTION 'Project ID must be provided directly or exist in the invitation record (Invitation ID: %)', invitation_id;
+  END IF;
+  
+  -- Add the user to the determined project
+  INSERT INTO projects_profiles (project_id, profile_id, role)
+  VALUES (v_target_project_id, user_id, v_role)
+  ON CONFLICT (project_id, profile_id) DO UPDATE SET role = v_role;
+  
+  -- Delete the invitation
+  DELETE FROM invitations WHERE id = invitation_id;
+  
+  RETURN TRUE;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Re-raise the original exception to preserve details
+    RAISE; 
 END;
-
 $$;
 
 
-ALTER FUNCTION "public"."authorize"("requested_permission" "public"."app_permission") OWNER TO "postgres";
+ALTER FUNCTION "public"."accept_invitation"("invitation_id" bigint, "user_id" "uuid", "p_project_id" bigint) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."accept_invitation"("invitation_id" bigint, "user_id" "uuid", "p_project_id" bigint) IS 'Securely accepts an invitation, adds a user to a project using provided project_id or fallback to invitation project_id - bypasses RLS';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."authorize"("requested_permission" "public"."app_permission", "project_id" bigint) RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$ 
+DECLARE
+  jwt_project_id bigint;
+BEGIN
+  -- Get the current project ID from JWT
+  jwt_project_id := (auth.jwt()->'current_project_id')::bigint;
+  
+  -- Only authorize if the requested project matches the current project in JWT
+  -- and the user has the requested permission
+  RETURN 
+    project_id = jwt_project_id AND
+    requested_permission = ANY(
+      ARRAY(
+        SELECT jsonb_array_elements_text((auth.jwt()->'permissions')::jsonb)
+      )::public.app_permission[]
+    );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."authorize"("requested_permission" "public"."app_permission", "project_id" bigint) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."calculate_practice_number"() RETURNS "trigger"
@@ -231,64 +302,257 @@ ALTER FUNCTION "public"."create_project"("project_name" "text") OWNER TO "postgr
 
 CREATE OR REPLACE FUNCTION "public"."custom_access_token_hook"("event" "jsonb") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
-DECLARE user_id uuid;
+DECLARE
+    claims jsonb;
+    user_id uuid;
+    current_project_id bigint;
+    project_role public.user_role;
+    user_permissions public.app_permission[];
+    debug_profiles jsonb;
+    debug_projects jsonb;
+BEGIN
+    -- RAISE LOG 'custom_access_token_hook called with event: %', event;
 
-current_project_id bigint;
+    claims := event->'claims';
+    user_id := (event->>'user_id')::uuid;
 
-project_role public.user_role;
+    -- Debug the full profiles row
+    SELECT row_to_json(p)::jsonb INTO debug_profiles
+    FROM public.profiles p
+    WHERE p.id = user_id;
+    
+    -- RAISE LOG 'Debug profiles row: %', debug_profiles;
 
-user_permissions public.app_permission [];
+    -- Get current project and explicit role if any
+    SELECT p.current_project_id, pp.role 
+    INTO current_project_id, project_role
+    FROM public.profiles p
+    LEFT JOIN public.projects_profiles pp ON pp.project_id = p.current_project_id AND pp.profile_id = user_id
+    WHERE p.id = user_id;
 
-is_public boolean;
+    -- Debug the full projects row
+    SELECT row_to_json(pr)::jsonb INTO debug_projects
+    FROM public.projects pr
+    WHERE pr.id = current_project_id;
+    
+    -- RAISE LOG 'Debug projects row: %', debug_projects;
+    -- RAISE LOG 'Found project_id: %, role: %', current_project_id, project_role;
 
-BEGIN -- Get user ID from event
-user_id := (event->>'user_id')::uuid;
+    -- Get permissions for the role
+    SELECT array_agg(permission) INTO user_permissions
+    FROM public.role_permissions
+    WHERE role = COALESCE(project_role, 'member'::public.user_role);
 
-SELECT p.current_project_id,
-  pr.is_public,
-  pp.role INTO current_project_id,
-  is_public,
-  project_role
-FROM public.profiles p
-  JOIN public.projects pr ON pr.id = p.current_project_id
-  LEFT JOIN public.projects_profiles pp ON pp.project_id = p.current_project_id
-  AND pp.profile_id = user_id;
+    -- Set our custom claims
+    claims := jsonb_set(claims, '{current_project_id}', to_jsonb(current_project_id));
+    claims := jsonb_set(claims, '{project_role}', to_jsonb(COALESCE(project_role, 'member')));
+    claims := jsonb_set(claims, '{permissions}', to_jsonb(COALESCE(user_permissions, ARRAY[]::public.app_permission[])));
 
-IF is_public
-AND project_role IS NULL THEN project_role := 'member'::public.user_role;
-
-END IF;
-
-SELECT array_agg(permission) INTO user_permissions
-FROM public.role_permissions
-WHERE role = COALESCE(project_role, 'member'::public.user_role);
-
-event := jsonb_set(
-  event,
-  '{claims}',
-  jsonb_build_object(
-    'current_project_id',
-    current_project_id,
-    'project_role',
-    COALESCE(project_role, 'member'),
-    'permissions',
-    COALESCE(
-      user_permissions,
-      ARRAY []::public.app_permission []
-    )
-  )
-);
-
-RETURN event;
-
+    -- Update the claims in the event
+    RETURN jsonb_set(event, '{claims}', claims);
 END;
-
 $$;
 
 
 ALTER FUNCTION "public"."custom_access_token_hook"("event" "jsonb") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."deep_copy_project"("source_project_id" bigint, "target_project_id" bigint, "target_user_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    source_training_id BIGINT;
+    new_training_id BIGINT;
+    character_id_map HSTORE := ''::HSTORE;
+    old_character_id BIGINT;
+    new_character_id BIGINT;
+    module_rec RECORD;
+BEGIN
+    -- First, build a map of character IDs that will be needed
+    FOR old_character_id IN
+        SELECT DISTINCT characters.id
+        FROM modules_characters
+        JOIN modules ON modules.id = modules_characters.module_id
+        JOIN trainings ON trainings.id = modules.training_id
+        JOIN characters ON characters.id = modules_characters.character_id
+        WHERE trainings.project_id = source_project_id
+    LOOP
+        -- Create new character
+        INSERT INTO characters (
+            name, voice, ai_description, ai_model,
+            description, avatar_url, project_id, created_by
+        )
+        SELECT 
+            name, voice, ai_description, ai_model,
+            description, avatar_url, target_project_id, target_user_id
+        FROM characters
+        WHERE id = old_character_id
+        RETURNING id INTO new_character_id;
+        
+        -- Store the mapping of old to new character IDs
+        character_id_map := character_id_map || HSTORE(
+            old_character_id::text,
+            new_character_id::text
+        );
+    END LOOP;
+
+    -- Create a temporary table to store module mappings
+    CREATE TEMPORARY TABLE module_mapping (
+        old_id BIGINT,
+        new_id BIGINT,
+        training_id BIGINT
+    ) ON COMMIT DROP;
+
+    -- Copy each training and its modules
+    FOR source_training_id IN
+        SELECT id FROM trainings WHERE project_id = source_project_id
+    LOOP
+        -- Copy the training
+        INSERT INTO trainings (
+            title, tagline, description, image_url, preview_url,
+            created_by, project_id
+        )
+        SELECT 
+            title, tagline, description, image_url, preview_url,
+            target_user_id, target_project_id
+        FROM trainings 
+        WHERE id = source_training_id
+        RETURNING id INTO new_training_id;
+        
+        -- Copy modules for this specific training
+        FOR module_rec IN
+            SELECT id, title, instructions, ordinal, ai_model, 
+                   scenario_prompt, assessment_prompt, moderator_prompt, 
+                   video_url, audio_url
+            FROM modules
+            WHERE training_id = source_training_id
+        LOOP
+            INSERT INTO modules (
+                training_id, title, instructions, ordinal,
+                ai_model, scenario_prompt, assessment_prompt,
+                moderator_prompt, video_url, audio_url
+            )
+            VALUES (
+                new_training_id, module_rec.title, module_rec.instructions, module_rec.ordinal,
+                module_rec.ai_model, module_rec.scenario_prompt, module_rec.assessment_prompt,
+                module_rec.moderator_prompt, module_rec.video_url, module_rec.audio_url
+            )
+            RETURNING id INTO new_character_id;
+            
+            -- Store the module mapping
+            INSERT INTO module_mapping (old_id, new_id, training_id)
+            VALUES (module_rec.id, new_character_id, new_training_id);
+        END LOOP;
+    END LOOP;
+    
+    -- Copy module_characters relationships using the mappings
+    INSERT INTO modules_characters (
+        module_id, character_id, ordinal, prompt
+    )
+    SELECT 
+        mm.new_id,
+        (character_id_map -> mc.character_id::text)::bigint,
+        mc.ordinal,
+        mc.prompt
+    FROM modules_characters mc
+    JOIN module_mapping mm ON mc.module_id = mm.old_id
+    WHERE mc.character_id::text = ANY (akeys(character_id_map));
+    
+    -- Drop the temporary table
+    DROP TABLE module_mapping;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."deep_copy_project"("source_project_id" bigint, "target_project_id" bigint, "target_user_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_project_member_info"("p_project_id" bigint, "p_user_id" "uuid") RETURNS "json"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    authorized boolean;
+    member_info json;
+BEGIN
+    -- Check if the caller has 'project.member.manage' permission for this specific project
+    authorized := public.authorize('project.member.manage'::public.app_permission, p_project_id);
+
+    IF authorized THEN
+        -- Retrieve single member's information for the specified project and user
+        SELECT json_build_object(
+            'user_id', pp.profile_id,
+            'email', u.email,
+            'display_name', u.raw_user_meta_data->>'display_name',
+            'avatar_url', u.raw_user_meta_data->>'avatar_url',
+            'role', pp.role
+        )
+        INTO member_info
+        FROM public.projects_profiles pp
+        JOIN auth.users u ON pp.profile_id = u.id
+        WHERE pp.project_id = p_project_id 
+        AND pp.profile_id = p_user_id;
+
+        -- Return success with member data, null if member not found
+        RETURN json_build_object(
+            'status', 'success',
+            'data', COALESCE(member_info, null)
+        );
+    ELSE
+        -- Return error if user lacks permission
+        RETURN json_build_object(
+            'status', 'error',
+            'message', 'Access denied'
+        );
+    END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_project_member_info"("p_project_id" bigint, "p_user_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_project_members"("p_project_id" bigint) RETURNS "json"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+    authorized boolean;
+    members json;
+BEGIN
+    -- Check if the caller has 'project.member.manage' permission for this specific project
+    authorized := public.authorize('project.member.manage'::public.app_permission, p_project_id);
+
+    IF authorized THEN
+        -- Retrieve members' information for the specified project
+        SELECT json_agg(json_build_object(
+            'user_id', pp.profile_id,
+            'email', u.email,
+            'display_name', u.raw_user_meta_data->>'display_name',
+            'avatar_url', u.raw_user_meta_data->>'avatar_url',
+            'role', pp.role
+        ))
+        INTO members
+        FROM public.projects_profiles pp
+        JOIN auth.users u ON pp.profile_id = u.id
+        WHERE pp.project_id = p_project_id;
+
+        -- Return success with members data, defaulting to empty array if no members
+        RETURN json_build_object(
+            'status', 'success',
+            'data', COALESCE(members, '[]'::json)
+        );
+    ELSE
+        -- Return error if user lacks permission
+        RETURN json_build_object(
+            'status', 'error',
+            'message', 'Access denied'
+        );
+    END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_project_members"("p_project_id" bigint) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."get_user_id_by_email"("email" "text") RETURNS TABLE("id" "uuid")
@@ -307,45 +571,56 @@ CREATE OR REPLACE FUNCTION "public"."get_user_profile"("user_id" "uuid") RETURNS
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-declare result json;
+declare 
+  result json;
+  user_project_role user_role;
 
 begin -- Check if the requesting user is the same as the requested profile
 if auth.uid() != user_id then raise exception 'Permission denied' using hint = 'Users can only access their own profiles';
-
 end if;
+
+select pp.role into user_project_role
+from profiles p
+join projects_profiles pp on p.current_project_id = pp.project_id and p.id = pp.profile_id
+where p.id = user_id;
 
 select json_build_object(
     'id',
     au.id,
     'email',
     au.email,
-    'displayName',
+    'display_name',
     COALESCE(
       (au.raw_user_meta_data->>'display_name')::text,
       split_part(au.email, '@', 1),
       'User'
     ),
-    'avatarUrl',
-    COALESCE(
-      (au.raw_user_meta_data->>'avatar_url')::text,
-      '/placeholder.svg'
-    ),
-    'pricingPlan',
+    'avatar_url',
+    (au.raw_user_meta_data->>'avatar_url')::text,
+    'pricing_plan',
     p.pricing_plan,
-    'currentProject',
+    'trial_start',
+    p.trial_start,
+    'trial_end',
+    p.trial_end,
+    'current_project',
     json_build_object(
       'id',
       proj.id,
       'name',
       proj.name,
-      'isPublic',
+      'is_public',
       proj.is_public
     ),
-    -- Permissions are now handled by JWT claims
+    -- Get permissions directly from the database based on the user's role in their current project
     'permissions',
-    (auth.jwt()->>'permissions')::app_permission [],
-    'projectRole',
-    (auth.jwt()->>'project_role')::user_role
+    array(
+      select rp.permission
+      from role_permissions rp
+      where rp.role = user_project_role
+    ),
+    'project_role',
+    user_project_role
   ) into result
 from auth.users au
   join public.profiles p on p.id = au.id
@@ -378,20 +653,20 @@ $$;
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."is_project_member"("project_id" bigint) RETURNS boolean
+CREATE OR REPLACE FUNCTION "public"."is_member_of_project"("project_id" bigint) RETURNS boolean
     LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public'
     AS $_$
 select exists (
-        select 1
-        from projects_profiles
-        where project_id = $1
-            and profile_id = auth.uid()
-    );
-
+    select 1
+    from projects_profiles
+    where project_id = $1
+    and profile_id = auth.uid()
+);
 $_$;
 
 
-ALTER FUNCTION "public"."is_project_member"("project_id" bigint) OWNER TO "postgres";
+ALTER FUNCTION "public"."is_member_of_project"("project_id" bigint) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."is_project_owner"("project_id" bigint) RETURNS boolean
@@ -399,372 +674,67 @@ CREATE OR REPLACE FUNCTION "public"."is_project_owner"("project_id" bigint) RETU
     SET "search_path" TO 'public'
     AS $$
 select exists (
-        select 1
-        from projects
-        where id = project_id
-            and created_by = auth.uid()
-    );
-
+    select 1
+    from projects
+    where id = project_id
+    and created_by = auth.uid()
+);
 $$;
 
 
 ALTER FUNCTION "public"."is_project_owner"("project_id" bigint) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "test_overrides"."now"() RETURNS timestamp with time zone
-    LANGUAGE "plpgsql"
-    AS $$ BEGIN -- check if a frozen time is set
-IF nullif(current_setting('tests.frozen_time'), '') IS NOT NULL THEN RETURN current_setting('tests.frozen_time')::timestamptz;
-
-END IF;
-
-RETURN pg_catalog.now();
-
-END $$;
-
-
-ALTER FUNCTION "test_overrides"."now"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tests"."authenticate_as"("identifier" "text") RETURNS "void"
-    LANGUAGE "plpgsql"
-    AS $$
-DECLARE user_data json;
-
-original_auth_data text;
-
-current_project_id bigint;
-
-project_role user_role;
-
-user_permissions app_permission [];
-
-is_public boolean;
-
-BEGIN -- store the request.jwt.claims in a variable in case we need it
-original_auth_data := current_setting('request.jwt.claims', true);
-
-user_data := tests.get_supabase_user(identifier);
-
-SELECT p.current_project_id,
-    pr.is_public,
-    pp.role INTO current_project_id,
-    is_public,
-    project_role
-FROM profiles p
-    JOIN projects pr ON pr.id = p.current_project_id
-    LEFT JOIN projects_profiles pp ON pp.project_id = p.current_project_id
-    AND pp.profile_id = (user_data->>'id')::uuid;
-
-IF is_public
-AND project_role IS NULL THEN project_role := 'member'::user_role;
-
-END IF;
-
-SELECT array_agg(permission) INTO user_permissions
-FROM role_permissions
-WHERE role = COALESCE(project_role, 'member'::user_role);
-
-perform set_config('role', 'authenticated', true);
-
-perform set_config(
-    'request.jwt.claims',
-    json_build_object(
-        'sub',
-        user_data->>'id',
-        'email',
-        user_data->>'email',
-        'phone',
-        user_data->>'phone',
-        'user_metadata',
-        user_data->'raw_user_meta_data',
-        'app_metadata',
-        user_data->'raw_app_meta_data',
-        'current_project_id',
-        current_project_id,
-        'project_role',
-        COALESCE(project_role, 'member'),
-        'permissions',
-        COALESCE(user_permissions, ARRAY []::app_permission [])
-    )::text,
-    true
-);
-
-EXCEPTION -- revert back to original auth data
-WHEN OTHERS THEN RAISE NOTICE 'Error occurred: %',
-SQLERRM;
-
-perform set_config('role', 'authenticated', true);
-
-perform set_config('request.jwt.claims', original_auth_data, true);
-
-RAISE;
-
-END $$;
-
-
-ALTER FUNCTION "tests"."authenticate_as"("identifier" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tests"."authenticate_as_service_role"() RETURNS "void"
-    LANGUAGE "plpgsql"
-    AS $$ BEGIN perform set_config('role', 'service_role', true);
-
-perform set_config('request.jwt.claims', null, true);
-
-END $$;
-
-
-ALTER FUNCTION "tests"."authenticate_as_service_role"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tests"."clear_authentication"() RETURNS "void"
-    LANGUAGE "plpgsql"
-    AS $$ BEGIN perform set_config('role', 'anon', true);
-
-perform set_config('request.jwt.claims', null, true);
-
-END $$;
-
-
-ALTER FUNCTION "tests"."clear_authentication"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tests"."create_supabase_user"("identifier" "text", "project_id" bigint DEFAULT 1, "email" "text" DEFAULT NULL::"text", "phone" "text" DEFAULT NULL::"text", "metadata" "jsonb" DEFAULT NULL::"jsonb") RETURNS "uuid"
+CREATE OR REPLACE FUNCTION "public"."replace_module_character"("p_module_id" integer, "p_old_character_id" integer, "p_new_character_id" integer) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'auth', 'pg_temp'
     AS $$
-DECLARE user_id uuid;
+declare
+  v_existing_ordinal int;
+  v_existing_prompt text;
+begin
+  -- If trying to replace with the same character, do nothing
+  if p_old_character_id = p_new_character_id then
+    return;
+  end if;
 
-BEGIN -- create the user
-user_id := extensions.uuid_generate_v4();
+  -- Get the existing row's data (if it exists)
+  select ordinal, prompt
+  into v_existing_ordinal, v_existing_prompt
+  from modules_characters
+  where module_id = p_module_id and character_id = p_old_character_id;
 
-INSERT INTO auth.users (
-        id,
-        email,
-        phone,
-        raw_user_meta_data,
-        raw_app_meta_data,
-        created_at,
-        updated_at
+  -- If the old character exists
+  if found then
+    -- Delete the old character
+    delete from modules_characters
+    where module_id = p_module_id and character_id = p_old_character_id;
+
+    -- Insert or update the new character, preserving ordinal and prompt
+    insert into modules_characters (module_id, character_id, ordinal, prompt, created_at, updated_at)
+    values (
+      p_module_id,
+      p_new_character_id,
+      coalesce(v_existing_ordinal, 0),
+      v_existing_prompt,
+      now(),
+      now()
     )
-VALUES (
-        user_id,
-        coalesce(email, concat(user_id, '@test.com')),
-        phone,
-        jsonb_build_object('test_identifier', identifier) || coalesce(metadata, '{}'::jsonb),
-        '{}'::jsonb,
-        now(),
-        now()
-    )
-RETURNING id INTO user_id;
-
-UPDATE public.profiles
-SET id = user_id,
-    current_project_id = create_supabase_user.project_id
-WHERE id = user_id;
-
-RETURN user_id;
-
-END;
-
+    on conflict (module_id, character_id) 
+    do update set
+      ordinal = excluded.ordinal,
+      prompt = excluded.prompt,
+      updated_at = now();
+  else
+    -- If old character doesn't exist, just insert the new one
+    insert into modules_characters (module_id, character_id, created_at, updated_at)
+    values (p_module_id, p_new_character_id, now(), now())
+    on conflict (module_id, character_id) do nothing;
+  end if;
+end;
 $$;
 
 
-ALTER FUNCTION "tests"."create_supabase_user"("identifier" "text", "project_id" bigint, "email" "text", "phone" "text", "metadata" "jsonb") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tests"."freeze_time"("frozen_time" timestamp with time zone) RETURNS "void"
-    LANGUAGE "plpgsql"
-    AS $$ BEGIN -- Add test_overrides to search path if needed
-    IF current_setting('search_path') NOT LIKE 'test_overrides,%' THEN -- store search path for later
-    PERFORM set_config(
-        'tests.original_search_path',
-        current_setting('search_path'),
-        true
-    );
-
-PERFORM set_config(
-    'search_path',
-    'test_overrides,' || current_setting('tests.original_search_path') || ',pg_catalog',
-    true
-);
-
-END IF;
-
-PERFORM set_config('tests.frozen_time', frozen_time::text, true);
-
-END $$;
-
-
-ALTER FUNCTION "tests"."freeze_time"("frozen_time" timestamp with time zone) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tests"."get_supabase_uid"("identifier" "text") RETURNS "uuid"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'auth', 'pg_temp'
-    AS $$
-DECLARE supabase_user uuid;
-
-BEGIN
-SELECT id into supabase_user
-FROM auth.users
-WHERE raw_user_meta_data->>'test_identifier' = identifier
-limit 1;
-
-if supabase_user is null then RAISE EXCEPTION 'User with identifier % not found',
-identifier;
-
-end if;
-
-RETURN supabase_user;
-
-END;
-
-$$;
-
-
-ALTER FUNCTION "tests"."get_supabase_uid"("identifier" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tests"."get_supabase_user"("identifier" "text") RETURNS "json"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'auth', 'pg_temp'
-    AS $$
-DECLARE supabase_user json;
-
-BEGIN
-SELECT json_build_object(
-        'id',
-        id,
-        'email',
-        email,
-        'phone',
-        phone,
-        'raw_user_meta_data',
-        raw_user_meta_data,
-        'raw_app_meta_data',
-        raw_app_meta_data
-    ) into supabase_user
-FROM auth.users
-WHERE raw_user_meta_data->>'test_identifier' = identifier
-limit 1;
-
-if supabase_user is null
-OR supabase_user->'id' IS NULL then RAISE EXCEPTION 'User with identifier % not found',
-identifier;
-
-end if;
-
-RETURN supabase_user;
-
-END;
-
-$$;
-
-
-ALTER FUNCTION "tests"."get_supabase_user"("identifier" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tests"."rls_enabled"("testing_schema" "text") RETURNS "text"
-    LANGUAGE "sql"
-    AS $$
-select is(
-        (
-            select count(pc.relname)::integer
-            from pg_class pc
-                join pg_namespace pn on pn.oid = pc.relnamespace
-                and pn.nspname = rls_enabled.testing_schema
-                join pg_type pt on pt.oid = pc.reltype
-            where relrowsecurity = FALSE
-        ),
-        0,
-        'All tables in the' || testing_schema || ' schema should have row level security enabled'
-    );
-
-$$;
-
-
-ALTER FUNCTION "tests"."rls_enabled"("testing_schema" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tests"."rls_enabled"("testing_schema" "text", "testing_table" "text") RETURNS "text"
-    LANGUAGE "sql"
-    AS $$
-select is(
-        (
-            select count(*)::integer
-            from pg_class pc
-                join pg_namespace pn on pn.oid = pc.relnamespace
-                and pn.nspname = rls_enabled.testing_schema
-                and pc.relname = rls_enabled.testing_table
-                join pg_type pt on pt.oid = pc.reltype
-            where relrowsecurity = TRUE
-        ),
-        1,
-        testing_table || 'table in the' || testing_schema || ' schema should have row level security enabled'
-    );
-
-$$;
-
-
-ALTER FUNCTION "tests"."rls_enabled"("testing_schema" "text", "testing_table" "text") OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tests"."switch_to_project"("identifier" "text", "project_id" bigint) RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
-    AS $$
-DECLARE user_id uuid;
-
-BEGIN -- Get the user's ID
-SELECT id INTO user_id
-FROM auth.users
-WHERE raw_user_meta_data->>'test_identifier' = identifier;
-
-IF user_id IS NULL THEN RAISE EXCEPTION 'User with identifier % not found',
-identifier;
-
-END IF;
-
-IF NOT EXISTS (
-    SELECT 1
-    FROM public.projects
-    WHERE id = project_id
-) THEN RAISE EXCEPTION 'Project with ID % not found',
-project_id;
-
-END IF;
-
-UPDATE public.profiles
-SET current_project_id = project_id
-WHERE id = user_id;
-
-PERFORM tests.authenticate_as(identifier);
-
-END;
-
-$$;
-
-
-ALTER FUNCTION "tests"."switch_to_project"("identifier" "text", "project_id" bigint) OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "tests"."unfreeze_time"() RETURNS "void"
-    LANGUAGE "plpgsql"
-    AS $$ BEGIN -- restore the original now function
-    PERFORM set_config('tests.frozen_time', null, true);
-
-PERFORM set_config(
-    'search_path',
-    current_setting('tests.original_search_path'),
-    true
-);
-
-END $$;
-
-
-ALTER FUNCTION "tests"."unfreeze_time"() OWNER TO "postgres";
+ALTER FUNCTION "public"."replace_module_character"("p_module_id" integer, "p_old_character_id" integer, "p_new_character_id" integer) OWNER TO "postgres";
 
 SET default_tablespace = '';
 
@@ -779,7 +749,7 @@ CREATE TABLE IF NOT EXISTS "public"."characters" (
     "ai_model" "text",
     "description" "text",
     "avatar_url" "text",
-    "project_id" bigint,
+    "project_id" bigint NOT NULL,
     "created_by" "uuid" DEFAULT "auth"."uid"(),
     "created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     "updated_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP
@@ -864,6 +834,50 @@ ALTER SEQUENCE "public"."history_id_seq" OWNED BY "public"."history"."id";
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."invitations" (
+    "id" bigint NOT NULL,
+    "project_id" bigint,
+    "inviter_id" "uuid" NOT NULL,
+    "invitee_email" "text" NOT NULL,
+    "inviter_display_name" "text" NOT NULL,
+    "inviter_email" "text" NOT NULL,
+    "role" "public"."user_role" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    "is_trial" boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE "public"."invitations" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."invitations" IS 'Stores project invitation records';
+
+
+
+COMMENT ON COLUMN "public"."invitations"."project_id" IS 'Project ID the invitation is for (nullable for system invitations)';
+
+
+
+COMMENT ON COLUMN "public"."invitations"."is_trial" IS 'Indicates if the invitation is for a trial account';
+
+
+
+CREATE SEQUENCE IF NOT EXISTS "public"."invitations_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE "public"."invitations_id_seq" OWNER TO "postgres";
+
+
+ALTER SEQUENCE "public"."invitations_id_seq" OWNED BY "public"."invitations"."id";
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."modules" (
     "id" bigint NOT NULL,
     "training_id" bigint NOT NULL,
@@ -917,11 +931,21 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "current_project_id" bigint DEFAULT 1,
     "pricing_plan" "public"."pricing_plan" DEFAULT 'free'::"public"."pricing_plan" NOT NULL,
     "created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+    "updated_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    "trial_start" timestamp with time zone,
+    "trial_end" timestamp with time zone
 );
 
 
 ALTER TABLE "public"."profiles" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."profiles"."trial_start" IS 'The date when the user trial started';
+
+
+
+COMMENT ON COLUMN "public"."profiles"."trial_end" IS 'The date when the user trial ends';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."projects" (
@@ -983,7 +1007,7 @@ CREATE TABLE IF NOT EXISTS "public"."trainings" (
     "image_url" "text",
     "preview_url" "text",
     "created_by" "uuid" DEFAULT "auth"."uid"(),
-    "project_id" bigint,
+    "project_id" bigint NOT NULL,
     "created_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     "updated_at" timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
@@ -1019,6 +1043,10 @@ ALTER TABLE ONLY "public"."history" ALTER COLUMN "id" SET DEFAULT "nextval"('"pu
 
 
 
+ALTER TABLE ONLY "public"."invitations" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."invitations_id_seq"'::"regclass");
+
+
+
 ALTER TABLE ONLY "public"."modules" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."modules_id_seq"'::"regclass");
 
 
@@ -1043,6 +1071,11 @@ ALTER TABLE ONLY "public"."enrollments"
 
 ALTER TABLE ONLY "public"."history"
     ADD CONSTRAINT "history_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."invitations"
+    ADD CONSTRAINT "invitations_pkey" PRIMARY KEY ("id");
 
 
 
@@ -1098,6 +1131,18 @@ CREATE INDEX "history_user_id_idx" ON "public"."history" USING "btree" ("user_id
 
 
 
+CREATE INDEX "invitations_invitee_email_idx" ON "public"."invitations" USING "btree" ("invitee_email");
+
+
+
+CREATE INDEX "invitations_project_id_idx" ON "public"."invitations" USING "btree" ("project_id");
+
+
+
+CREATE UNIQUE INDEX "invitations_project_invitee_unique_idx" ON "public"."invitations" USING "btree" (COALESCE("project_id", (0)::bigint), "invitee_email");
+
+
+
 CREATE INDEX "modules_training_id_idx" ON "public"."modules" USING "btree" ("training_id");
 
 
@@ -1133,6 +1178,16 @@ ALTER TABLE ONLY "public"."history"
 
 ALTER TABLE ONLY "public"."history"
     ADD CONSTRAINT "history_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."invitations"
+    ADD CONSTRAINT "invitations_inviter_id_fkey" FOREIGN KEY ("inviter_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."invitations"
+    ADD CONSTRAINT "invitations_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
 
 
 
@@ -1190,75 +1245,58 @@ CREATE POLICY "Allow handle_new_user owner (supabase_admin) full access to pro" 
 
 
 
-CREATE POLICY "Allow supabase_auth_admin to read profiles" ON "public"."profiles" FOR SELECT TO "supabase_auth_admin" USING (true);
-
-
-
-CREATE POLICY "Allow supabase_auth_admin to read projects" ON "public"."projects" FOR SELECT TO "supabase_auth_admin" USING (true);
-
-
-
-CREATE POLICY "Allow supabase_auth_admin to read projects_profiles" ON "public"."projects_profiles" FOR SELECT TO "supabase_auth_admin" USING (true);
-
-
-
 CREATE POLICY "Any member can view role permissions" ON "public"."role_permissions" FOR SELECT TO "authenticated" USING (true);
 
 
 
-CREATE POLICY "Characters are manageable by users with training.manage permiss" ON "public"."characters" TO "authenticated" USING (("public"."authorize"('training.manage'::"public"."app_permission") AND (EXISTS ( SELECT 1
-   FROM "public"."profiles"
-  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."current_project_id" = "characters"."project_id")))))) WITH CHECK (("public"."authorize"('training.manage'::"public"."app_permission") AND (EXISTS ( SELECT 1
-   FROM "public"."profiles"
-  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."current_project_id" = "characters"."project_id"))))));
+CREATE POLICY "Characters are manageable by users with training.manage permiss" ON "public"."characters" TO "authenticated" USING ("public"."authorize"('training.manage'::"public"."app_permission", "project_id")) WITH CHECK ("public"."authorize"('training.manage'::"public"."app_permission", "project_id"));
 
 
 
 CREATE POLICY "Characters are viewable by project members or if project is pub" ON "public"."characters" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM ("public"."projects" "p"
-     LEFT JOIN "public"."projects_profiles" "pp" ON ((("pp"."project_id" = "p"."id") AND ("pp"."profile_id" = "auth"."uid"()))))
-  WHERE (("p"."id" = "characters"."project_id") AND (("p"."is_public" = true) OR ("pp"."profile_id" IS NOT NULL))))));
+   FROM "public"."projects" "p"
+  WHERE (("p"."id" = "characters"."project_id") AND (("p"."is_public" = true) OR ("p"."id" = (("auth"."jwt"() ->> 'current_project_id'::"text"))::bigint))))));
 
 
 
-CREATE POLICY "Modules are manageable by users with training.manage permission" ON "public"."modules" TO "authenticated" USING (("public"."authorize"('training.manage'::"public"."app_permission") AND (EXISTS ( SELECT 1
-   FROM ("public"."trainings"
-     JOIN "public"."profiles" ON (("profiles"."current_project_id" = "trainings"."project_id")))
-  WHERE (("trainings"."id" = "modules"."training_id") AND ("profiles"."id" = "auth"."uid"())))))) WITH CHECK (("public"."authorize"('training.manage'::"public"."app_permission") AND (EXISTS ( SELECT 1
-   FROM ("public"."trainings"
-     JOIN "public"."profiles" ON (("profiles"."current_project_id" = "trainings"."project_id")))
-  WHERE (("trainings"."id" = "modules"."training_id") AND ("profiles"."id" = "auth"."uid"()))))));
+CREATE POLICY "Invitations are manageable by users with project.member.manage " ON "public"."invitations" TO "authenticated" USING ("public"."authorize"('project.member.manage'::"public"."app_permission", "project_id")) WITH CHECK ("public"."authorize"('project.member.manage'::"public"."app_permission", "project_id"));
+
+
+
+CREATE POLICY "Invitations are viewable by invitee" ON "public"."invitations" FOR SELECT TO "authenticated" USING (("invitee_email" = ("auth"."jwt"() ->> 'email'::"text")));
+
+
+
+CREATE POLICY "Modules are manageable by users with training.manage permission" ON "public"."modules" TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."trainings" "t"
+  WHERE (("t"."id" = "modules"."training_id") AND "public"."authorize"('training.manage'::"public"."app_permission", "t"."project_id"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainings" "t"
+  WHERE (("t"."id" = "modules"."training_id") AND "public"."authorize"('training.manage'::"public"."app_permission", "t"."project_id")))));
 
 
 
 CREATE POLICY "Modules are viewable by project members or if project is public" ON "public"."modules" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM (("public"."trainings" "t"
+   FROM ("public"."trainings" "t"
      JOIN "public"."projects" "p" ON (("p"."id" = "t"."project_id")))
-     LEFT JOIN "public"."projects_profiles" "pp" ON ((("pp"."project_id" = "p"."id") AND ("pp"."profile_id" = "auth"."uid"()))))
-  WHERE (("t"."id" = "modules"."training_id") AND (("p"."is_public" = true) OR ("pp"."profile_id" IS NOT NULL))))));
+  WHERE (("t"."id" = "modules"."training_id") AND (("p"."is_public" = true) OR ("p"."id" = (("auth"."jwt"() ->> 'current_project_id'::"text"))::bigint))))));
 
 
 
-CREATE POLICY "Modules-characters associations are manageable by users with tr" ON "public"."modules_characters" TO "authenticated" USING (("public"."authorize"('training.manage'::"public"."app_permission") AND (EXISTS ( SELECT 1
+CREATE POLICY "Modules-characters associations are manageable by users with tr" ON "public"."modules_characters" TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM ("public"."modules" "m"
      JOIN "public"."trainings" "t" ON (("t"."id" = "m"."training_id")))
-  WHERE (("m"."id" = "modules_characters"."module_id") AND ("t"."project_id" = ( SELECT "profiles"."current_project_id"
-           FROM "public"."profiles"
-          WHERE ("profiles"."id" = "auth"."uid"())))))))) WITH CHECK (("public"."authorize"('training.manage'::"public"."app_permission") AND (EXISTS ( SELECT 1
+  WHERE (("m"."id" = "modules_characters"."module_id") AND "public"."authorize"('training.manage'::"public"."app_permission", "t"."project_id"))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM ("public"."modules" "m"
      JOIN "public"."trainings" "t" ON (("t"."id" = "m"."training_id")))
-  WHERE (("m"."id" = "modules_characters"."module_id") AND ("t"."project_id" = ( SELECT "profiles"."current_project_id"
-           FROM "public"."profiles"
-          WHERE ("profiles"."id" = "auth"."uid"()))))))));
+  WHERE (("m"."id" = "modules_characters"."module_id") AND "public"."authorize"('training.manage'::"public"."app_permission", "t"."project_id")))));
 
 
 
 CREATE POLICY "Modules-characters associations are viewable by project members" ON "public"."modules_characters" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM ((("public"."modules" "m"
+   FROM (("public"."modules" "m"
      JOIN "public"."trainings" "t" ON (("t"."id" = "m"."training_id")))
      JOIN "public"."projects" "p" ON (("p"."id" = "t"."project_id")))
-     LEFT JOIN "public"."projects_profiles" "pp" ON ((("pp"."project_id" = "p"."id") AND ("pp"."profile_id" = "auth"."uid"()))))
-  WHERE (("m"."id" = "modules_characters"."module_id") AND (("p"."is_public" = true) OR ("pp"."profile_id" IS NOT NULL))))));
+  WHERE (("m"."id" = "modules_characters"."module_id") AND (("p"."is_public" = true) OR ("p"."id" = (("auth"."jwt"() ->> 'current_project_id'::"text"))::bigint))))));
 
 
 
@@ -1266,30 +1304,17 @@ CREATE POLICY "Project creators can manage members" ON "public"."projects_profil
 
 
 
-CREATE POLICY "Training managers can manage other users' enrollments in their " ON "public"."enrollments" TO "authenticated" USING (("public"."authorize"('enrollment.manage'::"public"."app_permission") AND (EXISTS ( SELECT 1
-   FROM "public"."trainings" "t"
-  WHERE (("t"."id" = "enrollments"."training_id") AND ("t"."project_id" = ( SELECT "profiles"."current_project_id"
-           FROM "public"."profiles"
-          WHERE ("profiles"."id" = "auth"."uid"())))))))) WITH CHECK (("public"."authorize"('enrollment.manage'::"public"."app_permission") AND (EXISTS ( SELECT 1
-   FROM "public"."trainings" "t"
-  WHERE (("t"."id" = "enrollments"."training_id") AND ("t"."project_id" = ( SELECT "profiles"."current_project_id"
-           FROM "public"."profiles"
-          WHERE ("profiles"."id" = "auth"."uid"()))))))));
-
-
-
-CREATE POLICY "Trainings are manageable by users with training.manage permissi" ON "public"."trainings" TO "authenticated" USING (("public"."authorize"('training.manage'::"public"."app_permission") AND (EXISTS ( SELECT 1
-   FROM "public"."profiles"
-  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."current_project_id" = "trainings"."project_id")))))) WITH CHECK (("public"."authorize"('training.manage'::"public"."app_permission") AND (EXISTS ( SELECT 1
-   FROM "public"."profiles"
-  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."current_project_id" = "trainings"."project_id"))))));
+CREATE POLICY "Trainings are manageable by users with training.manage permissi" ON "public"."trainings" TO "authenticated" USING ("public"."authorize"('training.manage'::"public"."app_permission", "project_id")) WITH CHECK ("public"."authorize"('training.manage'::"public"."app_permission", "project_id"));
 
 
 
 CREATE POLICY "Trainings are viewable by project members or if project is publ" ON "public"."trainings" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM ("public"."projects" "p"
-     LEFT JOIN "public"."projects_profiles" "pp" ON ((("pp"."project_id" = "p"."id") AND ("pp"."profile_id" = "auth"."uid"()))))
-  WHERE (("p"."id" = "trainings"."project_id") AND (("p"."is_public" = true) OR ("pp"."profile_id" IS NOT NULL))))));
+   FROM "public"."projects" "p"
+  WHERE (("p"."id" = "trainings"."project_id") AND (("p"."is_public" = true) OR ("p"."id" = (("auth"."jwt"() ->> 'current_project_id'::"text"))::bigint))))));
+
+
+
+CREATE POLICY "Trial invitations are manageable by users with trials.manage pe" ON "public"."invitations" TO "authenticated" USING ((("is_trial" = true) AND ('trials.manage'::"public"."app_permission" = ANY ((ARRAY( SELECT "jsonb_array_elements_text"(("auth"."jwt"() -> 'permissions'::"text")) AS "jsonb_array_elements_text"))::"public"."app_permission"[])))) WITH CHECK ((("is_trial" = true) AND ('trials.manage'::"public"."app_permission" = ANY ((ARRAY( SELECT "jsonb_array_elements_text"(("auth"."jwt"() -> 'permissions'::"text")) AS "jsonb_array_elements_text"))::"public"."app_permission"[]))));
 
 
 
@@ -1297,31 +1322,40 @@ CREATE POLICY "Users can create projects" ON "public"."projects" FOR INSERT TO "
 
 
 
-CREATE POLICY "Users can manage project members" ON "public"."projects_profiles" TO "authenticated" USING (("public"."is_project_member"("project_id") AND "public"."authorize"('project.member.manage'::"public"."app_permission"))) WITH CHECK (("public"."is_project_member"("project_id") AND "public"."authorize"('project.member.manage'::"public"."app_permission")));
+CREATE POLICY "Users can delete their own history" ON "public"."history" FOR DELETE USING (("auth"."uid"() = "user_id"));
 
 
 
-CREATE POLICY "Users can manage projects with permission" ON "public"."projects" TO "authenticated" USING ("public"."authorize"('project.manage'::"public"."app_permission")) WITH CHECK ("public"."authorize"('project.manage'::"public"."app_permission"));
+CREATE POLICY "Users can insert their own history" ON "public"."history" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can manage projects with permission" ON "public"."projects" TO "authenticated" USING ("public"."authorize"('project.manage'::"public"."app_permission", "id")) WITH CHECK ("public"."authorize"('project.manage'::"public"."app_permission", "id"));
 
 
 
 CREATE POLICY "Users can manage their own enrollments" ON "public"."enrollments" TO "authenticated" USING ((("user_id" = "auth"."uid"()) AND (EXISTS ( SELECT 1
-   FROM (("public"."trainings" "t"
+   FROM ("public"."trainings" "t"
      JOIN "public"."projects" "p" ON (("p"."id" = "t"."project_id")))
-     LEFT JOIN "public"."projects_profiles" "pp" ON ((("pp"."project_id" = "p"."id") AND ("pp"."profile_id" = "auth"."uid"()))))
-  WHERE (("t"."id" = "enrollments"."training_id") AND (("p"."is_public" = true) OR ("pp"."profile_id" IS NOT NULL))))))) WITH CHECK ((("user_id" = "auth"."uid"()) AND (EXISTS ( SELECT 1
-   FROM (("public"."trainings" "t"
+  WHERE (("t"."id" = "enrollments"."training_id") AND (("p"."is_public" = true) OR ("p"."id" = (("auth"."jwt"() ->> 'current_project_id'::"text"))::bigint))))))) WITH CHECK ((("user_id" = "auth"."uid"()) AND (EXISTS ( SELECT 1
+   FROM ("public"."trainings" "t"
      JOIN "public"."projects" "p" ON (("p"."id" = "t"."project_id")))
-     LEFT JOIN "public"."projects_profiles" "pp" ON ((("pp"."project_id" = "p"."id") AND ("pp"."profile_id" = "auth"."uid"()))))
-  WHERE (("t"."id" = "enrollments"."training_id") AND (("p"."is_public" = true) OR ("pp"."profile_id" IS NOT NULL)))))));
+  WHERE (("t"."id" = "enrollments"."training_id") AND (("p"."is_public" = true) OR ("p"."id" = (("auth"."jwt"() ->> 'current_project_id'::"text"))::bigint)))))));
 
 
 
-CREATE POLICY "Users can manage their own history" ON "public"."history" USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
+CREATE POLICY "Users can update their own history" ON "public"."history" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
 CREATE POLICY "Users can update their own profile" ON "public"."profiles" FOR UPDATE TO "authenticated" USING (("id" = "auth"."uid"())) WITH CHECK (("id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "Users can view history they own or have permission to see" ON "public"."history" FOR SELECT USING ((("auth"."uid"() = "user_id") OR (EXISTS ( SELECT 1
+   FROM ("public"."modules" "m"
+     JOIN "public"."trainings" "t" ON (("t"."id" = "m"."training_id")))
+  WHERE (("m"."id" = "history"."module_id") AND "public"."authorize"('training.history'::"public"."app_permission", "t"."project_id"))))));
 
 
 
@@ -1332,7 +1366,7 @@ CREATE POLICY "Users can view profiles of users in shared projects" ON "public".
 
 
 
-CREATE POLICY "Users can view project members" ON "public"."projects_profiles" FOR SELECT TO "authenticated" USING (("profile_id" = "auth"."uid"()));
+CREATE POLICY "Users can view project members" ON "public"."projects_profiles" FOR SELECT TO "authenticated" USING ((("profile_id" = "auth"."uid"()) OR ("project_id" = (("auth"."jwt"() ->> 'current_project_id'::"text"))::bigint) OR "public"."is_member_of_project"("project_id")));
 
 
 
@@ -1340,9 +1374,21 @@ CREATE POLICY "Users can view their own profile" ON "public"."profiles" FOR SELE
 
 
 
-CREATE POLICY "Users can view their projects" ON "public"."projects" FOR SELECT TO "authenticated" USING ((("is_public" = true) OR ("created_by" = "auth"."uid"()) OR (EXISTS ( SELECT 1
+CREATE POLICY "Users can view their projects" ON "public"."projects" FOR SELECT TO "authenticated" USING ((("is_public" = true) OR ("created_by" = "auth"."uid"()) OR ("id" = (("auth"."jwt"() ->> 'current_project_id'::"text"))::bigint) OR (EXISTS ( SELECT 1
    FROM "public"."projects_profiles"
   WHERE (("projects_profiles"."project_id" = "projects"."id") AND ("projects_profiles"."profile_id" = "auth"."uid"()))))));
+
+
+
+CREATE POLICY "Users with enrollment.manage permission can manage other users'" ON "public"."enrollments" TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."trainings" "t"
+  WHERE (("t"."id" = "enrollments"."training_id") AND "public"."authorize"('enrollment.manage'::"public"."app_permission", "t"."project_id"))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."trainings" "t"
+  WHERE (("t"."id" = "enrollments"."training_id") AND "public"."authorize"('enrollment.manage'::"public"."app_permission", "t"."project_id")))));
+
+
+
+CREATE POLICY "Users with project.member.manage permission can manage project " ON "public"."projects_profiles" TO "authenticated" USING ("public"."authorize"('project.member.manage'::"public"."app_permission", "project_id")) WITH CHECK ("public"."authorize"('project.member.manage'::"public"."app_permission", "project_id"));
 
 
 
@@ -1353,6 +1399,9 @@ ALTER TABLE "public"."enrollments" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."history" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."invitations" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."modules" ENABLE ROW LEVEL SECURITY;
@@ -1385,7 +1434,6 @@ GRANT USAGE ON SCHEMA "public" TO "postgres";
 GRANT USAGE ON SCHEMA "public" TO "anon";
 GRANT USAGE ON SCHEMA "public" TO "authenticated";
 GRANT USAGE ON SCHEMA "public" TO "service_role";
-GRANT USAGE ON SCHEMA "public" TO "supabase_auth_admin";
 GRANT USAGE ON SCHEMA "public" TO "supabase_admin";
 
 
@@ -1393,39 +1441,73 @@ GRANT USAGE ON SCHEMA "public" TO "supabase_admin";
 
 
 
-GRANT USAGE ON SCHEMA "test_overrides" TO "anon";
-GRANT USAGE ON SCHEMA "test_overrides" TO "authenticated";
-GRANT USAGE ON SCHEMA "test_overrides" TO "service_role";
+GRANT ALL ON FUNCTION "public"."ghstore_in"("cstring") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ghstore_in"("cstring") TO "anon";
+GRANT ALL ON FUNCTION "public"."ghstore_in"("cstring") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ghstore_in"("cstring") TO "service_role";
 
 
 
-GRANT USAGE ON SCHEMA "tests" TO "anon";
-GRANT USAGE ON SCHEMA "tests" TO "authenticated";
-GRANT USAGE ON SCHEMA "tests" TO "service_role";
+GRANT ALL ON FUNCTION "public"."ghstore_out"("public"."ghstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ghstore_out"("public"."ghstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."ghstore_out"("public"."ghstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ghstore_out"("public"."ghstore") TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."hstore_in"("cstring") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_in"("cstring") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_in"("cstring") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_in"("cstring") TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."hstore_out"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_out"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_out"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_out"("public"."hstore") TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."hstore_recv"("internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_recv"("internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_recv"("internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_recv"("internal") TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."hstore_send"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_send"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_send"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_send"("public"."hstore") TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."hstore_subscript_handler"("internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_subscript_handler"("internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_subscript_handler"("internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_subscript_handler"("internal") TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."hstore"("text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore"("text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore"("text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore"("text"[]) TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."hstore_to_json"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_to_json"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_to_json"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_to_json"("public"."hstore") TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."hstore_to_jsonb"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_to_jsonb"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_to_jsonb"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_to_jsonb"("public"."hstore") TO "service_role";
 
 
 
@@ -1645,9 +1727,53 @@ GRANT USAGE ON SCHEMA "tests" TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."authorize"("requested_permission" "public"."app_permission") TO "anon";
-GRANT ALL ON FUNCTION "public"."authorize"("requested_permission" "public"."app_permission") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."authorize"("requested_permission" "public"."app_permission") TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GRANT ALL ON FUNCTION "public"."accept_invitation"("invitation_id" bigint, "user_id" "uuid", "p_project_id" bigint) TO "anon";
+GRANT ALL ON FUNCTION "public"."accept_invitation"("invitation_id" bigint, "user_id" "uuid", "p_project_id" bigint) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."accept_invitation"("invitation_id" bigint, "user_id" "uuid", "p_project_id" bigint) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."akeys"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."akeys"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."akeys"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."akeys"("public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."authorize"("requested_permission" "public"."app_permission", "project_id" bigint) TO "anon";
+GRANT ALL ON FUNCTION "public"."authorize"("requested_permission" "public"."app_permission", "project_id" bigint) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."authorize"("requested_permission" "public"."app_permission", "project_id" bigint) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."avals"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."avals"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."avals"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."avals"("public"."hstore") TO "service_role";
 
 
 
@@ -1663,9 +1789,90 @@ GRANT ALL ON FUNCTION "public"."create_project"("project_name" "text") TO "servi
 
 
 
-REVOKE ALL ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") TO "service_role";
-GRANT ALL ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") TO "supabase_auth_admin";
+
+
+
+GRANT ALL ON FUNCTION "public"."deep_copy_project"("source_project_id" bigint, "target_project_id" bigint, "target_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."deep_copy_project"("source_project_id" bigint, "target_project_id" bigint, "target_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."deep_copy_project"("source_project_id" bigint, "target_project_id" bigint, "target_user_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."defined"("public"."hstore", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."defined"("public"."hstore", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."defined"("public"."hstore", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."defined"("public"."hstore", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."delete"("public"."hstore", "text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."delete"("public"."hstore", "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."delete"("public"."hstore", "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."delete"("public"."hstore", "text"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."delete"("public"."hstore", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."delete"("public"."hstore", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."delete"("public"."hstore", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."delete"("public"."hstore", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."delete"("public"."hstore", "public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."delete"("public"."hstore", "public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."delete"("public"."hstore", "public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."delete"("public"."hstore", "public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."each"("hs" "public"."hstore", OUT "key" "text", OUT "value" "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."each"("hs" "public"."hstore", OUT "key" "text", OUT "value" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."each"("hs" "public"."hstore", OUT "key" "text", OUT "value" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."each"("hs" "public"."hstore", OUT "key" "text", OUT "value" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."exist"("public"."hstore", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."exist"("public"."hstore", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."exist"("public"."hstore", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."exist"("public"."hstore", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."exists_all"("public"."hstore", "text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."exists_all"("public"."hstore", "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."exists_all"("public"."hstore", "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."exists_all"("public"."hstore", "text"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."exists_any"("public"."hstore", "text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."exists_any"("public"."hstore", "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."exists_any"("public"."hstore", "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."exists_any"("public"."hstore", "text"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fetchval"("public"."hstore", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."fetchval"("public"."hstore", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fetchval"("public"."hstore", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fetchval"("public"."hstore", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_project_member_info"("p_project_id" bigint, "p_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_project_member_info"("p_project_id" bigint, "p_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_project_member_info"("p_project_id" bigint, "p_user_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_project_members"("p_project_id" bigint) TO "anon";
+GRANT ALL ON FUNCTION "public"."get_project_members"("p_project_id" bigint) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_project_members"("p_project_id" bigint) TO "service_role";
 
 
 
@@ -1681,15 +1888,232 @@ GRANT ALL ON FUNCTION "public"."get_user_profile"("user_id" "uuid") TO "service_
 
 
 
+GRANT ALL ON FUNCTION "public"."ghstore_compress"("internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ghstore_compress"("internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."ghstore_compress"("internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ghstore_compress"("internal") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."ghstore_consistent"("internal", "public"."hstore", smallint, "oid", "internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ghstore_consistent"("internal", "public"."hstore", smallint, "oid", "internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."ghstore_consistent"("internal", "public"."hstore", smallint, "oid", "internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ghstore_consistent"("internal", "public"."hstore", smallint, "oid", "internal") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."ghstore_decompress"("internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ghstore_decompress"("internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."ghstore_decompress"("internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ghstore_decompress"("internal") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."ghstore_options"("internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ghstore_options"("internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."ghstore_options"("internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ghstore_options"("internal") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."ghstore_penalty"("internal", "internal", "internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ghstore_penalty"("internal", "internal", "internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."ghstore_penalty"("internal", "internal", "internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ghstore_penalty"("internal", "internal", "internal") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."ghstore_picksplit"("internal", "internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ghstore_picksplit"("internal", "internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."ghstore_picksplit"("internal", "internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ghstore_picksplit"("internal", "internal") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."ghstore_same"("public"."ghstore", "public"."ghstore", "internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ghstore_same"("public"."ghstore", "public"."ghstore", "internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."ghstore_same"("public"."ghstore", "public"."ghstore", "internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ghstore_same"("public"."ghstore", "public"."ghstore", "internal") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."ghstore_union"("internal", "internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."ghstore_union"("internal", "internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."ghstore_union"("internal", "internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."ghstore_union"("internal", "internal") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."gin_consistent_hstore"("internal", smallint, "public"."hstore", integer, "internal", "internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."gin_consistent_hstore"("internal", smallint, "public"."hstore", integer, "internal", "internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."gin_consistent_hstore"("internal", smallint, "public"."hstore", integer, "internal", "internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."gin_consistent_hstore"("internal", smallint, "public"."hstore", integer, "internal", "internal") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."gin_extract_hstore"("public"."hstore", "internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."gin_extract_hstore"("public"."hstore", "internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."gin_extract_hstore"("public"."hstore", "internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."gin_extract_hstore"("public"."hstore", "internal") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."gin_extract_hstore_query"("public"."hstore", "internal", smallint, "internal", "internal") TO "postgres";
+GRANT ALL ON FUNCTION "public"."gin_extract_hstore_query"("public"."hstore", "internal", smallint, "internal", "internal") TO "anon";
+GRANT ALL ON FUNCTION "public"."gin_extract_hstore_query"("public"."hstore", "internal", smallint, "internal", "internal") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."gin_extract_hstore_query"("public"."hstore", "internal", smallint, "internal", "internal") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."is_project_member"("project_id" bigint) TO "anon";
-GRANT ALL ON FUNCTION "public"."is_project_member"("project_id" bigint) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."is_project_member"("project_id" bigint) TO "service_role";
+GRANT ALL ON FUNCTION "public"."hs_concat"("public"."hstore", "public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hs_concat"("public"."hstore", "public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hs_concat"("public"."hstore", "public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hs_concat"("public"."hstore", "public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hs_contained"("public"."hstore", "public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hs_contained"("public"."hstore", "public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hs_contained"("public"."hstore", "public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hs_contained"("public"."hstore", "public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hs_contains"("public"."hstore", "public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hs_contains"("public"."hstore", "public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hs_contains"("public"."hstore", "public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hs_contains"("public"."hstore", "public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore"("record") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore"("record") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore"("record") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore"("record") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore"("text"[], "text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore"("text"[], "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore"("text"[], "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore"("text"[], "text"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore"("text", "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_cmp"("public"."hstore", "public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_cmp"("public"."hstore", "public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_cmp"("public"."hstore", "public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_cmp"("public"."hstore", "public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_eq"("public"."hstore", "public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_eq"("public"."hstore", "public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_eq"("public"."hstore", "public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_eq"("public"."hstore", "public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_ge"("public"."hstore", "public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_ge"("public"."hstore", "public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_ge"("public"."hstore", "public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_ge"("public"."hstore", "public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_gt"("public"."hstore", "public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_gt"("public"."hstore", "public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_gt"("public"."hstore", "public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_gt"("public"."hstore", "public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_hash"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_hash"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_hash"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_hash"("public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_hash_extended"("public"."hstore", bigint) TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_hash_extended"("public"."hstore", bigint) TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_hash_extended"("public"."hstore", bigint) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_hash_extended"("public"."hstore", bigint) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_le"("public"."hstore", "public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_le"("public"."hstore", "public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_le"("public"."hstore", "public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_le"("public"."hstore", "public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_lt"("public"."hstore", "public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_lt"("public"."hstore", "public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_lt"("public"."hstore", "public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_lt"("public"."hstore", "public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_ne"("public"."hstore", "public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_ne"("public"."hstore", "public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_ne"("public"."hstore", "public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_ne"("public"."hstore", "public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_to_array"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_to_array"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_to_array"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_to_array"("public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_to_json_loose"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_to_json_loose"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_to_json_loose"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_to_json_loose"("public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_to_jsonb_loose"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_to_jsonb_loose"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_to_jsonb_loose"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_to_jsonb_loose"("public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_to_matrix"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_to_matrix"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_to_matrix"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_to_matrix"("public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."hstore_version_diag"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."hstore_version_diag"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."hstore_version_diag"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."hstore_version_diag"("public"."hstore") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_member_of_project"("project_id" bigint) TO "anon";
+GRANT ALL ON FUNCTION "public"."is_member_of_project"("project_id" bigint) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_member_of_project"("project_id" bigint) TO "service_role";
 
 
 
@@ -1699,75 +2123,65 @@ GRANT ALL ON FUNCTION "public"."is_project_owner"("project_id" bigint) TO "servi
 
 
 
-GRANT ALL ON FUNCTION "test_overrides"."now"() TO "anon";
-GRANT ALL ON FUNCTION "test_overrides"."now"() TO "authenticated";
-GRANT ALL ON FUNCTION "test_overrides"."now"() TO "service_role";
+GRANT ALL ON FUNCTION "public"."isdefined"("public"."hstore", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isdefined"("public"."hstore", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isdefined"("public"."hstore", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isdefined"("public"."hstore", "text") TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "tests"."authenticate_as"("identifier" "text") TO "anon";
-GRANT ALL ON FUNCTION "tests"."authenticate_as"("identifier" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "tests"."authenticate_as"("identifier" "text") TO "service_role";
+GRANT ALL ON FUNCTION "public"."isexists"("public"."hstore", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."isexists"("public"."hstore", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."isexists"("public"."hstore", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."isexists"("public"."hstore", "text") TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "tests"."authenticate_as_service_role"() TO "anon";
-GRANT ALL ON FUNCTION "tests"."authenticate_as_service_role"() TO "authenticated";
-GRANT ALL ON FUNCTION "tests"."authenticate_as_service_role"() TO "service_role";
+GRANT ALL ON FUNCTION "public"."populate_record"("anyelement", "public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."populate_record"("anyelement", "public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."populate_record"("anyelement", "public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."populate_record"("anyelement", "public"."hstore") TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "tests"."clear_authentication"() TO "anon";
-GRANT ALL ON FUNCTION "tests"."clear_authentication"() TO "authenticated";
-GRANT ALL ON FUNCTION "tests"."clear_authentication"() TO "service_role";
+GRANT ALL ON FUNCTION "public"."replace_module_character"("p_module_id" integer, "p_old_character_id" integer, "p_new_character_id" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."replace_module_character"("p_module_id" integer, "p_old_character_id" integer, "p_new_character_id" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."replace_module_character"("p_module_id" integer, "p_old_character_id" integer, "p_new_character_id" integer) TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "tests"."create_supabase_user"("identifier" "text", "project_id" bigint, "email" "text", "phone" "text", "metadata" "jsonb") TO "anon";
-GRANT ALL ON FUNCTION "tests"."create_supabase_user"("identifier" "text", "project_id" bigint, "email" "text", "phone" "text", "metadata" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "tests"."create_supabase_user"("identifier" "text", "project_id" bigint, "email" "text", "phone" "text", "metadata" "jsonb") TO "service_role";
+GRANT ALL ON FUNCTION "public"."skeys"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."skeys"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."skeys"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."skeys"("public"."hstore") TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "tests"."freeze_time"("frozen_time" timestamp with time zone) TO "anon";
-GRANT ALL ON FUNCTION "tests"."freeze_time"("frozen_time" timestamp with time zone) TO "authenticated";
-GRANT ALL ON FUNCTION "tests"."freeze_time"("frozen_time" timestamp with time zone) TO "service_role";
+GRANT ALL ON FUNCTION "public"."slice"("public"."hstore", "text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."slice"("public"."hstore", "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."slice"("public"."hstore", "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."slice"("public"."hstore", "text"[]) TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "tests"."get_supabase_uid"("identifier" "text") TO "anon";
-GRANT ALL ON FUNCTION "tests"."get_supabase_uid"("identifier" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "tests"."get_supabase_uid"("identifier" "text") TO "service_role";
+GRANT ALL ON FUNCTION "public"."slice_array"("public"."hstore", "text"[]) TO "postgres";
+GRANT ALL ON FUNCTION "public"."slice_array"("public"."hstore", "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."slice_array"("public"."hstore", "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."slice_array"("public"."hstore", "text"[]) TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "tests"."get_supabase_user"("identifier" "text") TO "anon";
-GRANT ALL ON FUNCTION "tests"."get_supabase_user"("identifier" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "tests"."get_supabase_user"("identifier" "text") TO "service_role";
+GRANT ALL ON FUNCTION "public"."svals"("public"."hstore") TO "postgres";
+GRANT ALL ON FUNCTION "public"."svals"("public"."hstore") TO "anon";
+GRANT ALL ON FUNCTION "public"."svals"("public"."hstore") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."svals"("public"."hstore") TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "tests"."rls_enabled"("testing_schema" "text") TO "anon";
-GRANT ALL ON FUNCTION "tests"."rls_enabled"("testing_schema" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "tests"."rls_enabled"("testing_schema" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "tests"."rls_enabled"("testing_schema" "text", "testing_table" "text") TO "anon";
-GRANT ALL ON FUNCTION "tests"."rls_enabled"("testing_schema" "text", "testing_table" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "tests"."rls_enabled"("testing_schema" "text", "testing_table" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "tests"."switch_to_project"("identifier" "text", "project_id" bigint) TO "anon";
-GRANT ALL ON FUNCTION "tests"."switch_to_project"("identifier" "text", "project_id" bigint) TO "authenticated";
-GRANT ALL ON FUNCTION "tests"."switch_to_project"("identifier" "text", "project_id" bigint) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "tests"."unfreeze_time"() TO "anon";
-GRANT ALL ON FUNCTION "tests"."unfreeze_time"() TO "authenticated";
-GRANT ALL ON FUNCTION "tests"."unfreeze_time"() TO "service_role";
+GRANT ALL ON FUNCTION "public"."tconvert"("text", "text") TO "postgres";
+GRANT ALL ON FUNCTION "public"."tconvert"("text", "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."tconvert"("text", "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tconvert"("text", "text") TO "service_role";
 
 
 
@@ -1822,6 +2236,18 @@ GRANT ALL ON SEQUENCE "public"."history_id_seq" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."invitations" TO "anon";
+GRANT ALL ON TABLE "public"."invitations" TO "authenticated";
+GRANT ALL ON TABLE "public"."invitations" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."invitations_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."invitations_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."invitations_id_seq" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."modules" TO "anon";
 GRANT ALL ON TABLE "public"."modules" TO "authenticated";
 GRANT ALL ON TABLE "public"."modules" TO "service_role";
@@ -1843,7 +2269,6 @@ GRANT ALL ON SEQUENCE "public"."modules_id_seq" TO "service_role";
 GRANT ALL ON TABLE "public"."profiles" TO "anon";
 GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."profiles" TO "service_role";
-GRANT SELECT ON TABLE "public"."profiles" TO "supabase_auth_admin";
 GRANT ALL ON TABLE "public"."profiles" TO "supabase_admin";
 
 
@@ -1851,7 +2276,6 @@ GRANT ALL ON TABLE "public"."profiles" TO "supabase_admin";
 GRANT ALL ON TABLE "public"."projects" TO "anon";
 GRANT ALL ON TABLE "public"."projects" TO "authenticated";
 GRANT ALL ON TABLE "public"."projects" TO "service_role";
-GRANT SELECT ON TABLE "public"."projects" TO "supabase_auth_admin";
 
 
 
@@ -1864,7 +2288,6 @@ GRANT ALL ON SEQUENCE "public"."projects_id_seq" TO "service_role";
 GRANT ALL ON TABLE "public"."projects_profiles" TO "anon";
 GRANT ALL ON TABLE "public"."projects_profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."projects_profiles" TO "service_role";
-GRANT SELECT ON TABLE "public"."projects_profiles" TO "supabase_auth_admin";
 
 
 
@@ -1913,18 +2336,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
-
-
-
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "test_overrides" GRANT ALL ON FUNCTIONS  TO "anon";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "test_overrides" GRANT ALL ON FUNCTIONS  TO "authenticated";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "test_overrides" GRANT ALL ON FUNCTIONS  TO "service_role";
-
-
-
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "tests" GRANT ALL ON FUNCTIONS  TO "anon";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "tests" GRANT ALL ON FUNCTIONS  TO "authenticated";
-ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "tests" GRANT ALL ON FUNCTIONS  TO "service_role";
 
 
 
