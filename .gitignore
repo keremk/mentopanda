@@ -40,3 +40,6 @@ next-env.d.ts
 /foo.json
 /ui-mocks/
 .specstory/
+
+# gdpr exports
+gdpr-exports/

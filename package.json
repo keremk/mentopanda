@@ -12,6 +12,7 @@
     "test:db": "supabase test db",
     "import-data": "tsx src/scripts/import-data.ts",
     "export-data": "tsx src/scripts/export-data.ts",
+    "delete-user": "tsx src/scripts/delete-user.ts",
     "email:dev": "email dev --dir src/emails --port 3001"
   },
   "dependencies": {
