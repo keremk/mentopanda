@@ -92,6 +92,17 @@ export default async function LoginPage(props: {
                 />
               </div>
 
+              {!isSignUp && (
+                <div className="text-right">
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm underline hover:text-brand transition-colors text-muted-foreground"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+              )}
+
               {isSignUp && (
                 <div className="text-sm text-muted-foreground">
                   By clicking Continue, you agree to our{" "}
