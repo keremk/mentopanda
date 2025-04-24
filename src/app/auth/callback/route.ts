@@ -6,23 +6,66 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
 
   // if "next" is in param, use it as the redirect URL
-  const next = searchParams.get("next") ?? "/home";
+  const next = searchParams.get("next") ?? "/home"; // Default redirect path
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const { error: exchangeError } =
+      await supabase.auth.exchangeCodeForSession(code);
+
+    // --- If code exchange is successful ---
+    if (!exchangeError) {
+      // --- Get user to find out the provider ---
+      const {
+        data: { user },
+        error: getUserError,
+      } = await supabase.auth.getUser();
+
+      if (getUserError || !user) {
+        console.error(
+          "Auth Callback: Error getting user after session exchange:",
+          getUserError
+        );
+        // Redirect to error page even if session exchange succeeded but user fetch failed
+        return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+      }
+
+      // Extract provider (default to 'email' if somehow missing, though unlikely for OAuth)
+      const provider = user.app_metadata?.provider || "email";
+
+      // --- Construct final redirect URL with provider ---
+      const redirectUrl = new URL(next, origin);
+      redirectUrl.searchParams.set("auth_provider", provider);
+      const finalRedirectPath = `${redirectUrl.pathname}${redirectUrl.search}`;
+
+      // --- Handle Redirect based on environment ---
       const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer
       const isLocalEnv = process.env.NODE_ENV === "development";
+
       if (isLocalEnv) {
-        // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
-        return NextResponse.redirect(`${origin}${next}`);
+        // Local dev: Use origin directly
+        return NextResponse.redirect(`${origin}${finalRedirectPath}`);
       } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
+        // Production behind proxy: Use forwarded host
+        return NextResponse.redirect(
+          `https://${forwardedHost}${finalRedirectPath}`
+        );
       } else {
-        return NextResponse.redirect(`${origin}${next}`);
+        // Production without proxy (or fallback): Use origin
+        return NextResponse.redirect(`${origin}${finalRedirectPath}`);
       }
     }
+    // --- Log exchange error if it happened ---
+    else {
+      console.error(
+        "Auth Callback: Code exchange error:",
+        exchangeError.message
+      );
+    }
+  }
+  // --- If no code or error occurred ---
+  else {
+    console.warn("Auth Callback: No code parameter found in request URL.");
   }
 
   // return the user to an error page with instructions

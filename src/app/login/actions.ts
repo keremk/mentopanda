@@ -34,7 +34,7 @@ export async function login(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  return redirect("/home");
+  return redirect("/home?auth_provider=email");
 }
 
 export async function signup(formData: FormData) {
@@ -61,7 +61,7 @@ export async function signup(formData: FormData) {
     // If we have a user and session, it means email confirmation is disabled
     // or the user was automatically confirmed
     revalidatePath("/", "layout");
-    return redirect("/onboard");
+    return redirect("/onboard?auth_provider=email");
   } else {
     // Email confirmation is required
     return redirect(
@@ -90,7 +90,7 @@ export async function githubSignIn() {
   For Production you need to change the Authentication->URL Configuration in Supabase Studio.
   VERY IMPORTANT: You need to provide the full URL including the protocol (http or https) + and the full path (e.g. https://example.com/auth/callback)
   Supabase Studio in local does not have this UI, so you need to use config.toml file.
-  */ 
+  */
 
   const supabase = await createClient();
 

@@ -9,6 +9,7 @@ import {
 import { cookies } from "next/headers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageTitle } from "@/components/page-title";
+import { StoreProviderHandler } from "@/components/auth/store-provider-handler";
 
 function SidebarSkeleton() {
   return (
@@ -20,7 +21,11 @@ function SidebarSkeleton() {
   );
 }
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   // Read cookie server-side
   const cookieStore = await cookies();
   const sidebarState = cookieStore.get("sidebar:state");
@@ -28,6 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
+      <StoreProviderHandler />
       <Suspense fallback={<SidebarSkeleton />}>
         <AppSidebar />
       </Suspense>

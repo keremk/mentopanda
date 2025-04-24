@@ -1,3 +1,5 @@
+"use client";
+
 import { login, signup, githubSignIn, googleSignIn } from "@/app/login/actions";
 import { Footer } from "@/app/footer";
 import Link from "next/link";
@@ -7,12 +9,21 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { SiGoogle, SiGithub } from "@icons-pack/react-simple-icons";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
+import { useState, useEffect } from "react";
+import { getLastAuthProvider } from "@/lib/store-auth-provider";
+import { useSearchParams } from "next/navigation";
 
-export default async function LoginPage(props: {
-  searchParams: Promise<{ message: string; mode?: "signin" | "signup" }>;
-}) {
-  const searchParams = await props.searchParams;
-  const isSignUp = searchParams.mode === "signup";
+export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const message = searchParams.get("message");
+  const mode = searchParams.get("mode");
+
+  const isSignUp = mode === "signup";
+  const [lastProvider, setLastProvider] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLastProvider(getLastAuthProvider());
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -96,7 +107,7 @@ export default async function LoginPage(props: {
                 <div className="text-right">
                   <Link
                     href="/forgot-password"
-                    className="text-sm underline hover:text-brand transition-colors text-muted-foreground"
+                    className="text-sm underline hover:text-brand transition-colors"
                   >
                     Forgot password?
                   </Link>
@@ -134,9 +145,9 @@ export default async function LoginPage(props: {
           </CardContent>
 
           <CardFooter className="flex flex-col gap-4">
-            {searchParams?.message && (
+            {message && (
               <p className="text-sm text-red-500 text-center w-full p-2 border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900 rounded-md">
-                {searchParams.message}
+                {message}
               </p>
             )}
             <p className="text-sm text-muted-foreground text-center">
@@ -162,6 +173,13 @@ export default async function LoginPage(props: {
                 </>
               )}
             </p>
+
+            {lastProvider && (
+              <p className="text-xs text-muted-foreground text-center pt-2">
+                Hint: You last logged in with{" "}
+                <span className="capitalize font-medium">{lastProvider}</span>.
+              </p>
+            )}
           </CardFooter>
         </Card>
       </div>
