@@ -27,6 +27,10 @@ export type User = {
   permissions: AppPermission[];
   trialStartDate: Date | null;
   trialEndDate: Date | null;
+  app_metadata?: {
+    provider?: string;
+    [key: string]: any;
+  };
 };
 
 export async function getUserId(supabase: SupabaseClient): Promise<string> {
@@ -41,26 +45,44 @@ export async function getUserId(supabase: SupabaseClient): Promise<string> {
 export async function getCurrentUserInfo(
   supabase: SupabaseClient
 ): Promise<User> {
-  const userId = await getUserId(supabase);
+  const {
+    data: { user: authUser },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-  const { data, error } = await supabase.rpc("get_user_profile", {
-    user_id: userId,
-  });
+  if (authError || !authUser)
+    throw new Error(
+      `User is not authenticated or error fetching auth user: ${authError?.message}`
+    );
 
-  if (error)
-    throw new Error(`Failed to fetch user profile, with error ${error}`);
+  const { data: profileData, error: profileError } = await supabase.rpc(
+    "get_user_profile",
+    {
+      user_id: authUser.id,
+    }
+  );
+
+  if (profileError)
+    throw new Error(
+      `Failed to fetch user profile, with error ${profileError.message}`
+    );
 
   const userData: User = {
-    id: data.id,
-    email: data.email,
-    displayName: data.display_name,
-    avatarUrl: data.avatar_url,
-    pricingPlan: data.pricing_plan,
-    currentProject: data.current_project,
-    projectRole: data.project_role,
-    permissions: data.permissions || [],
-    trialStartDate: data.trial_start ? new Date(data.trial_start) : null,
-    trialEndDate: data.trial_end ? new Date(data.trial_end) : null,
+    id: authUser.id,
+    email: profileData.email,
+    displayName: profileData.display_name,
+    avatarUrl: profileData.avatar_url,
+    pricingPlan: profileData.pricing_plan,
+    currentProject: profileData.current_project,
+    projectRole: profileData.project_role,
+    permissions: profileData.permissions || [],
+    trialStartDate: profileData.trial_start
+      ? new Date(profileData.trial_start)
+      : null,
+    trialEndDate: profileData.trial_end
+      ? new Date(profileData.trial_end)
+      : null,
+    app_metadata: authUser.app_metadata,
   };
 
   return userData;
@@ -70,7 +92,6 @@ export async function updateUserProfile(
   supabase: SupabaseClient,
   displayName: string
 ): Promise<User> {
-  // Update the user metadata in auth.users
   const { error: updateAuthError } = await supabase.auth.updateUser({
     data: {
       display_name: displayName,
@@ -82,7 +103,6 @@ export async function updateUserProfile(
       `Failed to update display name: ${updateAuthError.message}`
     );
 
-  // Get the updated user info
   return await getCurrentUserInfo(supabase);
 }
 
@@ -99,7 +119,6 @@ export async function updateUserAvatar(
   if (updateAuthError)
     throw new Error(`Failed to update avatar: ${updateAuthError.message}`);
 
-  // Return updated user info
   return await getCurrentUserInfo(supabase);
 }
 
@@ -136,13 +155,15 @@ export async function updateUserTrial(
     .from("profiles")
     .update({ trial_start: startDate, trial_end: endDate })
     .eq("id", userId);
-  
+
   if (error) handleError(error);
 
   return await getCurrentUserInfo(supabase);
 }
 
-export async function isUserOnTrial(supabase: SupabaseClient): Promise<boolean> {
+export async function isUserOnTrial(
+  supabase: SupabaseClient
+): Promise<boolean> {
   const user = await getCurrentUserInfo(supabase);
 
   if (!user.trialStartDate || !user.trialEndDate) return false;
@@ -159,18 +180,15 @@ export async function hasPermission({
   permission: AppPermission;
   user: User;
 }): Promise<boolean> {
-  // If user has permissions array, check locally
   if (user.permissions) {
     return user.permissions.includes(permission);
   }
 
-  // If no current project, we can't check permission
   if (!user.currentProject?.id) {
     return false;
   }
 
   try {
-    // Fallback to RPC call if no cached permissions
     const { data: hasPermission, error } = await supabase.rpc("authorize", {
       requested_permission: permission,
       project_id: user.currentProject.id,
