@@ -10,6 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useState } from "react";
+import { UploadCloud } from "lucide-react";
 
 type ImageUploadButtonProps = {
   onUploadComplete: (url: string) => Promise<void>;
@@ -63,7 +64,13 @@ export function ImageUploadButton({
           size={buttonSize}
           disabled={isUploading}
         >
-          {isUploading ? "Uploading..." : buttonText}
+          {isUploading ? (
+            "Uploading..."
+          ) : (
+            <>
+              <UploadCloud className="mr-2 h-4 w-4" /> {buttonText}
+            </>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px] p-0 gap-0">

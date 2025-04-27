@@ -169,7 +169,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
                 bucket="avatars"
                 folder="character-avatars"
                 onUploadComplete={handleAvatarUpload}
-                buttonText={isAvatarUpdating ? "Uploading..." : "Upload Image"}
+                buttonText={isAvatarUpdating ? "Uploading..." : "Upload"}
                 buttonVariant="ghost-brand"
                 buttonSize="default"
               />
