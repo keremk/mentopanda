@@ -95,8 +95,10 @@ export function AccountForm({ user }: AccountFormProps) {
     });
   }
 
-  async function handleAvatarUpload(url: string) {
+  async function handleAvatarUpload(url: string, path: string) {
     setIsAvatarUpdating(true);
+    console.log("[AccountForm] New avatar path (needs handling):", path);
+
     try {
       const response = await updateAvatarAction({ avatarUrl: url });
       if (response.success) {
@@ -176,7 +178,7 @@ export function AccountForm({ user }: AccountFormProps) {
           </Avatar>
           <ImageUploadButton
             bucket="avatars"
-            folder="user-avatars"
+            folder={`user-avatars/${user.id}`}
             onUploadComplete={handleAvatarUpload}
             buttonText={isAvatarUpdating ? "Updating..." : "Change Avatar"}
             buttonVariant="ghost-brand"

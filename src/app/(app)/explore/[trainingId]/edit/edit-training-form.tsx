@@ -47,8 +47,15 @@ export function EditTrainingForm() {
     }
   };
 
-  const handleGeneratedImage = (url: string) => {
-    handleFieldChange("imageUrl", url);
+  const handleGeneratedImage = (url: string, path: string) => {
+    dispatch({
+      type: "UPDATE_TRAINING_FIELD",
+      payload: { field: "imageUrl", value: url },
+    });
+    console.log(
+      "[EditTrainingForm] Generated image path (needs handling):",
+      path
+    );
     setIsImageGenerationDialogOpen(false);
   };
 
@@ -79,11 +86,18 @@ export function EditTrainingForm() {
           <div className="flex justify-center gap-2">
             <div>
               <ImageUploadButton
-                onUploadComplete={async (url) => {
-                  handleFieldChange("imageUrl", url);
+                onUploadComplete={async (url, path) => {
+                  dispatch({
+                    type: "UPDATE_TRAINING_FIELD",
+                    payload: { field: "imageUrl", value: url },
+                  });
+                  console.log(
+                    "[EditTrainingForm] Uploaded image path (needs handling):",
+                    path
+                  );
                 }}
                 bucket="trainings"
-                folder="covers"
+                folder={`trainings/${trainingId}`}
                 buttonText="Upload"
                 buttonVariant="ghost-brand"
                 buttonSize="default"

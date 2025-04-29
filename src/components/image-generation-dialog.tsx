@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
   Dialog,
@@ -25,6 +25,8 @@ import { SendHorizontal, Loader2, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import { generateImageAction } from "@/app/actions/generate-images";
 import { toast } from "@/hooks/use-toast";
+import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
+import type { FileWithPreview } from "@/hooks/use-supabase-upload";
 
 function base64ToBlob(base64: string, contentType = "image/png"): Blob {
   const byteCharacters = atob(base64);
@@ -40,7 +42,7 @@ type ImageGenerationDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   trainingId: string;
-  onImageGenerated: (url: string) => void;
+  onImageGenerated: (url: string, path: string) => void;
 };
 
 const imageStyles: { value: string; label: string }[] = [
@@ -67,9 +69,16 @@ export function ImageGenerationDialog({
   const [generatedImageData, setGeneratedImageData] = useState<string | null>(
     null
   );
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const supabase = useMemo(() => createClient(), []);
+  const hasHandledUploadSuccess = useRef(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const uploadHook = useSupabaseUpload({
+    bucketName: "trainings",
+    path: `trainings/${trainingId}`,
+    maxFiles: 1,
+    upsert: true,
+  });
 
   const handleGenerateClick = useCallback(async () => {
     if (
@@ -115,101 +124,45 @@ export function ImageGenerationDialog({
       setError("No image data available to upload.");
       return;
     }
-    setIsUploading(true);
-    setError(null);
+    hasHandledUploadSuccess.current = false;
+    uploadHook.setFiles([]);
+    uploadHook.setErrors([]);
 
     try {
-      const supabase = createClient();
       const imageBlob = base64ToBlob(generatedImageData);
-      const fileName = `cover.png`;
-      const storagePath = `trainings/${trainingId}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("trainings")
-        .upload(storagePath, imageBlob, {
-          contentType: "image/png",
-          upsert: true,
-        });
+      // Create a File object for the hook
+      const imageFile = new File([imageBlob], "generated_cover.png", {
+        type: "image/png",
+      });
 
-      if (uploadError) {
-        console.error(
-          "Client-side Supabase upload error object:",
-          JSON.stringify(uploadError, null, 2)
-        );
-        const errorMessage = uploadError.message || "Unknown storage error";
-        let userFriendlyError = `Storage upload failed: ${errorMessage}`; // Default
+      // Construct the FileWithPreview object explicitly for the hook's state
+      const fileForHook: FileWithPreview = Object.assign(imageFile, {
+        preview: undefined, // No preview needed/generated for Blob
+        errors: [],
+      });
+      uploadHook.setFiles([fileForHook]);
 
-        if (errorMessage.includes("Bucket not found")) {
-          userFriendlyError =
-            "Storage bucket not found. Please contact support.";
-        } else if (
-          errorMessage.includes("Auth") ||
-          errorMessage.includes("RLS") || // Catch the RLS error
-          errorMessage.includes("security policy") // Catch the RLS error specifically
-        ) {
-          userFriendlyError =
-            "Permission denied. Ensure you are logged in and have rights to upload.";
-        } else {
-          // Keep the default userFriendlyError
-        }
-
-        setError(userFriendlyError); // Keep inline error if desired
-        toast({
-          variant: "destructive",
-          title: "Upload Failed",
-          description: userFriendlyError,
-        });
-        setIsUploading(false);
-        return;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from("trainings")
-        .getPublicUrl(storagePath);
-
-      if (!urlData?.publicUrl) {
-        const errorMsg =
-          "Upload succeeded but failed to retrieve the image URL.";
-        console.error(
-          "Failed to get public URL after client upload for:",
-          storagePath
-        );
-        setError(errorMsg);
-        toast({
-          variant: "destructive",
-          title: "Upload Issue",
-          description: errorMsg,
-        });
-        setIsUploading(false);
-        return;
-      }
-
-      onImageGenerated(urlData.publicUrl);
-      toast({ title: "Image uploaded successfully!" });
-      onClose();
+      // Trigger the upload process defined in the hook
+      await uploadHook.onUpload();
     } catch (err) {
-      console.error("Client-side upload process error:", err);
+      console.error("Error initiating upload process:", err);
       const errorMsg =
-        "An unexpected error occurred trying to upload the image.";
+        "An unexpected error occurred trying to start the image upload.";
       setError(errorMsg);
       toast({
         variant: "destructive",
         title: "Upload Error",
         description: errorMsg,
       });
-    } finally {
-      setIsUploading(false);
     }
-  }, [generatedImageData, trainingId, onImageGenerated, onClose]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      if (!isGenerating && !isUploading) {
-        handleGenerateClick();
-      }
-    }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    generatedImageData,
+    uploadHook.setFiles,
+    uploadHook.onUpload,
+    uploadHook.setErrors,
+  ]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -219,8 +172,10 @@ export function ImageGenerationDialog({
         setPrompt("");
         setGeneratedImageData(null);
         setIsGenerating(false);
-        setIsUploading(false);
         setError(null);
+        uploadHook.setFiles([]);
+        uploadHook.setErrors([]);
+        hasHandledUploadSuccess.current = false;
       }, 300);
       return () => clearTimeout(timer);
     } else {
@@ -229,12 +184,105 @@ export function ImageGenerationDialog({
       setPrompt("");
       setGeneratedImageData(null);
       setIsGenerating(false);
-      setIsUploading(false);
       setError(null);
+      uploadHook.setFiles([]);
+      uploadHook.setErrors([]);
+      hasHandledUploadSuccess.current = false;
     }
-  }, [isOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, uploadHook.setFiles, uploadHook.setErrors]);
 
-  const isLoading = isGenerating || isUploading;
+  const isLoading = isGenerating || uploadHook.loading;
+
+  useEffect(() => {
+    if (
+      !uploadHook.loading &&
+      uploadHook.isSuccess &&
+      uploadHook.successes.length > 0
+    ) {
+      if (!hasHandledUploadSuccess.current) {
+        hasHandledUploadSuccess.current = true;
+
+        const handleComplete = async () => {
+          try {
+            const uploadedPath = uploadHook.successes[0]?.uploadedPath;
+            if (!uploadedPath) {
+              console.error(
+                "Completion Effect: Could not determine uploaded path."
+              );
+              setError("Upload succeeded but failed to get path.");
+              return;
+            }
+
+            console.log(
+              "Completion Effect: Getting public URL for path:",
+              uploadedPath
+            );
+            const { data } = supabase.storage
+              .from("trainings")
+              .getPublicUrl(decodeURIComponent(uploadedPath));
+
+            if (data?.publicUrl) {
+              onImageGenerated(data.publicUrl, uploadedPath);
+              toast({ title: "Image uploaded successfully!" });
+              onClose();
+            } else {
+              const errorMsg =
+                "Upload succeeded but failed to retrieve the image URL.";
+              console.error(
+                "Completion Effect:",
+                errorMsg,
+                "Path:",
+                uploadedPath
+              );
+              setError(errorMsg);
+              toast({
+                variant: "destructive",
+                title: "Upload Issue",
+                description: errorMsg,
+              });
+            }
+          } catch (error) {
+            const errorMsg = "Error processing upload completion.";
+            console.error("Completion Effect Error:", error);
+            setError(errorMsg);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: errorMsg,
+            });
+          }
+        };
+        handleComplete();
+      }
+    } else if (!uploadHook.loading) {
+      hasHandledUploadSuccess.current = false;
+    }
+  }, [
+    uploadHook.loading,
+    uploadHook.isSuccess,
+    uploadHook.successes,
+    onImageGenerated,
+    onClose,
+    supabase,
+  ]);
+
+  useEffect(() => {
+    if (uploadHook.errors.length > 0) {
+      const hookError = uploadHook.errors[0];
+      const message = `Upload failed: ${hookError.message}`;
+      setError(message);
+    }
+  }, [uploadHook.errors]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      if (!isGenerating && !uploadHook.loading) {
+        handleGenerateClick();
+      }
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -337,7 +385,7 @@ export function ImageGenerationDialog({
                     variant="ghost-brand"
                     size="sm"
                     onClick={handleGenerateClick}
-                    disabled={isLoading || isGenerating}
+                    disabled={isLoading}
                     className="h-7 rounded-full px-3 flex items-center gap-1 text-xs"
                   >
                     {isGenerating ? (
@@ -362,10 +410,12 @@ export function ImageGenerationDialog({
             onClick={handleUseImage}
             disabled={!generatedImageData || isLoading}
           >
-            {isUploading ? (
+            {uploadHook.loading && !isGenerating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : null}
-            {isUploading ? "Uploading..." : "Use This Image"}
+            {uploadHook.loading && !isGenerating
+              ? "Uploading..."
+              : "Use This Image"}
           </Button>
         </DialogFooter>
       </DialogContent>

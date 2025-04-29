@@ -84,8 +84,10 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
     }
   };
 
-  async function handleAvatarUpload(url: string) {
+  async function handleAvatarUpload(url: string, path: string) {
     setIsAvatarUpdating(true);
+    console.log("[EditCharacterForm] New avatar path (needs handling):", path);
+
     try {
       const response = await updateCharacterAvatarAction(character.id, {
         avatarUrl: url,
@@ -167,7 +169,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
               </Avatar>
               <ImageUploadButton
                 bucket="avatars"
-                folder="character-avatars"
+                folder={`character-avatars/${character.id}`}
                 onUploadComplete={handleAvatarUpload}
                 buttonText={isAvatarUpdating ? "Uploading..." : "Upload"}
                 buttonVariant="ghost-brand"
