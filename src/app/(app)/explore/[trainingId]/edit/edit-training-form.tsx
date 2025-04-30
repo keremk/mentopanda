@@ -1,19 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import Image from "next/image";
 import { AIFocusInput } from "@/components/ai-focus-input";
 import { AIFocusTextarea } from "@/components/ai-focus-textarea";
 import { useTrainingEdit } from "@/contexts/training-edit-context";
-import { ImageGenerationButton } from "@/components/image-generation-button"; // Import the new component
+import { ImageGenerationButton } from "@/components/image-generation-button";
 
 export function EditTrainingForm() {
   const { state, dispatch } = useTrainingEdit();
   const { training } = state;
-  // Removed dialog state as it's now managed by ImageGenerationButton
-  // const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] =
-  //   useState(false);
+  // Reintroduce state for dialog visibility
+  const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] =
+    useState(false);
+  const [imageDialogKey, setImageDialogKey] = useState(1);
 
   if (!training) {
     return <div>Loading training details...</div>;
@@ -53,8 +55,17 @@ export function EditTrainingForm() {
       "[EditTrainingForm] Generated image path (needs handling):",
       path
     );
-    // Dialog closing is handled within ImageGenerationButton/Dialog now
-    // setIsImageGenerationDialogOpen(false);
+    // Close the dialog explicitly now that parent manages state
+    setIsImageGenerationDialogOpen(false);
+  };
+
+  // Handler now sets visibility state AND updates key
+  const handleImageDialogOpenChange = (isOpen: boolean) => {
+    setIsImageGenerationDialogOpen(isOpen);
+    if (isOpen) {
+      // Increment key when dialog opens to force remount
+      setImageDialogKey((prevKey) => prevKey + 1);
+    }
   };
 
   return (
@@ -100,14 +111,13 @@ export function EditTrainingForm() {
               buttonSize="default"
             />
             <ImageGenerationButton
+              key={imageDialogKey}
+              isOpen={isImageGenerationDialogOpen}
+              onOpenChange={handleImageDialogOpenChange}
               contextId={trainingId.toString()}
               contextType="training"
               aspectRatio="landscape"
               onImageGenerated={handleGeneratedImage}
-              // Optional: customize props if needed
-              // buttonText="Generate New"
-              // buttonVariant="secondary"
-              // buttonSize="lg"
             />
           </div>
         </div>

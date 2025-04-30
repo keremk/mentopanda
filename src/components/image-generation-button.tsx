@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ImageGenerationDialog } from "@/components/image-generation-dialog";
 import { Sparkles } from "lucide-react";
@@ -10,6 +9,8 @@ import type {
 } from "@/components/image-generation-dialog";
 
 type ImageGenerationButtonProps = {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
   contextId: string;
   contextType: ImageContextType;
   aspectRatio: ImageAspectRatio;
@@ -28,6 +29,8 @@ type ImageGenerationButtonProps = {
 };
 
 export function ImageGenerationButton({
+  isOpen,
+  onOpenChange,
   contextId,
   contextType,
   aspectRatio,
@@ -37,22 +40,19 @@ export function ImageGenerationButton({
   buttonSize = "default",
   showContextSwitch,
 }: ImageGenerationButtonProps) {
-  const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] =
-    useState(false);
-
   return (
     <>
       <Button
         type="button"
         variant={buttonVariant}
         size={buttonSize}
-        onClick={() => setIsImageGenerationDialogOpen(true)}
+        onClick={() => onOpenChange(true)}
       >
         <Sparkles className="mr-2 h-4 w-4" /> {buttonText}
       </Button>
       <ImageGenerationDialog
-        isOpen={isImageGenerationDialogOpen}
-        onClose={() => setIsImageGenerationDialogOpen(false)}
+        isOpen={isOpen}
+        onClose={() => onOpenChange(false)}
         contextId={contextId}
         contextType={contextType}
         aspectRatio={aspectRatio}

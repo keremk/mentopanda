@@ -126,7 +126,7 @@ export async function generateImageAction(
     console.log("Server-side Final Prompt:", finalPrompt);
 
     // 3. Determine image size based on aspect ratio per user instruction
-    const imageSize = aspectRatio === "landscape" ? "1024x1536" : "1024x1024";
+    const imageSize = aspectRatio === "landscape" ? "1536x1024" : "1024x1024";
     console.log(`Generating image with size: ${imageSize}`);
 
     // 4. Call OpenAI API using gpt-image-1 model and specified sizes
@@ -134,7 +134,7 @@ export async function generateImageAction(
       model: "gpt-image-1", // Use gpt-image-1 model as instructed
       prompt: finalPrompt,
       n: 1,
-      size: imageSize, // Pass dynamic size (1024x1024 or 1024x1536)
+      size: imageSize, 
     });
 
     const image_base64 = response.data?.[0]?.b64_json;

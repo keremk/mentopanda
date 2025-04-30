@@ -34,6 +34,9 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
   const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(character.avatarUrl);
   const [isAIPaneOpen, setIsAIPaneOpen] = useState(false);
+  const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] =
+    useState(false);
+  const [imageDialogKey, setImageDialogKey] = useState(1);
 
   // Use character-specific AI context
   const getAIPaneContext = () => {
@@ -118,12 +121,9 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
       "[EditCharacterForm] Generated avatar path (needs handling):",
       path
     );
-    // Update UI immediately
     setAvatarUrl(url);
-    // Update context state
     updateCharacterField("avatarUrl", url);
 
-    // Attempt to save the character (which includes the new URL)
     const saveSuccess = await saveCharacter();
     if (!saveSuccess) {
       toast({
@@ -134,8 +134,18 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
     } else {
       toast({ title: "Generated avatar used and saved!" });
     }
+    // Close dialog after successful use
+    setIsImageGenerationDialogOpen(false);
     setIsAvatarUpdating(false);
   }
+
+  // Handler for Image Generation Button's open/close events
+  const handleImageDialogOpenChange = (isOpen: boolean) => {
+    setIsImageGenerationDialogOpen(isOpen);
+    if (isOpen) {
+      setImageDialogKey((prevKey) => prevKey + 1);
+    }
+  };
 
   return (
     <AIPaneProvider
@@ -203,6 +213,9 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
                   buttonSize="sm"
                 />
                 <ImageGenerationButton
+                  key={imageDialogKey}
+                  isOpen={isImageGenerationDialogOpen}
+                  onOpenChange={handleImageDialogOpenChange}
                   contextId={character.id.toString()}
                   contextType="character"
                   aspectRatio="square"

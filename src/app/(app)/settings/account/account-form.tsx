@@ -62,6 +62,11 @@ export function AccountForm({ user }: AccountFormProps) {
     !user.app_metadata?.provider || user.app_metadata.provider === "email";
   const authProvider = user.app_metadata?.provider;
 
+  // State for Image Generation Dialog
+  const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] =
+    useState(false);
+  const [imageDialogKey, setImageDialogKey] = useState(1);
+
   async function handleSubmitProfile(formData: FormData) {
     startTransition(async () => {
       const newDisplayName = formData.get("displayName") as string;
@@ -96,10 +101,11 @@ export function AccountForm({ user }: AccountFormProps) {
     });
   }
 
+  // Combined handler for avatar update (upload or generation)
   async function handleAvatarUpdate(url: string, path: string) {
     setIsAvatarUpdating(true);
     console.log("[AccountForm] New avatar URL:", url, "Path:", path);
-    setAvatarUrl(url);
+    setAvatarUrl(url); // Update local state for UI immediately
 
     try {
       const response = await updateAvatarAction({ avatarUrl: url });
@@ -108,6 +114,8 @@ export function AccountForm({ user }: AccountFormProps) {
           title: "Avatar updated",
           description: "Your avatar has been updated successfully.",
         });
+        // Close dialog after successful generation/upload and save
+        setIsImageGenerationDialogOpen(false);
       } else {
         console.error("Failed to update avatar:", response.error);
         toast({
@@ -166,6 +174,14 @@ export function AccountForm({ user }: AccountFormProps) {
     }
   }
 
+  // Handler for Image Generation Button's open/close events
+  const handleImageDialogOpenChange = (isOpen: boolean) => {
+    setIsImageGenerationDialogOpen(isOpen);
+    if (isOpen) {
+      setImageDialogKey((prevKey) => prevKey + 1);
+    }
+  };
+
   return (
     <form
       action={handleSubmitProfile}
@@ -187,6 +203,9 @@ export function AccountForm({ user }: AccountFormProps) {
               buttonSize="sm"
             />
             <ImageGenerationButton
+              key={imageDialogKey}
+              isOpen={isImageGenerationDialogOpen}
+              onOpenChange={handleImageDialogOpenChange}
               contextId={user.id}
               contextType="user"
               aspectRatio="square"
