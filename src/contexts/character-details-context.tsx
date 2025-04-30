@@ -58,6 +58,7 @@ export function CharacterDetailsProvider({
         aiModel: characterData.aiModel,
         aiDescription: characterData.aiDescription || "",
         description: characterData.description || "",
+        avatarUrl: characterData.avatarUrl || null,
       });
 
       // Update the last saved version with current values using deep clone
@@ -87,6 +88,7 @@ export function CharacterDetailsProvider({
         aiModel: lastSavedCharacter.aiModel,
         aiDescription: lastSavedCharacter.aiDescription,
         description: lastSavedCharacter.description,
+        avatarUrl: lastSavedCharacter.avatarUrl,
       }) !==
       JSON.stringify({
         name: debouncedCharacter.name,
@@ -94,6 +96,7 @@ export function CharacterDetailsProvider({
         aiModel: debouncedCharacter.aiModel,
         aiDescription: debouncedCharacter.aiDescription,
         description: debouncedCharacter.description,
+        avatarUrl: debouncedCharacter.avatarUrl,
       });
 
     if (hasChanges) {

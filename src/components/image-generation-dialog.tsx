@@ -38,11 +38,17 @@ function base64ToBlob(base64: string, contentType = "image/png"): Blob {
   return new Blob([byteArray], { type: contentType });
 }
 
+export type ImageContextType = "training" | "character" | "user";
+export type ImageAspectRatio = "landscape" | "square";
+
 type ImageGenerationDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  trainingId: string;
+  contextId: string;
+  contextType: ImageContextType;
   onImageGenerated: (url: string, path: string) => void;
+  aspectRatio: ImageAspectRatio;
+  showContextSwitch?: boolean;
 };
 
 const imageStyles: { value: string; label: string }[] = [
@@ -55,11 +61,24 @@ const imageStyles: { value: string; label: string }[] = [
   { value: "custom", label: "Custom" },
 ];
 
+// Define a type for the action input based on usage
+type GenerateImageActionInput = {
+  contextId: string;
+  contextType: ImageContextType;
+  prompt: string;
+  style: string;
+  aspectRatio: ImageAspectRatio;
+  includeContext?: boolean;
+};
+
 export function ImageGenerationDialog({
   isOpen,
   onClose,
-  trainingId,
+  contextId,
+  contextType,
   onImageGenerated,
+  aspectRatio,
+  showContextSwitch = true,
 }: ImageGenerationDialogProps) {
   const [selectedStyle, setSelectedStyle] = useState<string>(
     imageStyles[0].value
@@ -73,20 +92,39 @@ export function ImageGenerationDialog({
   const supabase = useMemo(() => createClient(), []);
   const hasHandledUploadSuccess = useRef(false);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Parse aspect ratio string for the component prop
+  const numericAspectRatio = useMemo(() => {
+    if (aspectRatio === "landscape") return 16 / 9;
+    if (aspectRatio === "square") return 1;
+    return 16 / 9; // Default fallback if needed
+  }, [aspectRatio]);
+
+  // Determine bucket and path based on contextType
+  const bucketName = useMemo(() => {
+    if (contextType === "training") return "trainings";
+    if (contextType === "character") return "avatars";
+    if (contextType === "user") return "avatars";
+    return "default-bucket";
+  }, [contextType]);
+
+  const uploadPath = useMemo(() => {
+    if (contextType === "training") return `trainings/${contextId}`;
+    if (contextType === "character") return `character-avatars/${contextId}`;
+    if (contextType === "user") return `user-avatars/${contextId}`;
+    return `unknown-context/${contextId}`;
+  }, [contextType, contextId]);
+
   const uploadHook = useSupabaseUpload({
-    bucketName: "trainings",
-    path: `trainings/${trainingId}`,
+    bucketName: bucketName,
+    path: uploadPath,
     maxFiles: 1,
     upsert: true,
   });
 
   const handleGenerateClick = useCallback(async () => {
-    if (
-      !trainingId ||
-      typeof trainingId !== "string" ||
-      trainingId.length === 0
-    ) {
-      setError("Invalid or missing Training ID. Cannot generate image.");
+    if (!contextId || typeof contextId !== "string" || contextId.length === 0) {
+      setError(`Invalid or missing ${contextType} ID. Cannot generate image.`);
       return;
     }
 
@@ -95,12 +133,16 @@ export function ImageGenerationDialog({
     setGeneratedImageData(null);
 
     try {
-      const actionInput = {
-        trainingId,
+      const actionInput: GenerateImageActionInput = {
+        contextId,
+        contextType,
         prompt: prompt.trim(),
         style: selectedStyle,
-        includeContext,
+        aspectRatio,
       };
+      if (showContextSwitch) {
+        actionInput.includeContext = includeContext;
+      }
       console.log("Sending to server action:", actionInput);
 
       const result = await generateImageAction(actionInput);
@@ -117,7 +159,15 @@ export function ImageGenerationDialog({
     } finally {
       setIsGenerating(false);
     }
-  }, [trainingId, prompt, selectedStyle, includeContext]);
+  }, [
+    contextId,
+    contextType,
+    prompt,
+    selectedStyle,
+    includeContext,
+    showContextSwitch,
+    aspectRatio,
+  ]);
 
   const handleUseImage = useCallback(async () => {
     if (!generatedImageData) {
@@ -130,20 +180,14 @@ export function ImageGenerationDialog({
 
     try {
       const imageBlob = base64ToBlob(generatedImageData);
-
-      // Create a File object for the hook
       const imageFile = new File([imageBlob], "generated_cover.png", {
         type: "image/png",
       });
-
-      // Construct the FileWithPreview object explicitly for the hook's state
       const fileForHook: FileWithPreview = Object.assign(imageFile, {
-        preview: undefined, // No preview needed/generated for Blob
+        preview: undefined,
         errors: [],
       });
       uploadHook.setFiles([fileForHook]);
-
-      // Trigger the upload process defined in the hook
       await uploadHook.onUpload();
     } catch (err) {
       console.error("Error initiating upload process:", err);
@@ -156,7 +200,6 @@ export function ImageGenerationDialog({
         description: errorMsg,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     generatedImageData,
     uploadHook.setFiles,
@@ -189,7 +232,6 @@ export function ImageGenerationDialog({
       uploadHook.setErrors([]);
       hasHandledUploadSuccess.current = false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, uploadHook.setFiles, uploadHook.setErrors]);
 
   const isLoading = isGenerating || uploadHook.loading;
@@ -218,8 +260,9 @@ export function ImageGenerationDialog({
               "Completion Effect: Getting public URL for path:",
               uploadedPath
             );
+            // Use dynamic bucketName here
             const { data } = supabase.storage
-              .from("trainings")
+              .from(bucketName)
               .getPublicUrl(decodeURIComponent(uploadedPath));
 
             if (data?.publicUrl) {
@@ -265,6 +308,7 @@ export function ImageGenerationDialog({
     onImageGenerated,
     onClose,
     supabase,
+    bucketName,
   ]);
 
   useEffect(() => {
@@ -293,7 +337,10 @@ export function ImageGenerationDialog({
 
         <div className="grid grid-rows-[auto_minmax(0,1fr)] gap-4 overflow-y-auto px-6 pb-4">
           <div className="image-container-enhanced">
-            <AspectRatio ratio={16 / 9} className="bg-muted rounded-lg">
+            <AspectRatio
+              ratio={numericAspectRatio}
+              className="bg-muted rounded-lg"
+            >
               {isGenerating ? (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                   <Loader2 className="h-8 w-8 animate-spin mb-2" />
@@ -348,21 +395,23 @@ export function ImageGenerationDialog({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex flex-col items-center space-y-1 pt-1">
-                <Label
-                  htmlFor="include-context"
-                  className="text-xs font-medium"
-                >
-                  Use Context
-                </Label>
-                <Switch
-                  id="include-context"
-                  checked={includeContext}
-                  onCheckedChange={setIncludeContext}
-                  disabled={isLoading}
-                  className="data-[state=checked]:bg-brand data-[state=unchecked]:bg-input focus-visible:ring-brand"
-                />
-              </div>
+              {showContextSwitch && (
+                <div className="flex flex-col items-center space-y-1 pt-1">
+                  <Label
+                    htmlFor="include-context"
+                    className="text-xs font-medium"
+                  >
+                    Use Context
+                  </Label>
+                  <Switch
+                    id="include-context"
+                    checked={includeContext}
+                    onCheckedChange={setIncludeContext}
+                    disabled={isLoading}
+                    className="data-[state=checked]:bg-brand data-[state=unchecked]:bg-input focus-visible:ring-brand"
+                  />
+                </div>
+              )}
             </div>
 
             <div>

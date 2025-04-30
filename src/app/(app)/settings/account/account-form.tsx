@@ -12,6 +12,7 @@ import {
 import React, { useTransition, useState, useRef } from "react";
 import type { User } from "@/data/user";
 import { ImageUploadButton } from "@/components/image-upload-button";
+import { ImageGenerationButton } from "@/components/image-generation-button";
 import { ProjectDialog } from "@/components/project-dialog";
 import { ApiKeyInput } from "@/components/api-key-input";
 import { useToast } from "@/hooks/use-toast";
@@ -95,14 +96,14 @@ export function AccountForm({ user }: AccountFormProps) {
     });
   }
 
-  async function handleAvatarUpload(url: string, path: string) {
+  async function handleAvatarUpdate(url: string, path: string) {
     setIsAvatarUpdating(true);
-    console.log("[AccountForm] New avatar path (needs handling):", path);
+    console.log("[AccountForm] New avatar URL:", url, "Path:", path);
+    setAvatarUrl(url);
 
     try {
       const response = await updateAvatarAction({ avatarUrl: url });
       if (response.success) {
-        setAvatarUrl(url);
         toast({
           title: "Avatar updated",
           description: "Your avatar has been updated successfully.",
@@ -171,19 +172,31 @@ export function AccountForm({ user }: AccountFormProps) {
       className="space-y-6 max-w-2xl px-2 py-6"
     >
       <div className="flex items-start gap-8">
-        <div className="space-y-4 flex flex-col items-center w-48">
+        <div className="space-y-3 flex flex-col items-center w-48">
           <Avatar className="h-32 w-32">
             <AvatarImage src={avatarUrl ?? undefined} alt={displayName ?? ""} />
             <AvatarFallback>{getInitials(displayName ?? "")}</AvatarFallback>
           </Avatar>
-          <ImageUploadButton
-            bucket="avatars"
-            folder={`user-avatars/${user.id}`}
-            onUploadComplete={handleAvatarUpload}
-            buttonText={isAvatarUpdating ? "Updating..." : "Change Avatar"}
-            buttonVariant="ghost-brand"
-            buttonSize="default"
-          />
+          <div className="flex justify-center gap-2 w-full">
+            <ImageUploadButton
+              bucket="avatars"
+              folder={`user-avatars/${user.id}`}
+              onUploadComplete={handleAvatarUpdate}
+              buttonText={isAvatarUpdating ? "Uploading..." : "Upload"}
+              buttonVariant="ghost-brand"
+              buttonSize="sm"
+            />
+            <ImageGenerationButton
+              contextId={user.id}
+              contextType="user"
+              aspectRatio="square"
+              onImageGenerated={handleAvatarUpdate}
+              showContextSwitch={false}
+              buttonText="Generate"
+              buttonVariant="ghost-brand"
+              buttonSize="sm"
+            />
+          </div>
         </div>
 
         <div className="flex-1 space-y-6 py-2">

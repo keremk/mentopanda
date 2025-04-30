@@ -1,22 +1,19 @@
 "use client";
 
-import { useState } from "react";
-// import { useParams } from "next/navigation"; // Removed unused import
 import { Input } from "@/components/ui/input";
 import { ImageUploadButton } from "@/components/image-upload-button";
 import Image from "next/image";
 import { AIFocusInput } from "@/components/ai-focus-input";
 import { AIFocusTextarea } from "@/components/ai-focus-textarea";
 import { useTrainingEdit } from "@/contexts/training-edit-context";
-import { Button } from "@/components/ui/button";
-import { ImageGenerationDialog } from "@/components/image-generation-dialog";
-import { Sparkles } from "lucide-react";
+import { ImageGenerationButton } from "@/components/image-generation-button"; // Import the new component
 
 export function EditTrainingForm() {
   const { state, dispatch } = useTrainingEdit();
   const { training } = state;
-  const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] =
-    useState(false);
+  // Removed dialog state as it's now managed by ImageGenerationButton
+  // const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] =
+  //   useState(false);
 
   if (!training) {
     return <div>Loading training details...</div>;
@@ -56,7 +53,8 @@ export function EditTrainingForm() {
       "[EditTrainingForm] Generated image path (needs handling):",
       path
     );
-    setIsImageGenerationDialogOpen(false);
+    // Dialog closing is handled within ImageGenerationButton/Dialog now
+    // setIsImageGenerationDialogOpen(false);
   };
 
   return (
@@ -84,32 +82,33 @@ export function EditTrainingForm() {
             </div>
           </div>
           <div className="flex justify-center gap-2">
-            <div>
-              <ImageUploadButton
-                onUploadComplete={async (url, path) => {
-                  dispatch({
-                    type: "UPDATE_TRAINING_FIELD",
-                    payload: { field: "imageUrl", value: url },
-                  });
-                  console.log(
-                    "[EditTrainingForm] Uploaded image path (needs handling):",
-                    path
-                  );
-                }}
-                bucket="trainings"
-                folder={`trainings/${trainingId}`}
-                buttonText="Upload"
-                buttonVariant="ghost-brand"
-                buttonSize="default"
-              />
-            </div>
-            <Button
-              variant="ghost-brand"
-              size="default"
-              onClick={() => setIsImageGenerationDialogOpen(true)}
-            >
-              <Sparkles className="mr-2 h-4 w-4" /> Generate
-            </Button>
+            <ImageUploadButton
+              onUploadComplete={async (url, path) => {
+                dispatch({
+                  type: "UPDATE_TRAINING_FIELD",
+                  payload: { field: "imageUrl", value: url },
+                });
+                console.log(
+                  "[EditTrainingForm] Uploaded image path (needs handling):",
+                  path
+                );
+              }}
+              bucket="trainings"
+              folder={`trainings/${trainingId}`}
+              buttonText="Upload"
+              buttonVariant="ghost-brand"
+              buttonSize="default"
+            />
+            <ImageGenerationButton
+              contextId={trainingId.toString()}
+              contextType="training"
+              aspectRatio="landscape"
+              onImageGenerated={handleGeneratedImage}
+              // Optional: customize props if needed
+              // buttonText="Generate New"
+              // buttonVariant="secondary"
+              // buttonSize="lg"
+            />
           </div>
         </div>
 
@@ -167,13 +166,6 @@ export function EditTrainingForm() {
           placeholder="Enter training description, use markdown for formatting"
         />
       </div>
-
-      <ImageGenerationDialog
-        isOpen={isImageGenerationDialogOpen}
-        onClose={() => setIsImageGenerationDialogOpen(false)}
-        trainingId={trainingId.toString()}
-        onImageGenerated={handleGeneratedImage}
-      />
     </>
   );
 }

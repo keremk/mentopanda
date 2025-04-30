@@ -14,14 +14,22 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Schema now includes fields needed for server-side prompt generation
+// Define Zod types matching client-side types
+const imageContextTypeSchema = z.enum(["training", "character", "user"]);
+const imageAspectRatioSchema = z.enum(["landscape", "square"]);
+
+// Updated schema for the action input
 const generateImageSchema = z.object({
-  trainingId: z.string().min(1, "Training ID cannot be empty."),
+  contextId: z.string().min(1, "Context ID cannot be empty."),
+  contextType: imageContextTypeSchema,
+  aspectRatio: imageAspectRatioSchema,
   prompt: z.string(), // Can be empty if only refining
   style: z.string().optional(),
-  includeContext: z.boolean(),
-  // lastSuccessfulPrompt: z.string().optional(), // Consider adding later if needed server-side
+  includeContext: z.boolean().optional(), // Make includeContext optional
 });
+
+// Define the input type based on the schema - Removed as it's not strictly needed
+// type GenerateImageInput = z.infer<typeof generateImageSchema>;
 
 // Update ActionResult to return base64 data
 type GenerateActionResult =
@@ -29,11 +37,10 @@ type GenerateActionResult =
   | { success: false; error: string };
 
 export async function generateImageAction(
-  input: unknown
+  input: unknown // Keep input as unknown for initial validation
 ): Promise<GenerateActionResult> {
-  // Return GenerateActionResult
   try {
-    // 1. Validate input
+    // 1. Validate input against the updated schema
     const validationResult = generateImageSchema.safeParse(input);
     if (!validationResult.success) {
       console.error("Invalid input:", validationResult.error.flatten());
@@ -41,34 +48,76 @@ export async function generateImageAction(
         success: false,
         error:
           "Invalid input: " +
-          validationResult.error.flatten().formErrors.join(", "),
+          validationResult.error.flatten().formErrors.join(", ") +
+          ". " +
+          validationResult.error.flatten().fieldErrors,
       };
     }
-    const { trainingId, prompt, style, includeContext } = validationResult.data;
+    const {
+      contextId,
+      contextType,
+      aspectRatio,
+      prompt,
+      style,
+      includeContext = false,
+    } = validationResult.data;
 
-    // Acknowledge trainingId for linter until context fetch is implemented
-    console.log(`Generating image for trainingId: ${trainingId}`);
-
-    // 2. Construct the prompt server-side (Basic example - enhance later)
+    // 2. Construct the prompt server-side
     let finalPrompt = prompt; // Start with user's explicit prompt
-    if (includeContext) {
-      // TODO: Fetch training details using trainingId from DB
-      // const supabase = createSupabaseServerClient();
-      // const { data: trainingData, error: dbError } = await supabase
-      //    .from('trainings')
-      //    .select('title, tagline, description')
-      //    .eq('id', trainingId)
-      //    .single();
-      // if (dbError || !trainingData) { /* handle error */ }
-      // else { finalPrompt = `Based on Training (${trainingData.title}): ` + finalPrompt; }
-      finalPrompt = `(Context Included) ` + finalPrompt; // Placeholder
+
+    // === Scaffolding for Context Fetching ===
+    if (
+      includeContext &&
+      (contextType === "training" || contextType === "character")
+    ) {
+      console.log(
+        `Context fetching requested for ${contextType}: ${contextId}`
+      );
+      // TODO: Implement database fetching based on contextType and contextId
+      // Example structure:
+      /*
+      const supabase = createSupabaseServerClient(); // Assuming you have this helper
+      let contextText = "";
+      if (contextType === "training") {
+        const { data, error } = await supabase
+          .from('trainings')
+          .select('title, tagline, description')
+          .eq('id', contextId)
+          .single();
+        if (!error && data) {
+          contextText = `Based on Training (${data.title} - ${data.tagline}): ${data.description}\n\nUser Prompt:`;
+        }
+      } else if (contextType === "character") {
+        const { data, error } = await supabase
+          .from('characters')
+          .select('name, description, aiDescription') // Fetch relevant fields
+          .eq('id', contextId)
+          .single();
+         if (!error && data) {
+           contextText = `Based on Character (${data.name}):\nDescription: ${data.description}\nAI Notes: ${data.aiDescription}\n\nUser Prompt:`;
+         }
+      }
+      if (contextText) {
+        finalPrompt = contextText + " " + finalPrompt;
+      } else {
+        console.warn(`Could not fetch context for ${contextType}: ${contextId}`);
+        // Optionally add a generic prefix or handle error
+         finalPrompt = `(Context Included - Fetch Failed) ` + finalPrompt; // Placeholder if fetch fails
+      }
+      */
+      // Current placeholder:
+      finalPrompt = `(Context Included for ${contextType}) ` + finalPrompt;
     }
+    // === End Scaffolding ===
+
     if (style && style !== "custom") {
       finalPrompt += ` Style: ${style}.`;
     }
-    // Limit prompt length
-    finalPrompt = finalPrompt.substring(0, 1000);
-    if (!finalPrompt) {
+
+    // Limit prompt length (OpenAI has its own limits, but good practice)
+    finalPrompt = finalPrompt.substring(0, 2000); // Increased limit slightly
+
+    if (!finalPrompt.trim()) {
       return {
         success: false,
         error: "A prompt is required for image generation.",
@@ -76,12 +125,16 @@ export async function generateImageAction(
     }
     console.log("Server-side Final Prompt:", finalPrompt);
 
-    // 3. Call OpenAI API for Base64 JSON
+    // 3. Determine image size based on aspect ratio per user instruction
+    const imageSize = aspectRatio === "landscape" ? "1024x1536" : "1024x1024";
+    console.log(`Generating image with size: ${imageSize}`);
+
+    // 4. Call OpenAI API using gpt-image-1 model and specified sizes
     const response = await openai.images.generate({
-      model: "gpt-image-1",
+      model: "gpt-image-1", // Use gpt-image-1 model as instructed
       prompt: finalPrompt,
       n: 1,
-      size: "1024x1024",
+      size: imageSize, // Pass dynamic size (1024x1024 or 1024x1536)
     });
 
     const image_base64 = response.data?.[0]?.b64_json;
@@ -94,13 +147,18 @@ export async function generateImageAction(
       };
     }
 
-    // 4. Return base64 data directly
+    // 5. Return base64 data directly
     return { success: true, imageData: image_base64 };
   } catch (error) {
     console.error("Image generation action error:", error);
     let errorMessage = "An unknown error occurred during image generation.";
-    if (error instanceof Error) errorMessage = error.message;
-    else if (typeof error === "string") errorMessage = error;
+    if (error instanceof OpenAI.APIError) {
+      errorMessage = `OpenAI Error: ${error.status} ${error.name} ${error.message}`;
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === "string") {
+      errorMessage = error;
+    }
     return { success: false, error: `Action failed: ${errorMessage}` };
   }
 }

@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { AIModel } from "@/types/models";
 import { CharacterVoiceSelect } from "@/components/character-voice-select";
 import { ImageUploadButton } from "@/components/image-upload-button";
-import { updateCharacterAvatarAction } from "@/app/actions/character-actions";
+import { ImageGenerationButton } from "@/components/image-generation-button";
 import { useCharacterDetails } from "@/contexts/character-details-context";
 import { useToast } from "@/hooks/use-toast";
 import { getInitials } from "@/lib/utils";
@@ -84,32 +84,57 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
     }
   };
 
+  // Handler for when an image is uploaded via the button
   async function handleAvatarUpload(url: string, path: string) {
     setIsAvatarUpdating(true);
-    console.log("[EditCharacterForm] New avatar path (needs handling):", path);
+    console.log(
+      "[EditCharacterForm] Uploaded avatar path (needs handling):",
+      path
+    );
+    // Update UI immediately
+    setAvatarUrl(url);
+    // Update context state
+    updateCharacterField("avatarUrl", url);
 
-    try {
-      const response = await updateCharacterAvatarAction(character.id, {
-        avatarUrl: url,
-      });
-      if (response.success) {
-        setAvatarUrl(url);
-      } else {
-        toast({
-          title: "Failed to update avatar",
-          description: response.error,
-        });
-        console.log(`Failed to update avatar: ${response.error}`);
-      }
-    } catch (error) {
-      console.log(`Failed to update avatar: ${error}`);
+    // Attempt to save the character (which includes the new URL)
+    const saveSuccess = await saveCharacter();
+    if (!saveSuccess) {
       toast({
-        title: "Failed to update avatar",
-        description: "An error occurred while updating the avatar",
+        variant: "destructive",
+        title: "Failed to save avatar",
+        description: "Could not save character after avatar upload.",
       });
-    } finally {
-      setIsAvatarUpdating(false);
+      // Optionally revert UI change if save fails, or rely on context state
+    } else {
+      toast({ title: "Avatar updated and saved!" });
     }
+    setIsAvatarUpdating(false);
+  }
+
+  // Handler for when an image is generated and selected from the dialog
+  async function handleGeneratedAvatar(url: string, path: string) {
+    setIsAvatarUpdating(true);
+    console.log(
+      "[EditCharacterForm] Generated avatar path (needs handling):",
+      path
+    );
+    // Update UI immediately
+    setAvatarUrl(url);
+    // Update context state
+    updateCharacterField("avatarUrl", url);
+
+    // Attempt to save the character (which includes the new URL)
+    const saveSuccess = await saveCharacter();
+    if (!saveSuccess) {
+      toast({
+        variant: "destructive",
+        title: "Failed to save generated avatar",
+        description: "Could not save character after avatar generation.",
+      });
+    } else {
+      toast({ title: "Generated avatar used and saved!" });
+    }
+    setIsAvatarUpdating(false);
   }
 
   return (
@@ -135,8 +160,9 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
             onClick={handleSave}
             size="default"
             className="h-9"
+            disabled={saveStatus === "saving"}
           >
-            Save
+            {saveStatus === "saving" ? "Saving..." : "Save"}
           </Button>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -157,7 +183,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
 
         <div className="space-y-6">
           <div className="flex gap-8 items-start">
-            <div className="space-y-4 flex flex-col items-center w-48">
+            <div className="space-y-3 flex flex-col items-center w-48">
               <Avatar className="h-32 w-32">
                 <AvatarImage
                   src={avatarUrl || undefined}
@@ -167,14 +193,25 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
                   {getInitials(character.name)}
                 </AvatarFallback>
               </Avatar>
-              <ImageUploadButton
-                bucket="avatars"
-                folder={`character-avatars/${character.id}`}
-                onUploadComplete={handleAvatarUpload}
-                buttonText={isAvatarUpdating ? "Uploading..." : "Upload"}
-                buttonVariant="ghost-brand"
-                buttonSize="default"
-              />
+              <div className="flex justify-center gap-2 w-full">
+                <ImageUploadButton
+                  bucket="avatars"
+                  folder={`character-avatars/${character.id}`}
+                  onUploadComplete={handleAvatarUpload}
+                  buttonText={isAvatarUpdating ? "Uploading..." : "Upload"}
+                  buttonVariant="ghost-brand"
+                  buttonSize="sm"
+                />
+                <ImageGenerationButton
+                  contextId={character.id.toString()}
+                  contextType="character"
+                  aspectRatio="square"
+                  onImageGenerated={handleGeneratedAvatar}
+                  buttonText="Generate"
+                  buttonVariant="ghost-brand"
+                  buttonSize="sm"
+                />
+              </div>
             </div>
 
             <div className="flex-1 space-y-6">
