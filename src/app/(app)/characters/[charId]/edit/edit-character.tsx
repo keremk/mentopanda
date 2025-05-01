@@ -1,15 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
 import { AIModel } from "@/types/models";
 import { CharacterVoiceSelect } from "@/components/character-voice-select";
-import { ImageUploadButton } from "@/components/image-upload-button";
-import { ImageGenerationButton } from "@/components/image-generation-button";
+import { ImageEdit } from "@/components/image-edit";
 import { useCharacterDetails } from "@/contexts/character-details-context";
 import { useToast } from "@/hooks/use-toast";
-import { getInitials } from "@/lib/utils";
 import { Sparkles } from "lucide-react";
 import { AIPane } from "@/components/aipane";
 import { AIPaneProvider } from "@/contexts/ai-pane-context";
@@ -31,12 +28,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
   const { toast } = useToast();
   const { character, updateCharacterField, saveStatus, saveCharacter } =
     useCharacterDetails();
-  const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(character.avatarUrl);
   const [isAIPaneOpen, setIsAIPaneOpen] = useState(false);
-  const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] =
-    useState(false);
-  const [imageDialogKey, setImageDialogKey] = useState(1);
 
   // Use character-specific AI context
   const getAIPaneContext = () => {
@@ -80,70 +72,44 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
   const handleSave = async () => {
     const success = await saveCharacter();
     if (success) {
+      // Toast handled in handleImageChange or direct save button
+      // toast({
+      //   title: "Character saved",
+      //   description: "Your character has been saved successfully",
+      // });
+    } else {
       toast({
-        title: "Character saved",
-        description: "Your character has been saved successfully",
+        variant: "destructive",
+        title: "Save Failed",
+        description: "Could not save character details.",
       });
     }
   };
 
-  // Handler for when an image is uploaded via the button
-  async function handleAvatarUpload(url: string, path: string) {
-    setIsAvatarUpdating(true);
-    console.log(
-      "[EditCharacterForm] Uploaded avatar path (needs handling):",
-      path
-    );
-    // Update UI immediately
-    setAvatarUrl(url);
-    // Update context state
-    updateCharacterField("avatarUrl", url);
+  // Handler for ImageEdit component changes
+  const handleImageChange = async (
+    newUrl: string,
+    newPath: string, // Path is available if needed for future logic
+    oldImageUrl: string | null
+  ) => {
+    console.log("[EditCharacterForm] Image changed:", { newUrl, oldImageUrl });
+    updateCharacterField("avatarUrl", newUrl); // Update context
 
-    // Attempt to save the character (which includes the new URL)
+    // Trigger save
     const saveSuccess = await saveCharacter();
-    if (!saveSuccess) {
+
+    if (saveSuccess) {
+      toast({ title: "Avatar updated and saved!" });
+    } else {
       toast({
         variant: "destructive",
         title: "Failed to save avatar",
-        description: "Could not save character after avatar upload.",
+        description: "Could not save character after avatar update.",
       });
-      // Optionally revert UI change if save fails, or rely on context state
-    } else {
-      toast({ title: "Avatar updated and saved!" });
-    }
-    setIsAvatarUpdating(false);
-  }
-
-  // Handler for when an image is generated and selected from the dialog
-  async function handleGeneratedAvatar(url: string, path: string) {
-    setIsAvatarUpdating(true);
-    console.log(
-      "[EditCharacterForm] Generated avatar path (needs handling):",
-      path
-    );
-    setAvatarUrl(url);
-    updateCharacterField("avatarUrl", url);
-
-    const saveSuccess = await saveCharacter();
-    if (!saveSuccess) {
-      toast({
-        variant: "destructive",
-        title: "Failed to save generated avatar",
-        description: "Could not save character after avatar generation.",
-      });
-    } else {
-      toast({ title: "Generated avatar used and saved!" });
-    }
-    // Close dialog after successful use
-    setIsImageGenerationDialogOpen(false);
-    setIsAvatarUpdating(false);
-  }
-
-  // Handler for Image Generation Button's open/close events
-  const handleImageDialogOpenChange = (isOpen: boolean) => {
-    setIsImageGenerationDialogOpen(isOpen);
-    if (isOpen) {
-      setImageDialogKey((prevKey) => prevKey + 1);
+      // Note: ImageEdit handles optimistic UI update, but here we might
+      // ideally want to revert the context state if save fails.
+      // For simplicity, we'll rely on the user seeing the error and potentially re-saving.
+      // Or, we could force a re-fetch of character data on failure.
     }
   };
 
@@ -193,38 +159,22 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
 
         <div className="space-y-6">
           <div className="flex gap-8 items-start">
-            <div className="space-y-3 flex flex-col items-center w-48">
-              <Avatar className="h-32 w-32">
-                <AvatarImage
-                  src={avatarUrl || undefined}
-                  alt={character.name}
-                />
-                <AvatarFallback className="text-4xl">
-                  {getInitials(character.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex justify-center gap-2 w-full">
-                <ImageUploadButton
-                  bucket="avatars"
-                  folder={`character-avatars/${character.id}`}
-                  onUploadComplete={handleAvatarUpload}
-                  buttonText={isAvatarUpdating ? "Uploading..." : "Upload"}
-                  buttonVariant="ghost-brand"
-                  buttonSize="sm"
-                />
-                <ImageGenerationButton
-                  key={imageDialogKey}
-                  isOpen={isImageGenerationDialogOpen}
-                  onOpenChange={handleImageDialogOpenChange}
-                  contextId={character.id.toString()}
-                  contextType="character"
-                  aspectRatio="square"
-                  onImageGenerated={handleGeneratedAvatar}
-                  buttonText="Generate"
-                  buttonVariant="ghost-brand"
-                  buttonSize="sm"
-                />
-              </div>
+            <div className="w-48 flex-shrink-0">
+              <ImageEdit
+                initialImageUrl={character.avatarUrl}
+                bucketName="avatars"
+                storageFolderPath={`character-avatars/${character.id}`}
+                contextId={character.id.toString()}
+                contextType="character"
+                aspectRatio="square"
+                onImageChange={handleImageChange}
+                imageShape="circle"
+                imageContainerClassName="h-32 w-32"
+                buttonSpacing="mt-3"
+                buttonSize="sm"
+                buttonVariant="ghost-brand"
+                showButtonLabels={false}
+              />
             </div>
 
             <div className="flex-1 space-y-6">

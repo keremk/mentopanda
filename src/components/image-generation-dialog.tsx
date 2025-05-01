@@ -90,8 +90,8 @@ export function ImageGenerationDialog({
   );
   const [error, setError] = useState<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
-  const hasHandledUploadSuccess = useRef(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const hasHandledUploadSuccess = useRef(false);
 
   // Parse aspect ratio string for the component prop
   const numericAspectRatio = useMemo(() => {
@@ -207,35 +207,14 @@ export function ImageGenerationDialog({
     uploadHook.setErrors,
   ]);
 
+  // Reset hasHandledUploadSuccess flag when isOpen becomes false
   useEffect(() => {
     if (!isOpen) {
-      const timer = setTimeout(() => {
-        setSelectedStyle(imageStyles[0].value);
-        setIncludeContext(true);
-        setPrompt("");
-        setGeneratedImageData(null);
-        setIsGenerating(false);
-        setError(null);
-        uploadHook.setFiles([]);
-        uploadHook.setErrors([]);
-        hasHandledUploadSuccess.current = false;
-      }, 300);
-      return () => clearTimeout(timer);
-    } else {
-      setSelectedStyle(imageStyles[0].value);
-      setIncludeContext(true);
-      setPrompt("");
-      setGeneratedImageData(null);
-      setIsGenerating(false);
-      setError(null);
-      uploadHook.setFiles([]);
-      uploadHook.setErrors([]);
       hasHandledUploadSuccess.current = false;
     }
-  }, [isOpen, uploadHook.setFiles, uploadHook.setErrors]);
+  }, [isOpen]);
 
-  const isLoading = isGenerating || uploadHook.loading;
-
+  // Success handling effect for the internal upload hook
   useEffect(() => {
     if (
       !uploadHook.loading &&
@@ -247,8 +226,8 @@ export function ImageGenerationDialog({
 
         const handleComplete = async () => {
           try {
-            const uploadedPath = uploadHook.successes[0]?.uploadedPath;
-            if (!uploadedPath) {
+            const uploadedPathRaw = uploadHook.successes[0]?.uploadedPath;
+            if (!uploadedPathRaw) {
               console.error(
                 "Completion Effect: Could not determine uploaded path."
               );
@@ -256,28 +235,33 @@ export function ImageGenerationDialog({
               return;
             }
 
+            let filePath = uploadedPathRaw;
+            const expectedPrefix = `${bucketName}/`;
+            if (filePath.startsWith(expectedPrefix)) {
+              const pathAfterBucket = filePath.substring(expectedPrefix.length);
+              if (pathAfterBucket.startsWith(`${bucketName}/`)) {
+                console.warn(
+                  `Detected duplicated bucket name in generated uploadedPath: ${filePath}. Normalizing.`
+                );
+                filePath = pathAfterBucket;
+              }
+            }
+
             console.log(
               "Completion Effect: Getting public URL for path:",
-              uploadedPath
+              filePath
             );
-            // Use dynamic bucketName here
             const { data } = supabase.storage
               .from(bucketName)
-              .getPublicUrl(decodeURIComponent(uploadedPath));
+              .getPublicUrl(decodeURIComponent(filePath));
 
             if (data?.publicUrl) {
-              onImageGenerated(data.publicUrl, uploadedPath);
+              onImageGenerated(data.publicUrl, filePath);
               toast({ title: "Image uploaded successfully!" });
-              onClose();
             } else {
               const errorMsg =
                 "Upload succeeded but failed to retrieve the image URL.";
-              console.error(
-                "Completion Effect:",
-                errorMsg,
-                "Path:",
-                uploadedPath
-              );
+              console.error("Completion Effect:", errorMsg, "Path:", filePath);
               setError(errorMsg);
               toast({
                 variant: "destructive",
@@ -299,18 +283,20 @@ export function ImageGenerationDialog({
         handleComplete();
       }
     } else if (!uploadHook.loading) {
-      hasHandledUploadSuccess.current = false;
+      if (!uploadHook.isSuccess || uploadHook.successes.length === 0) {
+        hasHandledUploadSuccess.current = false;
+      }
     }
   }, [
     uploadHook.loading,
     uploadHook.isSuccess,
     uploadHook.successes,
     onImageGenerated,
-    onClose,
     supabase,
     bucketName,
   ]);
 
+  // Error handling effect for upload hook
   useEffect(() => {
     if (uploadHook.errors.length > 0) {
       const hookError = uploadHook.errors[0];
@@ -328,8 +314,11 @@ export function ImageGenerationDialog({
     }
   };
 
+  // Define isLoading state before return
+  const isLoading = isGenerating || uploadHook.loading;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[600px] grid grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90vh]">
         <DialogHeader className="p-6 pb-4">
           <DialogTitle>Generate Cover Image</DialogTitle>

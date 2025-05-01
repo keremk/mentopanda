@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   updateProfileAction,
   updateAvatarAction,
@@ -11,12 +10,11 @@ import {
 } from "@/app/actions/user-actions";
 import React, { useTransition, useState, useRef } from "react";
 import type { User } from "@/data/user";
-import { ImageUploadButton } from "@/components/image-upload-button";
-import { ImageGenerationButton } from "@/components/image-generation-button";
+import { ImageEdit } from "@/components/image-edit";
 import { ProjectDialog } from "@/components/project-dialog";
 import { ApiKeyInput } from "@/components/api-key-input";
 import { useToast } from "@/hooks/use-toast";
-import { getInitials, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -42,7 +40,6 @@ export function AccountForm({ user }: AccountFormProps) {
   const [isPending, startTransition] = useTransition();
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
   const [displayName, setDisplayName] = useState(user.displayName);
-  const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
   const [showProjectDialog, setShowProjectDialog] = useState(false);
   const { toast } = useToast();
 
@@ -61,11 +58,6 @@ export function AccountForm({ user }: AccountFormProps) {
   const isEmailProvider =
     !user.app_metadata?.provider || user.app_metadata.provider === "email";
   const authProvider = user.app_metadata?.provider;
-
-  // State for Image Generation Dialog
-  const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] =
-    useState(false);
-  const [imageDialogKey, setImageDialogKey] = useState(1);
 
   async function handleSubmitProfile(formData: FormData) {
     startTransition(async () => {
@@ -101,21 +93,18 @@ export function AccountForm({ user }: AccountFormProps) {
     });
   }
 
-  // Combined handler for avatar update (upload or generation)
-  async function handleAvatarUpdate(url: string, path: string) {
-    setIsAvatarUpdating(true);
-    console.log("[AccountForm] New avatar URL:", url, "Path:", path);
-    setAvatarUrl(url); // Update local state for UI immediately
+  // Callback for ImageEdit component
+  async function handleImageChange(newUrl: string) {
+    setAvatarUrl(newUrl); // Update local state for UI immediately
 
     try {
-      const response = await updateAvatarAction({ avatarUrl: url });
+      const response = await updateAvatarAction({ avatarUrl: newUrl });
+
       if (response.success) {
         toast({
           title: "Avatar updated",
           description: "Your avatar has been updated successfully.",
         });
-        // Close dialog after successful generation/upload and save
-        setIsImageGenerationDialogOpen(false);
       } else {
         console.error("Failed to update avatar:", response.error);
         toast({
@@ -123,6 +112,7 @@ export function AccountForm({ user }: AccountFormProps) {
           description: response.error || "Failed to update avatar",
           variant: "destructive",
         });
+        setAvatarUrl(user.avatarUrl); // Revert UI on DB update failure
       }
     } catch (error) {
       console.error("Error updating avatar:", error);
@@ -131,8 +121,7 @@ export function AccountForm({ user }: AccountFormProps) {
         description: "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
-      setIsAvatarUpdating(false);
+      setAvatarUrl(user.avatarUrl); // Revert UI on catch error
     }
   }
 
@@ -174,48 +163,29 @@ export function AccountForm({ user }: AccountFormProps) {
     }
   }
 
-  // Handler for Image Generation Button's open/close events
-  const handleImageDialogOpenChange = (isOpen: boolean) => {
-    setIsImageGenerationDialogOpen(isOpen);
-    if (isOpen) {
-      setImageDialogKey((prevKey) => prevKey + 1);
-    }
-  };
-
   return (
     <form
       action={handleSubmitProfile}
       className="space-y-6 max-w-2xl px-2 py-6"
     >
       <div className="flex items-start gap-8">
-        <div className="space-y-3 flex flex-col items-center w-48">
-          <Avatar className="h-32 w-32">
-            <AvatarImage src={avatarUrl ?? undefined} alt={displayName ?? ""} />
-            <AvatarFallback>{getInitials(displayName ?? "")}</AvatarFallback>
-          </Avatar>
-          <div className="flex justify-center gap-2 w-full">
-            <ImageUploadButton
-              bucket="avatars"
-              folder={`user-avatars/${user.id}`}
-              onUploadComplete={handleAvatarUpdate}
-              buttonText={isAvatarUpdating ? "Uploading..." : "Upload"}
-              buttonVariant="ghost-brand"
-              buttonSize="sm"
-            />
-            <ImageGenerationButton
-              key={imageDialogKey}
-              isOpen={isImageGenerationDialogOpen}
-              onOpenChange={handleImageDialogOpenChange}
-              contextId={user.id}
-              contextType="user"
-              aspectRatio="square"
-              onImageGenerated={handleAvatarUpdate}
-              showContextSwitch={false}
-              buttonText="Generate"
-              buttonVariant="ghost-brand"
-              buttonSize="sm"
-            />
-          </div>
+        <div className="w-48 flex-shrink-0 flex flex-col items-center px-4">
+          <ImageEdit
+            initialImageUrl={avatarUrl}
+            bucketName="avatars"
+            storageFolderPath={`user-avatars/${user.id}`}
+            contextId={user.id}
+            contextType="user"
+            aspectRatio="square"
+            onImageChange={handleImageChange}
+            imageShape="circle"
+            imageContainerClassName="w-36 h-36"
+            buttonSize="sm"
+            buttonVariant="ghost-brand"
+            buttonSpacing="mt-3"
+            buttonContainerClassName="w-full flex justify-center"
+            showButtonLabels={false}
+          />
         </div>
 
         <div className="flex-1 space-y-6 py-2">

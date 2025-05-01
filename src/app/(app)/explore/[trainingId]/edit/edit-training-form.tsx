@@ -1,27 +1,27 @@
 "use client";
 
-import { useState } from "react";
+// import { useState } from "react"; // Removed unused import
 import { Input } from "@/components/ui/input";
-import { ImageUploadButton } from "@/components/image-upload-button";
-import Image from "next/image";
+import { ImageEdit } from "@/components/image-edit";
 import { AIFocusInput } from "@/components/ai-focus-input";
 import { AIFocusTextarea } from "@/components/ai-focus-textarea";
 import { useTrainingEdit } from "@/contexts/training-edit-context";
-import { ImageGenerationButton } from "@/components/image-generation-button";
+// import { getPathFromStorageUrl, getDirectoryFromPath } from "@/lib/utils";
+// import { deleteStorageObjectAction } from "@/app/actions/storage-actions";
+import { useToast } from "@/hooks/use-toast";
 
 export function EditTrainingForm() {
   const { state, dispatch } = useTrainingEdit();
   const { training } = state;
-  // Reintroduce state for dialog visibility
-  const [isImageGenerationDialogOpen, setIsImageGenerationDialogOpen] =
-    useState(false);
-  const [imageDialogKey, setImageDialogKey] = useState(1);
+  const { toast } = useToast();
 
   if (!training) {
     return <div>Loading training details...</div>;
   }
 
   const trainingId = training.id;
+  const storageFolderPath = `trainings/${trainingId}`;
+  const bucketName = "trainings";
 
   if (!trainingId) {
     console.error("Training ID is missing!");
@@ -46,81 +46,39 @@ export function EditTrainingForm() {
     }
   };
 
-  const handleGeneratedImage = (url: string, path: string) => {
+  function handleImageChange(
+    newUrl: string,
+    newPath: string,
+    oldImageUrl: string | null
+  ) {
+    console.log("[TrainingForm] Image changed:", {
+      newUrl,
+      newPath,
+      oldImageUrl,
+    });
     dispatch({
       type: "UPDATE_TRAINING_FIELD",
-      payload: { field: "imageUrl", value: url },
+      payload: { field: "imageUrl", value: newUrl },
     });
-    console.log(
-      "[EditTrainingForm] Generated image path (needs handling):",
-      path
-    );
-    // Close the dialog explicitly now that parent manages state
-    setIsImageGenerationDialogOpen(false);
-  };
-
-  // Handler now sets visibility state AND updates key
-  const handleImageDialogOpenChange = (isOpen: boolean) => {
-    setIsImageGenerationDialogOpen(isOpen);
-    if (isOpen) {
-      // Increment key when dialog opens to force remount
-      setImageDialogKey((prevKey) => prevKey + 1);
-    }
-  };
+    toast({ title: "Image updated.", description: "Saving changes..." });
+  }
 
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div className="space-y-4">
-          <div className="aspect-video w-full relative bg-secondary/30 rounded-xl overflow-hidden border border-border/30 shadow-sm image-container-enhanced">
-            <div className="image-inner">
-              {training.imageUrl ? (
-                <Image
-                  src={training.imageUrl}
-                  alt={training.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  priority
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <span className="text-muted-foreground">
-                    No image uploaded
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex justify-center gap-2">
-            <ImageUploadButton
-              onUploadComplete={async (url, path) => {
-                dispatch({
-                  type: "UPDATE_TRAINING_FIELD",
-                  payload: { field: "imageUrl", value: url },
-                });
-                console.log(
-                  "[EditTrainingForm] Uploaded image path (needs handling):",
-                  path
-                );
-              }}
-              bucket="trainings"
-              folder={`trainings/${trainingId}`}
-              buttonText="Upload"
-              buttonVariant="ghost-brand"
-              buttonSize="default"
-            />
-            <ImageGenerationButton
-              key={imageDialogKey}
-              isOpen={isImageGenerationDialogOpen}
-              onOpenChange={handleImageDialogOpenChange}
-              contextId={trainingId.toString()}
-              contextType="training"
-              aspectRatio="landscape"
-              onImageGenerated={handleGeneratedImage}
-            />
-          </div>
-        </div>
+        <ImageEdit
+          initialImageUrl={training.imageUrl}
+          aspectRatio="landscape"
+          bucketName={bucketName}
+          storageFolderPath={storageFolderPath}
+          contextId={trainingId.toString()}
+          contextType="training"
+          onImageChange={handleImageChange}
+          className="w-full"
+          imageContainerClassName="aspect-video"
+          buttonSize="default"
+          buttonSpacing="mt-3"
+        />
 
         <div className="space-y-6 mt-5">
           <div className="flex flex-col gap-y-2">
