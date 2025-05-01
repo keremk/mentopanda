@@ -1,12 +1,25 @@
 "use server";
 
 import { z } from "zod";
-import OpenAI from "openai";
+import OpenAI, { toFile } from "openai";
+import { createClient } from "@supabase/supabase-js"; // Import Supabase client
+import { getPathFromStorageUrl } from "@/lib/utils"; // Import helper
 // Removed Buffer and Supabase client imports for now
 
 // Ensure environment variables are set
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("Missing OpenAI API key environment variable");
+}
+// Check for Supabase admin credentials needed for image fetching
+if (
+  !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  !process.env.SUPABASE_SERVICE_ROLE_KEY
+) {
+  // Throw error only if needed later, but warn
+  console.warn(
+    "Missing Supabase URL or Service Role Key. Image editing via URL will fail."
+  );
+  // We don't throw here immediately as generation might still work without it.
 }
 // Removed Supabase URL check for this action
 
@@ -19,14 +32,30 @@ const imageContextTypeSchema = z.enum(["training", "character", "user"]);
 const imageAspectRatioSchema = z.enum(["landscape", "square"]);
 
 // Updated schema for the action input
-const generateImageSchema = z.object({
-  contextId: z.string().min(1, "Context ID cannot be empty."),
-  contextType: imageContextTypeSchema,
-  aspectRatio: imageAspectRatioSchema,
-  prompt: z.string(), // Can be empty if only refining
-  style: z.string().optional(),
-  includeContext: z.boolean().optional(), // Make includeContext optional
-});
+const generateImageSchema = z
+  .object({
+    contextId: z.string().min(1, "Context ID cannot be empty."),
+    contextType: imageContextTypeSchema,
+    aspectRatio: imageAspectRatioSchema,
+    prompt: z.string(), // Can be empty if only refining
+    style: z.string().optional(),
+    includeContext: z.boolean().optional(), // Make includeContext optional
+    existingImageUrl: z.string().url().optional(), // <<< ADDED: URL of image to edit/use as reference
+    bucketName: z.string().min(1).optional(), // <<< ADDED: Required if existingImageUrl is provided
+  })
+  .refine(
+    (data) => {
+      // Require bucketName if existingImageUrl is provided
+      if (data.existingImageUrl && !data.bucketName) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Bucket name is required when providing an existing image URL.",
+      path: ["bucketName"], // Specify the path of the error
+    }
+  );
 
 // Define the input type based on the schema - Removed as it's not strictly needed
 // type GenerateImageInput = z.infer<typeof generateImageSchema>;
@@ -60,6 +89,8 @@ export async function generateImageAction(
       prompt,
       style,
       includeContext = false,
+      existingImageUrl,
+      bucketName,
     } = validationResult.data;
 
     // 2. Construct the prompt server-side
@@ -126,28 +157,105 @@ export async function generateImageAction(
     console.log("Server-side Final Prompt:", finalPrompt);
 
     // 3. Determine image size based on aspect ratio per user instruction
-    const imageSize = aspectRatio === "landscape" ? "1536x1024" : "1024x1024";
+    const imageSize = aspectRatio === "landscape" ? "1792x1024" : "1024x1024"; // Use DALL-E 3 sizes, assuming gpt-image-1 supports them
     console.log(`Generating image with size: ${imageSize}`);
 
-    // 4. Call OpenAI API using gpt-image-1 model and specified sizes
-    const response = await openai.images.generate({
-      model: "gpt-image-1", // Use gpt-image-1 model as instructed
-      prompt: finalPrompt,
-      n: 1,
-      size: imageSize, 
-    });
+    // 4. Call OpenAI API - Conditionally use edit or generate
+    let image_base64: string | undefined;
 
-    const image_base64 = response.data?.[0]?.b64_json;
+    if (existingImageUrl && bucketName) {
+      // --- Edit/Reference Image Logic ---
+      console.log(`Using existing image: ${existingImageUrl}`);
 
+      // Ensure Supabase Admin Client can be created
+      if (
+        !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+        !process.env.SUPABASE_SERVICE_ROLE_KEY
+      ) {
+        return {
+          success: false,
+          error:
+            "Server configuration error: Missing Supabase credentials for image fetching.",
+        };
+      }
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      const imagePath = getPathFromStorageUrl(existingImageUrl);
+      if (!imagePath) {
+        return {
+          success: false,
+          error: "Could not extract path from existing image URL.",
+        };
+      }
+
+      console.log(`Fetching image from storage: ${bucketName}/${imagePath}`);
+      const { data: blobData, error: downloadError } =
+        await supabaseAdmin.storage.from(bucketName).download(imagePath);
+
+      if (downloadError || !blobData) {
+        console.error("Supabase download error:", downloadError);
+        return {
+          success: false,
+          error: `Failed to download existing image: ${downloadError?.message ?? "Unknown error"}`,
+        };
+      }
+
+      try {
+        const filename = imagePath.split("/").pop() || "input-image.png"; // Basic filename extraction
+        // Convert Blob to file format OpenAI SDK understands
+        const imageFile = await toFile(blobData, filename, {
+          type: blobData.type || "image/png", // Use Blob type or default
+        });
+
+        console.log(
+          `Calling OpenAI images.edit for: ${filename} with size: ${imageSize}`
+        );
+        // Use images.edit with the fetched image
+        const editSize = "1024x1024"; // Force size for images.edit based on SDK types
+        const response = await openai.images.edit({
+          model: "gpt-image-1", // Use gpt-image-1 model
+          image: imageFile, // Pass the fetched image file
+          prompt: finalPrompt,
+          n: 1,
+          size: editSize, // Use the fixed size for edit
+        });
+        image_base64 = response.data?.[0]?.b64_json;
+      } catch (toFileError) {
+        console.error("Error processing image blob:", toFileError);
+        return {
+          success: false,
+          error: `Failed to process image file: ${toFileError instanceof Error ? toFileError.message : "Unknown error"}`,
+        };
+      }
+    } else {
+      // --- Generate New Image Logic ---
+      console.log("Calling OpenAI images.generate");
+      // Use dynamic size for generate based on aspect ratio
+      const generateSize =
+        aspectRatio === "landscape" ? "1792x1024" : "1024x1024";
+      console.log(`Generating image with dynamic size: ${generateSize}`);
+      const response = await openai.images.generate({
+        model: "gpt-image-1", // Use gpt-image-1 model as instructed
+        prompt: finalPrompt,
+        n: 1,
+        size: generateSize, // Use dynamic size for generate
+      });
+      image_base64 = response.data?.[0]?.b64_json;
+    }
+
+    // 5. Process result
     if (!image_base64) {
-      console.error("OpenAI response missing b64_json:", response.data);
+      console.error("OpenAI response missing b64_json"); // Log less verbosely now
       return {
         success: false,
-        error: "Image generation failed: No base64 data returned from API.",
+        error: "Image generation/edit failed: No base64 data returned.",
       };
     }
 
-    // 5. Return base64 data directly
+    // 6. Return base64 data directly
     return { success: true, imageData: image_base64 };
   } catch (error) {
     console.error("Image generation action error:", error);

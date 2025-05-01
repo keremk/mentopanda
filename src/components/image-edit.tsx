@@ -277,6 +277,7 @@ export function ImageEdit({
         aspectRatio={aspectRatio}
         showContextSwitch={contextType !== "user"} // Default logic for context switch
         onImageGenerated={handleGenerationComplete}
+        currentImageUrl={currentImageUrl}
       />
     </div>
   );

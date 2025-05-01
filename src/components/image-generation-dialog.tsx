@@ -27,6 +27,7 @@ import { generateImageAction } from "@/app/actions/generate-images";
 import { toast } from "@/hooks/use-toast";
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import type { FileWithPreview } from "@/hooks/use-supabase-upload";
+import { cn } from "@/lib/utils";
 
 function base64ToBlob(base64: string, contentType = "image/png"): Blob {
   const byteCharacters = atob(base64);
@@ -49,6 +50,7 @@ type ImageGenerationDialogProps = {
   onImageGenerated: (url: string, path: string) => void;
   aspectRatio: ImageAspectRatio;
   showContextSwitch?: boolean;
+  currentImageUrl?: string | null;
 };
 
 const imageStyles: { value: string; label: string }[] = [
@@ -69,6 +71,8 @@ type GenerateImageActionInput = {
   style: string;
   aspectRatio: ImageAspectRatio;
   includeContext?: boolean;
+  existingImageUrl?: string;
+  bucketName?: string;
 };
 
 export function ImageGenerationDialog({
@@ -79,11 +83,13 @@ export function ImageGenerationDialog({
   onImageGenerated,
   aspectRatio,
   showContextSwitch = true,
+  currentImageUrl,
 }: ImageGenerationDialogProps) {
   const [selectedStyle, setSelectedStyle] = useState<string>(
     imageStyles[0].value
   );
   const [includeContext, setIncludeContext] = useState(true);
+  const [useCurrentImage, setUseCurrentImage] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [generatedImageData, setGeneratedImageData] = useState<string | null>(
     null
@@ -130,7 +136,6 @@ export function ImageGenerationDialog({
 
     setIsGenerating(true);
     setError(null);
-    setGeneratedImageData(null);
 
     try {
       const actionInput: GenerateImageActionInput = {
@@ -140,9 +145,19 @@ export function ImageGenerationDialog({
         style: selectedStyle,
         aspectRatio,
       };
+
+      // Conditionally add context flag
       if (showContextSwitch) {
         actionInput.includeContext = includeContext;
       }
+
+      // Conditionally add existing image URL and bucket name
+      if (useCurrentImage && currentImageUrl && bucketName) {
+        actionInput.existingImageUrl = currentImageUrl;
+        actionInput.bucketName = bucketName;
+        console.log("Including existing image in generation request.");
+      }
+
       console.log("Sending to server action:", actionInput);
 
       const result = await generateImageAction(actionInput);
@@ -167,6 +182,9 @@ export function ImageGenerationDialog({
     includeContext,
     showContextSwitch,
     aspectRatio,
+    useCurrentImage,
+    currentImageUrl,
+    bucketName,
   ]);
 
   const handleUseImage = useCallback(async () => {
@@ -328,31 +346,61 @@ export function ImageGenerationDialog({
           <div className="image-container-enhanced">
             <AspectRatio
               ratio={numericAspectRatio}
-              className="bg-muted rounded-lg"
+              className="bg-muted rounded-lg relative overflow-hidden"
             >
-              {isGenerating ? (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                  <span>Generating...</span>
-                </div>
-              ) : error ? (
-                <div className="flex flex-col items-center justify-center h-full text-destructive px-4 text-center">
+              {/* Determine primary image source */}
+              {(() => {
+                const primaryImageUrl = generatedImageData
+                  ? `data:image/png;base64,${generatedImageData}`
+                  : currentImageUrl;
+                const primaryImageAlt = generatedImageData
+                  ? "Generated image preview"
+                  : "Current image";
+
+                return (
+                  <>
+                    {/* Render the primary image if available AND no error occurred AFTER generation */}
+                    {primaryImageUrl && !(error && !isGenerating) && (
+                      <div className="image-inner w-full h-full">
+                        <Image
+                          src={primaryImageUrl}
+                          alt={primaryImageAlt}
+                          fill
+                          className={cn(
+                            "object-cover transition-opacity duration-300", // Added transition
+                            isGenerating && "opacity-50" // Dim if generating (blur handled by overlay)
+                          )}
+                          priority={!generatedImageData && !!currentImageUrl} // Prioritize initial current image load
+                        />
+                      </div>
+                    )}
+
+                    {/* Render Placeholder only if no image source AND no error occurred AFTER generation */}
+                    {!primaryImageUrl && !(error && !isGenerating) && (
+                      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                        <ImageIcon className="h-12 w-12 mb-2" />
+                        <span>Image will appear here</span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* Render Error State (if error occurred AFTER generation) */}
+              {error && !isGenerating && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/90 text-destructive px-4 text-center">
+                  {" "}
+                  {/* Increased opacity */}
                   <ImageIcon className="h-8 w-8 mb-2" />
                   <span>{error}</span>
                 </div>
-              ) : generatedImageData ? (
-                <div className="image-inner">
-                  <Image
-                    src={`data:image/png;base64,${generatedImageData}`}
-                    alt="Generated cover image preview"
-                    fill
-                    className="rounded-lg object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <ImageIcon className="h-12 w-12 mb-2" />
-                  <span>Image will appear here</span>
+              )}
+
+              {/* Render Loading Overlay */}
+              {isGenerating && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md">
+                  <Loader2 className="h-8 w-8 animate-spin text-white mb-2" />
+                  <span className="text-white">Generating...</span>
                 </div>
               )}
             </AspectRatio>
@@ -401,6 +449,21 @@ export function ImageGenerationDialog({
                   />
                 </div>
               )}
+              <div className="flex flex-col items-center space-y-1 pt-1">
+                <Label
+                  htmlFor="use-current-image"
+                  className="text-xs font-medium"
+                >
+                  Use Current
+                </Label>
+                <Switch
+                  id="use-current-image"
+                  checked={useCurrentImage}
+                  onCheckedChange={setUseCurrentImage}
+                  disabled={isLoading || !currentImageUrl}
+                  className="data-[state=checked]:bg-brand data-[state=unchecked]:bg-input focus-visible:ring-brand"
+                />
+              </div>
             </div>
 
             <div>
