@@ -29,7 +29,7 @@ export type User = {
   trialEndDate: Date | null;
   app_metadata?: {
     provider?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 };
 

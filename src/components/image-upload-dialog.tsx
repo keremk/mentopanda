@@ -147,7 +147,7 @@ export function ImageUploadDialog({
           </Dropzone>
         </div>
         <DialogFooter className="p-4 border-t">
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost-brand" onClick={onClose}>
             Cancel
           </Button>
         </DialogFooter>
