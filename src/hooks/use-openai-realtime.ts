@@ -1,8 +1,9 @@
 import { CURRENT_MODEL_NAMES } from "@/types/models";
-import { getStoredApiKey } from "@/lib/apikey";
 import { createOpenAISession } from "@/app/actions/openai-session";
 import { useRef } from "react";
 import { useTranscript } from "@/contexts/transcript";
+import { useApiKey } from "./use-api-key";
+
 export type OpenAIRealtimeProps = {
   instructions: string;
   voice: string;
@@ -66,11 +67,11 @@ export function useOpenAIRealtime({
     updateTranscriptEntryStatus,
     updateTranscriptMessage,
   } = useTranscript();
+  const { apiKey } = useApiKey();
 
   const tokenFetcher = async () => {
-    const storedApiKey = await getStoredApiKey();
     const { session } = await createOpenAISession({
-      apiKey: storedApiKey || undefined,
+      apiKey: apiKey || undefined,
       instructions: instructions,
       voice: voice,
     });

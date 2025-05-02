@@ -4,28 +4,7 @@ import { z } from "zod";
 import OpenAI, { toFile } from "openai";
 import { createClient } from "@supabase/supabase-js"; // Import Supabase client
 import { getPathFromStorageUrl } from "@/lib/utils"; // Import helper
-// Removed Buffer and Supabase client imports for now
-
-// Ensure environment variables are set
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error("Missing OpenAI API key environment variable");
-}
-// Check for Supabase admin credentials needed for image fetching
-if (
-  !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  !process.env.SUPABASE_SERVICE_ROLE_KEY
-) {
-  // Throw error only if needed later, but warn
-  console.warn(
-    "Missing Supabase URL or Service Role Key. Image editing via URL will fail."
-  );
-  // We don't throw here immediately as generation might still work without it.
-}
-// Removed Supabase URL check for this action
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getAIContextDataForCharacterAction, getAIContextDataForTrainingAction } from "./aicontext-actions";
 
 // Define Zod types matching client-side types
 const imageContextTypeSchema = z.enum(["training", "character", "user"]);
@@ -42,6 +21,7 @@ const generateImageSchema = z
     includeContext: z.boolean().optional(), // Make includeContext optional
     existingImageUrl: z.string().url().optional(), // <<< ADDED: URL of image to edit/use as reference
     bucketName: z.string().min(1).optional(), // <<< ADDED: Required if existingImageUrl is provided
+    apiKey: z.string().optional(),
   })
   .refine(
     (data) => {
@@ -57,10 +37,103 @@ const generateImageSchema = z
     }
   );
 
-// Define the input type based on the schema - Removed as it's not strictly needed
-// type GenerateImageInput = z.infer<typeof generateImageSchema>;
+async function getImageFromSupabase(imageUrl: string, bucketName: string) {
+  // Ensure Supabase Admin Client can be created
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) {
+    throw new Error(
+      "Server configuration error: Missing Supabase credentials for image fetching."
+    );
+  }
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
-// Update ActionResult to return base64 data
+  const imagePath = getPathFromStorageUrl(imageUrl);
+  if (!imagePath) {
+    throw new Error("Could not extract path from existing image URL.");
+  }
+
+  console.log(`Fetching image from storage: ${bucketName}/${imagePath}`);
+  const { data: blobData, error: downloadError } = await supabaseAdmin.storage
+    .from(bucketName)
+    .download(imagePath);
+
+  if (downloadError || !blobData) {
+    console.error("Supabase download error:", downloadError);
+    throw new Error(
+      `Failed to download existing image: ${downloadError?.message ?? "Unknown error"}`
+    );
+  }
+
+  const filename = imagePath.split("/").pop() || "input-image.png"; // Basic filename extraction
+  // Convert Blob to file format OpenAI SDK understands
+  const imageFile = await toFile(blobData, filename, {
+    type: blobData.type || "image/png", // Use Blob type or default
+  });
+
+  return imageFile;
+}
+
+async function getContextForType(
+  contextType: string,
+  contextId: string
+): Promise<string | undefined> {
+  console.log(`Context fetching requested for ${contextType}: ${contextId}`);
+  const id = parseInt(contextId); // Parse ID once
+
+  switch (contextType) {
+    case "training": {
+      const trainingContext = await getAIContextDataForTrainingAction(
+        id,
+        undefined
+      );
+      return trainingContext ? `Description of the training that you will be generating a representative common image for: ${trainingContext?.training.description}` : undefined;
+    }
+    case "character": {
+      const characterContext = await getAIContextDataForCharacterAction(id);
+      return characterContext ? `Description of the character that you will be generating an image for: ${characterContext?.description}` : undefined;
+    }
+    default:
+      return undefined; 
+  }
+}
+
+async function constructPrompt(
+  prompt: string,
+  style: string | undefined,
+  contextType: string,
+  contextId: string,
+  includeContext: boolean
+): Promise<string | undefined> {
+  const promptSegments: string[] = [];
+
+  if (includeContext) {
+    const context = await getContextForType(contextType, contextId);
+    if (context) {
+      promptSegments.push(`When generating an image, consider the following context: \n ${context}`);
+    }
+  }
+  if (style && style !== "custom") {
+    promptSegments.push(`The style of the image should be: ${style}`);
+  }
+  if (prompt) {
+    promptSegments.push(`Create an image that closely matches the following description: ${prompt}`);
+  }
+ 
+  if (promptSegments.length > 0) {
+    return promptSegments.join("\n\n");
+  } else {
+    console.warn(
+      "Constructing prompt resulted in no segments. "
+    );
+    return undefined;
+  }
+}
+
 type GenerateActionResult =
   | { success: true; imageData: string } // imageData is base64 string
   | { success: false; error: string };
@@ -91,136 +164,45 @@ export async function generateImageAction(
       includeContext = false,
       existingImageUrl,
       bucketName,
+      apiKey,
     } = validationResult.data;
 
+    const finalApiKey = apiKey || process.env.OPENAI_API_KEY;
+    if (!finalApiKey) {
+      throw new Error("Missing OpenAI API key environment variable");
+    }
+    const openai = new OpenAI({
+      apiKey: finalApiKey,
+    });
+
     // 2. Construct the prompt server-side
-    let finalPrompt = prompt; // Start with user's explicit prompt
-
-    // === Scaffolding for Context Fetching ===
-    if (
-      includeContext &&
-      (contextType === "training" || contextType === "character")
-    ) {
-      console.log(
-        `Context fetching requested for ${contextType}: ${contextId}`
-      );
-      // TODO: Implement database fetching based on contextType and contextId
-      // Example structure:
-      /*
-      const supabase = createSupabaseServerClient(); // Assuming you have this helper
-      let contextText = "";
-      if (contextType === "training") {
-        const { data, error } = await supabase
-          .from('trainings')
-          .select('title, tagline, description')
-          .eq('id', contextId)
-          .single();
-        if (!error && data) {
-          contextText = `Based on Training (${data.title} - ${data.tagline}): ${data.description}\n\nUser Prompt:`;
-        }
-      } else if (contextType === "character") {
-        const { data, error } = await supabase
-          .from('characters')
-          .select('name, description, aiDescription') // Fetch relevant fields
-          .eq('id', contextId)
-          .single();
-         if (!error && data) {
-           contextText = `Based on Character (${data.name}):\nDescription: ${data.description}\nAI Notes: ${data.aiDescription}\n\nUser Prompt:`;
-         }
-      }
-      if (contextText) {
-        finalPrompt = contextText + " " + finalPrompt;
-      } else {
-        console.warn(`Could not fetch context for ${contextType}: ${contextId}`);
-        // Optionally add a generic prefix or handle error
-         finalPrompt = `(Context Included - Fetch Failed) ` + finalPrompt; // Placeholder if fetch fails
-      }
-      */
-      // Current placeholder:
-      finalPrompt = `(Context Included for ${contextType}) ` + finalPrompt;
-    }
-    // === End Scaffolding ===
-
-    if (style && style !== "custom") {
-      finalPrompt += ` Style: ${style}.`;
-    }
-
-    // Limit prompt length (OpenAI has its own limits, but good practice)
-    finalPrompt = finalPrompt.substring(0, 2000); // Increased limit slightly
-
-    if (!finalPrompt.trim()) {
+    const resolvedPrompt = await constructPrompt(prompt, style, contextType, contextId, includeContext); 
+ 
+    if (resolvedPrompt === undefined || !resolvedPrompt.trim()) {
       return {
         success: false,
         error: "A prompt is required for image generation.",
       };
     }
-    console.log("Server-side Final Prompt:", finalPrompt);
-
-    // 3. Determine image size based on aspect ratio per user instruction
-    const imageSize = aspectRatio === "landscape" ? "1792x1024" : "1024x1024"; // Use DALL-E 3 sizes, assuming gpt-image-1 supports them
-    console.log(`Generating image with size: ${imageSize}`);
+  
+    const truncatedPrompt = resolvedPrompt.substring(0, 4000); 
+    console.log("Server-side Final Prompt:", truncatedPrompt);
 
     // 4. Call OpenAI API - Conditionally use edit or generate
     let image_base64: string | undefined;
 
     if (existingImageUrl && bucketName) {
-      // --- Edit/Reference Image Logic ---
-      console.log(`Using existing image: ${existingImageUrl}`);
-
-      // Ensure Supabase Admin Client can be created
-      if (
-        !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-        !process.env.SUPABASE_SERVICE_ROLE_KEY
-      ) {
-        return {
-          success: false,
-          error:
-            "Server configuration error: Missing Supabase credentials for image fetching.",
-        };
-      }
-      const supabaseAdmin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
-
-      const imagePath = getPathFromStorageUrl(existingImageUrl);
-      if (!imagePath) {
-        return {
-          success: false,
-          error: "Could not extract path from existing image URL.",
-        };
-      }
-
-      console.log(`Fetching image from storage: ${bucketName}/${imagePath}`);
-      const { data: blobData, error: downloadError } =
-        await supabaseAdmin.storage.from(bucketName).download(imagePath);
-
-      if (downloadError || !blobData) {
-        console.error("Supabase download error:", downloadError);
-        return {
-          success: false,
-          error: `Failed to download existing image: ${downloadError?.message ?? "Unknown error"}`,
-        };
-      }
-
       try {
-        const filename = imagePath.split("/").pop() || "input-image.png"; // Basic filename extraction
-        // Convert Blob to file format OpenAI SDK understands
-        const imageFile = await toFile(blobData, filename, {
-          type: blobData.type || "image/png", // Use Blob type or default
-        });
-
-        console.log(
-          `Calling OpenAI images.edit for: ${filename} with size: ${imageSize}`
+        const imageFile = await getImageFromSupabase(
+          existingImageUrl,
+          bucketName
         );
-        // Use images.edit with the fetched image
-        const editSize = "1024x1024"; // Force size for images.edit based on SDK types
+
         const response = await openai.images.edit({
           model: "gpt-image-1", // Use gpt-image-1 model
           image: imageFile, // Pass the fetched image file
-          prompt: finalPrompt,
+          prompt: truncatedPrompt,
           n: 1,
-          size: editSize, // Use the fixed size for edit
         });
         image_base64 = response.data?.[0]?.b64_json;
       } catch (toFileError) {
@@ -232,14 +214,12 @@ export async function generateImageAction(
       }
     } else {
       // --- Generate New Image Logic ---
-      console.log("Calling OpenAI images.generate");
-      // Use dynamic size for generate based on aspect ratio
       const generateSize =
-        aspectRatio === "landscape" ? "1792x1024" : "1024x1024";
+        aspectRatio === "landscape" ? "1536x1024" : "1024x1024";
       console.log(`Generating image with dynamic size: ${generateSize}`);
       const response = await openai.images.generate({
         model: "gpt-image-1", // Use gpt-image-1 model as instructed
-        prompt: finalPrompt,
+        prompt: truncatedPrompt,
         n: 1,
         size: generateSize, // Use dynamic size for generate
       });

@@ -28,6 +28,7 @@ import { toast } from "@/hooks/use-toast";
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import type { FileWithPreview } from "@/hooks/use-supabase-upload";
 import { cn } from "@/lib/utils";
+import { useApiKey } from "@/hooks/use-api-key";
 
 function base64ToBlob(base64: string, contentType = "image/png"): Blob {
   const byteCharacters = atob(base64);
@@ -73,6 +74,7 @@ type GenerateImageActionInput = {
   includeContext?: boolean;
   existingImageUrl?: string;
   bucketName?: string;
+  apiKey?: string;
 };
 
 export function ImageGenerationDialog({
@@ -98,6 +100,7 @@ export function ImageGenerationDialog({
   const supabase = useMemo(() => createClient(), []);
   const [isGenerating, setIsGenerating] = useState(false);
   const hasHandledUploadSuccess = useRef(false);
+  const { apiKey } = useApiKey();
 
   // Parse aspect ratio string for the component prop
   const numericAspectRatio = useMemo(() => {
@@ -144,6 +147,7 @@ export function ImageGenerationDialog({
         prompt: prompt.trim(),
         style: selectedStyle,
         aspectRatio,
+        apiKey,
       };
 
       // Conditionally add context flag
@@ -174,6 +178,7 @@ export function ImageGenerationDialog({
     } finally {
       setIsGenerating(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     contextId,
     contextType,
@@ -218,6 +223,7 @@ export function ImageGenerationDialog({
         description: errorMsg,
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     generatedImageData,
     uploadHook.setFiles,
@@ -334,6 +340,13 @@ export function ImageGenerationDialog({
 
   // Define isLoading state before return
   const isLoading = isGenerating || uploadHook.loading;
+
+  // Determine if a prompt is absolutely required
+  const isPromptRequired = !includeContext && !useCurrentImage;
+
+  // Determine if the generate button should be disabled
+  const isGenerateDisabled =
+    isLoading || (isPromptRequired && prompt.trim().length === 0);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -475,10 +488,14 @@ export function ImageGenerationDialog({
                   id="prompt"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Describe the image you want or how to change the current one..."
+                  placeholder={
+                    isPromptRequired
+                      ? "Describe the image you want..."
+                      : "Prompt is optional but recommended. Describe changes or a new image..."
+                  }
                   className="flex-1 min-h-[60px] max-h-[100px] resize-none border-0 bg-transparent p-3 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
                   onKeyDown={handleKeyDown}
-                  disabled={isLoading}
+                  disabled={isLoading} // Keep textarea enabled even if button is disabled for prompt input
                 />
                 <div className="flex items-center justify-end bg-secondary/40 px-3 py-1.5 border-t border-border/20">
                   <Button
@@ -486,7 +503,7 @@ export function ImageGenerationDialog({
                     variant="ghost-brand"
                     size="sm"
                     onClick={handleGenerateClick}
-                    disabled={isLoading}
+                    disabled={isGenerateDisabled} // Use the calculated disabled state
                     className="h-7 rounded-full px-3 flex items-center gap-1 text-xs"
                   >
                     {isGenerating ? (
