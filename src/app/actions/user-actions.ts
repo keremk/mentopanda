@@ -13,7 +13,6 @@ import { Invitation } from "@/data/invitations";
 
 const updateProfileSchema = z.object({
   displayName: z.string().min(2).max(50),
-  avatarUrl: z.string().url(),
 });
 
 const updateAvatarSchema = z.object({
