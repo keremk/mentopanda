@@ -15,13 +15,33 @@ export async function POST(req: Request) {
 
   const finalApiKey = apiKey || process.env.OPENAI_API_KEY;
 
+  if (!finalApiKey) {
+    console.error("No API key provided");
+    return new Response(JSON.stringify({ error: "No API key provided" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const [module, historyEntry] = await Promise.all([
     getModuleByIdAction2(moduleId),
     getHistoryEntryAction(entryId),
   ]);
 
-  if (!module) throw new Error("Module not found");
-  if (!historyEntry) throw new Error("History entry not found");
+  if (!module) {
+    console.error(`Module not found for moduleId: ${moduleId}`);
+    return new Response(JSON.stringify({ error: "Module not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  if (!historyEntry) {
+    console.error(`History entry not found for entryId: ${entryId}`);
+    return new Response(JSON.stringify({ error: "History entry not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   const assessmentPrompt = module.modulePrompt.assessment;
 

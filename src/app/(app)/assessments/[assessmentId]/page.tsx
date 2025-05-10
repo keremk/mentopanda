@@ -13,6 +13,8 @@ import { XCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TranscriptDisplay } from "@/components/transcript-display";
 import AssessmentContent from "./assessment-content";
+import { ApiKeyCheckDialog } from "@/components/api-key-check-dialog";
+import { getCurrentUserAction } from "@/app/actions/user-actions";
 
 type Props = {
   params: Promise<{
@@ -27,6 +29,8 @@ export default async function AssessmentPage(props: Props) {
 
   const historyEntry = await getHistoryEntryAction(historyId);
   if (!historyEntry) notFound();
+
+  const user = await getCurrentUserAction();
 
   if (!historyEntry.transcript) {
     return (
@@ -56,6 +60,7 @@ export default async function AssessmentPage(props: Props) {
 
   return (
     <div className="container mx-auto py-2">
+      <ApiKeyCheckDialog isOpenAIModule={true} user={user} />
       <Tabs defaultValue="assessment" className="w-full max-w-4xl mx-auto">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="assessment">Assessment</TabsTrigger>
