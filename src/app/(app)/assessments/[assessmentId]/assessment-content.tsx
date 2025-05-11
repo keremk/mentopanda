@@ -1,12 +1,14 @@
 "use client";
 
 import { useCompletion } from "@ai-sdk/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { updateHistoryEntryAction } from "@/app/actions/history-actions";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { useRouter } from "next/navigation";
 import { useApiKey } from "@/hooks/use-api-key";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ThumbsUp, ThumbsDown, RotateCw } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   moduleId: number;
@@ -14,6 +16,9 @@ type Props = {
   assessmentText?: string;
   assessmentCreated?: boolean;
 };
+
+const POSTHOG_SURVEY_ID = "0196bb9b-d5bf-0000-7177-095a2c5e4d63";
+const POSTHOG_ASSESSMENT_QUESTION_ID = "bfae5267-3ddc-45fa-973f-7c494f4ef775";
 
 export default function AssessmentContent({
   moduleId,
@@ -23,6 +28,7 @@ export default function AssessmentContent({
 }: Props) {
   const router = useRouter();
   const { apiKey } = useApiKey();
+  const posthog = usePostHog();
 
   const { completion, complete, error } = useCompletion({
     api: "/api/completion",
@@ -31,19 +37,19 @@ export default function AssessmentContent({
       entryId: entryId,
       apiKey: apiKey,
     },
-    onFinish: (prompt, completion) => {
+    onFinish: (prompt, completionResponse) => {
       updateHistoryEntryAction({
         id: entryId,
-        assessmentText: completion,
+        assessmentText: completionResponse,
         assessmentCreated: true,
       });
       setIsAssessmentCreated(true);
-      setCurrentAssessmentText(completion);
-      router.refresh();
+      setCurrentAssessmentText(completionResponse);
+      setFeedbackGiven(null);
+      if (router) router.refresh();
     },
     onError: (err) => {
       console.error("Error fetching assessment completion:", err);
-      // Potentially set an error state here to display a more user-friendly message
     },
     experimental_throttle: 500,
   });
@@ -54,20 +60,49 @@ export default function AssessmentContent({
     useState(assessmentCreated);
   const [currentAssessmentText, setCurrentAssessmentText] =
     useState(assessmentText);
+  const [feedbackGiven, setFeedbackGiven] = useState<null | "up" | "down">(
+    null
+  );
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setStreamedContent(completion);
-    }, 200);
-    return () => clearTimeout(timeoutId);
+    setStreamedContent(completion);
   }, [completion]);
 
   useEffect(() => {
-    if (!hasTriggered && !isAssessmentCreated) {
+    if (!hasTriggered && !isAssessmentCreated && !error) {
       setHasTriggered(true);
       void complete("");
     }
-  }, [apiKey, hasTriggered, complete, isAssessmentCreated]);
+  }, [apiKey, hasTriggered, complete, isAssessmentCreated, error]);
+
+  const handleFeedback = useCallback(
+    (feedback: "up" | "down") => {
+      if (!posthog) return;
+
+      const feedbackValue = feedback === "up" ? "ThumbsUp" : "ThumbsDown";
+
+      posthog.capture("survey sent", {
+        $survey_id: POSTHOG_SURVEY_ID,
+        $survey_questions: [
+          {
+            id: POSTHOG_ASSESSMENT_QUESTION_ID,
+            question: "Was the assessment helpful?",
+          },
+        ],
+        [`$survey_response_${POSTHOG_ASSESSMENT_QUESTION_ID}`]: feedbackValue,
+      });
+      setFeedbackGiven(feedback);
+    },
+    [posthog]
+  );
+
+  const handleRedoAssessment = useCallback(() => {
+    setIsAssessmentCreated(false);
+    setCurrentAssessmentText(undefined);
+    setStreamedContent("");
+    setHasTriggered(false);
+    setFeedbackGiven(null);
+  }, []);
 
   if (error) {
     return (
@@ -97,11 +132,52 @@ export default function AssessmentContent({
   }
 
   return (
-    <div className="prose space-y-2">
-      {isAssessmentCreated ? (
-        <MemoizedMarkdown content={currentAssessmentText || ""} />
-      ) : (
-        <MemoizedMarkdown content={streamedContent} />
+    <div className="space-y-4">
+      <div className="prose dark:prose-invert max-w-none">
+        {isAssessmentCreated && currentAssessmentText ? (
+          <MemoizedMarkdown content={currentAssessmentText} />
+        ) : (
+          <MemoizedMarkdown content={streamedContent} />
+        )}
+      </div>
+
+      {isAssessmentCreated && !error && (
+        <div className="mt-6 flex items-center justify-between rounded-lg border bg-card p-4 shadow-sm">
+          <p className="text-sm text-muted-foreground">Rate this assessment:</p>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant={feedbackGiven === "up" ? "default" : "outline"}
+              size="icon"
+              onClick={() => handleFeedback("up")}
+              disabled={feedbackGiven !== null}
+              aria-label="Helpful"
+            >
+              <ThumbsUp
+                className={`h-5 w-5 ${feedbackGiven === "up" ? "" : "text-green-500"}`}
+              />
+            </Button>
+            <Button
+              variant={feedbackGiven === "down" ? "destructive" : "outline"}
+              size="icon"
+              onClick={() => handleFeedback("down")}
+              disabled={feedbackGiven !== null}
+              aria-label="Not Helpful"
+            >
+              <ThumbsDown
+                className={`h-5 w-5 ${feedbackGiven === "down" ? "" : "text-red-500"}`}
+              />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRedoAssessment}
+              className="ml-4"
+            >
+              <RotateCw className="mr-2 h-4 w-4" />
+              Redo Assessment
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
