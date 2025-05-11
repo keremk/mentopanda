@@ -28,13 +28,13 @@ import {
 } from "@/components/ui/tooltip";
 import { ApiKeyCheckDialog } from "@/components/api-key-check-dialog";
 import { User } from "@/data/user";
-// Import the new context provider and hook
 import {
   TrainingEditProvider,
   useTrainingEdit,
 } from "@/contexts/training-edit-context";
 import { TrainingEdit } from "@/data/trainings";
 import { CharacterSummary } from "@/data/characters";
+import { useToast } from "@/hooks/use-toast";
 
 // --- Prop Types ---
 // Ensure this type definition is correct and includes the necessary props
@@ -53,6 +53,7 @@ function EditContainerContent({ user }: { user: User }) {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("details");
   const [moduleTab, setModuleTab] = useState<string>("scenario");
+  const { toast } = useToast();
 
   // Use the context provided by the outer component
   const { state, dispatch, saveNow, getModuleById } = useTrainingEdit();
@@ -82,6 +83,10 @@ function EditContainerContent({ user }: { user: User }) {
     } catch (error) {
       console.error("Error deleting training:", error);
       // Add user feedback
+      toast({
+        title: "Error deleting training",
+        description: "Please try again.",
+      });
     }
   };
 
@@ -90,14 +95,20 @@ function EditContainerContent({ user }: { user: User }) {
     try {
       const saveSuccessful = await saveNow();
       if (saveSuccessful) {
-        router.push(`/explore/`);
+        router.push(`/explore/${training.id}`);
       } else {
         console.error("Save failed before exiting.");
-        // Add user feedback
+        toast({
+          title: "Error saving training",
+          description: "Please try again.",
+        });
       }
     } catch (error) {
       console.error("Error during save and exit:", error);
-      // Add user feedback
+      toast({
+        title: "Error saving training",
+        description: "Please try again.",
+      });
     }
   };
 

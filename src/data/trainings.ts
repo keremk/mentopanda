@@ -105,6 +105,7 @@ export async function getTrainingByIdForEdit(
             id,
             name,
             voice,
+            description,
             avatar_url
           )
         )
@@ -154,6 +155,7 @@ export async function getTrainingByIdForEdit(
           id: mc.characters.id,
           name: mc.characters.name,
           voice: mc.characters.voice,
+          description: mc.characters.description,
           avatarUrl: mc.characters.avatar_url,
           prompt: mc.prompt,
           ordinal: mc.ordinal,
