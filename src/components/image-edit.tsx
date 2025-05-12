@@ -275,7 +275,7 @@ export function ImageEdit({
         contextId={contextId}
         contextType={contextType}
         aspectRatio={aspectRatio}
-        showContextSwitch={contextType !== "user"} // Default logic for context switch
+        showContextSwitch={contextType === "training"} // Default logic for context switch
         onImageGenerated={handleGenerationComplete}
         currentImageUrl={currentImageUrl}
       />

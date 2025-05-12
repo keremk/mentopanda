@@ -55,12 +55,12 @@ type ImageGenerationDialogProps = {
 };
 
 const imageStyles: { value: string; label: string }[] = [
-  { value: "photorealistic", label: "Photorealistic" },
-  { value: "cinematic", label: "Cinematic" },
   { value: "anime", label: "Anime" },
   { value: "cartoon", label: "Cartoon" },
   { value: "sketch", label: "Sketch" },
   { value: "pixar 3D", label: "Pixar 3D" },
+  { value: "photorealistic", label: "Photorealistic" },
+  { value: "cinematic", label: "Cinematic" },
   { value: "custom", label: "Custom" },
 ];
 
@@ -84,14 +84,14 @@ export function ImageGenerationDialog({
   contextType,
   onImageGenerated,
   aspectRatio,
-  showContextSwitch = true,
+  showContextSwitch = false,
   currentImageUrl,
 }: ImageGenerationDialogProps) {
   const [selectedStyle, setSelectedStyle] = useState<string>(
     imageStyles[0].value
   );
-  const [includeContext, setIncludeContext] = useState(true);
-  const [useCurrentImage, setUseCurrentImage] = useState(false);
+  const [includeContext, setIncludeContext] = useState(false);
+  const [useCurrentImage, setUseCurrentImage] = useState(true);
   const [prompt, setPrompt] = useState("");
   const [generatedImageData, setGeneratedImageData] = useState<string | null>(
     null
