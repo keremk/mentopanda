@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { PlayIcon, ChevronDownIcon, CheckIcon } from "lucide-react";
+import { PlayIcon, ChevronDownIcon, CheckIcon, PauseIcon } from "lucide-react";
 import { AIModel, VOICES } from "@/types/models";
 import * as Portal from "@radix-ui/react-portal";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,9 @@ export function CharacterVoiceSelect({
   const [isOpen, setIsOpen] = React.useState(false);
   const [audio, setAudio] = React.useState<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const [currentlyPlayingVoice, setCurrentlyPlayingVoice] = React.useState<
+    string | null
+  >(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const [position, setPosition] = React.useState({ top: 0, left: 0, width: 0 });
 
@@ -51,10 +54,10 @@ export function CharacterVoiceSelect({
 
   // Cleanup audio on unmount
   React.useEffect(() => {
+    const audioToCleanUp = audio;
     return () => {
-      if (audio) {
-        audio.pause();
-        audio.remove();
+      if (audioToCleanUp) {
+        audioToCleanUp.pause();
       }
     };
   }, [audio]);
@@ -79,32 +82,64 @@ export function CharacterVoiceSelect({
   async function handlePlayVoice(sampleUrl: string | null, voiceName: string) {
     if (!sampleUrl) return;
 
-    if (audio) {
-      audio.pause();
-      audio.remove();
+    if (isPlaying && currentlyPlayingVoice === voiceName) {
+      // If the same voice is playing, pause it
+      audio?.pause();
+      setIsPlaying(false);
+      setCurrentlyPlayingVoice(null);
+      return;
     }
 
     try {
-      setIsPlaying(true);
       const newAudio = new Audio(sampleUrl);
 
-      newAudio.addEventListener("ended", () => {
-        setIsPlaying(false);
-        setAudio(null);
-      });
+      const onEnded = () => {
+        setAudio((currentAudioInState) => {
+          if (currentAudioInState === newAudio) {
+            setIsPlaying(false);
+            setCurrentlyPlayingVoice(null);
+            return null;
+          }
+          return currentAudioInState;
+        });
+        newAudio.removeEventListener("ended", onEnded);
+        newAudio.removeEventListener("error", onError);
+      };
 
-      newAudio.addEventListener("error", () => {
-        console.error(`Error playing ${voiceName} sample`);
-        setIsPlaying(false);
-        setAudio(null);
-      });
+      const onError = () => {
+        console.error(`Error playing ${voiceName} sample for ${newAudio.src}`);
+        setAudio((currentAudioInState) => {
+          if (currentAudioInState === newAudio) {
+            setIsPlaying(false);
+            setCurrentlyPlayingVoice(null);
+            return null;
+          }
+          return currentAudioInState;
+        });
+        newAudio.removeEventListener("ended", onEnded);
+        newAudio.removeEventListener("error", onError);
+      };
+
+      newAudio.addEventListener("ended", onEnded);
+      newAudio.addEventListener("error", onError);
 
       setAudio(newAudio);
+      setIsPlaying(true);
+      setCurrentlyPlayingVoice(voiceName);
+
       await newAudio.play();
     } catch (error) {
-      console.error(`Error playing ${voiceName} sample:`, error);
+      console.error(
+        `Error initiating playback for ${voiceName} sample:`,
+        error
+      );
       setIsPlaying(false);
-      setAudio(null);
+      setCurrentlyPlayingVoice(null);
+      setAudio((currentAudioInState) =>
+        currentAudioInState && currentAudioInState.src === sampleUrl
+          ? null
+          : currentAudioInState
+      );
     }
   }
 
@@ -161,10 +196,17 @@ export function CharacterVoiceSelect({
                         e.stopPropagation();
                         handlePlayVoice(voice.sampleUrl, voice.name);
                       }}
-                      disabled={isPlaying}
                     >
-                      <PlayIcon className="h-4 w-4" />
-                      <span className="sr-only">Play {voice.name} sample</span>
+                      {isPlaying && currentlyPlayingVoice === voice.name ? (
+                        <PauseIcon className="h-4 w-4" />
+                      ) : (
+                        <PlayIcon className="h-4 w-4" />
+                      )}
+                      <span className="sr-only">
+                        {isPlaying && currentlyPlayingVoice === voice.name
+                          ? `Pause ${voice.name} sample`
+                          : `Play ${voice.name} sample`}
+                      </span>
                     </Button>
                   )}
                 </div>
