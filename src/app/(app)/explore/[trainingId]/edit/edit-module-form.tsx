@@ -89,7 +89,7 @@ export function EditModuleForm({
 
   return (
     <div className="h-full space-y-6 px-2">
-      <div className="flex flex-col gap-y-2">
+      <div className="flex flex-col gap-y-2 px-2">
         <label className="text-sm font-medium text-muted-foreground">
           Title
         </label>
@@ -98,7 +98,7 @@ export function EditModuleForm({
           value={module.title}
           onChange={handleModuleFieldChange}
           placeholder="Enter module title"
-          className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50"
+          className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50 max-w-2xl"
           onKeyDown={handleModuleKeyDown}
         />
       </div>
@@ -111,28 +111,28 @@ export function EditModuleForm({
               onValueChange={handleTabChange}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-4 bg-secondary/50 p-1">
+              <TabsList className="grid w-full grid-cols-4 bg-secondary/50 p-1 rounded-2xl">
                 <TabsTrigger
                   value="instructions"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl"
                 >
                   User Instructions
                 </TabsTrigger>
                 <TabsTrigger
                   value="scenario"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl"
                 >
                   Scenario
                 </TabsTrigger>
                 <TabsTrigger
                   value="assessment"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl"
                 >
                   Assessment
                 </TabsTrigger>
                 <TabsTrigger
                   value="character"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl"
                 >
                   Character
                 </TabsTrigger>

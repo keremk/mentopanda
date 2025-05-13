@@ -6,9 +6,9 @@ export default async function CharactersLayout({
   children,
 }: {
   children: React.ReactNode;
-  }) {
-  const user  = await getCurrentUserAction();
-  const [characters ] = await Promise.all([
+}) {
+  const user = await getCurrentUserAction();
+  const [characters] = await Promise.all([
     getCharactersActionCached(user.currentProject.id),
   ]);
 

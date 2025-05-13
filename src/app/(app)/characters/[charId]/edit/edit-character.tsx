@@ -19,6 +19,8 @@ import { AIFocusTextarea } from "@/components/ai-focus-textarea";
 import { AIFocusInput } from "@/components/ai-focus-input";
 import { ApiKeyCheckDialog } from "@/components/api-key-check-dialog";
 import { User } from "@/data/user";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 type EditCharacterFormProps = {
   user: User;
@@ -119,7 +121,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
       contextData={aiPaneContext.contextData}
       onApplyContent={aiPaneContext.onApplyContent}
     >
-      <div className="h-full space-y-6 px-6">
+      <div className="h-full px-6 flex flex-col">
         <ApiKeyCheckDialog isOpenAIModule={true} user={user} />
         <div className="absolute top-0 right-0 p-4 z-10 flex items-center gap-3">
           {saveStatus === "saving" && (
@@ -132,7 +134,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
             <span className="text-sm text-red-500">Error saving</span>
           )}
           <Button
-            variant="brand"
+            variant="ghost-brand"
             onClick={handleSave}
             size="default"
             className="h-9"
@@ -157,87 +159,116 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
           </Tooltip>
         </div>
 
-        <div className="space-y-6">
-          <div className="flex gap-8 items-start">
-            <div className="w-48 flex-shrink-0">
-              <ImageEdit
-                initialImageUrl={character.avatarUrl}
-                bucketName="avatars"
-                storageFolderPath={`character-avatars/${character.id}`}
-                contextId={character.id.toString()}
-                contextType="character"
-                aspectRatio="square"
-                onImageChange={handleImageChange}
-                imageShape="circle"
-                imageContainerClassName="h-32 w-32"
-                buttonSpacing="mt-3"
-                buttonSize="sm"
-                buttonVariant="ghost-brand"
-                showButtonLabels={false}
-              />
-            </div>
-
-            <div className="flex-1 space-y-6">
-              <div className="flex flex-col gap-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Name
-                </label>
-                <AIFocusInput
-                  name="name"
-                  placeholder="Character Name"
-                  value={character.name}
-                  onChange={(e) => updateCharacterField("name", e.target.value)}
-                  className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
+        {/* Horizontal flex container for main content and AI Pane */}
+        <div className="flex w-full flex-1 mt-8">
+          {" "}
+          {/* mt-8 for spacing, similar to edit-container */}
+          {/* Left Side: Character Details (Image, Name, Voice) + Tabs */}
+          <div className="flex-1 min-w-0 pr-4 flex flex-col">
+            {" "}
+            {/* pr-4 for spacing before AI Pane */}
+            <div className="flex gap-8 items-start mb-6">
+              {" "}
+              {/* mb-6 for spacing between details and tabs */}
+              <div className="w-48 flex-shrink-0">
+                <ImageEdit
+                  initialImageUrl={character.avatarUrl}
+                  bucketName="avatars"
+                  storageFolderPath={`character-avatars/${character.id}`}
+                  contextId={character.id.toString()}
+                  contextType="character"
+                  aspectRatio="square"
+                  onImageChange={handleImageChange}
+                  imageShape="circle"
+                  imageContainerClassName="h-32 w-32"
+                  buttonSpacing="mt-3"
+                  buttonSize="sm"
+                  buttonVariant="ghost-brand"
+                  showButtonLabels={false}
                 />
               </div>
+              <div className="flex-1 space-y-6">
+                <div className="flex flex-col gap-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Name
+                  </label>
+                  <AIFocusInput
+                    name="name"
+                    placeholder="Character Name"
+                    value={character.name}
+                    onChange={(e) =>
+                      updateCharacterField("name", e.target.value)
+                    }
+                    className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
+                  />
+                </div>
 
-              <div className="flex flex-col gap-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Voice
-                </label>
-                <CharacterVoiceSelect
-                  value={character.voice || undefined}
-                  onValueChange={(voice) =>
-                    updateCharacterField("voice", voice)
+                <div className="flex flex-col gap-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Voice
+                  </label>
+                  <CharacterVoiceSelect
+                    value={character.voice || undefined}
+                    onValueChange={(voice) =>
+                      updateCharacterField("voice", voice)
+                    }
+                    aiModel={character.aiModel as AIModel}
+                  />
+                </div>
+              </div>
+            </div>
+            <Tabs
+              defaultValue="description"
+              className="w-full flex flex-col flex-1 min-h-0"
+            >
+              <TabsList className="grid w-full grid-cols-2 rounded-2xl">
+                <TabsTrigger value="description" className="rounded-2xl">
+                  Description
+                </TabsTrigger>
+                <TabsTrigger value="aiDescription" className="rounded-2xl">
+                  AI Description
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent
+                value="description"
+                className="flex-1 min-h-0 flex flex-col mt-4"
+              >
+                <AIFocusTextarea
+                  name="description"
+                  placeholder="Enter character description visible to users"
+                  value={character.description || ""}
+                  onChange={(e) =>
+                    updateCharacterField("description", e.target.value)
                   }
-                  aiModel={character.aiModel as AIModel}
+                  className="min-h-[calc(100vh-24rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
                 />
-              </div>
-            </div>
+              </TabsContent>
+              <TabsContent
+                value="aiDescription"
+                className="flex-1 min-h-0 flex flex-col mt-4"
+              >
+                <AIFocusTextarea
+                  name="aiDescription"
+                  placeholder="Enter character prompt for the AI model"
+                  value={character.aiDescription || ""}
+                  onChange={(e) =>
+                    updateCharacterField("aiDescription", e.target.value)
+                  }
+                  className="min-h-[calc(100vh-24rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
+                />
+              </TabsContent>
+            </Tabs>
           </div>
-
-          <div className="flex flex-col gap-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              Description
-            </label>
-            <AIFocusTextarea
-              name="description"
-              placeholder="Enter character description visible to users"
-              value={character.description || ""}
-              onChange={(e) =>
-                updateCharacterField("description", e.target.value)
-              }
-              className="min-h-[300px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
-            />
-          </div>
-
-          <div className="flex flex-col gap-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              AI Description
-            </label>
-            <AIFocusTextarea
-              name="aiDescription"
-              placeholder="Enter character prompt for the AI model"
-              value={character.aiDescription || ""}
-              onChange={(e) =>
-                updateCharacterField("aiDescription", e.target.value)
-              }
-              className="min-h-[400px] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
-            />
+          {/* Right Side: AI Pane */}
+          <div
+            className={cn(
+              "transition-all duration-300 overflow-hidden flex-shrink-0",
+              isAIPaneOpen ? "w-[435px]" : "w-0"
+            )}
+          >
+            <AIPane isOpen={isAIPaneOpen} />
           </div>
         </div>
-
-        <AIPane isOpen={isAIPaneOpen} />
       </div>
     </AIPaneProvider>
   );
