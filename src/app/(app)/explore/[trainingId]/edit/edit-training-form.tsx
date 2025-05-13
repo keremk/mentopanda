@@ -65,22 +65,24 @@ export function EditTrainingForm() {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <ImageEdit
-          initialImageUrl={training.imageUrl}
-          aspectRatio="landscape"
-          bucketName={bucketName}
-          storageFolderPath={storageFolderPath}
-          contextId={trainingId.toString()}
-          contextType="training"
-          onImageChange={handleImageChange}
-          className="w-full"
-          imageContainerClassName="aspect-video"
-          buttonSize="default"
-          buttonSpacing="mt-3"
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="w-full max-w-[32rem] mx-auto">
+          <ImageEdit
+            initialImageUrl={training.imageUrl}
+            aspectRatio="landscape"
+            bucketName={bucketName}
+            storageFolderPath={storageFolderPath}
+            contextId={trainingId.toString()}
+            contextType="training"
+            onImageChange={handleImageChange}
+            className="w-full"
+            imageContainerClassName="aspect-video"
+            buttonSize="default"
+            buttonSpacing="mt-3"
+          />
+        </div>
 
-        <div className="space-y-6 mt-5">
+        <div className="space-y-6 mt-5 px-4 pb-4">
           <div className="flex flex-col gap-y-2">
             <label className="text-sm font-medium text-muted-foreground">
               Title

@@ -35,6 +35,7 @@ import {
 import { TrainingEdit } from "@/data/trainings";
 import { CharacterSummary } from "@/data/characters";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 // --- Prop Types ---
 // Ensure this type definition is correct and includes the necessary props
@@ -227,7 +228,7 @@ function EditContainerContent({ user }: { user: User }) {
       contextData={aiPaneContextValue.contextData}
       onApplyContent={aiPaneContextValue.onApplyContent}
     >
-      <div className="container h-full px-4 flex flex-col min-h-[calc(100vh-2rem)] pb-4">
+      <div className="h-full px-4 flex flex-col min-h-[calc(100vh-2rem)] pb-4">
         <ApiKeyCheckDialog isOpenAIModule={true} user={user} />
         <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex gap-3">
           {/* Delete Button */}
@@ -239,7 +240,7 @@ function EditContainerContent({ user }: { user: User }) {
                 size="default"
                 className="h-9 shadow-sm hover:shadow-md transition-all"
               >
-                Delete Training
+                Delete
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent className="border-border/50 bg-background/95 backdrop-blur-sm">
@@ -273,14 +274,14 @@ function EditContainerContent({ user }: { user: User }) {
               size="default"
               className="h-9"
             >
-              Quick Test
+              Test
             </Button>
           )}
           {/* Save & Exit Button */}
           <Button
             onClick={handleSaveAndExit}
             disabled={isSaving}
-            variant="brand"
+            variant="ghost-brand"
             size="default"
             className="h-9"
           >
@@ -312,40 +313,50 @@ function EditContainerContent({ user }: { user: User }) {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 mt-8">
-          <Tabs
-            value={activeTab}
-            onValueChange={handleTabChange}
-            className="w-full flex-1 flex flex-col transition-all duration-300"
+        <div className="flex w-full h-full mt-8">
+          {/* Tabs Area */}
+          <div className="flex-1 min-w-0 pr-4">
+            <Tabs
+              value={activeTab}
+              onValueChange={handleTabChange}
+              className="w-full flex-1 flex flex-col"
+            >
+              <TabsList className="grid w-full grid-cols-2 bg-secondary/30 p-1 rounded-lg border border-border/30">
+                <TabsTrigger
+                  value="details"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  Training Details
+                </TabsTrigger>
+                <TabsTrigger
+                  value="modules"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  Modules
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="details" className="flex-1 mt-6">
+                <EditTrainingForm />
+              </TabsContent>
+              <TabsContent value="modules" className="flex-1 flex mt-6">
+                <EditModules
+                  onModuleTabChange={handleModuleTabChange}
+                  moduleTab={moduleTab}
+                  isAIPaneOpen={isAIPaneOpen}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+          {/* AI Pane */}
+          <div
+            className={cn(
+              "transition-all duration-300 overflow-hidden flex-shrink-0",
+              isAIPaneOpen ? "w-[435px]" : "w-0"
+            )}
           >
-            <TabsList className="grid w-full grid-cols-2 bg-secondary/30 p-1 rounded-lg border border-border/30">
-              <TabsTrigger
-                value="details"
-                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                Training Details
-              </TabsTrigger>
-              <TabsTrigger
-                value="modules"
-                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                Modules
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="details" className="flex-1 mt-6">
-              <EditTrainingForm />
-            </TabsContent>
-            <TabsContent value="modules" className="flex-1 flex mt-6">
-              <EditModules
-                onModuleTabChange={handleModuleTabChange}
-                moduleTab={moduleTab}
-              />
-            </TabsContent>
-          </Tabs>
+            <AIPane isOpen={isAIPaneOpen} />
+          </div>
         </div>
-
-        {/* AI Pane */}
-        <AIPane isOpen={isAIPaneOpen} />
       </div>
     </AIPaneProvider>
   );

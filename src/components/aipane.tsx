@@ -37,8 +37,8 @@ export function AIPane({ isOpen }: AIPaneProps) {
   return (
     <div
       className={cn(
-        "fixed top-16 right-0 bottom-0 w-2/5 flex flex-col border-l border-border/30 bg-background/50 backdrop-blur-lg transform transition-transform duration-300 ease-in-out z-50",
-        isOpen ? "translate-x-0" : "translate-x-full"
+        "fixed top-16 right-0 bottom-0 flex flex-col border-l border-border/30 bg-background/50 backdrop-blur-lg transform transition-all duration-300 ease-in-out z-50",
+        isOpen ? "translate-x-0 w-[435px]" : "translate-x-full w-0"
       )}
     >
       {/* Header */}

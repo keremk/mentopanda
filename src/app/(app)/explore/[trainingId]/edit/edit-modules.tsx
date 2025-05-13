@@ -9,6 +9,7 @@ import { useTrainingEdit } from "@/contexts/training-edit-context";
 type Props = {
   moduleTab?: string;
   onModuleTabChange?: (value: string) => void;
+  isAIPaneOpen?: boolean;
 };
 
 export function EditModules({
@@ -126,35 +127,16 @@ export function EditModules({
 
   return (
     <div className="flex flex-col md:flex-row gap-2 w-full">
-      {!isCollapsed && (
-        <div className="w-full md:w-80 h-[calc(100vh-11rem)]">
-          <ModuleList
-            modules={modules}
-            selectedModuleId={selectedModuleId}
-            onSelectModule={handleSelectModule}
-            onAddModule={handleAddModule}
-            onDeleteModule={handleDeleteModule}
-            isCollapsed={isCollapsed}
-            onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
-          />
-        </div>
-      )}
-      {isCollapsed && (
-        <div className="w-full md:w-12 h-[calc(100vh-11rem)] flex flex-col items-end">
-          <ModuleList
-            modules={modules}
-            selectedModuleId={selectedModuleId}
-            onSelectModule={handleSelectModule}
-            onAddModule={handleAddModule}
-            onDeleteModule={handleDeleteModule}
-            isCollapsed={isCollapsed}
-            onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
-          />
-        </div>
-      )}
-      <div
-        className={`${isCollapsed ? "w-full" : "flex-1"} h-[calc(100vh-12rem)] overflow-auto transition-all duration-300`}
-      >
+      <ModuleList
+        modules={modules}
+        selectedModuleId={selectedModuleId}
+        onSelectModule={handleSelectModule}
+        onAddModule={handleAddModule}
+        onDeleteModule={handleDeleteModule}
+        isCollapsed={isCollapsed}
+        onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
+      />
+      <div className="flex-1 h-[calc(100vh-12rem)] overflow-auto transition-all duration-300 pt-4">
         {currentModule ? (
           <EditModuleForm
             key={currentModule.id}

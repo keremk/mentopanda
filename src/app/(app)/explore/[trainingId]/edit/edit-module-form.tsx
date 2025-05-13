@@ -104,7 +104,6 @@ export function EditModuleForm({
       </div>
 
       <div className="mt-8 transition-all duration-300 px-2">
-
         <div className="flex h-full">
           <div className="w-full">
             <Tabs
