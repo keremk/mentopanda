@@ -222,10 +222,16 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
               className="w-full flex flex-col flex-1 min-h-0"
             >
               <TabsList className="grid grid-cols-2 rounded-2xl">
-                <TabsTrigger value="description" className="rounded-2xl">
+                <TabsTrigger
+                  value="description"
+                  className="rounded-2xl focus:ring-brand focus:ring-2"
+                >
                   Description
                 </TabsTrigger>
-                <TabsTrigger value="aiDescription" className="rounded-2xl">
+                <TabsTrigger
+                  value="aiDescription"
+                  className="rounded-2xl focus:ring-brand focus:ring-2"
+                >
                   AI Description
                 </TabsTrigger>
               </TabsList>

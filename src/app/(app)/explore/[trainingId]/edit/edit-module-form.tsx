@@ -114,25 +114,25 @@ export function EditModuleForm({
               <TabsList className="grid w-full grid-cols-4 bg-secondary/50 p-1 rounded-2xl">
                 <TabsTrigger
                   value="instructions"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
                 >
                   User Instructions
                 </TabsTrigger>
                 <TabsTrigger
                   value="scenario"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
                 >
                   Scenario
                 </TabsTrigger>
                 <TabsTrigger
                   value="assessment"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
                 >
                   Assessment
                 </TabsTrigger>
                 <TabsTrigger
                   value="character"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
                 >
                   Character
                 </TabsTrigger>

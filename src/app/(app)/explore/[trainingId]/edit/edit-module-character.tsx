@@ -119,7 +119,7 @@ export function EditModuleCharacter() {
             value={currentCharacterId || ""}
             onValueChange={handleCharacterChange}
           >
-            <SelectTrigger className="w-full bg-background/90 border-border/50">
+            <SelectTrigger className="w-full bg-background/90 border-border/50 rounded-2xl focus:ring-brand focus:ring-2">
               <SelectValue placeholder="Assign Character">
                 {currentCharacter ? (
                   <div className="flex items-center space-x-2">
@@ -138,7 +138,7 @@ export function EditModuleCharacter() {
                 )}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="border-border/50 bg-background/95 backdrop-blur-sm">
+            <SelectContent className="border-border/50 bg-background/95 backdrop-blur-sm rounded-2xl ring-2 ring-brand">
               {availableCharacters.map((character: CharacterSummary) => (
                 <SelectItem key={character.id} value={character.id.toString()}>
                   <div className="flex items-center space-x-2">

@@ -153,7 +153,7 @@ export function CharacterVoiceSelect({
         variant="outline"
         role="combobox"
         aria-expanded={isOpen}
-        className="w-full justify-between text-base"
+        className="w-full justify-between text-base rounded-2xl "
         onClick={() => setIsOpen(!isOpen)}
       >
         <span>{selectedVoice?.name || "Select a voice"}</span>
@@ -163,7 +163,7 @@ export function CharacterVoiceSelect({
       {isOpen && (
         <Portal.Root>
           <div
-            className="voice-dropdown fixed z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in"
+            className="voice-dropdown fixed z-50 min-w-[8rem] overflow-hidden border bg-popover text-popover-foreground shadow-md outline-none animate-in rounded-2xl ring-2 ring-brand"
             style={{
               top: `${position.top + 4}px`,
               left: `${position.left}px`,
