@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SendHorizontal, Lightbulb } from "lucide-react";
@@ -15,6 +15,7 @@ import {
   FocusedField,
   SelectedOption,
 } from "@/contexts/ai-pane-context";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type AIPanePromptBoxProps = {
   className?: string;
@@ -37,6 +38,8 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
     selectedOption,
     setSelectedOption,
   } = useAIPane();
+
+  const [isContextIncluded, setIsContextIncluded] = useState(true);
 
   // Define options based on context
   const options: AIAssistOption[] = getOptionsForContext(contextType);
@@ -84,7 +87,7 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (isLoading || (!input.trim() && !isContextIncluded)) return;
 
     // Submit with the selected option
     handleSubmit(e);
@@ -103,6 +106,8 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
     }
     // Pressing Enter alone will now insert a newline by default
   };
+
+  const isAskEnabled = isContextIncluded || !!input.trim();
 
   return (
     <TooltipProvider>
@@ -143,15 +148,21 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
               onKeyDown={handleKeyDown}
             />
             <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 border-t border-border/20">
-              <div className="flex items-center gap-1">
-                {/* <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 rounded-full text-muted-foreground/70 hover:text-foreground"
+              <div className="flex items-center gap-3">
+                <label
+                  htmlFor="context-toggle"
+                  className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer select-none"
                 >
-                  <Globe className="h-4 w-4" />
-                </Button> */}
+                  <Checkbox
+                    id="context-toggle"
+                    checked={isContextIncluded}
+                    onCheckedChange={(checked) =>
+                      setIsContextIncluded(!!checked)
+                    }
+                    className="h-5 w-5 border-border data-[state=checked]:bg-brand data-[state=checked]:border-brand"
+                  />
+                  Include context
+                </label>
               </div>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -159,7 +170,7 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
                     type="submit"
                     variant="ghost-brand"
                     size="sm"
-                    disabled={isLoading || !selectedOption}
+                    disabled={isLoading || !selectedOption || !isAskEnabled}
                     className="h-7 rounded-full px-3 flex items-center gap-1 text-xs"
                   >
                     <SendHorizontal className="h-3.5 w-3.5" />

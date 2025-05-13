@@ -8,7 +8,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useChat, Message } from "@ai-sdk/react";
+import { useChat, Message, CreateMessage } from "@ai-sdk/react";
 import { useApiKey } from "@/hooks/use-api-key";
 export type ContextType = "module" | "character" | "training";
 
@@ -82,6 +82,7 @@ export function AIPaneProvider({
     input,
     handleInputChange,
     handleSubmit: chatHandleSubmit,
+    append,
     isLoading,
     setMessages,
     setInput,
@@ -108,6 +109,19 @@ export function AIPaneProvider({
 
   // Custom submit handler that can include additional data
   const handleSubmit: SubmitHandler = (e, additionalData = {}) => {
+    // If input is empty, but context is included, use append to send a whitespace message
+    if (input.trim() === "") {
+      if (e && typeof e.preventDefault === "function") e.preventDefault();
+      append({ role: "user", content: " " } as CreateMessage, {
+        body: {
+          ...additionalData,
+          contextType,
+          contextData,
+          selectedOption,
+        },
+      });
+      return;
+    }
     chatHandleSubmit(e, {
       body: {
         ...additionalData,
