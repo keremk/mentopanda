@@ -125,6 +125,32 @@ export function EditModules({
     }
   }, [selectedModuleId, searchParams, router, pathname]); // Run when context selection changes
 
+  // Keyboard shortcut for collapsing/expanding the module list (Opt+B / Alt+B)
+  useEffect(() => {
+    console.log("Setting up keydown listener for Opt+B...");
+    function handleKeyDown(event: KeyboardEvent) {
+      console.log("[EditModules] Keydown event:", {
+        altKey: event.altKey,
+        key: event.key,
+        code: event.code,
+      });
+      if (
+        event.altKey &&
+        (event.key === "b" || event.key === "B" || event.code === "KeyB")
+      ) {
+        console.log("[EditModules] Opt+B detected, toggling collapse.");
+        event.preventDefault();
+        setIsCollapsed((prev) => !prev);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      console.log("Cleaning up keydown listener for Opt+B.");
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []); // Empty dependency array means this effect runs once on mount and cleans up on unmount
+
   return (
     <div className="flex flex-col md:flex-row gap-2 w-full">
       <ModuleList

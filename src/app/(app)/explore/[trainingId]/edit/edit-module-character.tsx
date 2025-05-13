@@ -171,7 +171,7 @@ export function EditModuleCharacter() {
             onChange={(e) => handleCharacterPromptChange(e.target.value)}
             placeholder="Enter the prompt about how this character should behave in this scenario"
             rows={10}
-            className="min-h-[calc(100vh-30rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
+            className="min-h-[calc(100vh-31rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
             onKeyDown={handleKeyDown}
           />
         </div>

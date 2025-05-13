@@ -143,7 +143,7 @@ export function EditModuleForm({
                   name="instructions"
                   value={module.instructions || ""}
                   onChange={handleModuleFieldChange}
-                  className="min-h-[calc(100vh-22rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
+                  className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
                   placeholder="Enter module instructions visible to the user, use markdown for formatting"
                   onKeyDown={handleModuleKeyDown}
                 />
@@ -156,7 +156,7 @@ export function EditModuleForm({
                   onChange={(e) => handleModulePromptFieldChange(e, "scenario")}
                   rows={12}
                   placeholder="Enter the prompt for the AI to set up the overall scenario"
-                  className="min-h-[calc(100vh-22rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
+                  className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
                   onKeyDown={handleModuleKeyDown}
                 />
               </TabsContent>
@@ -170,7 +170,7 @@ export function EditModuleForm({
                   }
                   rows={12}
                   placeholder="Enter the prompt for the AI to assess the user's performance"
-                  className="min-h-[calc(100vh-22rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
+                  className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
                   onKeyDown={handleModuleKeyDown}
                 />
               </TabsContent>

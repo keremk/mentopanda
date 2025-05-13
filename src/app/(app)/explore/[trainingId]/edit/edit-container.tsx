@@ -50,7 +50,7 @@ type EditContainerProps = {
 function EditContainerContent({ user }: { user: User }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isAIPaneOpen, setIsAIPaneOpen] = useState(false);
+  const [isAIPaneOpen, setIsAIPaneOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("details");
   const [moduleTab, setModuleTab] = useState<string>("scenario");
   const { toast } = useToast();

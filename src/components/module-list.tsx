@@ -16,6 +16,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { PlusIcon, TrashIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { ModuleSummary } from "@/data/modules";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type ModuleListProps = {
   modules: ModuleSummary[];
@@ -77,19 +83,28 @@ export function ModuleList({
             Modules
           </span>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="ml-auto"
-          aria-label={isCollapsed ? "Expand modules" : "Collapse modules"}
-          onClick={onToggleCollapse}
-        >
-          {isCollapsed ? (
-            <ChevronRight className="w-5 h-5" />
-          ) : (
-            <ChevronLeft className="w-5 h-5" />
-          )}
-        </Button>
+        <TooltipProvider>
+          <Tooltip delayDuration={300}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto"
+                aria-label={isCollapsed ? "Expand modules" : "Collapse modules"}
+                onClick={onToggleCollapse}
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="w-5 h-5" />
+                ) : (
+                  <ChevronLeft className="w-5 h-5" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>{isCollapsed ? "Expand (Alt+B)" : "Collapse (Alt+B)"}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       {/* ScrollArea should always be present to show either titles or numbers */}
       <ScrollArea className="flex-1 pt-4">
