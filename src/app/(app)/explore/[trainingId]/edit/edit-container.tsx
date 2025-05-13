@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,6 @@ function EditContainerContent({ user }: { user: User }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isAIPaneOpen, setIsAIPaneOpen] = useState(false);
-  const [isFullScreen, setIsFullScreen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("details");
   const [moduleTab, setModuleTab] = useState<string>("scenario");
   const { toast } = useToast();
@@ -66,11 +65,6 @@ function EditContainerContent({ user }: { user: User }) {
 
     const moduleTabFromUrl = searchParams.get("moduleTab");
     if (moduleTabFromUrl) setModuleTab(moduleTabFromUrl);
-  }, [searchParams]);
-
-  useEffect(() => {
-    const isFullScreenParam = searchParams.get("fullscreen") === "true";
-    setIsFullScreen(isFullScreenParam);
   }, [searchParams]);
 
   const handleTabChange = (value: string) => setActiveTab(value);
@@ -114,11 +108,6 @@ function EditContainerContent({ user }: { user: User }) {
 
   const handleToggleAIPane = () => setIsAIPaneOpen((prev) => !prev);
 
-  const handleToggleFullScreen = useCallback(
-    () => setIsFullScreen((prev) => !prev),
-    []
-  );
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!event.metaKey && !event.ctrlKey) return;
@@ -126,14 +115,11 @@ function EditContainerContent({ user }: { user: User }) {
       if (key === "k") {
         event.preventDefault();
         setIsAIPaneOpen((prev) => !prev);
-      } else if (key === "f") {
-        event.preventDefault();
-        handleToggleFullScreen();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleToggleFullScreen]);
+  }, []);
 
   const determineContextType = (): ContextType =>
     activeTab === "details" ? "training" : "module";
@@ -277,6 +263,19 @@ function EditContainerContent({ user }: { user: User }) {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          {/* Quick Test Button (only show in modules tab and when a module is selected) */}
+          {activeTab === "modules" && selectedModuleId && (
+            <Button
+              variant="ghost-brand"
+              onClick={() =>
+                window.open(`/simulation/${selectedModuleId}`, "_blank")
+              }
+              size="default"
+              className="h-9"
+            >
+              Quick Test
+            </Button>
+          )}
           {/* Save & Exit Button */}
           <Button
             onClick={handleSaveAndExit}
@@ -338,8 +337,6 @@ function EditContainerContent({ user }: { user: User }) {
             </TabsContent>
             <TabsContent value="modules" className="flex-1 flex mt-6">
               <EditModules
-                isFullScreen={isFullScreen}
-                onToggleFullScreen={handleToggleFullScreen}
                 onModuleTabChange={handleModuleTabChange}
                 moduleTab={moduleTab}
               />

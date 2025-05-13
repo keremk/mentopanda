@@ -14,7 +14,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { PlusIcon, TrashIcon } from "lucide-react";
+import { PlusIcon, TrashIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { ModuleSummary } from "@/data/modules";
 
 type ModuleListProps = {
@@ -23,6 +23,8 @@ type ModuleListProps = {
   onSelectModule: (moduleId: number) => void;
   onAddModule: (title: string) => Promise<void>;
   onDeleteModule: (moduleId: number) => Promise<boolean>;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 };
 
 export function ModuleList({
@@ -31,6 +33,8 @@ export function ModuleList({
   onSelectModule,
   onAddModule,
   onDeleteModule,
+  isCollapsed,
+  onToggleCollapse,
 }: ModuleListProps) {
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const createDialogCloseRef = useRef<HTMLButtonElement>(null);
@@ -57,107 +61,133 @@ export function ModuleList({
 
   return (
     <div className="flex flex-col h-full border border-border/40 bg-background/80 rounded-lg overflow-hidden">
-      <ScrollArea className="flex-1">
-        <div className="space-y-2 p-3">
-          {modules.map((module) => (
-            <div
-              key={module.id}
-              className={`flex items-center gap-3 rounded-lg px-4 py-3 cursor-pointer transition-all duration-200 ${
-                module.id === selectedModuleId
-                  ? "bg-secondary/90 shadow-sm border border-border/30"
-                  : "hover:bg-secondary/50 border border-transparent"
-              }`}
-              onClick={() => onSelectModule(module.id)}
-            >
-              <span
-                className={`text-sm font-medium ${module.id === selectedModuleId ? "text-foreground" : "text-muted-foreground"}`}
-              >
-                {module.title}
-              </span>
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
-
-      <div className="border-t border-border/40 p-3 flex gap-2 bg-background/90">
-        {/* Add Module Dialog */}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="ghost-brand" size="sm" className="flex-1">
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Module</DialogTitle>
-              <DialogDescription>
-                Enter the title for your new module.
-              </DialogDescription>
-            </DialogHeader>
-            <Input
-              value={newModuleTitle}
-              onChange={(e) => setNewModuleTitle(e.target.value)}
-              placeholder="Module title"
-              className="my-4"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newModuleTitle.trim()) {
-                  e.preventDefault();
-                  handleCreateModule();
-                }
-              }}
-            />
-            <DialogFooter>
-              <DialogClose ref={createDialogCloseRef} asChild>
-                <Button variant="secondary">Cancel</Button>
-              </DialogClose>
-              <Button
-                onClick={handleCreateModule}
-                variant="brand"
-                disabled={!newModuleTitle.trim()}
-              >
-                Create
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Remove Module Dialog */}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button
-              variant="ghost-danger"
-              size="sm"
-              className="flex-1"
-              disabled={!isModuleSelected}
-            >
-              <TrashIcon className="h-4 w-4 mr-2" />
-              Remove
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Remove Module</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to remove {selectedModuleData?.title}?
-                This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <DialogClose ref={deleteDialogCloseRef} asChild>
-                <Button variant="secondary">Cancel</Button>
-              </DialogClose>
-              <Button
-                variant="danger"
-                onClick={handleDeleteModule}
-                disabled={!selectedModuleId}
-              >
-                Remove
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+      {/* Header with title and collapse/expand button */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border/40 bg-background/90">
+        {!isCollapsed && (
+          <span className="font-semibold text-base text-foreground">
+            Modules
+          </span>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto"
+          aria-label={isCollapsed ? "Expand modules" : "Collapse modules"}
+          onClick={onToggleCollapse}
+        >
+          {isCollapsed ? (
+            <ChevronRight className="w-5 h-5" />
+          ) : (
+            <ChevronLeft className="w-5 h-5" />
+          )}
+        </Button>
       </div>
+      {/* Only show the rest if not collapsed */}
+      {!isCollapsed && (
+        <>
+          <ScrollArea className="flex-1">
+            <div className="space-y-2 p-3">
+              {modules.map((module) => (
+                <div
+                  key={module.id}
+                  className={`flex items-center gap-3 rounded-lg px-4 py-3 cursor-pointer transition-all duration-200 ${
+                    module.id === selectedModuleId
+                      ? "bg-secondary/90 shadow-sm border border-border/30"
+                      : "hover:bg-secondary/50 border border-transparent"
+                  }`}
+                  onClick={() => onSelectModule(module.id)}
+                >
+                  <span
+                    className={`text-sm font-medium ${module.id === selectedModuleId ? "text-foreground" : "text-muted-foreground"}`}
+                  >
+                    {module.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+
+          <div className="border-t border-border/40 p-3 flex gap-2 bg-background/90">
+            {/* Add Module Dialog */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost-brand" size="sm" className="flex-1">
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Add
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Module</DialogTitle>
+                  <DialogDescription>
+                    Enter the title for your new module.
+                  </DialogDescription>
+                </DialogHeader>
+                <Input
+                  value={newModuleTitle}
+                  onChange={(e) => setNewModuleTitle(e.target.value)}
+                  placeholder="Module title"
+                  className="my-4"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newModuleTitle.trim()) {
+                      e.preventDefault();
+                      handleCreateModule();
+                    }
+                  }}
+                />
+                <DialogFooter>
+                  <DialogClose ref={createDialogCloseRef} asChild>
+                    <Button variant="secondary">Cancel</Button>
+                  </DialogClose>
+                  <Button
+                    onClick={handleCreateModule}
+                    variant="brand"
+                    disabled={!newModuleTitle.trim()}
+                  >
+                    Create
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Remove Module Dialog */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost-danger"
+                  size="sm"
+                  className="flex-1"
+                  disabled={!isModuleSelected}
+                >
+                  <TrashIcon className="h-4 w-4 mr-2" />
+                  Remove
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Remove Module</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to remove {selectedModuleData?.title}?
+                    This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <DialogClose ref={deleteDialogCloseRef} asChild>
+                    <Button variant="secondary">Cancel</Button>
+                  </DialogClose>
+                  <Button
+                    variant="danger"
+                    onClick={handleDeleteModule}
+                    disabled={!selectedModuleId}
+                  >
+                    Remove
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,27 +1,24 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ModuleList } from "@/components/module-list";
 import { EditModuleForm } from "./edit-module-form";
 import { useTrainingEdit } from "@/contexts/training-edit-context";
 
 type Props = {
-  isFullScreen: boolean;
-  onToggleFullScreen: () => void;
   moduleTab?: string;
   onModuleTabChange?: (value: string) => void;
 };
 
 export function EditModules({
-  isFullScreen,
-  onToggleFullScreen,
   moduleTab = "scenario",
   onModuleTabChange,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Use the centralized context, including the new methods (addModule, deleteModule)
   const { state, dispatch, getModuleById, addModule, deleteModule } =
@@ -129,26 +126,39 @@ export function EditModules({
 
   return (
     <div className="flex flex-col md:flex-row gap-2 w-full">
-      {!isFullScreen && (
+      {!isCollapsed && (
         <div className="w-full md:w-80 h-[calc(100vh-11rem)]">
           <ModuleList
             modules={modules}
             selectedModuleId={selectedModuleId}
-            onSelectModule={handleSelectModule} // Use simplified handler
+            onSelectModule={handleSelectModule}
             onAddModule={handleAddModule}
             onDeleteModule={handleDeleteModule}
+            isCollapsed={isCollapsed}
+            onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
+          />
+        </div>
+      )}
+      {isCollapsed && (
+        <div className="w-full md:w-12 h-[calc(100vh-11rem)] flex flex-col items-end">
+          <ModuleList
+            modules={modules}
+            selectedModuleId={selectedModuleId}
+            onSelectModule={handleSelectModule}
+            onAddModule={handleAddModule}
+            onDeleteModule={handleDeleteModule}
+            isCollapsed={isCollapsed}
+            onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
           />
         </div>
       )}
       <div
-        className={`${isFullScreen ? "w-full" : "flex-1"} h-[calc(100vh-12rem)] overflow-auto transition-all duration-300`}
+        className={`${isCollapsed ? "w-full" : "flex-1"} h-[calc(100vh-12rem)] overflow-auto transition-all duration-300`}
       >
         {currentModule ? (
           <EditModuleForm
             key={currentModule.id}
             module={currentModule}
-            isFullScreen={isFullScreen}
-            onToggleFullScreen={onToggleFullScreen}
             moduleTab={moduleTab}
             onModuleTabChange={onModuleTabChange}
           />
