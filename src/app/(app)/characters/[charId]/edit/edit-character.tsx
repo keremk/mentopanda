@@ -221,7 +221,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
               defaultValue="description"
               className="w-full flex flex-col flex-1 min-h-0"
             >
-              <TabsList className="grid w-full grid-cols-2 rounded-2xl">
+              <TabsList className="grid grid-cols-2 rounded-2xl">
                 <TabsTrigger value="description" className="rounded-2xl">
                   Description
                 </TabsTrigger>
@@ -229,10 +229,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
                   AI Description
                 </TabsTrigger>
               </TabsList>
-              <TabsContent
-                value="description"
-                className="flex-1 min-h-0 flex flex-col mt-4"
-              >
+              <TabsContent value="description" className="mt-4">
                 <AIFocusTextarea
                   name="description"
                   placeholder="Enter character description visible to users"
@@ -243,10 +240,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
                   className="min-h-[calc(100vh-24rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
                 />
               </TabsContent>
-              <TabsContent
-                value="aiDescription"
-                className="flex-1 min-h-0 flex flex-col mt-4"
-              >
+              <TabsContent value="aiDescription" className="mt-4">
                 <AIFocusTextarea
                   name="aiDescription"
                   placeholder="Enter character prompt for the AI model"

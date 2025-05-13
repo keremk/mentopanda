@@ -61,7 +61,9 @@ const MemoizedMarkdownBlock = memo(function MemoizedMarkdownBlock({
 }: {
   content: string;
 }) {
-  return <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>;
+  return (
+    <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
+  );
 });
 
 export const MemoizedMarkdown = memo(function MemoizedMarkdown({

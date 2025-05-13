@@ -5,11 +5,18 @@ import { Textarea, TextareaProps } from "@/components/ui/textarea";
 import { useAIPane } from "@/contexts/ai-pane-context";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 
-export function AIFocusTextarea({ name, value, onChange, ...props }: TextareaProps) {
+export function AIFocusTextarea({
+  name,
+  value,
+  onChange,
+  ...props
+}: TextareaProps) {
   const { setFocusedField } = useAIPane();
   const [hasFocus, setHasFocus] = useState(false);
   const [shouldFocus, setShouldFocus] = useState(false);
-  const [measuredHeight, setMeasuredHeight] = useState<string | undefined>(undefined);
+  const [measuredHeight, setMeasuredHeight] = useState<string | undefined>(
+    undefined
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const measureRef = useRef<HTMLTextAreaElement>(null);
 
