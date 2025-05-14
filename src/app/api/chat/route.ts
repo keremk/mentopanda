@@ -88,13 +88,26 @@ async function generateSystemPrompt(
 
   if (!selectedOption) return basePrompt;
 
+  const generalInstructions = `
+You are an expert prompt engineer. You will be given some specific instructions and some context (if exists) to generate the most effective prompt. The prompt will be directly copied and pasted so do not include any extra text at the beginning or end of it, otherwise user will have to manually strip them out and that is very bad. Follow the instructions carefully and generate the most effective prompt.  
+  `;
+
   switch (contextType) {
     case "character":
-      return generateMetaCharacterPrompts(selectedOption, characterContext);
+      return `${generalInstructions}\n${generateMetaCharacterPrompts(
+        selectedOption,
+        characterContext
+      )}`;
     case "module":
-      return generateMetaModulePrompts(selectedOption, trainingContext);
+      return `${generalInstructions}\n${generateMetaModulePrompts(
+        selectedOption,
+        trainingContext
+      )}`;
     case "training":
-      return generateMetaTrainingPrompts(selectedOption, trainingContext);
+      return `${generalInstructions}\n${generateMetaTrainingPrompts(
+        selectedOption,
+        trainingContext
+      )}`;
     default:
       return basePrompt;
   }
@@ -150,6 +163,22 @@ export async function POST(req: Request) {
   const openai = createOpenAI({
     apiKey: finalApiKey,
   });
+
+  const lastMessageContent =
+    messages.length > 0 ? messages[messages.length - 1].content : undefined;
+  const isLastMessageAnEmptyString =
+    typeof lastMessageContent === "string" && lastMessageContent.trim() === "";
+
+  if (messages.length === 0 || isLastMessageAnEmptyString) {
+    messages.push({
+      role: "user",
+      content:
+        "Please use the relevant context in the system prompt and generate a response.",
+    });
+  }
+
+  console.log(JSON.stringify(messages, null, 2));
+  console.log(JSON.stringify(systemPrompt, null, 2));
 
   const result = await streamText({
     model: openai.chat("gpt-4o"),
