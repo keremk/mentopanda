@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAIPane } from "../contexts/ai-pane-context";
 import { Button } from "@/components/ui/button";
 import { Check, Copy } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 export function AIPaneResponses() {
   const { messages, messagesEndRef, applyGeneratedContent, selectedOption } =
@@ -36,15 +37,15 @@ export function AIPaneResponses() {
 
   const handleApplyContent = (messageId: string, content: string) => {
     if (!selectedOption || !applyGeneratedContent) {
-      console.error(
+      logger.error(
         "Cannot apply content: selectedOption or applyGeneratedContent is undefined"
       );
       return;
     }
 
     try {
-      console.log("Applying content to:", selectedOption.targetField);
-      console.log("Content being applied:", content);
+      logger.debug("Applying content to:", selectedOption.targetField);
+      logger.debug("Content being applied:", content);
 
       // Use the targetField from the selected option in context
       applyGeneratedContent(content, selectedOption.targetField);
@@ -52,7 +53,7 @@ export function AIPaneResponses() {
       // Mark this message as applied
       setAppliedMessageIds((prev) => new Set([...prev, messageId]));
     } catch (error) {
-      console.error("Error applying content:", error);
+      logger.error("Error applying content:", error);
     }
   };
 

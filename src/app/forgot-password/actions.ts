@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { z } from "zod";
-
+import { logger } from "@/lib/logger";
 const ForgotPasswordSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
 });
@@ -55,7 +55,7 @@ export async function requestPasswordReset(
   // Always return a generic success message to prevent email enumeration
   // Log the actual error server-side if needed for debugging
   if (error) {
-    console.error("Password Reset Error:", error.message);
+    logger.error("Password Reset Error:", error.message);
     // Optionally redirect to the same page with a generic success message
     // Or just return the success state
   }

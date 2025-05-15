@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
+import { logger } from "@/lib/logger";
 interface EnrollmentButtonProps {
   trainingId: number;
   className?: string;
@@ -41,7 +41,7 @@ export function EnrollmentButton({
         const status = await isEnrolledAction(trainingId);
         setEnrolled(status);
       } catch (error) {
-        console.error("Failed to check enrollment status:", error);
+        logger.error("Failed to check enrollment status:", error);
       }
     };
 
@@ -60,8 +60,8 @@ export function EnrollmentButton({
       }
       setEnrolled(!enrolled);
       router.refresh();
-    } catch (error) {
-      console.error("Failed to update enrollment:", error);
+    } catch (error) { 
+      logger.error("Failed to update enrollment:", error);
     } finally {
       setIsLoading(false);
       setIsDialogOpen(false);

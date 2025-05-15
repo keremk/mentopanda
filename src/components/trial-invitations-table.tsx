@@ -26,7 +26,7 @@ import {
 } from "@/app/actions/invitation-actions";
 import { useToast } from "@/hooks/use-toast";
 import { MailIcon, Trash2Icon } from "lucide-react";
-
+import { logger } from "@/lib/logger";
 type TrialInvitationsTableProps = {
   invitations: Invitation[];
   onInvitationChange: () => void;
@@ -67,7 +67,7 @@ export function TrialInvitationsTable({
         description: "Failed to resend invitation email",
         variant: "destructive",
       });
-      console.log("Failed to resend invitation email", error);
+      logger.error(`Failed to resend invitation email: ${error}`);
     } finally {
       setIsLoading((prev) => ({ ...prev, [invitationId]: false }));
     }
@@ -88,7 +88,7 @@ export function TrialInvitationsTable({
         description: "Failed to delete invitation",
         variant: "destructive",
       });
-      console.log("Failed to delete invitation", error);
+      logger.error(`Failed to delete invitation: ${error}`);
     } finally {
       setIsLoading((prev) => ({ ...prev, [invitationId]: false }));
     }

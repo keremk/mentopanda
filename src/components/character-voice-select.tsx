@@ -6,7 +6,7 @@ import { PlayIcon, ChevronDownIcon, CheckIcon, PauseIcon } from "lucide-react";
 import { AIModel, VOICES } from "@/types/models";
 import * as Portal from "@radix-ui/react-portal";
 import { cn } from "@/lib/utils";
-
+import { logger } from "@/lib/logger";
 interface CharacterVoiceSelectProps {
   value?: string;
   onValueChange?: (value: string) => void;
@@ -107,7 +107,7 @@ export function CharacterVoiceSelect({
       };
 
       const onError = () => {
-        console.error(`Error playing ${voiceName} sample for ${newAudio.src}`);
+        logger.error(`Error playing ${voiceName} sample for ${newAudio.src}`);
         setAudio((currentAudioInState) => {
           if (currentAudioInState === newAudio) {
             setIsPlaying(false);
@@ -129,9 +129,8 @@ export function CharacterVoiceSelect({
 
       await newAudio.play();
     } catch (error) {
-      console.error(
-        `Error initiating playback for ${voiceName} sample:`,
-        error
+      logger.error(
+        `Error initiating playback for ${voiceName} sample: ${error}`
       );
       setIsPlaying(false);
       setCurrentlyPlayingVoice(null);

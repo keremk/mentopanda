@@ -29,6 +29,7 @@ import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import type { FileWithPreview } from "@/hooks/use-supabase-upload";
 import { cn } from "@/lib/utils";
 import { useApiKey } from "@/hooks/use-api-key";
+import { logger } from "@/lib/logger";
 
 function base64ToBlob(base64: string, contentType = "image/png"): Blob {
   const byteCharacters = atob(base64);
@@ -159,21 +160,18 @@ export function ImageGenerationDialog({
       if (useCurrentImage && currentImageUrl && bucketName) {
         actionInput.existingImageUrl = currentImageUrl;
         actionInput.bucketName = bucketName;
-        console.log("Including existing image in generation request.");
       }
-
-      console.log("Sending to server action:", actionInput);
 
       const result = await generateImageAction(actionInput);
 
       if (result.success) {
         setGeneratedImageData(result.imageData);
-        console.log("Image data received successfully!");
       } else {
+        logger.error("Image generation action error:", result.error);
         setError(result.error);
       }
     } catch (err) {
-      console.error("Generation action invocation error:", err);
+      logger.error("Generation action invocation error:", err);
       setError("An unexpected error occurred trying to generate the image.");
     } finally {
       setIsGenerating(false);
@@ -213,7 +211,7 @@ export function ImageGenerationDialog({
       uploadHook.setFiles([fileForHook]);
       await uploadHook.onUpload();
     } catch (err) {
-      console.error("Error initiating upload process:", err);
+      logger.error("Error initiating upload process:", err);
       const errorMsg =
         "An unexpected error occurred trying to start the image upload.";
       setError(errorMsg);
@@ -252,7 +250,7 @@ export function ImageGenerationDialog({
           try {
             const uploadedPathRaw = uploadHook.successes[0]?.uploadedPath;
             if (!uploadedPathRaw) {
-              console.error(
+              logger.error(
                 "Completion Effect: Could not determine uploaded path."
               );
               setError("Upload succeeded but failed to get path.");
@@ -264,14 +262,14 @@ export function ImageGenerationDialog({
             if (filePath.startsWith(expectedPrefix)) {
               const pathAfterBucket = filePath.substring(expectedPrefix.length);
               if (pathAfterBucket.startsWith(`${bucketName}/`)) {
-                console.warn(
+                logger.warn(
                   `Detected duplicated bucket name in generated uploadedPath: ${filePath}. Normalizing.`
                 );
                 filePath = pathAfterBucket;
               }
             }
 
-            console.log(
+            logger.debug(
               "Completion Effect: Getting public URL for path:",
               filePath
             );
@@ -285,7 +283,7 @@ export function ImageGenerationDialog({
             } else {
               const errorMsg =
                 "Upload succeeded but failed to retrieve the image URL.";
-              console.error("Completion Effect:", errorMsg, "Path:", filePath);
+              logger.error(`Completion Effect: ${errorMsg} Path: ${filePath}`);
               setError(errorMsg);
               toast({
                 variant: "destructive",
@@ -295,7 +293,7 @@ export function ImageGenerationDialog({
             }
           } catch (error) {
             const errorMsg = "Error processing upload completion.";
-            console.error("Completion Effect Error:", error);
+            logger.error("Completion Effect Error:", error);
             setError(errorMsg);
             toast({
               variant: "destructive",

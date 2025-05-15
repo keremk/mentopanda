@@ -30,6 +30,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { getInitials } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 export function NavUser({
   user,
@@ -58,12 +59,12 @@ export function NavUser({
       const supabase = createClient();
       const { error } = await supabase.auth.signOut();
       if (error) {
-        console.error("Error signing out:", error);
+        logger.error("Error signing out:", error);
       } else {
         router.push("/login");
       }
     } catch (error) {
-      console.error("Error in handleLogout:", error);
+      logger.error("Error in handleLogout:", error);
     }
   };
 

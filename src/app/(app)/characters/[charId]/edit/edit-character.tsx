@@ -21,7 +21,7 @@ import { ApiKeyCheckDialog } from "@/components/api-key-check-dialog";
 import { User } from "@/data/user";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-
+import { logger } from "@/lib/logger";
 type EditCharacterFormProps = {
   user: User;
 };
@@ -94,7 +94,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
     newPath: string, // Path is available if needed for future logic
     oldImageUrl: string | null
   ) => {
-    console.log("[EditCharacterForm] Image changed:", { newUrl, oldImageUrl });
+    logger.debug("[EditCharacterForm] Image changed:", { newUrl, oldImageUrl });
     updateCharacterField("avatarUrl", newUrl); // Update context
 
     // Trigger save

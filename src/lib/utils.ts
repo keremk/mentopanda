@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-
+import { logger } from "./logger";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -53,7 +53,7 @@ export function getPathFromStorageUrl(url: string): string | null {
     // Decode URI component to handle spaces or special chars in filenames
     return decodeURIComponent(storagePath);
   } catch (error) {
-    console.error("Error parsing storage URL:", error);
+    logger.error("Error parsing storage URL:", error);
     return null;
   }
 }

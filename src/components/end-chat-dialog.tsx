@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { logger } from "@/lib/logger";
 
 type EndChatDialogProps = {
   isOpen: boolean;
@@ -32,7 +33,7 @@ export function EndChatDialog({
       setIsLoading(true);
       await action();
     } catch (error) {
-      console.error("Failed to execute end chat action:", error);
+      logger.error("Failed to execute end chat action:", error);
     } finally {
       setIsLoading(false);
     }

@@ -6,13 +6,15 @@ import { Metadata } from "next";
 import { getEnrolledTrainingsActionCached } from "@/app/actions/enrollment-actions";
 import { getInvitationsForUserAction } from "@/app/actions/invitation-actions";
 import { getCurrentUserActionCached } from "@/app/actions/user-actions";
+import { logger } from "@/lib/logger";
+
 export const metadata: Metadata = {
   title: "Home",
 };
 
 export default async function HomePage() {
   const user = await getCurrentUserActionCached();
-  console.log(JSON.stringify(user, null, 2));
+  logger.debug(`User:`, JSON.stringify(user, null, 2));
 
   const [trainings, invitations] = await Promise.all([
     getEnrolledTrainingsActionCached(user),

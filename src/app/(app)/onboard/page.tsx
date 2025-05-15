@@ -3,6 +3,8 @@ import { getProjectsAction } from "@/app/actions/project-actions";
 import { OnboardingFlow } from "./onboarding-flow";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
 import { getInvitationsForUserAction } from "@/app/actions/invitation-actions";
+import { logger } from "@/lib/logger";
+
 export default async function OnboardPage() {
   const [projects, user] = await Promise.all([
     getProjectsAction(),
@@ -15,6 +17,6 @@ export default async function OnboardPage() {
   if (projects.length > 1) redirect("/home");
 
   const invitations = await getInvitationsForUserAction(user);
-  console.log(`Invitations: ${JSON.stringify(invitations)}`);
+  logger.debug(`Invitations: ${JSON.stringify(invitations)}`);
   return <OnboardingFlow user={user} invitations={invitations} />;
 }

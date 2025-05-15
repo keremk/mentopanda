@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createClient as createAdminClient } from "@supabase/supabase-js"; // For admin client
+import { logger } from "@/lib/logger";
 
 type ActionResult = { success: boolean; error?: string };
 
@@ -17,7 +18,7 @@ export async function deleteStorageObjectAction(
   const validationResult = deleteSchema.safeParse(input);
   if (!validationResult.success) {
     const errorMsg = validationResult.error.flatten().formErrors.join(", ");
-    console.error("Invalid input for deleteStorageObjectAction:", errorMsg);
+    logger.error("Invalid input for deleteStorageObjectAction:", errorMsg);
     return { success: false, error: `Invalid input: ${errorMsg}` };
   }
 
@@ -29,7 +30,7 @@ export async function deleteStorageObjectAction(
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.SUPABASE_SERVICE_ROLE_KEY
   ) {
-    console.error("Missing Supabase URL or Service Role Key for admin client.");
+    logger.error("Missing Supabase URL or Service Role Key for admin client.");
     return { success: false, error: "Server configuration error." };
   }
 
@@ -38,7 +39,7 @@ export async function deleteStorageObjectAction(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  console.log(`Attempting to delete object: ${bucketName}/${path}`);
+  logger.debug(`Attempting to delete object: ${bucketName}/${path}`);
 
   try {
     const { error } = await supabaseAdmin.storage
@@ -48,12 +49,12 @@ export async function deleteStorageObjectAction(
     if (error) {
       // Don't treat "Not Found" as a fatal error for cleanup
       if (error.message.includes("Not Found")) {
-        console.warn(
+        logger.warn(
           `Object not found for deletion (ignoring): ${bucketName}/${path}`
         );
         return { success: true }; // Considered success as the object is gone
       }
-      console.error(
+      logger.error(
         `Supabase storage deletion error: ${error.message} for ${bucketName}/${path}`
       );
       return {
@@ -62,10 +63,10 @@ export async function deleteStorageObjectAction(
       };
     }
 
-    console.log(`Successfully deleted object: ${bucketName}/${path}`);
+    logger.debug(`Successfully deleted object: ${bucketName}/${path}`);
     return { success: true };
   } catch (err) {
-    console.error("Unexpected error during storage deletion:", err);
+    logger.error("Unexpected error during storage deletion:", err);
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
     return {
       success: false,

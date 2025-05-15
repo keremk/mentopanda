@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
 import { getUserId, UserRole } from "./user";
-
+import { logger } from "@/lib/logger";
 export type ProjectSummary = {
   id: number;
   name: string;
@@ -26,11 +26,11 @@ export async function createProject(
     project_name: name,
   });
 
-  console.log(`Project ID: ${projectId}`);
+  logger.debug(`Project ID: ${projectId}`);
   if (error) handleError(error);
   if (!projectId) throw new Error("Failed to create project");
 
-  console.log(`Created project with name: ${name} and id: ${projectId}`);
+  logger.debug(`Created project with name: ${name} and id: ${projectId}`);
   return {
     id: projectId,
     name: name,
@@ -69,7 +69,7 @@ export async function copyPublicTrainings(
   projectId: number,
   userId: string
 ) {
-  console.log(
+  logger.debug(
     `Copying public trainings to project ${projectId} for user ${userId}`
   );
   const { error } = await supabase.rpc("deep_copy_project", {
@@ -168,14 +168,18 @@ export async function addProjectMember(
   userId: string,
   role: UserRole
 ): Promise<ProjectMemberSummary> {
-  console.log(
+  logger.debug(
     `Adding project member ${userId} to project ${projectId} with role ${role}`
   );
-  const { data, error } = await supabase.from("projects_profiles").insert({
-    project_id: projectId,
-    profile_id: userId,
-    role: role,
-  }).select(`profile_id, role`).single();
+  const { data, error } = await supabase
+    .from("projects_profiles")
+    .insert({
+      project_id: projectId,
+      profile_id: userId,
+      role: role,
+    })
+    .select(`profile_id, role`)
+    .single();
 
   if (error) handleError(error);
   if (!data) throw new Error("Failed to add project member");

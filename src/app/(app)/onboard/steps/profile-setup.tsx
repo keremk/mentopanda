@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getInitials } from "@/lib/utils";
 import { User } from "@/data/user";
 import { OnboardingData } from "../onboarding-flow";
+import { logger } from "@/lib/logger";
 
 type ProfileSetupProps = {
   user: User;
@@ -40,7 +41,7 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
         setAvatarUrl(url);
         updateData({ avatarUrl: url });
       } else {
-        console.log("Failed to update avatar:", response.error);
+        logger.error("Failed to update avatar:", response.error);
         toast({
           title: "Update failed",
           description: response.error || "Failed to update avatar",
@@ -48,7 +49,7 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
         });
       }
     } catch (error) {
-      console.log("Error updating avatar:", error);
+      logger.error("Error updating avatar:", error);
       toast({
         title: "Update failed",
         description: "An unexpected error occurred",

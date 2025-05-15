@@ -14,7 +14,7 @@ import type {
   ImageContextType,
   ImageAspectRatio,
 } from "./image-generation-dialog";
-
+import { logger } from "@/lib/logger";
 // --- Helper Type for Button Variant --- //
 type ButtonVariant = ButtonProps["variant"];
 
@@ -91,19 +91,18 @@ export function ImageEdit({
   // --- Derived Values --- //
   const numericAspectRatio = aspectRatio === "landscape" ? 16 / 9 : 1;
 
-  // --- Deletion Logic --- (Moved into component)
   const handleDeleteOldImage = (
     oldImageUrl: string | null,
     newPath: string
   ) => {
     if (!oldImageUrl) {
-      console.log("[ImageEdit] No previous image URL, skipping deletion.");
+      logger.debug("[ImageEdit] No previous image URL, skipping deletion.");
       return;
     }
 
     const oldImagePath = getPathFromStorageUrl(oldImageUrl);
     if (!oldImagePath) {
-      console.warn(
+      logger.warn(
         "[ImageEdit] Could not parse path from old URL, skipping deletion:",
         oldImageUrl
       );
@@ -119,25 +118,25 @@ export function ImageEdit({
       oldImageDir === newImageDir &&
       oldImagePath !== newPath
     ) {
-      console.log(
+      logger.debug(
         `[ImageEdit] Attempting deletion of old image: ${oldImagePath}`
       );
       // Call delete action but DO NOT await it
       deleteStorageObjectAction({ bucketName, path: oldImagePath }).then(
         (result) => {
           if (!result.success) {
-            console.error(
+            logger.error(
               `[ImageEdit] Background deletion failed for ${oldImagePath}: ${result.error}`
             );
           } else {
-            console.log(
+            logger.debug(
               `[ImageEdit] Background deletion successful for ${oldImagePath}`
             );
           }
         }
       );
     } else {
-      console.log(
+      logger.debug(
         "[ImageEdit] Skipping deletion: directory mismatch, same path, or parse error.",
         { oldImageDir, newImageDir, oldImagePath, newPath }
       );

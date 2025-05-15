@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
+import { logger } from "@/lib/logger";
 
 export type InsertModuleCharacterInput = {
   moduleId: number;
@@ -51,13 +52,8 @@ export async function replaceModuleCharacter(
   supabase: SupabaseClient,
   data: ReplaceModuleCharacterInput
 ): Promise<void> {
-  console.log(
-    "Replacing module id ",
-    data.moduleId,
-    " character ",
-    data.oldCharacterId,
-    " with character ",
-    data.newCharacterId
+  logger.debug(
+    `Replacing module id ${data.moduleId} character ${data.oldCharacterId} with character ${data.newCharacterId}`
   );
   const { error } = await supabase.rpc("replace_module_character", {
     p_module_id: data.moduleId,

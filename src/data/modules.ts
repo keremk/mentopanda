@@ -3,6 +3,7 @@ import { handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { CharacterDetails } from "./characters";
 import { AIModel, AI_MODELS, aiModelSchema } from "@/types/models";
+import { logger } from "@/lib/logger";
 
 export type ModuleCharacter = CharacterDetails & {
   prompt: string;
@@ -217,7 +218,7 @@ export async function getModuleById2(
     .single();
 
   if (error) {
-    console.error("Error getting module by id", error);
+    logger.error("Error getting module by id", error);
     if (error.code === "PGRST116") return null;
     handleError(error);
   }

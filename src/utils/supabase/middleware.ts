@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-
+import { logger } from "@/lib/logger";
 export async function updateSession(
   request: NextRequest,
   isProtectedRoute: boolean
@@ -82,7 +82,7 @@ export async function updateSession(
         }
       }
     } else {
-      console.error("No session found!");
+      logger.error("No session found!");
     }
   }
 

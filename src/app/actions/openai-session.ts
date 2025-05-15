@@ -1,7 +1,7 @@
 "use server";
 
 import { CURRENT_MODEL_NAMES, DEFAULT_VOICE } from "@/types/models";
-
+import { logger } from "@/lib/logger";
 type CreateOpenAISessionParams = {
   apiKey?: string;
   voice?: string;
@@ -48,7 +48,7 @@ export async function createOpenAISession({
     const session = await response.json();
     return { session };
   } catch (error) {
-    console.error("Error creating OpenAI session:", error);
+    logger.error("Error creating OpenAI session:", error);
     throw new Error("Failed to create OpenAI session");
   }
 }

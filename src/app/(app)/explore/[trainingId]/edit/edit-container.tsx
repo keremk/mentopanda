@@ -36,7 +36,7 @@ import { TrainingEdit } from "@/data/trainings";
 import { CharacterSummary } from "@/data/characters";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
+import { logger } from "@/lib/logger";
 // --- Prop Types ---
 // Ensure this type definition is correct and includes the necessary props
 type EditContainerProps = {
@@ -76,7 +76,7 @@ function EditContainerContent({ user }: { user: User }) {
       await deleteTrainingAction(training.id);
       router.push("/explore");
     } catch (error) {
-      console.error("Error deleting training:", error);
+      logger.error("Error deleting training:", error);
       // Add user feedback
       toast({
         title: "Error deleting training",
@@ -92,14 +92,14 @@ function EditContainerContent({ user }: { user: User }) {
       if (saveSuccessful) {
         router.push(`/explore/${training.id}`);
       } else {
-        console.error("Save failed before exiting.");
+        logger.error("Save failed before exiting.");
         toast({
           title: "Error saving training",
           description: "Please try again.",
         });
       }
     } catch (error) {
-      console.error("Error during save and exit:", error);
+      logger.error("Error during save and exit:", error);
       toast({
         title: "Error saving training",
         description: "Please try again.",
@@ -164,7 +164,7 @@ function EditContainerContent({ user }: { user: User }) {
           });
           break;
         default:
-          console.warn("Unknown targetField for details tab:", targetField);
+          logger.warn("Unknown targetField for details tab:", targetField);
       }
     } else if (activeTab === "modules" && currentModuleId) {
       switch (targetField) {
@@ -201,16 +201,16 @@ function EditContainerContent({ user }: { user: User }) {
               },
             });
           } else {
-            console.warn(
+            logger.warn(
               "Cannot apply character prompt: No character selected."
             );
           }
           break;
         default:
-          console.warn("Unknown targetField for modules tab:", targetField);
+          logger.warn("Unknown targetField for modules tab:", targetField);
       }
     } else {
-      console.warn(
+      logger.warn(
         "Cannot update content: Unknown tab or missing module/character",
         { activeTab, currentModuleId, currentCharacterId }
       );

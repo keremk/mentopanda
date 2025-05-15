@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { unenrollFromTrainingAction } from "@/app/actions/enrollment-actions";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 type UnenrollButtonProps = {
   trainingId?: number;
@@ -65,7 +66,7 @@ export function UnenrollButton({
           "An error occurred while trying to unenroll from the training.",
         variant: "destructive",
       });
-      console.error("Failed to unenroll:", error);
+      logger.error("Failed to unenroll:", error);
     } finally {
       setIsLoading(false);
     }

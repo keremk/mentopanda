@@ -3,6 +3,7 @@ import { createOpenAISession } from "@/app/actions/openai-session";
 import { useRef } from "react";
 import { useTranscript } from "@/contexts/transcript";
 import { useApiKey } from "./use-api-key";
+import { logger } from "@/lib/logger";
 
 export type OpenAIRealtimeProps = {
   instructions: string;
@@ -86,7 +87,7 @@ export function useOpenAIRealtime({
     ) {
       dataChannelRef.current.send(JSON.stringify(eventObj));
     } else {
-      console.error(
+      logger.error(
         "Failed to send message - no data channel available",
         eventObj
       );
@@ -126,7 +127,7 @@ export function useOpenAIRealtime({
       .find((entry) => entry.role === "agent");
 
     if (!mostRecentAgentMessage) {
-      console.warn("can't cancel, no recent assistant message found");
+      logger.warn("can't cancel, no recent assistant message found");
       return;
     }
     if (mostRecentAgentMessage.status === "DONE") {
@@ -215,23 +216,15 @@ export function useOpenAIRealtime({
         }
       }
     } catch (error) {
-      console.error("Failed to parse data channel message:", error);
+      logger.error("Failed to parse data channel message:", error);
     }
   };
 
   const registerHandlers = (dataChannel: RTCDataChannel) => {
     dataChannel.addEventListener("message", handleMessage);
 
-    // dataChannel.addEventListener("open", () => {
-    //   console.log("Data channel opened");
-    // });
-
-    // dataChannel.addEventListener("close", () => {
-    //   console.log("Data channel closed");
-    // });
-
     dataChannel.addEventListener("error", (error) => {
-      console.error("Data channel error:", error);
+      logger.error("Data channel error:", error);
     });
   };
 

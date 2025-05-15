@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
-
+import { logger } from "@/lib/logger";
 const credentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -103,7 +103,7 @@ export async function githubSignIn() {
   });
 
   if (error) {
-    console.error("error", error.message);
+    logger.error("error", error.message);
     return redirect("/login?message=Could not authenticate with GitHub");
   }
 
@@ -121,8 +121,8 @@ export async function googleSignIn() {
     },
   });
 
-  if (error) {
-    console.error("error", error.message);
+  if (error) {  
+    logger.error("error", error.message);
     return redirect("/login?message=Could not authenticate with Google");
   }
 

@@ -5,6 +5,7 @@ import OpenAI, { toFile } from "openai";
 import { createClient } from "@supabase/supabase-js"; // Import Supabase client
 import { getPathFromStorageUrl } from "@/lib/utils"; // Import helper
 import { getAIContextDataForCharacterAction, getAIContextDataForTrainingAction } from "./aicontext-actions";
+import { logger } from "@/lib/logger";
 
 // Define Zod types matching client-side types
 const imageContextTypeSchema = z.enum(["training", "character", "user"]);
@@ -57,13 +58,13 @@ async function getImageFromSupabase(imageUrl: string, bucketName: string) {
     throw new Error("Could not extract path from existing image URL.");
   }
 
-  console.log(`Fetching image from storage: ${bucketName}/${imagePath}`);
+  logger.debug(`Fetching image from storage: ${bucketName}/${imagePath}`);
   const { data: blobData, error: downloadError } = await supabaseAdmin.storage
     .from(bucketName)
     .download(imagePath);
 
   if (downloadError || !blobData) {
-    console.error("Supabase download error:", downloadError);
+    logger.error("Supabase download error:", downloadError);
     throw new Error(
       `Failed to download existing image: ${downloadError?.message ?? "Unknown error"}`
     );
@@ -82,7 +83,7 @@ async function getContextForType(
   contextType: string,
   contextId: string
 ): Promise<string | undefined> {
-  console.log(`Context fetching requested for ${contextType}: ${contextId}`);
+  logger.debug(`Context fetching requested for ${contextType}: ${contextId}`);
   const id = parseInt(contextId); // Parse ID once
 
   switch (contextType) {
@@ -127,7 +128,7 @@ async function constructPrompt(
   if (promptSegments.length > 0) {
     return promptSegments.join("\n\n");
   } else {
-    console.warn(
+    logger.warn(
       "Constructing prompt resulted in no segments. "
     );
     return undefined;
@@ -145,7 +146,7 @@ export async function generateImageAction(
     // 1. Validate input against the updated schema
     const validationResult = generateImageSchema.safeParse(input);
     if (!validationResult.success) {
-      console.error("Invalid input:", validationResult.error.flatten());
+      logger.error("Invalid input:", validationResult.error.flatten());
       return {
         success: false,
         error:
@@ -186,7 +187,7 @@ export async function generateImageAction(
     }
   
     const truncatedPrompt = resolvedPrompt.substring(0, 4000); 
-    console.log("Server-side Final Prompt:", truncatedPrompt);
+    logger.debug("Server-side Final Prompt:", truncatedPrompt);
 
     // 4. Call OpenAI API - Conditionally use edit or generate
     let image_base64: string | undefined;
@@ -206,7 +207,7 @@ export async function generateImageAction(
         });
         image_base64 = response.data?.[0]?.b64_json;
       } catch (toFileError) {
-        console.error("Error processing image blob:", toFileError);
+        logger.error("Error processing image blob:", toFileError);
         return {
           success: false,
           error: `Failed to process image file: ${toFileError instanceof Error ? toFileError.message : "Unknown error"}`,
@@ -216,7 +217,7 @@ export async function generateImageAction(
       // --- Generate New Image Logic ---
       const generateSize =
         aspectRatio === "landscape" ? "1536x1024" : "1024x1024";
-      console.log(`Generating image with dynamic size: ${generateSize}`);
+      logger.debug(`Generating image with dynamic size: ${generateSize}`);
       const response = await openai.images.generate({
         model: "gpt-image-1", // Use gpt-image-1 model as instructed
         prompt: truncatedPrompt,
@@ -228,7 +229,7 @@ export async function generateImageAction(
 
     // 5. Process result
     if (!image_base64) {
-      console.error("OpenAI response missing b64_json"); // Log less verbosely now
+      logger.error("OpenAI response missing b64_json"); // Log less verbosely now
       return {
         success: false,
         error: "Image generation/edit failed: No base64 data returned.",
@@ -238,7 +239,7 @@ export async function generateImageAction(
     // 6. Return base64 data directly
     return { success: true, imageData: image_base64 };
   } catch (error) {
-    console.error("Image generation action error:", error);
+    logger.error("Image generation action error:", error);
     let errorMessage = "An unknown error occurred during image generation.";
     if (error instanceof OpenAI.APIError) {
       errorMessage = `OpenAI Error: ${error.status} ${error.name} ${error.message}`;

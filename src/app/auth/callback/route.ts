@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
       } = await supabase.auth.getUser();
 
       if (getUserError || !user) {
-        console.error(
+        logger.error(
           "Auth Callback: Error getting user after session exchange:",
           getUserError
         );
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
     }
     // --- Log exchange error if it happened ---
     else {
-      console.error(
+      logger.error(
         "Auth Callback: Code exchange error:",
         exchangeError.message
       );
@@ -65,7 +66,7 @@ export async function GET(request: Request) {
   }
   // --- If no code or error occurred ---
   else {
-    console.warn("Auth Callback: No code parameter found in request URL.");
+    logger.warn("Auth Callback: No code parameter found in request URL.");
   }
 
   // return the user to an error page with instructions

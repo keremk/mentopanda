@@ -1,6 +1,6 @@
 // AudioVisualiser.tsx
 import React, { useEffect, useState, RefObject } from "react";
-
+import { logger } from "@/lib/logger";
 interface AudioSetup {
   context: AudioContext;
   source: MediaElementAudioSourceNode;
@@ -20,7 +20,7 @@ function AudioVisualiser({ audioRef }: AudioVisualiserProps) {
   useEffect(() => {
     const audioElement = audioRef.current as ExtendedHTMLAudioElement | null;
     if (!audioElement) {
-      console.error("Analyser: audioRef.current is not set yet.");
+      logger.error("Analyser: audioRef.current is not set yet.");
       return;
     }
 
@@ -31,13 +31,13 @@ function AudioVisualiser({ audioRef }: AudioVisualiserProps) {
 
     const setupAnalyser = async () => {
       if (!audioElement) {
-        console.error("Analyser: audioElement is null");
+        logger.error("Analyser: audioElement is null");
         return;
       }
 
       const stream = audioElement.srcObject as MediaStream | null;
       if (!stream) {
-        console.warn("No MediaStream found on audio element.");
+        logger.warn("No MediaStream found on audio element.");
         return;
       }
 
@@ -55,7 +55,7 @@ function AudioVisualiser({ audioRef }: AudioVisualiserProps) {
 
       const update = () => {
         if (!analyser) {
-          console.error("Analyser: analyser is null");
+          logger.error("Analyser: analyser is null");
           return;
         }
         analyser.getFloatTimeDomainData(dataArray);

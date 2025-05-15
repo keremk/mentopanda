@@ -28,7 +28,7 @@ import { useOpenAIRealtime } from "@/hooks/use-openai-realtime";
 import { useTranscript } from "@/contexts/transcript";
 import { toast } from "@/hooks/use-toast";
 import { TranscriptProvider } from "@/contexts/transcript";
-
+import { logger } from "@/lib/logger";
 type ChatProps = {
   module: Module;
   currentUser: User;
@@ -123,7 +123,7 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
       try {
         await connect(micStream);
       } catch (error) {
-        console.log("Failed to connect to OpenAI:", error);
+        logger.error(`Failed to connect to OpenAI: ${error}`);
         toast({
           title: `Failed to connect to OpenAI, make sure your API key is correct or you have enough credits`,
           description: "Please try again.",
@@ -180,7 +180,7 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
         router.push(`/assessments/${historyEntryId}`);
       }
     } catch (error) {
-      console.error("Failed to save and complete:", error);
+      logger.error(`Failed to save and complete: ${error}`);
       toast({
         title: "Failed to save and complete",
         description: "Please try again.",

@@ -16,6 +16,8 @@ import { Resend } from "resend";
 import InviteEmail from "@/emails/invite-email";
 import React from "react";
 import { startTrialAction } from "./user-actions";
+import { logger } from "@/lib/logger";
+
 const createInvitationSchema = z.object({
   inviteeEmail: z.string().email(),
 });
@@ -42,7 +44,7 @@ export async function createInvitationAction(
     const emailTemplate = getInviteEmailTemplate(invitation, isPromoInvitation);
     await sendInviteEmailAction(invitation, subject, emailTemplate);
   } catch (error) {
-    console.error("Failed to create invitation", error);
+    logger.error("Failed to create invitation", error);  
     if (invitation) {
       await deleteInvitation(supabase, invitation.id);
     }
@@ -123,16 +125,16 @@ async function sendInviteEmailAction(
     react: emailTemplate,
   });
 
-  console.log("data", data);
-  console.log("error", error);
+  logger.debug("data", data);  
+  logger.debug("error", error);
 
   if (error) {
-    console.error(`Failed to send invite email: ${error}`);
+    logger.error(`Failed to send invite email: ${error}`);
     throw new Error(`Failed to send invite email: ${error}`);
   }
 
   if (!data || !data.id) {
-    console.error("Failed to send invite email with a valid trackingid");
+    logger.error("Failed to send invite email with a valid trackingid");
     throw new Error("Failed to send invite email");
   }
 

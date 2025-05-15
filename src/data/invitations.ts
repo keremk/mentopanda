@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
 import { getUserId, UserRole, User, getCurrentUserInfo } from "./user";
+import { logger } from "@/lib/logger";
 
 export type Invitation = {
   id: number;
@@ -151,7 +152,7 @@ export async function acceptInvitation(
 ): Promise<boolean> {
   const userId = await getUserId(supabase);
 
-  console.log(`Accepting invitation ${invitationId} for user ${userId}`);
+  logger.debug(`Accepting invitation ${invitationId} for user ${userId}`);
   const { data, error } = await supabase.rpc("accept_invitation", {
     invitation_id: invitationId,
     user_id: userId,

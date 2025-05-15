@@ -23,6 +23,7 @@ import {
   deleteCharacterAction,
 } from "@/app/actions/character-actions";
 import { getInitials } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 type CharacterListProps = {
   characters: CharacterSummary[];
@@ -68,7 +69,6 @@ export function CharacterList({
 
   // Auto-select first character if none is selected and we're on the main characters page
   useEffect(() => {
-    console.log("[CharacterList] Auto-select useEffect running."); // Log for this effect
     if (
       characters.length > 0 &&
       !currentCharId &&
@@ -82,7 +82,6 @@ export function CharacterList({
 
   // Reset the redirect flag when navigating away from characters page
   useEffect(() => {
-    console.log("[CharacterList] Reset redirect flag useEffect running."); // Log for this effect
     if (pathname !== "/characters") {
       hasRedirectedRef.current = false;
     }
@@ -101,7 +100,7 @@ export function CharacterList({
       router.push(`/characters/${result.data?.id}/edit`);
     } else {
       // TODO: Show error toast
-      console.error("Failed to create character:", result.error);
+      logger.error("Failed to create character:", result.error);
     }
   }
 
@@ -116,7 +115,7 @@ export function CharacterList({
       router.replace("/characters");
     } else {
       // TODO: Show error toast
-      console.error("Failed to delete character:", result.error);
+      logger.error("Failed to delete character:", result.error);
     }
   }
 

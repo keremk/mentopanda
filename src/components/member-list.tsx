@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { logger } from "@/lib/logger";
 
 type MemberListProps = {
   members: ProjectMember[];
@@ -64,7 +65,7 @@ export function MemberList({ members, canManageMembers }: MemberListProps) {
       setNewMemberEmail("");
       createDialogCloseRef.current?.click();
     } catch (error) {
-      console.error(`Failed to send invitation: ${error}`);
+      logger.error(`Failed to send invitation: ${error}`);
       toast({
         title: "Error",
         description: "Failed to send invitation, please try again",

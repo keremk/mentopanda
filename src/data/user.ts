@@ -1,5 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
+import { logger } from "@/lib/logger";
+
 export type PricingPlan = "free" | "pro" | "team" | "enterprise";
 
 export type AppPermission =
@@ -132,7 +134,7 @@ export async function updateCurrentProject(
     .update({
       current_project_id: projectId,
     })
-    .eq("id", userId)
+    .eq("id", userId) 
     .select()
     .single();
 
@@ -195,13 +197,13 @@ export async function hasPermission({
     });
 
     if (error) {
-      console.error(`Permission check error: ${error.message}`);
+      logger.error(`Permission check error: ${error.message}`);
       return false;
     }
 
     return !!hasPermission;
   } catch (error) {
-    console.error("Permission check failed:", error);
+    logger.error("Permission check failed:", error);
     return false;
   }
 }

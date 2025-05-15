@@ -7,6 +7,7 @@ import React, {
   PropsWithChildren,
 } from "react";
 import { TranscriptEntry } from "@/types/chat-types";
+import { logger } from "@/lib/logger";
 
 type TranscriptContextValue = {
   transcriptEntries: TranscriptEntry[];
@@ -54,7 +55,7 @@ export const TranscriptProvider = ({ children }: PropsWithChildren) => {
   ) => {
     setTranscriptEntries((prev) => {
       if (prev.some((log) => log.id === entryId)) {
-        console.warn(
+        logger.warn(
           `[addTranscriptMessage] skipping; message already exists for entryId=${entryId}, role=${role}, text=${text}`
         );
         return prev;

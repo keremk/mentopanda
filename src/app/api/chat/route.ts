@@ -14,6 +14,7 @@ import {
 } from "@/app/actions/aicontext-actions";
 import { TrainingContextData } from "@/data/ai-context";
 import { CharacterContextForAI } from "@/data/characters";
+import { logger } from "@/lib/logger";
 
 const generateMetaCharacterPrompts = (
   selectedOption: SelectedOption,
@@ -177,29 +178,29 @@ export async function POST(req: Request) {
     });
   }
 
-  console.log(JSON.stringify(messages, null, 2));
-  console.log(JSON.stringify(systemPrompt, null, 2));
+  logger.debug(`Messages:`, JSON.stringify(messages, null, 2));
+  logger.debug(`System Prompt:`, JSON.stringify(systemPrompt, null, 2));
 
   const result = await streamText({
     model: openai.chat("gpt-4o"),
     system: systemPrompt,
     messages,
     temperature: 0.3,
-    onError: (error) => {
-      console.error(error);
+    onError: (error) => { 
+      logger.error(`Stream error: ${error}`);  
     },
     onFinish: (result) => {
       const usage = result.usage;
-      console.log(usage.totalTokens);
-      console.log(usage.promptTokens);
-      console.log(usage.completionTokens);
-      // console.log(JSON.stringify(result, null, 2));
+      logger.debug(`Usage:`, usage.totalTokens);
+      logger.debug(`Usage:`, usage.promptTokens);
+      logger.debug(`Usage:`, usage.completionTokens);
+      logger.debug(`Result:`, JSON.stringify(result, null, 2));
     },
   });
 
   return result.toDataStreamResponse({
     getErrorMessage: (error: unknown) => {
-      console.error("Stream error:", error);
+      logger.error(`Stream error: ${error}`);
       return `${error}`;
     },
   });

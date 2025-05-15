@@ -124,8 +124,6 @@ export async function getTrainingByIdForEdit(
     handleError(trainingError);
   }
 
-  // console.log(JSON.stringify(training, null, 2));
-
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const trainingEdit: TrainingEdit = {
     id: training.id,
@@ -165,7 +163,6 @@ export async function getTrainingByIdForEdit(
   };
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
-  // console.log(JSON.stringify(trainingEdit, null, 2));
   return trainingEdit;
 }
 

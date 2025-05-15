@@ -20,7 +20,7 @@ import {
   insertModuleCharacterAction,
 } from "@/app/actions/modules-characters-actions";
 import { ModuleCharacter } from "@/data/modules";
-
+import { logger } from "@/lib/logger";
 export function EditModuleCharacter() {
   const { toast } = useToast();
   const { state, dispatch, getModuleById } = useTrainingEdit();
@@ -52,7 +52,7 @@ export function EditModuleCharacter() {
     );
 
     if (!newCharacterSummary) {
-      console.error("Selected character not found in available list");
+      logger.error("Selected character not found in available list");
       toast({
         title: "Error selecting character",
         description: "Character not found.",
@@ -91,7 +91,7 @@ export function EditModuleCharacter() {
 
       toast({ title: "Character assigned" });
     } catch (error) {
-      console.error("Error assigning character:", error);
+      logger.error("Error assigning character:", error);
       toast({
         title: "Error assigning character",
         description: "Please try again.",

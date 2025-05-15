@@ -2,6 +2,7 @@ import { streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { getModuleByIdAction2 } from "@/app/actions/moduleActions";
 import { getHistoryEntryAction } from "@/app/actions/history-actions";
+import { logger } from "@/lib/logger";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   const finalApiKey = apiKey || process.env.OPENAI_API_KEY;
 
   if (!finalApiKey) {
-    console.error("No API key provided");
+    logger.error("No API key provided");
     return new Response(JSON.stringify({ error: "No API key provided" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
@@ -29,14 +30,14 @@ export async function POST(req: Request) {
   ]);
 
   if (!module) {
-    console.error(`Module not found for moduleId: ${moduleId}`);
+    logger.error(`Module not found for moduleId: ${moduleId}`);
     return new Response(JSON.stringify({ error: "Module not found" }), {
       status: 404,
       headers: { "Content-Type": "application/json" },
     });
   }
   if (!historyEntry) {
-    console.error(`History entry not found for entryId: ${entryId}`);
+    logger.error(`History entry not found for entryId: ${entryId}`);
     return new Response(JSON.stringify({ error: "History entry not found" }), {
       status: 404,
       headers: { "Content-Type": "application/json" },

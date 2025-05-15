@@ -21,7 +21,7 @@ import {
 } from "@/app/actions/moduleActions";
 import { updateModuleCharacterPromptAction } from "@/app/actions/modules-characters-actions";
 import { AI_MODELS } from "@/types/models";
-
+import { logger } from "@/lib/logger";
 // --- State Definition ---
 
 type SaveStatus = "idle" | "saving" | "error" | "saved";
@@ -390,7 +390,7 @@ export function TrainingEditProvider({
     async (title: string): Promise<void> => {
       const currentTraining = state.training;
       if (!currentTraining) {
-        console.error("Cannot add module: training data not loaded.");
+        logger.error("Cannot add module: training data not loaded.");
         throw new Error("Training data not available.");
       }
       try {
@@ -408,7 +408,7 @@ export function TrainingEditProvider({
         });
         dispatch({ type: "ADD_MODULE", payload: newModule });
       } catch (error) {
-        console.error("Failed to add module:", error);
+        logger.error(`Failed to add module: ${error}`);
         throw error;
       }
     },
@@ -420,14 +420,14 @@ export function TrainingEditProvider({
     async (moduleId: number): Promise<void> => {
       const currentTraining = state.training;
       if (!currentTraining) {
-        console.error("Cannot delete module: training data not loaded.");
+        logger.error("Cannot delete module: training data not loaded.");
         throw new Error("Training data not available.");
       }
       try {
         await deleteModuleAction(moduleId, currentTraining.id);
         dispatch({ type: "DELETE_MODULE", payload: { moduleId } });
       } catch (error) {
-        console.error("Failed to delete module:", error);
+        logger.error(`Failed to delete module: ${error}`);
         throw error;
       }
     },
@@ -437,11 +437,11 @@ export function TrainingEditProvider({
   // --- Auto-Save Logic ---
   const performSave = useCallback(async () => {
     if (state.isSaving || savePromiseRef.current) {
-      console.log("Auto-save skipped: Already saving.");
+      logger.debug("Auto-save skipped: Already saving.");
       return;
     }
     if (!state.userModified || !state.lastSavedState) {
-      console.log(
+      logger.debug(
         "Auto-save skipped: No modifications detected since last save."
       );
       if (state.saveStatus !== "saved") {
@@ -458,7 +458,7 @@ export function TrainingEditProvider({
       : null;
 
     if (!lastSaved) {
-      console.error("Auto-save error: Last saved state is missing.");
+      logger.error("Auto-save error: Last saved state is missing.");
       dispatch({ type: "SAVE_ERROR" });
       return;
     }
@@ -477,7 +477,6 @@ export function TrainingEditProvider({
       (field) => currentState[field] !== lastSaved[field]
     );
     if (trainingChanged) {
-      console.log("Auto-saving Training Details...");
       saveOperations.push(
         updateTrainingAction({
           id: currentState.id,
@@ -499,7 +498,7 @@ export function TrainingEditProvider({
       );
 
       if (!lastSavedModuleIds.has(currentModule.id)) {
-        console.log(
+        logger.debug(
           `Module ${currentModule.id} identified as potentially new or modified shortly after add.`
         );
       }
@@ -542,7 +541,7 @@ export function TrainingEditProvider({
         if (modulePropsChanged || modulePromptBaseChanged || characterChanged) {
           // If module properties or base prompt properties changed, use the main update action
           if (modulePropsChanged || modulePromptBaseChanged) {
-            console.log(
+            logger.debug(
               `Auto-saving Module ${currentModule.id} Details (Props or Base Prompt change detected)...`
             );
             saveOperations.push(
@@ -567,7 +566,7 @@ export function TrainingEditProvider({
           else if (characterChanged) {
             if (currentCharacter) {
               // Ensure character exists to update
-              console.log(
+              logger.debug(
                 `Auto-saving Character Prompt for Module ${currentModule.id}, Character ${currentCharacter.id}...`
               );
               saveOperations.push(
@@ -579,7 +578,7 @@ export function TrainingEditProvider({
               );
             } else {
               // This might occur if a character was selected then immediately removed before save?
-              console.warn(
+              logger.warn(
                 `Character prompt changed for module ${currentModule.id}, but currentCharacter is null/undefined.`
               );
             }
@@ -592,13 +591,13 @@ export function TrainingEditProvider({
             characterChanged &&
             currentCharacter
           ) {
-            console.log(
+            logger.debug(
               `Character prompt specifically changed for Module ${currentModule.id}, Character ${currentCharacter.id}. Handled by specific action.`
             );
           }
         }
       } else if (lastSavedModuleIds.has(currentModule.id)) {
-        console.warn(
+        logger.warn(
           `Module ${currentModule.id} found in current state but not in lastSavedState array. Attempting save.`
         );
         saveOperations.push(
@@ -615,7 +614,7 @@ export function TrainingEditProvider({
     });
 
     if (saveOperations.length === 0 && state.userModified) {
-      console.log(
+      logger.debug(
         "Auto-save: No specific property changes detected, but userModified was true (likely due to add/delete/reorder). Finalizing save state."
       );
       dispatch({
@@ -624,7 +623,7 @@ export function TrainingEditProvider({
       });
       return;
     } else if (saveOperations.length === 0 && !state.userModified) {
-      console.log(
+      logger.debug(
         "Auto-save: No specific changes detected and userModified is false."
       );
       dispatch({ type: "RESET_MODIFIED_FLAG" });
@@ -634,13 +633,13 @@ export function TrainingEditProvider({
     try {
       savePromiseRef.current = Promise.all(saveOperations);
       await savePromiseRef.current;
-      console.log("Auto-save successful for detected changes.");
+      logger.debug("Auto-save successful for detected changes.");
       dispatch({
         type: "SAVE_SUCCESS",
         payload: { savedState: structuredClone(currentState) },
       });
     } catch (error) {
-      console.error("Auto-save failed:", error);
+      logger.error(`Auto-save failed: ${error}`);
       dispatch({ type: "SAVE_ERROR" });
     } finally {
       savePromiseRef.current = null;
@@ -660,12 +659,12 @@ export function TrainingEditProvider({
       JSON.stringify(prevDebouncedStateRef.current);
 
     if (hasDebouncedStateChanged && state.userModified) {
-      console.log(
+      logger.debug(
         "Debounced state changed and user modified, triggering auto-save check."
       );
       performSave();
     } else if (hasDebouncedStateChanged) {
-      console.log(
+      logger.debug(
         "Debounced state changed, but userModified is false. Skipping save trigger."
       );
     }
@@ -684,11 +683,11 @@ export function TrainingEditProvider({
   const saveNow = useCallback(async (): Promise<boolean> => {
     if (savePromiseRef.current) {
       try {
-        console.log("SaveNow: Waiting for ongoing auto-save...");
+        logger.debug("SaveNow: Waiting for ongoing auto-save...");
         await savePromiseRef.current;
-        console.log("SaveNow: Ongoing auto-save finished.");
+        logger.debug("SaveNow: Ongoing auto-save finished.");
       } catch (e) {
-        console.warn("SaveNow: Ongoing auto-save finished with error.", e);
+        logger.error(`SaveNow: Ongoing auto-save finished with error. ${e}`);
       }
     }
     if (
@@ -696,17 +695,17 @@ export function TrainingEditProvider({
       !state.isSaving &&
       state.saveStatus !== "error"
     ) {
-      console.log(
+      logger.debug(
         "SaveNow: No modifications or ongoing save, and no error state."
       );
       return true;
     }
 
-    console.log("SaveNow: Performing explicit save...");
+    logger.debug("SaveNow: Performing explicit save...");
     await performSave();
 
     const success = !savePromiseRef.current && state.saveStatus !== "error";
-    console.log(
+    logger.debug(
       `SaveNow finished. Success: ${success}, Status: ${state.saveStatus}`
     );
     return success;

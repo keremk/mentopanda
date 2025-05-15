@@ -11,6 +11,7 @@ import {
 import { useDebounce } from "@/hooks/use-debounce";
 import { CharacterDetails, UpdateCharacterInput } from "@/data/characters";
 import { updateCharacterAction } from "@/app/actions/character-actions";
+import { logger } from "@/lib/logger";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -69,7 +70,7 @@ export function CharacterDetailsProvider({
       setTimeout(() => setSaveStatus("idle"), 2000);
       return true;
     } catch (error) {
-      console.error("Error saving character:", error);
+      logger.error("Error saving character:", error);
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 3000);
       return false;

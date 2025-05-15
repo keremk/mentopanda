@@ -15,7 +15,7 @@ import type { CharacterDetails } from "@/data/characters";
 import { VOICES, AI_MODELS } from "@/types/models";
 import { getInitials } from "@/lib/utils";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
-
+import { logger } from "@/lib/logger";
 type CharacterDetailsViewProps = {
   character: CharacterDetails;
 };
@@ -48,7 +48,7 @@ export function CharacterDetailsView({ character }: CharacterDetailsViewProps) {
         setIsPlaying(true);
         return;
       } catch (error) {
-        console.error(`Error resuming ${character.voice} sample:`, error);
+        logger.error(`Error resuming ${character.voice} sample:`, error);
       }
     }
 
@@ -56,7 +56,7 @@ export function CharacterDetailsView({ character }: CharacterDetailsViewProps) {
     const voiceData = VOICES[aiModel]?.find((v) => v.name === character.voice);
 
     if (!voiceData?.sampleUrl) {
-      console.warn(`No sample URL for voice: ${character.voice}`);
+      logger.warn(`No sample URL for voice: ${character.voice}`);
       return;
     }
 
@@ -66,7 +66,7 @@ export function CharacterDetailsView({ character }: CharacterDetailsViewProps) {
         setIsPlaying(false);
       });
       newAudio.addEventListener("error", (e) => {
-        console.error(`Error playing ${character.voice} sample:`, e);
+        logger.error(`Error playing ${character.voice} sample:`, e);
         setIsPlaying(false);
         setAudio(null);
       });
@@ -75,7 +75,7 @@ export function CharacterDetailsView({ character }: CharacterDetailsViewProps) {
       await newAudio.play();
       setIsPlaying(true);
     } catch (error) {
-      console.error(
+      logger.error(
         `Error initializing or playing ${character.voice} sample:`,
         error
       );

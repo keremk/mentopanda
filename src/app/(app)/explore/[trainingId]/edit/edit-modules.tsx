@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ModuleList } from "@/components/module-list";
 import { EditModuleForm } from "./edit-module-form";
 import { useTrainingEdit } from "@/contexts/training-edit-context";
-
+import { logger } from "@/lib/logger";
 type Props = {
   moduleTab?: string;
   onModuleTabChange?: (value: string) => void;
@@ -51,7 +51,7 @@ export function EditModules({
         // No dispatch needed here, context handles it internally
         // No URL update needed here, effect handles it
       } catch (error) {
-        console.error("Error adding module via context:", error);
+        logger.error("Error adding module via context:", error);
         // Optionally show a user-facing error
       }
     },
@@ -68,7 +68,7 @@ export function EditModules({
         // No manual URL update needed here, effect handles it
         return true;
       } catch (error) {
-        console.error("Error deleting module via context:", error);
+        logger.error("Error deleting module via context:", error);
         // Optionally show a user-facing error
         return false;
       }
@@ -127,18 +127,11 @@ export function EditModules({
 
   // Keyboard shortcut for collapsing/expanding the module list (Opt+B / Alt+B)
   useEffect(() => {
-    console.log("Setting up keydown listener for Opt+B...");
     function handleKeyDown(event: KeyboardEvent) {
-      console.log("[EditModules] Keydown event:", {
-        altKey: event.altKey,
-        key: event.key,
-        code: event.code,
-      });
       if (
         event.altKey &&
         (event.key === "b" || event.key === "B" || event.code === "KeyB")
       ) {
-        console.log("[EditModules] Opt+B detected, toggling collapse.");
         event.preventDefault();
         setIsCollapsed((prev) => !prev);
       }
@@ -146,7 +139,6 @@ export function EditModules({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
-      console.log("Cleaning up keydown listener for Opt+B.");
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []); // Empty dependency array means this effect runs once on mount and cleans up on unmount

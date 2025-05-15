@@ -17,7 +17,7 @@ import {
 } from "@/components/dropzone";
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import { createClient } from "@/utils/supabase/client";
-
+import { logger } from "@/lib/logger";
 type ImageUploadButtonProps = {
   onUploadComplete: (url: string, path: string) => Promise<void>;
   bucket: string;
@@ -94,7 +94,7 @@ export function ImageUploadButton({
           try {
             const uploadedPath = successes[0]?.uploadedPath;
             if (!uploadedPath) {
-              console.error(
+              logger.error(
                 "Could not determine uploaded path after successful upload."
               );
               setErrors([
@@ -108,11 +108,8 @@ export function ImageUploadButton({
 
             const filePath = uploadedPath;
 
-            console.log(
-              "Attempting getPublicUrl with bucket:",
-              bucket,
-              "and filePath:",
-              filePath
+            logger.debug(
+              `Attempting getPublicUrl with bucket: ${bucket} and filePath: ${filePath}`
             );
             const { data } = supabase.storage
               .from(bucket)
@@ -124,9 +121,8 @@ export function ImageUploadButton({
               setFiles([]);
               setErrors([]);
             } else {
-              console.error(
-                "Failed to get public URL (no data returned) for path:",
-                filePath
+              logger.error(
+                `Failed to get public URL (no data returned) for path: ${filePath}`
               );
               setErrors([
                 {
@@ -135,8 +131,10 @@ export function ImageUploadButton({
                 },
               ]);
             }
-          } catch (error) {
-            console.error("Error calling onUploadComplete callback:", error);
+          } catch (error) { 
+            logger.error(
+              `Error calling onUploadComplete callback: ${error}`
+            );
             const errorPath = successes[0]?.uploadedPath ?? "upload";
             setErrors([
               {

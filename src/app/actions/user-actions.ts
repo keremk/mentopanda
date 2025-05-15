@@ -10,6 +10,7 @@ import {
 import { z } from "zod";
 import { cache } from "react";
 import { Invitation } from "@/data/invitations";
+import { logger } from "@/lib/logger";
 
 const updateProfileSchema = z.object({
   displayName: z.string().min(2).max(50),
@@ -55,6 +56,7 @@ export async function updateProfileAction(data: { displayName: string }) {
 
     return { success: true, data: updatedUser };
   } catch (error) {
+    logger.error("Error updating profile:", error);
     if (error instanceof z.ZodError) {
       return { success: false, error: "Invalid input data" };
     }
@@ -72,6 +74,7 @@ export async function updateAvatarAction(data: { avatarUrl: string }) {
 
     return { success: true, data: updatedUser };
   } catch (error) {
+    logger.error("Error updating avatar:", error);
     if (error instanceof z.ZodError) {
       return { success: false, error: "Invalid avatar URL" };
     }
@@ -109,7 +112,7 @@ export async function updatePasswordAction(formData: FormData) {
 
   if (!validated.success) {
     // Log detailed validation errors server-side if needed
-    // console.error("Password validation failed:", validated.error.flatten());
+    logger.error("Password validation failed:", validated.error.flatten());
     // Return a generic error or specific field errors
     return {
       success: false,
@@ -131,13 +134,14 @@ export async function updatePasswordAction(formData: FormData) {
   } = await supabase.auth.getUser();
 
   if (getUserError || !user) {
-    console.error("Get User Error:", getUserError);
+    logger.error("Get User Error:", getUserError);
     return { success: false, error: "Authentication error. Please sign in." };
   }
 
   // Check provider - this check should ideally prevent calling the action
   // but double-check here for safety.
   if (user.app_metadata?.provider && user.app_metadata.provider !== "email") {
+    logger.error("Cannot update password for OAuth users.");
     return { success: false, error: "Cannot update password for OAuth users." };
   }
 
@@ -147,7 +151,7 @@ export async function updatePasswordAction(formData: FormData) {
   });
 
   if (updateError) {
-    console.error("Update Password Error:", updateError.message);
+    logger.error("Update Password Error:", updateError.message);
     return {
       success: false,
       error: `Failed to update password: ${updateError.message}`,
@@ -156,7 +160,4 @@ export async function updatePasswordAction(formData: FormData) {
 
   // Indicate success - client will handle redirect or message
   return { success: true };
-  // Optionally redirect server-side:
-  // redirect("/login?message=Password updated successfully. Please sign in.");
 }
-// --- End New Action ---

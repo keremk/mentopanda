@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { User } from "@/data/user";
 import { Invitation } from "@/data/invitations";
 import { acceptInvitationAction } from "@/app/actions/invitation-actions";
-
+import { logger } from "@/lib/logger";
 export type OnboardingData = {
   projectName: string;
   copyStarterContent: boolean;
@@ -43,7 +43,7 @@ type OnboardingFlowProps = {
 export function OnboardingFlow({ user, invitations }: OnboardingFlowProps) {
   const isTrialUser =
     invitations && invitations.length > 0 && invitations[0].isTrial;
-  console.log(
+  logger.debug(
     `Invitations: ${JSON.stringify(invitations)}, isTrial: ${isTrialUser}`
   );
 
@@ -62,7 +62,7 @@ export function OnboardingFlow({ user, invitations }: OnboardingFlowProps) {
   // Set isApiKeyEntered to true for trial users
   useEffect(() => {
     if (isTrialUser) {
-      console.log("Setting isApiKeyEntered to true");
+      logger.debug("Setting isApiKeyEntered to true");
       setData((prev) => ({ ...prev, isApiKeyEntered: true }));
     }
   }, [isTrialUser]);
@@ -131,7 +131,7 @@ export function OnboardingFlow({ user, invitations }: OnboardingFlowProps) {
 
       router.push("/home");
     } catch (error) {
-      console.log("Setup failed:", error);
+      logger.error("Setup failed:", error);
       toast({
         title: "Setup failed",
         description: `Error: ${error}`,

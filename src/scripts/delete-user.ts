@@ -4,6 +4,7 @@ import { join, dirname } from "path";
 import fs from "fs/promises";
 import * as readline from "node:readline/promises"; // Import readline for interactive prompt
 import { stdin as input, stdout as output } from "node:process"; // Import streams for readline
+import { logger } from "@/lib/logger";
 
 // Load environment variables from .env.local
 dotenv.config({ path: join(process.cwd(), ".env.local") });
@@ -12,7 +13,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
-  console.error(
+  logger.error(
     "Error: Missing environment variables NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY"
   );
   process.exit(1);
@@ -189,13 +190,13 @@ async function findUser(identifier: string): Promise<User> {
     );
 
   if (isUUID) {
-    console.log(`Searching for user by UUID: ${identifier}...`);
+    logger.info(`Searching for user by UUID: ${identifier}...`);
     const { data, error } = await supabase.auth.admin.getUserById(identifier);
     if (error) throw new Error(`Error fetching user by ID: ${error.message}`);
     if (!data?.user) throw new Error(`User with UUID ${identifier} not found.`);
     user = data.user;
   } else {
-    console.log(`Searching for user by email: ${identifier}...`);
+    logger.info(`Searching for user by email: ${identifier}...`);
     // Listing users might be necessary if direct lookup fails or isn't available for email in admin context easily.
     // Note: This can be slow for large user bases.
     const { data, error } = await supabase.auth.admin.listUsers({
@@ -211,7 +212,7 @@ async function findUser(identifier: string): Promise<User> {
     if (!user) throw new Error(`User with email ${identifier} not found.`);
   }
 
-  console.log(`User found: ${user.email} (ID: ${user.id})`);
+  logger.info(`User found: ${user.email} (ID: ${user.id})`);
   return user;
 }
 
@@ -225,7 +226,7 @@ async function fetchAllUserData(
   userId: string,
   userEmail: string
 ): Promise<UserData> {
-  console.log(`Fetching all data for user ID: ${userId}...`);
+  logger.info(`Fetching all data for user ID: ${userId}...`);
   const userData: UserData = {
     user: null,
     profile: null,
@@ -243,7 +244,7 @@ async function fetchAllUserData(
   const { data: userRes, error: userErr } =
     await supabase.auth.admin.getUserById(userId);
   if (userErr)
-    console.error(
+    logger.error(
       `Warning: Could not re-fetch user details: ${userErr.message}`
     );
   userData.user = userRes?.user ?? null;
@@ -255,7 +256,7 @@ async function fetchAllUserData(
     .single();
   if (profileError && profileError.code !== "PGRST116") {
     // Ignore 'not found' error, could happen if cascade deleted early
-    console.error(`Warning: Error fetching profile: ${profileError.message}`);
+    logger.error(`Warning: Error fetching profile: ${profileError.message}`);
   }
   userData.profile = profileData;
 
@@ -264,8 +265,8 @@ async function fetchAllUserData(
     .from("projects")
     .select("*")
     .eq("created_by", userId);
-  if (projectsError)
-    console.error(
+  if (projectsError)  
+    logger.error(
       `Warning: Error fetching created projects: ${projectsError.message}`
     );
   userData.projectsCreated = projectsData || [];
@@ -286,7 +287,7 @@ async function fetchAllUserData(
       .neq("profile_id", userId); // Exclude the owner
 
     if (membersError) {
-      console.error(
+      logger.error(
         `Warning: Error fetching memberships for project ${project.id}: ${membersError.message}`
       );
       projectMembershipsMap.set(project.id, []);
@@ -315,7 +316,7 @@ async function fetchAllUserData(
     // but let's assume direct array return for now based on function definition.
 
     if (usersError) {
-      console.error(
+      logger.error(
         `Warning: Error fetching member user details via RPC: ${usersError.message}`
       );
     } else {
@@ -325,7 +326,7 @@ async function fetchAllUserData(
           usersData.map((u) => [u.id, { id: u.id, email: u.email }])
         );
       } else {
-        console.error(
+        logger.error(
           `Warning: Unexpected data format received from RPC get_user_emails_by_ids:`,
           usersData
         );
@@ -355,21 +356,21 @@ async function fetchAllUserData(
     .select("*")
     .eq("created_by", userId);
   if (trainingsError)
-    console.error(
+    logger.error(  
       `Warning: Error fetching created trainings: ${trainingsError.message}`
     );
   userData.trainingsCreated = trainingsData || [];
 
   // Fetch Modules and ModuleCharacterLinks for each created training
   for (const training of userData.trainingsCreated) {
-    console.log(`Fetching modules for training ID: ${training.id}...`);
+    logger.info(`Fetching modules for training ID: ${training.id}...`);
     const { data: modulesData, error: modulesError } = await supabase
       .from("modules")
       .select("*")
       .eq("training_id", training.id);
 
     if (modulesError) {
-      console.error(
+      logger.error(
         `Warning: Error fetching modules for training ${training.id}: ${modulesError.message}`
       );
       training.modules = []; // Ensure modules property exists even if fetch fails
@@ -380,7 +381,7 @@ async function fetchAllUserData(
 
     // Fetch character links for each module
     for (const moduleItem of modules) {
-      console.log(
+      logger.info(
         `Fetching character links for module ID: ${moduleItem.id}...`
       );
       const { data: linksData, error: linksError } = await supabase
@@ -390,7 +391,7 @@ async function fetchAllUserData(
         .eq("module_id", moduleItem.id);
 
       if (linksError) {
-        console.error(
+        logger.error(
           `Warning: Error fetching module_characters for module ${moduleItem.id}: ${linksError.message}`
         );
         moduleItem.module_character_links = []; // Ensure property exists
@@ -408,7 +409,7 @@ async function fetchAllUserData(
     .select("*")
     .eq("created_by", userId);
   if (charactersError)
-    console.error(
+    logger.error(
       `Warning: Error fetching created characters: ${charactersError.message}`
     );
   userData.charactersCreated = charactersData || [];
@@ -424,7 +425,7 @@ async function fetchAllUserData(
       `(${userData.projectsCreated.map((p) => p.id).join(",") || "null"})`
     ); // Exclude memberships in own projects
   if (membershipsError)
-    console.error(
+    logger.error(
       `Warning: Error fetching project memberships: ${membershipsError.message}`
     );
   userData.projectMemberships = membershipsData || [];
@@ -434,7 +435,7 @@ async function fetchAllUserData(
     .select("*, trainings(title)")
     .eq("user_id", userId);
   if (enrollmentsError)
-    console.error(
+    logger.error(
       `Warning: Error fetching enrollments: ${enrollmentsError.message}`
     );
   userData.enrollments = enrollmentsData || [];
@@ -444,7 +445,7 @@ async function fetchAllUserData(
     .select("*, modules(title)")
     .eq("user_id", userId);
   if (historyError)
-    console.error(`Warning: Error fetching history: ${historyError.message}`);
+    logger.error(`Warning: Error fetching history: ${historyError.message}`);
   userData.history = historyData || [];
 
   // Fetch invitations (sent by user OR sent to user)
@@ -453,12 +454,12 @@ async function fetchAllUserData(
     .select("*")
     .or(`inviter_id.eq.${userId},invitee_email.eq.${userEmail}`);
   if (invitationsError)
-    console.error(
+    logger.error(
       `Warning: Error fetching invitations: ${invitationsError.message}`
     );
   userData.invitations = invitationsData || [];
 
-  console.log("Finished fetching user data.");
+  logger.info("Finished fetching user data.");
   return userData;
 }
 
@@ -475,16 +476,16 @@ async function saveUserData(
 ): Promise<string> {
   try {
     const filePath = join(outputDir, `user-data-${userId}-${Date.now()}.json`);
-    console.log(`Saving user data to ${filePath}...`);
+    logger.info(`Saving user data to ${filePath}...`);
     await fs.mkdir(dirname(filePath), { recursive: true });
     await fs.writeFile(filePath, JSON.stringify(userData, null, 2));
-    console.log(`User data successfully saved to ${filePath}`);
+    logger.info(`User data successfully saved to ${filePath}`);
     return filePath;
   } catch (error: unknown) {
     // Use unknown instead of any
     let message = "Unknown error";
     if (error instanceof Error) message = error.message;
-    console.error(`Error saving user data: ${message}`);
+    logger.error(`Error saving user data: ${message}`);
     throw error; // Re-throw to stop execution if saving fails
   }
 }
@@ -495,73 +496,70 @@ async function saveUserData(
  * @param filePath Path to the saved JSON file.
  */
 function displayDeletionPlan(userData: UserData, filePath: string): void {
-  console.log("\n--- GDPR User Deletion Plan ---");
-  console.log(
+  logger.info("\n--- GDPR User Deletion Plan ---");
+  logger.info(
     `Data for user ${userData.user?.email} (ID: ${userData.user?.id}) has been exported to:`
   );
-  console.log(filePath);
-  console.log("\nThe following data WILL BE DELETED upon confirmation:");
-  console.log(`\n[Core Data]`);
-  console.log(
+  logger.info(filePath);
+  logger.info("\nThe following data WILL BE DELETED upon confirmation:");
+  logger.info(`\n[Core Data]`);
+  logger.info(
     `- User Account: ${userData.user?.email} (ID: ${userData.user?.id})`
   );
-  console.log(
+  logger.info(
     `- Profile Record: ${userData.profile ? `ID ${userData.profile.id}` : "Not found/Already deleted"}`
   );
 
-  console.log(`\n[Items Created by User]`);
+  logger.info(`\n[Items Created by User]`);
   if (userData.projectsCreated.length > 0) {
-    console.log(
+    logger.info(
       `- Projects Created (${userData.projectsCreated.length}): IDs ${userData.projectsCreated.map((p) => p.id).join(", ")}`
     );
     // List specific members losing access
     userData.membersLosingAccess.forEach((projMembers) => {
       if (projMembers.members.length > 0) {
-        console.log(
+        logger.info(
           `  - Members losing access to Project ${projMembers.projectId}: ${projMembers.members.map((m) => m.profiles?.email || m.profile_id).join(", ")}`
         );
-      } else {
-        // Optional: Mention if a created project had no other members
-        // console.log(`  - No other members found in Project ${projMembers.projectId}.`);
-      }
+      } 
     });
   } else {
-    console.log("- Projects Created: 0");
+    logger.info("- Projects Created: 0");
   }
-  console.log(`- Trainings Created: ${userData.trainingsCreated.length}`);
+  logger.info(`- Trainings Created: ${userData.trainingsCreated.length}`);
   if (userData.trainingsCreated.length > 0) {
-    console.log(
+    logger.info(
       `  (Associated modules and character links will also be deleted via cascade)`
     );
     // Add clarification about other users' history
-    console.log(
+    logger.info(
       `  (History records of OTHER users for these modules will have module_id set to NULL, but the records will remain)`
     );
   }
-  console.log(`- Characters Created: ${userData.charactersCreated.length}`);
+  logger.info(`- Characters Created: ${userData.charactersCreated.length}`);
 
-  console.log(`\n[User's Associations]`);
-  console.log(
+  logger.info(`\n[User's Associations]`);
+  logger.info(
     `- Project Memberships (in others' projects): ${userData.projectMemberships.length}`
   );
-  console.log(`- Enrollments: ${userData.enrollments.length}`);
-  console.log(
+  logger.info(`- Enrollments: ${userData.enrollments.length}`);
+  logger.info(
     `- History/Assessment Records (Owned by User): ${userData.history.length}`
   );
-  console.log(
+  logger.info(
     `- Invitations (Sent or Received): ${userData.invitations.length}`
   );
 
-  console.log("\n--- WARNING ---");
-  console.log("This action is IRREVERSIBLE.");
-  console.log("Review the exported JSON file carefully.");
-  console.log(
+  logger.info("\n--- WARNING ---");
+  logger.info("This action is IRREVERSIBLE.");
+  logger.info("Review the exported JSON file carefully.");
+  logger.info(
     "To proceed with deletion, re-run the script with the --confirm-delete flag."
   );
-  console.log(
+  logger.info(
     "Example: `ts-node src/scripts/delete-user.ts <identifier> [--output-dir=<path>] [--confirm-delete]"
   );
-  console.log("---------------------------------\n");
+  logger.info("---------------------------------\n");
 }
 
 /**
@@ -575,26 +573,26 @@ async function deleteUserData(
   userEmail: string,
   createdProjectIds: number[]
 ): Promise<void> {
-  console.log(`\n--- Starting Deletion Process for User ID: ${userId} ---`);
+  logger.info(`\n--- Starting Deletion Process for User ID: ${userId} ---`);
 
   // 1. Delete Invitations (sent by or to the user)
-  console.log("Deleting invitations...");
+  logger.info("Deleting invitations...");
   const { error: invError } = await supabase
     .from("invitations")
     .delete()
     .or(`inviter_id.eq.${userId},invitee_email.eq.${userEmail}`);
   if (invError) {
-    console.error(
+    logger.error(
       `Error deleting invitations: ${invError.message}. Continuing...`
     );
   } else {
-    console.log("Invitations deleted successfully.");
+    logger.info("Invitations deleted successfully.");
   }
 
   // 2. Delete Projects Created by User (Cascades should handle related items WITHIN these projects)
   // Includes: projects_profiles, trainings, modules, characters, enrollments, history (if module linked)
   if (createdProjectIds.length > 0) {
-    console.log(
+    logger.info(
       `Deleting projects created by user: IDs ${createdProjectIds.join(", ")}...`
     );
     const { error: projDelError } = await supabase
@@ -602,54 +600,54 @@ async function deleteUserData(
       .delete()
       .in("id", createdProjectIds);
     if (projDelError) {
-      console.error(
+      logger.error(
         `Error deleting created projects: ${projDelError.message}. Foreign key constraints might prevent full deletion. Check DB logs. Continuing...`
       );
       // Manual cleanup might be needed if cascade fails or isn't fully configured.
     } else {
-      console.log(
+      logger.info(
         "Created projects (and their contents via cascade) deleted successfully."
       );
     }
   } else {
-    console.log("No projects created by user to delete.");
+    logger.info("No projects created by user to delete.");
   }
 
   // 3. Delete Remaining Project Memberships (in projects NOT created by the user)
-  console.log("Deleting remaining project memberships...");
+  logger.info("Deleting remaining project memberships...");
   const { error: membershipError } = await supabase
     .from("projects_profiles")
     .delete()
     .eq("profile_id", userId);
   if (membershipError && membershipError.code !== "23503") {
     // Ignore FK violation if project was deleted already
-    console.error(
+    logger.error(
       `Error deleting project memberships: ${membershipError.message}. Continuing...`
     );
   } else {
-    console.log("Remaining project memberships deleted successfully.");
+    logger.info("Remaining project memberships deleted successfully.");
   }
 
   // 4. Delete User Account (This should cascade to 'profiles' table and then further)
   // Cascade from profiles: enrollments, history
-  console.log(
+  logger.info(
     `Deleting user account (auth.users) and triggering cascades for profile ID: ${userId}...`
   );
   const { error: deletionError } = await supabase.auth.admin.deleteUser(userId);
 
   if (deletionError) {
     // Log the error but maybe the user was already deleted or partially deleted.
-    console.error(
+    logger.error(
       `!!! Critical Error deleting user account: ${deletionError.message} !!!`
     );
-    console.error(
+    logger.error(
       "Manual cleanup in 'auth.users' and potentially related tables might be required."
     );
     // Depending on the error, you might want to stop or continue trying cleanup.
     // For now, we log and finish.
   } else {
-    console.log("User account deleted successfully from auth.users.");
-    console.log(
+    logger.info("User account deleted successfully from auth.users.");
+    logger.info(
       "Cascading deletes for profiles, enrollments, history should have been triggered."
     );
   }
@@ -659,8 +657,8 @@ async function deleteUserData(
   // await supabase.from("enrollments").delete().eq("user_id", userId);
   // await supabase.from("history").delete().eq("user_id", userId);
 
-  console.log("--- Deletion Process Completed ---");
-  console.log("Please verify data removal in the database.");
+  logger.info("--- Deletion Process Completed ---");
+  logger.info("Please verify data removal in the database.");
 }
 
 // Main execution function
@@ -679,26 +677,26 @@ async function main() {
       if (!identifier) {
         identifier = arg;
       } else {
-        console.warn(`Ignoring extra argument: ${arg}`);
+        logger.warn(`Ignoring extra argument: ${arg}`);
       }
     } else {
-      console.warn(`Ignoring unknown flag: ${arg}`);
+      logger.warn(`Ignoring unknown flag: ${arg}`);
     }
   }
 
   // Validate required identifier
   if (!identifier) {
-    console.error("Error: User identifier (email or UUID) is required.");
-    console.log(
+    logger.error("Error: User identifier (email or UUID) is required.");
+    logger.info(
       "Usage: ts-node src/scripts/delete-user.ts <identifier> [--output-dir=<path>]"
     );
     process.exit(1);
   }
 
-  console.log("--- Script Configuration ---");
-  console.log(`Identifier: ${identifier}`);
-  console.log(`Output Directory: ${outputDir}`);
-  console.log("---------------------------");
+  logger.info("--- Script Configuration ---");
+  logger.info(`Identifier: ${identifier}`);
+  logger.info(`Output Directory: ${outputDir}`);
+  logger.info("---------------------------");
 
   let rl: readline.Interface | undefined;
   try {
@@ -729,20 +727,20 @@ async function main() {
 
     // 6. Perform deletion only if confirmed
     if (answer.toLowerCase().trim() === "y") {
-      console.log("Confirmation received. Proceeding with deletion...");
+      logger.info("Confirmation received. Proceeding with deletion...");
       // Add a small delay just in case
       await new Promise((resolve) => setTimeout(resolve, 2000)); // 2-second delay
 
       const createdProjectIds = userData.projectsCreated.map((p) => p.id);
       await deleteUserData(userId, userEmail, createdProjectIds);
-      console.log("User data deletion process finished.");
+      logger.info("User data deletion process finished.");
     } else {
-      console.log("Deletion aborted by user.");
+      logger.info("Deletion aborted by user.");
     }
   } catch (error: unknown) {
     let message = "Unknown error";
     if (error instanceof Error) message = error.message;
-    console.error(`\nScript failed: ${message}`);
+    logger.error(`\nScript failed: ${message}`);
     process.exit(1);
   } finally {
     // Ensure readline interface is closed even if errors occur after creation

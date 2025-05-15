@@ -15,6 +15,7 @@ import {
 import { acceptInvitationAction, declineInvitationAction } from "@/app/actions/invitation-actions";
 import { switchToProjectAction } from "@/app/actions/project-actions";
 import type { Invitation } from "@/data/invitations";
+import { logger } from "@/lib/logger";
 
 type InvitationNotificationsProps = {
   invitations: Invitation[] | null;
@@ -42,7 +43,7 @@ export function InvitationNotifications({ invitations }: InvitationNotifications
       });
       router.refresh();
     } catch (error) {
-      console.error(`Failed to decline invitation: ${error}`);
+      logger.error(`Failed to decline invitation: ${error}`);
       toast({
         title: "Error",
         description: "Failed to decline invitation",
@@ -64,7 +65,7 @@ export function InvitationNotifications({ invitations }: InvitationNotifications
       setIsDialogOpen(false);
       router.refresh();
     } catch (error) {
-      console.error(`Failed to accept invitation and switch to new project: ${error}`);
+      logger.error(`Failed to accept invitation and switch to new project: ${error}`);
       toast({
         title: "Error",
         description: "Failed to accept invitation",
@@ -85,7 +86,7 @@ export function InvitationNotifications({ invitations }: InvitationNotifications
       setIsDialogOpen(false);
       router.refresh();
     } catch (error) {
-      console.error(`Failed to accept invitation: ${error}`);
+      logger.error(`Failed to accept invitation: ${error}`);
       toast({
         title: "Error",
         description: "Failed to accept invitation",

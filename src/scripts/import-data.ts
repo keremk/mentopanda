@@ -2,6 +2,7 @@ import { createClient, Session } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import { join } from "path";
 import fs from "fs/promises";
+import { logger } from "@/lib/logger";
 
 dotenv.config({ path: ".env.local" });
 
@@ -9,7 +10,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
-  console.error("Missing environment variables");
+  logger.error("Missing environment variables");
   process.exit(1);
 }
 
@@ -112,18 +113,18 @@ async function generateRandomHistoryEntries(
         .eq("trainings.project_id", projectId)
     );
 
-  if (moduleError) {
-    console.error("Error fetching project modules:", moduleError);
+  if (moduleError) { 
+    logger.error("Error fetching project modules:", moduleError);
     return [];
   }
 
   if (!projectModules || projectModules.length === 0) {
-    console.log(`No modules found for project ${projectId}`);
+    logger.info(`No modules found for project ${projectId}`);
     return [];
   }
 
   const moduleIds = projectModules.map((m) => m.id);
-  console.log(`Found ${moduleIds.length} modules for project ${projectId}`);
+  logger.info(`Found ${moduleIds.length} modules for project ${projectId}`);
 
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
@@ -183,68 +184,11 @@ async function generateRandomHistoryEntries(
   return entries;
 }
 
-// async function createHistoryData(session: Session) {
-//   // Get the current project ID from the session
-//   const { data: profileData, error: profileError } = await supabase.auth
-//     .setSession(session)
-//     .then(() =>
-//       supabase
-//         .from("profiles")
-//         .select("current_project_id")
-//         .eq("id", session.user.id)
-//         .single()
-//     );
-
-//   if (profileError) {
-//     console.error("Error fetching user profile:", profileError);
-//     return;
-//   }
-
-//   const projectId = profileData.current_project_id;
-//   if (!projectId) {
-//     console.error("No current project ID found for user");
-//     return;
-//   }
-
-//   const historyEntries = await generateRandomHistoryEntries(
-//     session.user.id,
-//     session,
-//     projectId
-//   );
-
-//   if (historyEntries.length === 0) {
-//     console.log(
-//       `No history entries generated for user ${session.user.id} in project ${projectId}`
-//     );
-//     return;
-//   }
-
-//   // Insert history entries in chunks to avoid rate limits
-//   const chunkSize = 10;
-//   for (let i = 0; i < historyEntries.length; i += chunkSize) {
-//     const chunk = historyEntries.slice(i, i + chunkSize);
-//     const { error: historyError } = await supabase.auth
-//       .setSession(session)
-//       .then(() => supabase.from("history").insert(chunk));
-
-//     if (historyError) {
-//       console.error(
-//         `Error inserting history entries chunk ${i}:`,
-//         historyError
-//       );
-//     }
-//   }
-
-//   console.log(
-//     `Created ${historyEntries.length} history entries for user ${session.user.id} in project ${projectId}`
-//   );
-// }
-
 async function createAllMemberHistoryData(
   testData: TestData,
   users: TestUser[]
 ) {
-  console.log("Creating history data for members across all projects...");
+  logger.info("Creating history data for members across all projects...");
 
   // For each user
   for (const user of users) {
@@ -260,7 +204,7 @@ async function createAllMemberHistoryData(
     });
 
     if (signInError || !session) {
-      console.error(`Error signing in as ${user.email}:`, signInError);
+      logger.error(`Error signing in as ${user.email}:`, signInError);
       continue;
     }
 
@@ -275,16 +219,16 @@ async function createAllMemberHistoryData(
       );
 
     if (projectError) {
-      console.error(`Error fetching projects for ${user.email}:`, projectError);
+      logger.error(`Error fetching projects for ${user.email}:`, projectError);
       continue;
     }
 
     if (!memberProjects || memberProjects.length === 0) {
-      console.log(`User ${user.email} is not a member of any projects`);
+      logger.info(`User ${user.email} is not a member of any projects`);
       continue;
     }
 
-    console.log(
+    logger.info(
       `User ${user.email} is a member of ${memberProjects.length} projects`
     );
 
@@ -301,7 +245,7 @@ async function createAllMemberHistoryData(
       );
 
       if (historyEntries.length === 0) {
-        console.log(
+        logger.info(
           `No history entries generated for user ${user.email} in project ${project_id}`
         );
         continue;
@@ -316,20 +260,20 @@ async function createAllMemberHistoryData(
           .then(() => supabase.from("history").insert(chunk));
 
         if (historyError) {
-          console.error(
+          logger.error(
             `Error inserting history entries for ${user.email} in project ${project_id}:`,
             historyError
           );
         }
       }
 
-      console.log(
+      logger.info(
         `Created ${historyEntries.length} history entries for user ${user.email} in project ${project_id}`
       );
     }
   }
 
-  console.log("Finished creating history data for all members");
+  logger.info("Finished creating history data for all members");
 }
 
 type TestUser = {
@@ -428,11 +372,11 @@ async function createTestUsers(testData: TestData) {
       if (authError) throw authError;
 
       if (!authData.user) {
-        console.error(`Failed to create user: ${user.email}`);
+        logger.error(`Failed to create user: ${user.email}`);
         return null;
       }
 
-      console.log(`Created user: ${user.email}`);
+      logger.info(`Created user: ${user.email}`);
       const testUser: TestUser = {
         id: authData.user.id,
         email: user.email,
@@ -441,7 +385,7 @@ async function createTestUsers(testData: TestData) {
       };
       return testUser;
     } catch (error) {
-      console.error(`Error creating user ${user.email}:`, error);
+      logger.error(`Error creating user ${user.email}:`, error);
     }
   });
 
@@ -480,7 +424,7 @@ async function createTestProjects(
     let projectId: number;
     if (user.email === "super@example.com") {
       projectId = 1;
-      console.log(`Super user logged in, using project ${projectId}`);
+      logger.info(`Super user logged in, using project ${projectId}`);
     } else {
       const { data: newProjectId, error: projectError } = await supabase.auth
         .setSession(session)
@@ -498,7 +442,7 @@ async function createTestProjects(
     // Use the new refreshed session for subsequent operations
     const newSession = await switchProject(projectId, session);
 
-    // console.log(
+    // logger.debug(
     //   "JWT Contents:",
     //   JSON.stringify(decodeJWT(newSession.access_token), null, 2)
     // );
@@ -533,7 +477,7 @@ async function createTestProjects(
     await createTrainingData(projectId, inputTrainings, characters, newSession);
 
     // await createHistoryData(newSession);
-    console.log(`Created project: ${projectId}`);
+    logger.info(`Created project: ${projectId}`);
     index++;
   }
 }
@@ -553,7 +497,7 @@ async function switchProject(
     );
 
   if (updateError) {
-    console.error(
+    logger.error(
       `Error updating user's current project: ${updateError} with project id: ${projectId}`
     );
     throw updateError;
@@ -570,7 +514,7 @@ async function switchProject(
         .single()
     );
 
-  console.log(JSON.stringify(verifyData, null, 2));
+  logger.debug(JSON.stringify(verifyData, null, 2));
   if (verifyError || verifyData?.current_project_id !== projectId) {
     throw new Error(
       `Profile update verification failed: ${
@@ -580,7 +524,7 @@ async function switchProject(
       }`
     );
   }
-  console.log("Project ID verified:", verifyData?.current_project_id);
+  logger.info("Project ID verified:", verifyData?.current_project_id);
 
   // Refresh the session to get new JWT with updated project role
   const { data: refreshData, error: refreshError } = await supabase.auth
@@ -609,7 +553,7 @@ async function setupProjectMembers(
   for (const member of members) {
     const memberId = emailToId.get(member.email);
     if (!memberId) {
-      console.warn(`Member with email ${member.email} not found`);
+      logger.warn(`Member with email ${member.email} not found`);
       continue;
     }
 
@@ -707,17 +651,17 @@ async function createTrainingData(
             );
 
           if (moduleCharError) throw moduleCharError;
-          console.log(
+          logger.info(
             `Created module-character association for module ${moduleData.id} and character ${moduleChar.character_name}`
           );
         }
       }
 
-      console.log(
+      logger.info(
         `Created training: ${training.title} with ${training.modules.length} modules`
       );
     } catch (error) {
-      console.error(`Error creating training ${training.title}:`, error);
+      logger.error(`Error creating training ${training.title}:`, error);
     }
   }
 }
@@ -755,10 +699,10 @@ async function createCharactersData(
       if (!characterData) throw new Error("No character data returned");
 
       characters.push(characterData);
-      console.log(`Created character: ${character.name}`);
+      logger.info(`Created character: ${character.name}`);
     }
   } catch (error) {
-    console.error("Error creating characters:", error);
+    logger.error("Error creating characters:", error);
   }
   return characters;
 }
@@ -771,7 +715,7 @@ async function loadTestData(filePath?: string): Promise<TestData> {
     const fileContent = await fs.readFile(targetPath, "utf-8");
     return JSON.parse(fileContent);
   } catch (error) {
-    console.error("Error loading test data:", error);
+    logger.error("Error loading test data:", error);
     process.exit(1);
   }
 }
@@ -787,7 +731,7 @@ async function createTestData() {
   );
 
   if (!testUsers) {
-    console.error("No users created");
+    logger.error("No users created");
     return;
   }
 
@@ -798,7 +742,7 @@ async function createTestData() {
 
 // Add help text if --help flag is provided
 if (process.argv.includes("--help")) {
-  console.log(`
+  logger.info(`
 Usage: ts-node import-data.ts [path-to-test-data.json]
 
 If no path is provided, the script will use the default test data file at:
@@ -808,6 +752,6 @@ ${join(__dirname, "test-data.json")}
 }
 
 createTestData()
-  .then(() => console.log("Test data creation completed"))
-  .catch((error) => console.error("Error in test data creation:", error))
+  .then(() => logger.info("Test data creation completed"))
+  .catch((error) => logger.error("Error in test data creation:", error))
   .finally(() => process.exit());

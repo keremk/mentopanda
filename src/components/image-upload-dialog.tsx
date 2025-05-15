@@ -17,6 +17,7 @@ import {
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 type ImageUploadDialogProps = {
   isOpen: boolean;
@@ -73,6 +74,7 @@ export function ImageUploadDialog({
           try {
             const uploadedPathRaw = uploadHook.successes[0]?.uploadedPath;
             if (!uploadedPathRaw) {
+              logger.error("Could not determine uploaded path.");
               toast({
                 variant: "destructive",
                 title: "Upload Error",
@@ -101,6 +103,7 @@ export function ImageUploadDialog({
               // Parent now controls closing via the isOpen prop
               // onClose(); // Don't call onClose directly here
             } else {
+              logger.error("Failed to get public URL for uploaded image.");
               toast({
                 variant: "destructive",
                 title: "Upload Error",
@@ -109,7 +112,7 @@ export function ImageUploadDialog({
               hasHandledSuccess.current = false; // Allow retry
             }
           } catch (error) {
-            console.error("Error calling onUploadComplete callback:", error);
+            logger.error("Error calling onUploadComplete callback:", error);
             toast({
               variant: "destructive",
               title: "Processing Error",

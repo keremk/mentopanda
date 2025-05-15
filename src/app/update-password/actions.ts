@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 // Schema for password validation
 const UpdatePasswordSchema = z
@@ -52,6 +53,7 @@ export async function updatePassword(
 
   if (!user) {
     // This shouldn't happen if the flow is correct, but handle it defensively
+    logger.error("User not found in update password action");
     return redirect("/login?message=Authentication required. Please sign in.");
   }
 
@@ -59,7 +61,7 @@ export async function updatePassword(
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {
-    console.error("Update Password Error:", error.message);
+    logger.error("Update Password Error:", error.message);
     return {
       message: `Error updating password: ${error.message}. Please try again.`,
     };

@@ -9,7 +9,7 @@ import { useApiKey } from "@/hooks/use-api-key";
 import { AlertTriangle, ThumbsUp, ThumbsDown, RotateCw } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
-
+import { logger } from "@/lib/logger";
 type Props = {
   moduleId: number;
   entryId: number;
@@ -49,7 +49,7 @@ export default function AssessmentContent({
       if (router) router.refresh();
     },
     onError: (err) => {
-      console.error("Error fetching assessment completion:", err);
+      logger.error("Error fetching assessment completion:", err);
     },
     experimental_throttle: 500,
   });

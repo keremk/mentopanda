@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 const API_KEY_STORAGE_KEY = "user_openai_api_key";
 // Get encryption key from environment variable, fallback to a default only in development
 const ENCRYPTION_KEY =
@@ -64,18 +66,9 @@ async function encryptData(text: string): Promise<string> {
         .join("")
     );
 
-    // Log sizes
-    // console.log({
-    //   originalLength: text.length,
-    //   encryptedLength: encryptedArray.length,
-    //   combinedLength: combined.length,
-    //   base64Length: base64Result.length,
-    //   totalStorageUsed: JSON.stringify(localStorage).length,
-    // });
-
     return base64Result;
   } catch (error) {
-    console.error("Encryption error:", error);
+    logger.error("Encryption error:", error);
     throw error;
   }
 }
@@ -109,7 +102,7 @@ async function decryptData(encryptedText: string): Promise<string> {
 
     return decoder.decode(decryptedData);
   } catch (error) {
-    console.error("Decryption failed:", error);
+    logger.error("Decryption failed:", error);
     return "";
   }
 }
@@ -127,7 +120,7 @@ export async function storeApiKey(apiKey: string): Promise<void> {
     const encryptedKey = await encryptData(apiKey);
     window.localStorage.setItem(API_KEY_STORAGE_KEY, encryptedKey);
   } catch (error) {
-    console.error("Failed to store API key:", error);
+    logger.error("Failed to store API key:", error);
     throw new Error("Unable to store API key. Try clearing your browser data.");
   }
 }

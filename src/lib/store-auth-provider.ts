@@ -1,5 +1,7 @@
 "use client"; // Ensure this runs only on the client
 
+import { logger } from "./logger";
+
 const STORAGE_KEY = "lastAuthProvider";
 
 /**
@@ -13,7 +15,7 @@ export function setLastAuthProvider(
     try {
       window.localStorage.setItem(STORAGE_KEY, provider);
     } catch (error) {
-      console.error("Error saving last auth provider to localStorage:", error);
+      logger.error("Error saving last auth provider to localStorage:", error);
     }
   }
 }
@@ -27,7 +29,7 @@ export function getLastAuthProvider(): string | null {
     try {
       return window.localStorage.getItem(STORAGE_KEY);
     } catch (error) {
-      console.error(
+      logger.error(
         "Error reading last auth provider from localStorage:",
         error
       );

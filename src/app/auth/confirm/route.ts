@@ -1,6 +1,6 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
-
+import { logger } from "@/lib/logger";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -23,11 +23,12 @@ export async function GET(request: NextRequest) {
       // redirect user to specified redirect URL or root of app
       return NextResponse.redirect(redirectTo);
     } else {
+      logger.error("Error verifying OTP:", error);
       return redirect(`/login?message=${encodeURIComponent(error.message)}`);
     }
   }
 
-  console.error("Unexpected or no token type ", type);
+  logger.error("Unexpected or no token type ", type);
   
   // return the user to an error page with some instructions
   redirectTo.pathname = "/auth/auth-code-error";

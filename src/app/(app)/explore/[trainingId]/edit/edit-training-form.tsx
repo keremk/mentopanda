@@ -1,14 +1,12 @@
 "use client";
 
-// import { useState } from "react"; // Removed unused import
 import { Input } from "@/components/ui/input";
 import { ImageEdit } from "@/components/image-edit";
 import { AIFocusInput } from "@/components/ai-focus-input";
 import { AIFocusTextarea } from "@/components/ai-focus-textarea";
 import { useTrainingEdit } from "@/contexts/training-edit-context";
-// import { getPathFromStorageUrl, getDirectoryFromPath } from "@/lib/utils";
-// import { deleteStorageObjectAction } from "@/app/actions/storage-actions";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 export function EditTrainingForm() {
   const { state, dispatch } = useTrainingEdit();
@@ -24,7 +22,7 @@ export function EditTrainingForm() {
   const bucketName = "trainings";
 
   if (!trainingId) {
-    console.error("Training ID is missing!");
+    logger.error("Training ID is missing!");
     return <div>Error: Training ID missing.</div>;
   }
 
@@ -51,7 +49,7 @@ export function EditTrainingForm() {
     newPath: string,
     oldImageUrl: string | null
   ) {
-    console.log("[TrainingForm] Image changed:", {
+    logger.debug("[TrainingForm] Image changed:", {
       newUrl,
       newPath,
       oldImageUrl,

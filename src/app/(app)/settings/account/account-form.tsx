@@ -31,7 +31,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { AlertCircle } from "lucide-react";
-
+import { logger } from "@/lib/logger";
 type AccountFormProps = {
   user: User;
 };
@@ -72,7 +72,7 @@ export function AccountForm({ user }: AccountFormProps) {
             description: "Your display name has been updated.",
           });
         } else {
-          console.error("Update failed:", response.error);
+          logger.error("Update failed:", response.error);
           toast({
             title: "Update failed",
             description: response.error || "Failed to update display name",
@@ -80,7 +80,7 @@ export function AccountForm({ user }: AccountFormProps) {
           });
         }
       } catch (error) {
-        console.error("Error updating display name:", error);
+        logger.error("Error updating display name:", error);
         toast({
           title: "Update failed",
           description: "An unexpected error occurred",
@@ -103,7 +103,7 @@ export function AccountForm({ user }: AccountFormProps) {
           description: "Your avatar has been updated successfully.",
         });
       } else {
-        console.error("Failed to update avatar:", response.error);
+        logger.error("Failed to update avatar:", response.error);
         toast({
           title: "Update failed",
           description: response.error || "Failed to update avatar",
@@ -112,7 +112,7 @@ export function AccountForm({ user }: AccountFormProps) {
         setAvatarUrl(user.avatarUrl); // Revert UI on DB update failure
       }
     } catch (error) {
-      console.error("Error updating avatar:", error);
+      logger.error("Error updating avatar:", error);
       toast({
         title: "Update failed",
         description: "An unexpected error occurred",
@@ -148,7 +148,7 @@ export function AccountForm({ user }: AccountFormProps) {
         });
       }
     } catch (e) {
-      console.error("Password change error:", e);
+      logger.error("Password change error:", e);
       setPasswordUpdateError("An unexpected error occurred.");
       toast({
         title: "Password Update Failed",
