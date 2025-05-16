@@ -1,12 +1,15 @@
-import { getCharacterDetailsAction } from "@/app/actions/character-actions";
-import { getCurrentUserAction } from "@/app/actions/user-actions";
-import { CharacterDetailsView } from "@/components/character-details";
-import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getCharacterDetailsAction } from "@/app/actions/character-actions";
+import { EditCharacterForm } from "./edit-character";
+import { Metadata } from "next";
+import { CharacterDetailsProvider } from "@/contexts/character-details-context";
+import { getCurrentUserAction } from "@/app/actions/user-actions";
 
-export default async function CharacterPage(props: {
+export const metadata: Metadata = {
+  title: "Characters Catalog",
+};
+
+export default async function EditCharacterPage(props: {
   params: Promise<{ charId: string }>;
 }) {
   const params = await props.params;
@@ -15,26 +18,13 @@ export default async function CharacterPage(props: {
     getCurrentUserAction(),
   ]);
 
-  if (!character) notFound();
+  if (!character) {
+    notFound();
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="absolute top-0 right-0 p-4 z-10">
-        {user.permissions.includes("training.manage") &&
-          user.id === character.createdBy && (
-            <Button asChild variant="outline">
-              <Link
-                href={`/characters/${character.id}/edit`}
-                replace
-                className="flex items-center"
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </Link>
-            </Button>
-          )}
-      </div>
-      <CharacterDetailsView character={character} />
-    </div>
+    <CharacterDetailsProvider initialCharacter={character}>
+      <EditCharacterForm user={user} />
+    </CharacterDetailsProvider>
   );
 }

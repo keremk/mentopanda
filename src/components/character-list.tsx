@@ -76,7 +76,7 @@ export function CharacterList({
       !hasRedirectedRef.current
     ) {
       hasRedirectedRef.current = true;
-      router.replace(`/characters/${characters[0].id}/edit`);
+      router.replace(`/characters/${characters[0].id}`);
     }
   }, [characters, currentCharId, pathname, router]);
 
@@ -97,7 +97,7 @@ export function CharacterList({
       // Close the dialog
       createDialogCloseRef.current?.click();
       // Navigate to the new character's edit page
-      router.push(`/characters/${result.data?.id}/edit`);
+      router.push(`/characters/${result.data?.id}`);
     } else {
       // TODO: Show error toast
       logger.error("Failed to create character:", result.error);
@@ -137,7 +137,7 @@ export function CharacterList({
               } ${isCollapsed ? "justify-center" : ""}`}
               // Use replace instead of push to avoid adding to history stack
               onClick={() => {
-                router.replace(`/characters/${character.id}/edit`);
+                router.replace(`/characters/${character.id}`);
               }}
               title={isCollapsed ? character.name : undefined}
             >

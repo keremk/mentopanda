@@ -80,6 +80,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
       //   description: "Your character has been saved successfully",
       // });
     } else {
+      logger.error("Failed to save character details.");
       toast({
         variant: "destructive",
         title: "Save Failed",
@@ -103,6 +104,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
     if (saveSuccess) {
       toast({ title: "Avatar updated and saved!" });
     } else {
+      logger.error("Failed to save avatar.");
       toast({
         variant: "destructive",
         title: "Failed to save avatar",
@@ -232,7 +234,7 @@ export function EditCharacterForm({ user }: EditCharacterFormProps) {
                   value="aiDescription"
                   className="rounded-2xl focus:ring-brand focus:ring-2"
                 >
-                  AI Description
+                  AI Prompt
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="description" className="mt-4">
