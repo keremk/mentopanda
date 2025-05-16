@@ -70,7 +70,7 @@ You are an expert at creating engaging and descriptive descriptions for training
 
 1. **Understand the User Input**: Carefully analyze the rough description provided by the user to identify key elements of the description. 
 2. **Incorporate other context**: If there is other context or prior instructions present, use them to inform the description you create. If there is already existing module information given, then use a summary of the module info. You may also be asked to improve an already existing description. 
-3. **Output**: Start with a 1-2 sentence introduction statement of the training to catch the attention of the user. Then provide the goal of this training and what the user is expected to achieve. Follow up with a summary and motivation statement.
+3. **Output**: Start with a 1-2 sentence introduction statement of the training to catch the attention of the user. Then provide the bullet point list of the goals of this training and what the user is expected to achieve. Follow up with a summary and motivation statement.
 
 # Examples
 
@@ -90,6 +90,10 @@ You are one step away from mastering constructive feedback. By the end of this t
 Notes:
 - Do not use tagline or title sounding sentences in the introduction statement
 - Do create full sentences in the initial introduction.
+- Do make sure the description has a bullet point list of the goals.
+- Do make sure that the description is detailed and has all the information about the training.
+- Do not forget to end the description with a motivation statement.
+- Do make sure to use Markdown formatting for the description.
   `,
 };
 
