@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { EnrollmentButton } from "@/components/enrollment-button";
 import { getTrainingByIdForEditAction } from "@/app/actions/trainingActions";
 import { Pencil } from "lucide-react";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
@@ -10,7 +9,7 @@ import { CharacterDetailsView } from "@/components/character-details";
 import type { CharacterDetails } from "@/data/characters";
 import { AI_MODELS } from "@/types/models";
 import { isEnrolledAction } from "@/app/actions/enrollment-actions";
-import { PlayIcon } from "lucide-react";
+import { TrainingActionsRow } from "@/components/training-actions-row";
 
 function YouTubeEmbed({ url }: { url: string }) {
   const videoId = url.split("v=")[1];
@@ -102,20 +101,13 @@ export default async function TrainingDetailsPage(props: {
                 />
               </div>
               <div className="mt-4 space-y-2">
-                <EnrollmentButton
+                <TrainingActionsRow
                   trainingId={training.id}
-                  isEnrolled={isCurrentlyEnrolled}
-                  variant="brand"
-                  className="w-full"
+                  initialIsEnrolled={isCurrentlyEnrolled}
+                  enrollmentButtonVariant="brand"
+                  enrollmentButtonClassName="w-full"
+                  trainButtonClassName="w-full"
                 />
-                {isCurrentlyEnrolled && (
-                  <Button asChild variant="brand" className="w-full">
-                    <Link href={`/enrollments/${training.id}`}>
-                      <PlayIcon className="mr-2 h-4 w-4" />
-                      Train
-                    </Link>
-                  </Button>
-                )}
               </div>
             </div>
             <h1 className="text-3xl font-bold mb-1">{training.title}</h1>

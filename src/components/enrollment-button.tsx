@@ -17,12 +17,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { logger } from "@/lib/logger";
+
 interface EnrollmentButtonProps {
   trainingId: number;
   className?: string;
   isEnrolled?: boolean;
   variant?: "ghost-brand" | "brand";
   onUnenroll?: (trainingId: number) => void;
+  onOptimisticEnrollmentChange?: (enrolled: boolean) => void;
 }
 
 export function EnrollmentButton({
@@ -31,6 +33,7 @@ export function EnrollmentButton({
   isEnrolled: initialEnrollmentStatus,
   variant = "ghost-brand",
   onUnenroll,
+  onOptimisticEnrollmentChange,
 }: EnrollmentButtonProps) {
   const [enrolled, setEnrolled] = useState(initialEnrollmentStatus ?? false);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,36 +41,44 @@ export function EnrollmentButton({
   const router = useRouter();
 
   useEffect(() => {
-    const checkEnrollmentStatus = async () => {
-      try {
-        const status = await isEnrolledAction(trainingId);
-        setEnrolled(status);
-      } catch (error) {
-        logger.error("Failed to check enrollment status:", error);
-      }
-    };
-
-    if (initialEnrollmentStatus === undefined) {
+    if (initialEnrollmentStatus !== undefined) {
+      setEnrolled(initialEnrollmentStatus);
+    } else {
+      const checkEnrollmentStatus = async () => {
+        try {
+          const status = await isEnrolledAction(trainingId);
+          setEnrolled(status);
+        } catch (error) {
+          logger.error("Failed to check enrollment status:", error);
+        }
+      };
       checkEnrollmentStatus();
     }
   }, [trainingId, initialEnrollmentStatus]);
 
   const handleEnrollment = async () => {
+    const newEnrolledState = !enrolled;
+
+    // Apply optimistic update locally
+    setEnrolled(newEnrolledState);
+    onOptimisticEnrollmentChange?.(newEnrolledState);
+
     setIsLoading(true);
     try {
-      if (enrolled) {
+      if (!newEnrolledState) {
         await unenrollFromTrainingAction(trainingId);
-        setEnrolled(false);
         if (onUnenroll) {
           onUnenroll(trainingId);
         }
       } else {
         await enrollInTrainingAction(trainingId);
-        setEnrolled(true);
       }
       router.refresh();
     } catch (error) {
       logger.error("Failed to update enrollment:", error);
+      // Revert optimistic update on error
+      setEnrolled(!newEnrolledState);
+      onOptimisticEnrollmentChange?.(!newEnrolledState);
     } finally {
       setIsLoading(false);
       setIsDialogOpen(false);
