@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -5,13 +7,28 @@ import { Search, GripVertical, PlayIcon } from "lucide-react";
 import { EnrollmentButton } from "@/components/enrollment-button";
 import { TrainingSummary } from "@/data/trainings";
 import { ThemedImage } from "@/components/themed-image";
+import { useState, useEffect } from "react";
+
 type EnrolledTrainingsCardProps = {
   trainings: TrainingSummary[];
 };
 
-export async function EnrolledTrainingsCard({
-  trainings,
+export function EnrolledTrainingsCard({
+  trainings: initialTrainings,
 }: EnrolledTrainingsCardProps) {
+  const [displayedTrainings, setDisplayedTrainings] =
+    useState<TrainingSummary[]>(initialTrainings);
+
+  useEffect(() => {
+    setDisplayedTrainings(initialTrainings);
+  }, [initialTrainings]);
+
+  const handleUnenroll = (trainingId: number) => {
+    setDisplayedTrainings((prevTrainings) =>
+      prevTrainings.filter((t) => t.id !== trainingId)
+    );
+  };
+
   return (
     <Card className="w-full h-[310px] flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
@@ -22,15 +39,19 @@ export async function EnrolledTrainingsCard({
       </CardHeader>
       <CardContent className="h-[calc(100%-73px)] overflow-y-auto">
         <div className="space-y-4">
-          {trainings && trainings.length > 0 ? (
-            trainings.map((training) => (
+          {displayedTrainings && displayedTrainings.length > 0 ? (
+            displayedTrainings.map((training) => (
               <Card key={training.id} className="p-4">
                 <div className="flex gap-4 items-center min-w-0">
                   <div className="flex min-w-0 items-center">
                     <div className="relative h-12 w-12 mr-4 flex-shrink-0">
                       <ThemedImage
-                        lightSrc={training.imageUrl || "/placeholder-training.svg"}
-                        darkSrc={training.imageUrl || "/placeholder-training-dark.svg"}
+                        lightSrc={
+                          training.imageUrl || "/placeholder-training.svg"
+                        }
+                        darkSrc={
+                          training.imageUrl || "/placeholder-training-dark.svg"
+                        }
                         alt={training.title}
                         fill
                         className="object-cover rounded"
@@ -59,6 +80,7 @@ export async function EnrolledTrainingsCard({
                       trainingId={training.id}
                       isEnrolled={true}
                       className="flex-shrink-0"
+                      onUnenroll={handleUnenroll}
                     />
                   </div>
                 </div>

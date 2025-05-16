@@ -22,6 +22,7 @@ interface EnrollmentButtonProps {
   className?: string;
   isEnrolled?: boolean;
   variant?: "ghost-brand" | "brand";
+  onUnenroll?: (trainingId: number) => void;
 }
 
 export function EnrollmentButton({
@@ -29,6 +30,7 @@ export function EnrollmentButton({
   className,
   isEnrolled: initialEnrollmentStatus,
   variant = "ghost-brand",
+  onUnenroll,
 }: EnrollmentButtonProps) {
   const [enrolled, setEnrolled] = useState(initialEnrollmentStatus ?? false);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,12 +57,16 @@ export function EnrollmentButton({
     try {
       if (enrolled) {
         await unenrollFromTrainingAction(trainingId);
+        setEnrolled(false);
+        if (onUnenroll) {
+          onUnenroll(trainingId);
+        }
       } else {
         await enrollInTrainingAction(trainingId);
+        setEnrolled(true);
       }
-      setEnrolled(!enrolled);
       router.refresh();
-    } catch (error) { 
+    } catch (error) {
       logger.error("Failed to update enrollment:", error);
     } finally {
       setIsLoading(false);
