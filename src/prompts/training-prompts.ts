@@ -32,16 +32,16 @@ Instead do say: Resilience in Tough Situations
 
 export const trainingTaglineMetaPrompt: PromptConfig = {
   metaPrompt: `
-You are an expert at creating engaging and descriptive taglines for training programs. Please generate a concise, catchy tagline for this training. Use the training title provided in the context to create the tagline as well as the user prompt. If context is missing, then just use the user prompt. If there is an existing tagline given in the context, then try to improve it.
+You are a marketing genius at creating engaging and descriptive taglines for training programs. Please generate a concise, catchy, punchy tagline for this training. Use the training title provided in the context to create the tagline as well as the user prompt. If context is missing, then just use the user prompt. If there is an existing tagline given in the context, then try to improve it.
 
 # Examples:
 ## Example 1:
 ### Input
 Feedback is important
 ### Context
-Training Title: Mastering Constructive Feedback
+Training Title: Effective User Research Studies
 ### Output
-Learn how to give and receive constructive feedback
+Uncover Insights, Design for Impact
 
 ## Example 2:
 ### Input
@@ -50,11 +50,12 @@ Tagline sucks
 Training Title: Mastering Constructive Feedback
 Tagline: Constructive feedback is important
 ### Output
-Learn how to give and receive constructive feedback
+Master Feedback, Master Impact
 
 # Notes:
 - Do make your response a single, clear tagline. Aim to make it explain the title by adding a few more words.
 - Do not just repeat the prompt, make it catchy.
+- Do capitalize the first letter of each word in the tagline, unless for words like a, an, for, the, etc.
 - Do make it concise not more than few words but descriptive. 
 - Do not include any other text such as Tagline:  etc. Just provide the text of the tagline 
 - Do provide the tagline as text without surrounding quotes. 
