@@ -37,6 +37,11 @@ const nextConfig = {
         ? "'self' https://*.youtube.com https://*.youtube-nocookie.com"
         : "'self' https://*.youtube.com https://*.youtube-nocookie.com";
 
+    const scriptSrc =
+      process.env.NODE_ENV === "development"
+        ? "'self' 'unsafe-inline' 'unsafe-eval' https://eu-assets.i.posthog.com https://us-assets.i.posthog.com"
+        : "'self' 'unsafe-inline' 'unsafe-eval' https://eu-assets.i.posthog.com https://us-assets.i.posthog.com";
+
     return [
       {
         source: "/:path*",
@@ -45,7 +50,7 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              `script-src ${scriptSrc}`,
               "style-src 'self' 'unsafe-inline'",
               `img-src ${imgSrc}`,
               `media-src ${mediaSrc}`,

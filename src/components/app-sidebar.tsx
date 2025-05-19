@@ -10,8 +10,12 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
+import { FeedbackButton } from "@/components/feedback-button";
+import { Suspense } from "react";
 
-export async function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export async function AppSidebar({
+  ...props
+}: React.ComponentProps<typeof Sidebar>) {
   const userInfo = await getCurrentUserAction();
 
   return (
@@ -22,7 +26,12 @@ export async function AppSidebar({ ...props }: React.ComponentProps<typeof Sideb
       <SidebarContent>
         <NavMain permissions={userInfo.permissions} />
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="flex flex-col gap-4">
+        <Suspense
+          fallback={<div className="h-9 animate-pulse bg-muted rounded" />}
+        >
+          <FeedbackButton />
+        </Suspense>
         <NavUser
           user={{
             name: userInfo.displayName,
