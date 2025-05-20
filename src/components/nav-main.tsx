@@ -8,7 +8,6 @@ import {
   PieChart,
   Users,
   GraduationCap,
-  Bot,
   LayoutDashboard,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -36,7 +35,6 @@ const iconMap: Record<string, LucideIcon> = {
   home: Home,
   search: BookOpen,
   book: GraduationCap,
-  characters: Bot,
   users: Users,
   settings: Settings2,
   piechart: PieChart,

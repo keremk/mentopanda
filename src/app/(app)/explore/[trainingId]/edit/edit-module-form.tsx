@@ -125,16 +125,16 @@ export function EditModuleForm({
                   Scenario
                 </TabsTrigger>
                 <TabsTrigger
-                  value="assessment"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
-                >
-                  Assessment
-                </TabsTrigger>
-                <TabsTrigger
                   value="character"
                   className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
                 >
                   Character
+                </TabsTrigger>
+                <TabsTrigger
+                  value="assessment"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
+                >
+                  Assessment
                 </TabsTrigger>
               </TabsList>
 

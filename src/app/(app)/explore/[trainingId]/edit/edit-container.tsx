@@ -206,6 +206,21 @@ function EditContainerContent({ user }: { user: User }) {
             );
           }
           break;
+        case "characterName":
+          if (currentCharacterId) {
+            dispatch({
+              type: "UPDATE_MODULE_CHARACTER_FIELD",
+              payload: {
+                moduleId: currentModuleId,
+                characterId: currentCharacterId,
+                field: "name",
+                value: content,
+              },
+            });
+          } else {
+            logger.warn("Cannot apply character name: No character selected.");
+          }
+          break;
         default:
           logger.warn("Unknown targetField for modules tab:", targetField);
       }

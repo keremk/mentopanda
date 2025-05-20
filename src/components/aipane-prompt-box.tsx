@@ -218,28 +218,14 @@ function getOptionsForContext(contextType?: string): AIAssistOption[] {
           targetField: "assessment",
         },
         {
+          id: "generateCharacterName",
+          label: "Generate character name",
+          targetField: "characterName",
+        },
+        {
           id: "generateCharacterPrompt",
           label: "Generate character prompt",
           targetField: "characterPrompt",
-        },
-      ];
-    case "character":
-      // Character editing options
-      return [
-        {
-          id: "generateCharacterName",
-          label: "Generate character name",
-          targetField: "name",
-        },
-        {
-          id: "generateCharacterDescription",
-          label: "Generate character description",
-          targetField: "description",
-        },
-        {
-          id: "generateAIDescription",
-          label: "Generate AI description",
-          targetField: "aiDescription",
         },
       ];
     case "training":
