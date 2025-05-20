@@ -122,7 +122,7 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
   );
 
   // Log the values directly before passing them to the hook
-  console.log("[OpenAIChatContent] Preparing to call useOpenAIRealtime with:", {
+  logger.debug("[OpenAIChatContent] Preparing to call useOpenAIRealtime with:", {
     instructions,
     voice,
     agentName,
