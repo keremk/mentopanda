@@ -6,17 +6,8 @@ import { getCharacters } from "@/data/characters";
 import { getCharacterDetails } from "@/data/characters";
 import { updateCharacter, type UpdateCharacterInput } from "@/data/characters";
 import { z } from "zod";
-import { updateCharacterAvatar } from "@/data/characters";
 import { createCharacter, type CreateCharacterInput } from "@/data/characters";
 import { deleteCharacter } from "@/data/characters";
-import {
-  addCharacterToModule,
-  type ModuleCharacterInput,
-} from "@/data/characters";
-import {
-  removeCharacterFromModule,
-  type RemoveCharacterFromModuleInput,
-} from "@/data/characters";
 import { cache } from "react";
 
 export const getCharactersActionCached = cache(async (projectId: number) => {
@@ -41,38 +32,6 @@ export async function updateCharacterAction(
   revalidateTag(`character-${characterId}`);
 
   return result;
-}
-
-const updateAvatarSchema = z.object({
-  avatarUrl: z.string().url(),
-});
-
-export async function updateCharacterAvatarAction(
-  characterId: number,
-  data: { avatarUrl: string }
-) {
-  try {
-    // Validate input
-    const validated = updateAvatarSchema.parse(data);
-
-    const supabase = await createClient();
-    const avatarUrl = await updateCharacterAvatar({
-      supabase,
-      characterId,
-      avatarUrl: validated.avatarUrl,
-    });
-
-    // Revalidate the character data
-    revalidateTag("characters");
-    revalidateTag(`character-${characterId}`);
-
-    return { success: true, data: { avatarUrl } };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { success: false, error: "Invalid avatar URL" };
-    }
-    return { success: false, error: "Failed to update character avatar" };
-  }
 }
 
 const createCharacterSchema = z.object({
@@ -113,72 +72,6 @@ export async function deleteCharacterAction(characterId: number) {
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to delete character",
-    };
-  }
-}
-
-const addCharacterToModuleSchema = z.object({
-  moduleId: z.number(),
-  characterId: z.number(),
-  ordinal: z.number(),
-  prompt: z.string().nullable().optional(),
-});
-
-export async function addCharacterToModuleAction(data: ModuleCharacterInput) {
-  try {
-    // Validate input
-    const validated = addCharacterToModuleSchema.parse(data);
-
-    const supabase = await createClient();
-    await addCharacterToModule(supabase, validated);
-
-    // Revalidate the module data
-    revalidateTag(`module-${data.moduleId}`);
-
-    return { success: true };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { success: false, error: "Invalid input data" };
-    }
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to add character to module",
-    };
-  }
-}
-
-const removeCharacterFromModuleSchema = z.object({
-  moduleId: z.number(),
-  characterId: z.number(),
-});
-
-export async function removeCharacterFromModuleAction(
-  data: RemoveCharacterFromModuleInput
-) {
-  try {
-    // Validate input
-    const validated = removeCharacterFromModuleSchema.parse(data);
-
-    const supabase = await createClient();
-    await removeCharacterFromModule(supabase, validated);
-
-    // Revalidate the module data
-    revalidateTag(`module-${data.moduleId}`);
-
-    return { success: true };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { success: false, error: "Invalid input data" };
-    }
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to remove character from module",
     };
   }
 }

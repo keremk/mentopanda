@@ -57,12 +57,6 @@ export const navItems: NavItem[] = [
     permissions: ["basic.access"],
   },
   {
-    title: "Characters",
-    url: "/characters",
-    iconKey: "characters",
-    permissions: ["training.manage"],
-  },
-  {
     title: "Enrollments",
     url: "/enrollments",
     iconKey: "book",
