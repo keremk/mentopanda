@@ -11,7 +11,7 @@ import {
 } from "react";
 import { TrainingEdit, UpdateTrainingInput } from "@/data/trainings";
 import { Module, ModulePrompt, ModuleCharacter } from "@/data/modules";
-import { CharacterSummary } from "@/data/characters";
+import { CharacterSummary, CharacterDetails } from "@/data/characters";
 import { useDebounce } from "@/hooks/use-debounce";
 import { updateTrainingAction } from "@/app/actions/trainingActions";
 import {
@@ -19,7 +19,15 @@ import {
   createModuleAction,
   deleteModuleAction,
 } from "@/app/actions/moduleActions";
-import { updateModuleCharacterPromptAction } from "@/app/actions/modules-characters-actions";
+import {
+  updateModuleCharacterPromptAction,
+  insertModuleCharacterAction,
+} from "@/app/actions/modules-characters-actions";
+import {
+  createCharacterAction,
+  updateCharacterAction,
+  deleteCharacterAction,
+} from "@/app/actions/character-actions";
 import { AI_MODELS } from "@/types/models";
 import { logger } from "@/lib/logger";
 // --- State Definition ---
@@ -83,6 +91,27 @@ type TrainingEditAction =
   | {
       type: "REMOVE_MODULE_CHARACTER";
       payload: { moduleId: number; characterId: number };
+    }
+  // New Action: For setting character after creation and insertion
+  | {
+      type: "SET_MODULE_CHARACTER_AFTER_CREATION";
+      payload: { moduleId: number; character: CharacterDetails };
+    }
+  // New Action: For updating specific character fields (name, avatar, voice, AI model)
+  | {
+      type: "UPDATE_MODULE_CHARACTER_FIELD";
+      payload: {
+        moduleId: number;
+        characterId: number;
+        field: keyof Pick<
+          ModuleCharacter,
+          "name" | "avatarUrl" | "voice" | "aiModel"
+        >;
+        value: ModuleCharacter[keyof Pick<
+          ModuleCharacter,
+          "name" | "avatarUrl" | "voice" | "aiModel"
+        >];
+      };
     }
   // Internal Actions (for saving status)
   | { type: "SAVE_STARTED" }
@@ -318,6 +347,79 @@ function trainingEditReducer(
       };
     }
 
+    // New Reducer Case: SET_MODULE_CHARACTER_AFTER_CREATION
+    case "SET_MODULE_CHARACTER_AFTER_CREATION": {
+      const { moduleId, character } = action.payload;
+      const moduleIndex = state.training.modules.findIndex(
+        (m) => m.id === moduleId
+      );
+      if (moduleIndex === -1) {
+        logger.error(
+          `[Reducer SET_MODULE_CHARACTER_AFTER_CREATION] Module ${moduleId} not found.`
+        );
+        return state;
+      }
+
+      const newModuleCharacter: ModuleCharacter = {
+        ...character, // Spread full CharacterDetails
+        prompt: "", // Initialize with an empty prompt
+        ordinal: 0, // Only one character per module now
+      };
+
+      const updatedModules = [...state.training.modules];
+      updatedModules[moduleIndex] = {
+        ...updatedModules[moduleIndex],
+        modulePrompt: {
+          ...updatedModules[moduleIndex].modulePrompt,
+          characters: [newModuleCharacter],
+        },
+      };
+
+      return {
+        ...state,
+        training: {
+          ...state.training,
+          modules: updatedModules,
+        },
+        ...baseStateUpdate,
+      };
+    }
+
+    // New Reducer Case: UPDATE_MODULE_CHARACTER_FIELD
+    case "UPDATE_MODULE_CHARACTER_FIELD": {
+      const { moduleId, characterId, field, value } = action.payload;
+      const updatedModules = state.training.modules.map((m: Module) => {
+        if (m.id === moduleId) {
+          const updatedCharacters = m.modulePrompt.characters.map(
+            (c: ModuleCharacter) => {
+              if (c.id === characterId) {
+                // Ensure we're creating a new object for the character
+                return { ...c, [field]: value };
+              }
+              return c;
+            }
+          );
+          // Ensure we're creating a new object for the modulePrompt and module
+          return {
+            ...m,
+            modulePrompt: {
+              ...m.modulePrompt,
+              characters: updatedCharacters,
+            },
+          };
+        }
+        return m;
+      });
+      return {
+        ...state,
+        training: {
+          ...state.training,
+          modules: updatedModules,
+        },
+        ...baseStateUpdate,
+      };
+    }
+
     // --- Internal Save Status ---
     case "SAVE_STARTED":
       return { ...state, isSaving: true, saveStatus: "saving" };
@@ -350,6 +452,10 @@ type TrainingEditContextType = {
   getModuleById: (moduleId: number | undefined) => Module | undefined;
   addModule: (title: string) => Promise<void>;
   deleteModule: (moduleId: number) => Promise<void>;
+  createAndAssignCharacterToModule: (
+    moduleId: number,
+    initialName: string
+  ) => Promise<CharacterDetails>;
 };
 
 const TrainingEditContext = createContext<TrainingEditContextType | undefined>(
@@ -423,11 +529,109 @@ export function TrainingEditProvider({
         logger.error("Cannot delete module: training data not loaded.");
         throw new Error("Training data not available.");
       }
+
+      // Find the module to be deleted to get its character ID
+      const moduleToDelete = currentTraining.modules.find(
+        (m) => m.id === moduleId
+      );
+      const characterToDeleteId =
+        moduleToDelete?.modulePrompt.characters[0]?.id;
+
       try {
+        // 1. Delete the module from the database
         await deleteModuleAction(moduleId, currentTraining.id);
+
+        // 2. If module deletion was successful and it had a character, delete the character
+        if (characterToDeleteId) {
+          try {
+            logger.debug(
+              `Module ${moduleId} deleted, now deleting associated character ${characterToDeleteId}`
+            );
+            await deleteCharacterAction(characterToDeleteId);
+            logger.debug(
+              `Successfully deleted character ${characterToDeleteId} associated with module ${moduleId}`
+            );
+          } catch (charError) {
+            logger.error(
+              `Failed to delete character ${characterToDeleteId} associated with module ${moduleId}: ${charError}`
+            );
+            // Optionally, notify the user or handle this error more robustly
+            // For now, we proceed with updating the module state in the UI
+          }
+        }
+
+        // 3. Update local state by dispatching the action
         dispatch({ type: "DELETE_MODULE", payload: { moduleId } });
       } catch (error) {
-        logger.error(`Failed to delete module: ${error}`);
+        logger.error(`Failed to delete module ${moduleId}: ${error}`);
+        throw error; // Re-throw the error to be caught by the caller in EditModules.tsx
+      }
+    },
+    [state.training, dispatch] // Removed direct dependency on state.training.modules
+  );
+
+  // --- New: Create and Assign Character to Module ---
+  const createAndAssignCharacterToModule = useCallback(
+    async (
+      moduleId: number,
+      initialName: string
+    ): Promise<CharacterDetails> => {
+      if (!state.training) {
+        logger.error(
+          "Cannot create character: training data not loaded in context."
+        );
+        throw new Error("Training data not available.");
+      }
+      try {
+        // 1. Create the character
+        const creationResult = await createCharacterAction({
+          name: initialName,
+        });
+
+        if (!creationResult.success || !creationResult.data) {
+          const errorMessage =
+            creationResult.error || "Failed to create character";
+          logger.error(errorMessage);
+          throw new Error(errorMessage);
+        }
+        const newCharacter = creationResult.data;
+
+        // 2. Insert the character into the module (link them)
+        const insertionResult = await insertModuleCharacterAction({
+          moduleId: moduleId,
+          characterId: newCharacter.id,
+        });
+
+        if (!insertionResult.success) {
+          const errorMessage =
+            insertionResult.error ||
+            `Failed to link character ${newCharacter.id} to module ${moduleId}`;
+          logger.error(errorMessage);
+          throw new Error(errorMessage);
+        }
+
+        // 3. Update local state
+        dispatch({
+          type: "SET_MODULE_CHARACTER_AFTER_CREATION",
+          payload: { moduleId, character: newCharacter },
+        });
+
+        logger.debug(
+          `Character ${newCharacter.id} created and assigned to module ${moduleId}`
+        );
+        return newCharacter;
+      } catch (error) {
+        if (
+          !(
+            error instanceof Error &&
+            (error.message.includes("Failed to create character") ||
+              error.message.includes("Failed to link character"))
+          )
+        ) {
+          logger.error(
+            `Unexpected error in createAndAssignCharacterToModule for module ${moduleId}: ${error}`
+          );
+        }
         throw error;
       }
     },
@@ -527,18 +731,45 @@ export function TrainingEditProvider({
 
         const currentCharacter = currentModule.modulePrompt.characters[0];
         const lastSavedCharacter = lastSavedModule.modulePrompt.characters[0];
-        let characterChanged = false;
+
+        // Check for character detail changes (name, avatar, voice, aiModel)
+        let characterDetailsChanged = false;
+        if (currentCharacter && lastSavedCharacter) {
+          const detailsFields: (keyof Pick<
+            ModuleCharacter,
+            "name" | "avatarUrl" | "voice" | "aiModel"
+          >)[] = ["name", "avatarUrl", "voice", "aiModel"];
+          characterDetailsChanged = detailsFields.some(
+            (field) => currentCharacter[field] !== lastSavedCharacter[field]
+          );
+        } else if (currentCharacter && !lastSavedCharacter) {
+          // Character was added
+          characterDetailsChanged = true;
+        }
+
+        // Check for character prompt change
+        let characterPromptChanged = false;
         if (
-          currentCharacter?.id !== lastSavedCharacter?.id ||
-          (currentCharacter &&
-            lastSavedCharacter &&
-            currentCharacter.prompt !== lastSavedCharacter.prompt)
+          currentCharacter &&
+          lastSavedCharacter &&
+          currentCharacter.prompt !== lastSavedCharacter.prompt
         ) {
-          characterChanged = true;
+          characterPromptChanged = true;
+        } else if (
+          currentCharacter &&
+          !lastSavedCharacter &&
+          currentCharacter.prompt // New character with a prompt
+        ) {
+          characterPromptChanged = true;
         }
 
         // If any part of the module or its prompt/character changed, determine the correct action
-        if (modulePropsChanged || modulePromptBaseChanged || characterChanged) {
+        if (
+          modulePropsChanged ||
+          modulePromptBaseChanged ||
+          characterDetailsChanged ||
+          characterPromptChanged
+        ) {
           // If module properties or base prompt properties changed, use the main update action
           if (modulePropsChanged || modulePromptBaseChanged) {
             logger.debug(
@@ -562,37 +793,39 @@ export function TrainingEditProvider({
               })
             );
           }
-          // If ONLY the character changed (likely just the prompt)
-          else if (characterChanged) {
-            if (currentCharacter) {
-              // Ensure character exists to update
-              logger.debug(
-                `Auto-saving Character Prompt for Module ${currentModule.id}, Character ${currentCharacter.id}...`
-              );
-              saveOperations.push(
-                updateModuleCharacterPromptAction({
-                  moduleId: currentModule.id,
-                  characterId: currentCharacter.id,
-                  prompt: currentCharacter.prompt || null, // Ensure null if empty
-                })
-              );
-            } else {
-              // This might occur if a character was selected then immediately removed before save?
-              logger.warn(
-                `Character prompt changed for module ${currentModule.id}, but currentCharacter is null/undefined.`
-              );
-            }
+          // If ONLY the character details (name, avatar, voice, aiModel) changed
+          if (characterDetailsChanged && currentCharacter) {
+            logger.debug(
+              `Auto-saving Character Details for Module ${currentModule.id}, Character ${currentCharacter.id}...`
+            );
+            saveOperations.push(
+              updateCharacterAction(currentCharacter.id, {
+                name: currentCharacter.name,
+                avatarUrl: currentCharacter.avatarUrl,
+                voice: currentCharacter.voice,
+                aiModel: currentCharacter.aiModel,
+                // aiDescription and description are not managed here directly
+                // Pass them as undefined if not changing, or ensure action handles partial updates.
+                // Assuming updateCharacterAction can handle partial updates if some fields are undefined.
+              })
+            );
           }
 
-          // Optional: Log specific case where only prompt changed (for debugging)
+          // If ONLY the character prompt changed
           if (
-            !modulePropsChanged &&
-            !modulePromptBaseChanged &&
-            characterChanged &&
+            characterPromptChanged &&
+            !characterDetailsChanged &&
             currentCharacter
           ) {
             logger.debug(
-              `Character prompt specifically changed for Module ${currentModule.id}, Character ${currentCharacter.id}. Handled by specific action.`
+              `Auto-saving Character Prompt for Module ${currentModule.id}, Character ${currentCharacter.id}...`
+            );
+            saveOperations.push(
+              updateModuleCharacterPromptAction({
+                moduleId: currentModule.id,
+                characterId: currentCharacter.id,
+                prompt: currentCharacter.prompt || null,
+              })
             );
           }
         }
@@ -733,6 +966,7 @@ export function TrainingEditProvider({
         getModuleById,
         addModule,
         deleteModule,
+        createAndAssignCharacterToModule,
       }}
     >
       {children}

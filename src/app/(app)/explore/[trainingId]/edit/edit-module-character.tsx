@@ -1,32 +1,38 @@
 "use client";
 
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { CharacterSummary } from "@/data/characters";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { getInitials } from "@/lib/utils";
 import { AIFocusTextarea } from "@/components/ai-focus-textarea";
 import { useTrainingEdit } from "@/contexts/training-edit-context";
-import {
-  replaceModuleCharacterAction,
-  insertModuleCharacterAction,
-} from "@/app/actions/modules-characters-actions";
 import { ModuleCharacter } from "@/data/modules";
 import { logger } from "@/lib/logger";
-export function EditModuleCharacter() {
-  const { toast } = useToast();
-  const { state, dispatch, getModuleById } = useTrainingEdit();
-  const { selectedModuleId, availableCharacters } = state;
+import { ImageEdit } from "@/components/image-edit";
+import { CharacterVoiceSelect } from "@/components/character-voice-select";
+import { AIFocusInput } from "@/components/ai-focus-input";
+import { AI_MODELS } from "@/types/models";
+import { useState, useRef } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
+export function EditModuleCharacter() {
+  const { state, dispatch, getModuleById, createAndAssignCharacterToModule } =
+    useTrainingEdit();
+  const { selectedModuleId } = state;
   const selectedModule = getModuleById(selectedModuleId);
+  const { toast } = useToast();
+
+  const [isCreateCharDialogOpen, setIsCreateCharDialogOpen] = useState(false);
+  const [newCharacterName, setNewCharacterName] = useState("");
+  const createDialogCloseRef = useRef<HTMLButtonElement>(null);
 
   const handleCharacterPromptChange = (value: string) => {
     if (!selectedModule?.modulePrompt.characters.length) return;
@@ -42,59 +48,78 @@ export function EditModuleCharacter() {
     });
   };
 
-  const handleCharacterChange = async (value: string) => {
-    if (!selectedModule || !value) return;
+  const handleImageChange = async (
+    newUrl: string | null,
+    newPath: string,
+    oldImageUrl: string | null
+  ) => {
+    if (!selectedModule || !selectedModule.modulePrompt.characters[0]) return;
+    const characterId = selectedModule.modulePrompt.characters[0].id;
+    logger.debug("Image changed to:", { newUrl, oldImageUrl });
+    dispatch({
+      type: "UPDATE_MODULE_CHARACTER_FIELD",
+      payload: {
+        moduleId: selectedModule.id,
+        characterId,
+        field: "avatarUrl",
+        value: newUrl,
+      },
+    });
+  };
 
-    const newCharacterId = parseInt(value);
-    const currentCharacter = selectedModule.modulePrompt.characters[0];
-    const newCharacterSummary = availableCharacters.find(
-      (c) => c.id === newCharacterId
-    );
+  const handleNameChange = (value: string) => {
+    if (!selectedModule || !selectedModule.modulePrompt.characters[0]) return;
+    const characterId = selectedModule.modulePrompt.characters[0].id;
+    logger.debug("Name changed to:", value);
+    dispatch({
+      type: "UPDATE_MODULE_CHARACTER_FIELD",
+      payload: {
+        moduleId: selectedModule.id,
+        characterId,
+        field: "name",
+        value: value,
+      },
+    });
+  };
 
-    if (!newCharacterSummary) {
-      logger.error("Selected character not found in available list");
-      toast({
-        title: "Error selecting character",
-        description: "Character not found.",
-      });
-      return;
-    }
+  const handleVoiceChange = (voice: string | undefined) => {
+    if (!selectedModule || !selectedModule.modulePrompt.characters[0]) return;
+    const characterId = selectedModule.modulePrompt.characters[0].id;
+    logger.debug("Voice changed to:", voice);
+    dispatch({
+      type: "UPDATE_MODULE_CHARACTER_FIELD",
+      payload: {
+        moduleId: selectedModule.id,
+        characterId,
+        field: "voice",
+        value: voice === undefined ? null : voice,
+      },
+    });
+  };
 
-    const newModuleCharacterData = {
-      id: newCharacterSummary.id,
-      name: newCharacterSummary.name,
-      avatarUrl: newCharacterSummary.avatarUrl,
-      aiModel: newCharacterSummary.aiModel,
-      prompt: "",
-    };
-
+  const handleCreateNewCharacter = async () => {
+    if (!selectedModule || !newCharacterName.trim()) return;
     try {
-      if (currentCharacter) {
-        await replaceModuleCharacterAction({
-          moduleId: selectedModule.id,
-          oldCharacterId: currentCharacter.id,
-          newCharacterId: newCharacterId,
-        });
-      } else {
-        await insertModuleCharacterAction({
-          moduleId: selectedModule.id,
-          characterId: newCharacterId,
-        });
-      }
-      dispatch({
-        type: "SELECT_MODULE_CHARACTER",
-        payload: {
-          moduleId: selectedModule.id,
-          character: newModuleCharacterData as ModuleCharacter,
-        },
-      });
-
-      toast({ title: "Character assigned" });
-    } catch (error) {
-      logger.error("Error assigning character:", error);
+      await createAndAssignCharacterToModule(
+        selectedModule.id,
+        newCharacterName.trim()
+      );
+      setNewCharacterName("");
+      createDialogCloseRef.current?.click();
+      setIsCreateCharDialogOpen(false);
       toast({
-        title: "Error assigning character",
-        description: "Please try again.",
+        title: "Character Created",
+        description: `Successfully created and assigned '${newCharacterName.trim()}'.`,
+      });
+    } catch (error) {
+      logger.error("Failed to create and assign character from dialog:", error);
+      toast({
+        variant: "destructive",
+        title: "Creation Failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Could not create character. Please try again.",
       });
     }
   };
@@ -108,55 +133,125 @@ export function EditModuleCharacter() {
   if (!selectedModule) return null;
 
   const currentCharacter = selectedModule.modulePrompt.characters[0];
-  const currentCharacterId = currentCharacter?.id.toString();
   const currentCharacterPrompt = currentCharacter?.prompt || "";
+
+  if (!currentCharacter) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 border border-border/50 rounded-lg bg-secondary/10 shadow-sm space-y-4">
+        <p className="text-muted-foreground text-center">
+          This module doesn&apos;t have a character yet.
+        </p>
+        <Dialog
+          open={isCreateCharDialogOpen}
+          onOpenChange={setIsCreateCharDialogOpen}
+        >
+          <DialogTrigger asChild>
+            <Button variant="brand">Create New Character</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Character for Module</DialogTitle>
+              <DialogDescription>
+                Enter the name for the new character. This character will be
+                specifically for this module.
+              </DialogDescription>
+            </DialogHeader>
+            <Input
+              value={newCharacterName}
+              onChange={(e) => setNewCharacterName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newCharacterName.trim()) {
+                  handleCreateNewCharacter();
+                }
+              }}
+              placeholder="Character name"
+              className="my-4"
+            />
+            <DialogFooter>
+              <DialogClose ref={createDialogCloseRef} asChild>
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsCreateCharDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button
+                onClick={handleCreateNewCharacter}
+                variant="brand"
+                disabled={!newCharacterName.trim()}
+              >
+                Create
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="border border-border/50 rounded-lg p-5 bg-secondary/10 shadow-sm">
-        <div className="flex gap-3">
-          <Select
-            value={currentCharacterId || ""}
-            onValueChange={handleCharacterChange}
-          >
-            <SelectTrigger className="w-full bg-background/90 border-border/50 rounded-2xl focus:ring-brand focus:ring-2">
-              <SelectValue placeholder="Assign Character">
-                {currentCharacter ? (
-                  <div className="flex items-center space-x-2">
-                    <Avatar className="h-6 w-6 border border-border/30">
-                      <AvatarImage
-                        src={currentCharacter.avatarUrl || undefined}
-                      />
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {getInitials(currentCharacter.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span>{currentCharacter.name}</span>
-                  </div>
-                ) : (
-                  "Assign Character"
-                )}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="border-border/50 bg-background/95 backdrop-blur-sm rounded-2xl ring-2 ring-brand">
-              {availableCharacters.map((character: CharacterSummary) => (
-                <SelectItem key={character.id} value={character.id.toString()}>
-                  <div className="flex items-center space-x-2">
-                    <Avatar className="h-6 w-6 border border-border/30">
-                      <AvatarImage src={character.avatarUrl || undefined} />
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {getInitials(character.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span>{character.name}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="ghost-brand" asChild>
-            <Link href="/characters">Manage</Link>
-          </Button>
+        <div className="flex gap-8 items-start">
+          {currentCharacter ? (
+            <>
+              <div className="w-32 flex-shrink-0">
+                <ImageEdit
+                  initialImageUrl={currentCharacter.avatarUrl || null}
+                  bucketName="avatars"
+                  storageFolderPath={`character-avatars/${currentCharacter.id}`}
+                  contextId={currentCharacter.id.toString()}
+                  contextType="character"
+                  aspectRatio="square"
+                  onImageChange={handleImageChange}
+                  imageShape="circle"
+                  imageContainerClassName="h-24 w-24"
+                  buttonSpacing="mt-2"
+                  buttonSize="sm"
+                  buttonVariant="ghost-brand"
+                  showButtonLabels={false}
+                />
+              </div>
+              <div className="flex-1 space-y-4">
+                <div className="flex flex-col gap-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Name
+                  </label>
+                  <AIFocusInput
+                    name="characterName"
+                    placeholder="Character Name"
+                    value={currentCharacter.name}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    className="bg-secondary/30 rounded-lg border-border/30 shadow-sm text-sm h-9"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Voice
+                  </label>
+                  <CharacterVoiceSelect
+                    value={
+                      (currentCharacter as ModuleCharacter).voice || undefined
+                    }
+                    onValueChange={handleVoiceChange}
+                    aiModel={
+                      currentCharacter.aiModel === AI_MODELS.OPENAI ||
+                      currentCharacter.aiModel === AI_MODELS.GEMINI
+                        ? currentCharacter.aiModel
+                        : AI_MODELS.OPENAI
+                    }
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-muted-foreground">
+              No character assigned to this module. Please assign one via module
+              settings.
+            </div>
+          )}
         </div>
       </div>
 
@@ -171,7 +266,7 @@ export function EditModuleCharacter() {
             onChange={(e) => handleCharacterPromptChange(e.target.value)}
             placeholder="Enter the prompt about how this character should behave in this scenario"
             rows={10}
-            className="min-h-[calc(100vh-31rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
+            className="min-h-[calc(100vh-38rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
             onKeyDown={handleKeyDown}
           />
         </div>
