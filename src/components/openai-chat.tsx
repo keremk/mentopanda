@@ -35,6 +35,11 @@ import { useTranscript } from "@/contexts/transcript";
 import { toast } from "@/hooks/use-toast";
 import { TranscriptProvider } from "@/contexts/transcript";
 import { logger } from "@/lib/logger";
+import {
+  updateConversationUsageAction,
+  updateTranscriptionUsageAction,
+} from "@/app/actions/usage-actions";
+
 type ChatProps = {
   module: Module;
   currentUser: User;
@@ -90,6 +95,7 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
     showEndDialog: false,
   });
   const [historyEntryId, setHistoryEntryId] = useState<number>();
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const { transcriptEntries, clearTranscript } = useTranscript();
   const { saveAndComplete } = useTranscriptSave({
     historyEntryId,
@@ -126,12 +132,16 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
   );
 
   // Log the values directly before passing them to the hook
-  logger.info("[OpenAIChatContent] Preparing to call useOpenAIRealtime with:", {
-    instructions,
-    voice,
-    agentName,
-    userName: currentUser.displayName,
-  });
+  logger.debug(
+    "[OpenAIChatContent] Preparing to call useOpenAIRealtime with:",
+    {
+      instructions,
+      voice,
+      agentName,
+      userName: currentUser.displayName,
+    }
+  );
+  logger.debug("OpenAI Realtime Instructions:\n", instructions);
 
   const {
     startMicrophone,
@@ -141,7 +151,7 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
     isMuted,
   } = useMicrophone();
 
-  const { connect, disconnect, sendTextMessage } = useOpenAIRealtime({
+  const { connect, disconnect, sendTextMessage, usage } = useOpenAIRealtime({
     instructions: instructions,
     voice: voice,
     audioRef,
@@ -153,6 +163,135 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
   const handleDurationChange = useCallback((newDuration: number) => {
     setSessionDurationMinutes(newDuration);
   }, []);
+
+  const logUsageMetrics = useCallback(async () => {
+    logger.info("[logUsageMetrics] Attempting to log usage metrics."); // Debug log
+    logger.info(
+      `[logUsageMetrics] Current sessionStartTime: ${sessionStartTime}`
+    ); // Debug log
+    logger.info(
+      `[logUsageMetrics] Current transcriptEntries length: ${transcriptEntries.length}`
+    ); // Debug log
+
+    if (sessionStartTime === null) {
+      logger.warn(
+        "[logUsageMetrics] Session start time is null. Skipping metrics logging."
+      );
+      return;
+    }
+
+    const endTime = Date.now();
+    const elapsedTimeInSeconds = (endTime - sessionStartTime) / 1000;
+
+    let totalUserChars = 0;
+    let totalAgentChars = 0;
+    let totalUserUtterances = 0;
+    let totalAgentResponses = 0;
+
+    transcriptEntries.forEach((entry) => {
+      if (entry.role === "user" && entry.text) {
+        totalUserChars += entry.text.length;
+        totalUserUtterances++;
+      } else if (entry.role === "agent" && entry.text) {
+        totalAgentChars += entry.text.length;
+        totalAgentResponses++;
+      }
+    });
+
+    logger.info("===== Usage Metrics =====");
+    logger.info(`User ID: ${currentUser.id}`); // Assuming User type has an id
+    logger.info(`Module ID: ${module.id}`);
+    logger.info(`Session Duration: ${elapsedTimeInSeconds.toFixed(2)} seconds`);
+    logger.info(`Total User Characters Transcribed: ${totalUserChars}`);
+    logger.info(`Total User Utterances: ${totalUserUtterances}`);
+    logger.info(`Total Agent Characters Synthesized: ${totalAgentChars}`);
+    logger.info(`Total Agent Responses: ${totalAgentResponses}`);
+    logger.info("=========================");
+
+    if (usage) {
+      logger.info("===== Token Usage Metrics =====");
+      logger.info(`Total Tokens: ${usage.totalTokens}`);
+      logger.info(`Input Tokens: ${usage.inputTokens}`);
+      logger.info(`Output Tokens: ${usage.outputTokens}`);
+      logger.info("Input Token Details:");
+      logger.info(`  Cached Tokens: ${usage.inputTokenDetails.cachedTokens}`);
+      logger.info(`  Text Tokens: ${usage.inputTokenDetails.textTokens}`);
+      logger.info(`  Audio Tokens: ${usage.inputTokenDetails.audioTokens}`);
+      logger.info("  Cached Tokens Details:");
+      logger.info(
+        `    Text Tokens: ${usage.inputTokenDetails.cachedTokensDetails.textTokens}`
+      );
+      logger.info(
+        `    Audio Tokens: ${usage.inputTokenDetails.cachedTokensDetails.audioTokens}`
+      );
+      logger.info("Output Token Details:");
+      logger.info(`  Text Tokens: ${usage.outputTokenDetails.textTokens}`);
+      logger.info(`  Audio Tokens: ${usage.outputTokenDetails.audioTokens}`);
+      logger.info("=============================");
+
+      // Track conversation usage in database
+      try {
+        await updateConversationUsageAction({
+          modelName: "gpt-4o-realtime", // Assuming this is the model used
+          promptTokens: {
+            text: {
+              cached:
+                usage.inputTokenDetails.cachedTokensDetails.textTokens || 0,
+              notCached: Math.max(
+                0,
+                (usage.inputTokenDetails.textTokens || 0) -
+                  (usage.inputTokenDetails.cachedTokensDetails.textTokens || 0)
+              ),
+            },
+            audio: {
+              cached:
+                usage.inputTokenDetails.cachedTokensDetails.audioTokens || 0,
+              notCached: Math.max(
+                0,
+                (usage.inputTokenDetails.audioTokens || 0) -
+                  (usage.inputTokenDetails.cachedTokensDetails.audioTokens || 0)
+              ),
+            },
+          },
+          outputTokens: {
+            text: usage.outputTokenDetails.textTokens || 0,
+            audio: usage.outputTokenDetails.audioTokens || 0,
+          },
+          totalTokens: usage.totalTokens || 0,
+          totalSessionLength: elapsedTimeInSeconds,
+        });
+        logger.info("Conversation usage tracked successfully");
+      } catch (error) {
+        logger.error(`Failed to track conversation usage: ${error}`);
+        // Don't fail the request if usage tracking fails
+      }
+    }
+
+    // Track transcription usage in database
+    if (totalUserChars > 0 || totalAgentChars > 0) {
+      try {
+        await updateTranscriptionUsageAction({
+          modelName: "whisper-1", // Assuming this is the transcription model used
+          totalSessionLength: elapsedTimeInSeconds,
+          userChars: totalUserChars,
+          agentChars: totalAgentChars,
+        });
+        logger.info("Transcription usage tracked successfully");
+      } catch (error) {
+        logger.error(`Failed to track transcription usage: ${error}`);
+        // Don't fail the request if usage tracking fails
+      }
+    }
+
+    setSessionStartTime(null); // Reset start time after logging
+  }, [
+    sessionStartTime,
+    transcriptEntries,
+    currentUser,
+    module.id,
+    setSessionStartTime,
+    usage,
+  ]);
 
   const handleToggleConversation = useCallback(async () => {
     if (chatState.isConversationActive) {
@@ -172,12 +311,25 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
 
       const newHistoryEntryId = await createHistoryEntryAction(module.id);
       setHistoryEntryId(newHistoryEntryId);
-
+      setSessionStartTime(Date.now()); // Record session start time
+      logger.info(
+        "[handleToggleConversation] Session started. Start time set."
+      ); // Debug log
       setChatState((prev) => ({ ...prev, isConversationActive: true }));
     }
-  }, [chatState.isConversationActive, startMicrophone, connect, module.id]);
+  }, [
+    chatState.isConversationActive,
+    startMicrophone,
+    connect,
+    module.id,
+    logUsageMetrics,
+  ]);
 
-  const handleCountdownComplete = useCallback(() => {
+  const handleCountdownComplete = useCallback(async () => {
+    logger.info(
+      "[handleCountdownComplete] Countdown completed. Calling logUsageMetrics."
+    ); // Debug log
+    await logUsageMetrics();
     disconnect();
     stopMicrophone();
     setChatState((prev) => ({
@@ -186,9 +338,13 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
       isTimeout: true,
       showEndDialog: true,
     }));
-  }, [disconnect, stopMicrophone]);
+  }, [disconnect, stopMicrophone, logUsageMetrics]);
 
   const handleEndWithoutSaving = useCallback(async () => {
+    logger.info(
+      "[handleEndWithoutSaving] Ending without saving. Calling logUsageMetrics."
+    ); // Debug log
+    await logUsageMetrics();
     disconnect();
     stopMicrophone();
     if (historyEntryId) {
@@ -202,10 +358,20 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
       isTimeout: false,
       showEndDialog: false,
     }));
-  }, [disconnect, stopMicrophone, historyEntryId, clearTranscript]);
+  }, [
+    disconnect,
+    stopMicrophone,
+    historyEntryId,
+    clearTranscript,
+    logUsageMetrics,
+  ]);
 
   const handleEndAndSave = useCallback(async () => {
     try {
+      logger.info(
+        "[handleEndAndSave] Ending and saving. Calling logUsageMetrics."
+      ); // Debug log
+      await logUsageMetrics();
       disconnect();
       stopMicrophone();
       await saveAndComplete();
@@ -232,7 +398,14 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
         router.push(`/assessments/${historyEntryId}`);
       }
     }
-  }, [disconnect, stopMicrophone, saveAndComplete, historyEntryId, router]);
+  }, [
+    disconnect,
+    stopMicrophone,
+    saveAndComplete,
+    historyEntryId,
+    router,
+    logUsageMetrics,
+  ]);
 
   const handleSendMessage = useCallback(
     (message: string) => {

@@ -2,6 +2,7 @@ import { streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { getModuleByIdAction2 } from "@/app/actions/moduleActions";
 import { getHistoryEntryAction } from "@/app/actions/history-actions";
+import { updateAssessmentUsageAction } from "@/app/actions/usage-actions";
 import { logger } from "@/lib/logger";
 
 // Allow streaming responses up to 30 seconds
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
 
   const openai = createOpenAI({
     apiKey: finalApiKey,
+    compatibility: "strict", // Enable strict compatibility mode for proper token counting in streams
   });
 
   const systemPrompt = `
@@ -61,7 +63,60 @@ export async function POST(req: Request) {
     prompt: `Transcript:\n
      ${historyEntry.transcriptText}
      `,
+    onError: (error) => {
+      logger.error(`Stream error: ${error}`);
+    },
+    onFinish: async ({ usage, finishReason, text, providerMetadata }) => {
+      // Log usage data when available
+      if (usage) {
+        logger.info(`Usage:`, usage.totalTokens);
+        logger.info(`Prompt tokens:`, usage.promptTokens);
+        logger.info(`Completion tokens:`, usage.completionTokens);
+
+        // Log cached token information if available
+        const cachedPromptTokens =
+          typeof providerMetadata?.openai?.cachedPromptTokens === "number"
+            ? providerMetadata.openai.cachedPromptTokens
+            : 0;
+        const notCachedPromptTokens = Math.max(
+          0,
+          (usage.promptTokens || 0) - cachedPromptTokens
+        );
+        logger.info(`Cached prompt tokens:`, cachedPromptTokens);
+        logger.info(`Non-cached prompt tokens:`, notCachedPromptTokens);
+
+        // Track usage in database
+        try {
+          await updateAssessmentUsageAction({
+            modelName: "gpt-4o",
+            promptTokens: {
+              text: {
+                cached: cachedPromptTokens,
+                notCached: notCachedPromptTokens,
+              },
+            },
+            outputTokens: usage.completionTokens || 0,
+            totalTokens: usage.totalTokens || 0,
+          });
+          logger.info(`Usage tracked successfully for assessment`);
+        } catch (error) {
+          logger.error(`Failed to track usage: ${error}`);
+          // Don't fail the request if usage tracking fails
+        }
+      } else {
+        logger.warn(
+          "Usage is null in onFinish callback - this indicates an issue"
+        );
+      }
+      logger.info(`Finish reason:`, finishReason);
+      logger.info(`Text length:`, text.length);
+    },
   });
 
-  return result.toDataStreamResponse();
+  return result.toDataStreamResponse({
+    getErrorMessage: (error: unknown) => {
+      logger.error(`Stream error: ${error}`);
+      return `${error}`;
+    },
+  });
 }

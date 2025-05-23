@@ -1,6 +1,6 @@
 import { CURRENT_MODEL_NAMES } from "@/types/models";
 import { createOpenAISession } from "@/app/actions/openai-session";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useTranscript } from "@/contexts/transcript";
 import { useApiKey } from "./use-api-key";
 import { logger } from "@/lib/logger";
@@ -44,12 +44,50 @@ export type ServerEvent = {
       arguments?: any;
       call_id?: string;
     }[];
+    status?: string;
     status_details?: {
       error?: any;
+    };
+    usage?: {
+      total_tokens: number;
+      input_tokens: number;
+      output_tokens: number;
+      input_token_details: {
+        cached_tokens: number;
+        text_tokens: number;
+        audio_tokens: number;
+        cached_tokens_details: {
+          text_tokens: number;
+          audio_tokens: number;
+        };
+      };
+      output_token_details: {
+        text_tokens: number;
+        audio_tokens: number;
+      };
     };
   };
 };
 /* eslint-enable @typescript-eslint/no-explicit-any */
+
+export type Usage = {
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  inputTokenDetails: {
+    cachedTokens: number;
+    textTokens: number;
+    audioTokens: number;
+    cachedTokensDetails: {
+      textTokens: number;
+      audioTokens: number;
+    };
+  };
+  outputTokenDetails: {
+    textTokens: number;
+    audioTokens: number;
+  };
+};
 
 export function useOpenAIRealtime({
   instructions,
@@ -62,6 +100,7 @@ export function useOpenAIRealtime({
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const providerUrl = "https://api.openai.com/v1/realtime";
   const model = CURRENT_MODEL_NAMES.OPENAI;
+  const [usage, setUsage] = useState<Usage | null>(null);
   const {
     transcriptEntries,
     addTranscriptMessage,
@@ -214,6 +253,37 @@ export function useOpenAIRealtime({
           }
           break;
         }
+
+        case "response.done": {
+          const usageData = serverEvent.response?.usage;
+          if (usageData) {
+            logger.info("State:", serverEvent.response?.status);
+            logger.info("Token Usage:", usageData);
+            setUsage({
+              totalTokens: usageData.total_tokens,
+              inputTokens: usageData.input_tokens,
+              outputTokens: usageData.output_tokens,
+              inputTokenDetails: {
+                cachedTokens: usageData.input_token_details.cached_tokens,
+                textTokens: usageData.input_token_details.text_tokens,
+                audioTokens: usageData.input_token_details.audio_tokens,
+                cachedTokensDetails: {
+                  textTokens:
+                    usageData.input_token_details.cached_tokens_details
+                      .text_tokens,
+                  audioTokens:
+                    usageData.input_token_details.cached_tokens_details
+                      .audio_tokens,
+                },
+              },
+              outputTokenDetails: {
+                textTokens: usageData.output_token_details.text_tokens,
+                audioTokens: usageData.output_token_details.audio_tokens,
+              },
+            });
+          }
+          break;
+        }
       }
     } catch (error) {
       logger.error("Failed to parse data channel message:", error);
@@ -302,5 +372,5 @@ export function useOpenAIRealtime({
     sendClientEvent({ type: "response.create" });
   }
 
-  return { connect, disconnect, sendTextMessage };
+  return { connect, disconnect, sendTextMessage, usage };
 }

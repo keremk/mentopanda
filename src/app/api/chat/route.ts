@@ -12,6 +12,7 @@ import {
   getAIContextDataForCharacterAction,
   getAIContextDataForTrainingAction,
 } from "@/app/actions/aicontext-actions";
+import { updatePromptHelperUsageAction } from "@/app/actions/usage-actions";
 import { TrainingContextData } from "@/data/ai-context";
 import { CharacterContextForAI } from "@/data/characters";
 import { logger } from "@/lib/logger";
@@ -163,6 +164,7 @@ export async function POST(req: Request) {
   // Create a configured OpenAI client instance
   const openai = createOpenAI({
     apiKey: finalApiKey,
+    compatibility: "strict", // Enable strict compatibility mode for proper token counting in streams
   });
 
   const lastMessageContent =
@@ -181,20 +183,58 @@ export async function POST(req: Request) {
   logger.debug(`Messages:`, JSON.stringify(messages, null, 2));
   logger.debug(`System Prompt:`, JSON.stringify(systemPrompt, null, 2));
 
-  const result = await streamText({
+  const result = streamText({
     model: openai.chat("gpt-4o"),
     system: systemPrompt,
     messages,
     temperature: 0.3,
-    onError: (error) => { 
-      logger.error(`Stream error: ${error}`);  
+    onError: (error) => {
+      logger.error(`Stream error: ${error}`);
     },
-    onFinish: (result) => {
-      const usage = result.usage;
-      logger.debug(`Usage:`, usage.totalTokens);
-      logger.debug(`Usage:`, usage.promptTokens);
-      logger.debug(`Usage:`, usage.completionTokens);
-      logger.debug(`Result:`, JSON.stringify(result, null, 2));
+    onFinish: async ({ usage, finishReason, text, providerMetadata }) => {
+      // Log usage data when available
+      if (usage) {
+        logger.info(`Usage:`, usage.totalTokens);
+        logger.info(`Prompt tokens:`, usage.promptTokens);
+        logger.info(`Completion tokens:`, usage.completionTokens);
+
+        // Log cached token information if available
+        const cachedPromptTokens =
+          typeof providerMetadata?.openai?.cachedPromptTokens === "number"
+            ? providerMetadata.openai.cachedPromptTokens
+            : 0;
+        const notCachedPromptTokens = Math.max(
+          0,
+          (usage.promptTokens || 0) - cachedPromptTokens
+        );
+        logger.info(`Cached prompt tokens:`, cachedPromptTokens);
+        logger.info(`Non-cached prompt tokens:`, notCachedPromptTokens);
+
+        // Track usage in database
+        try {
+          await updatePromptHelperUsageAction({
+            modelName: "gpt-4o",
+            promptTokens: {
+              text: {
+                cached: cachedPromptTokens,
+                notCached: notCachedPromptTokens,
+              },
+            },
+            outputTokens: usage.completionTokens || 0,
+            totalTokens: usage.totalTokens || 0,
+          });
+          logger.info(`Usage tracked successfully for prompt helper`);
+        } catch (error) {
+          logger.error(`Failed to track prompt helper usage: ${error}`);
+          // Don't fail the request if usage tracking fails
+        }
+      } else {
+        logger.warn(
+          "Usage is null in onFinish callback - this indicates an issue"
+        );
+      }
+      logger.info(`Finish reason:`, finishReason);
+      logger.info(`Text length:`, text.length);
     },
   });
 
