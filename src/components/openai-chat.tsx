@@ -185,54 +185,20 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
 
     let totalUserChars = 0;
     let totalAgentChars = 0;
-    let totalUserUtterances = 0;
-    let totalAgentResponses = 0;
 
     transcriptEntries.forEach((entry) => {
       if (entry.role === "user" && entry.text) {
         totalUserChars += entry.text.length;
-        totalUserUtterances++;
       } else if (entry.role === "agent" && entry.text) {
         totalAgentChars += entry.text.length;
-        totalAgentResponses++;
       }
     });
 
-    logger.info("===== Usage Metrics =====");
-    logger.info(`User ID: ${currentUser.id}`); // Assuming User type has an id
-    logger.info(`Module ID: ${module.id}`);
-    logger.info(`Session Duration: ${elapsedTimeInSeconds.toFixed(2)} seconds`);
-    logger.info(`Total User Characters Transcribed: ${totalUserChars}`);
-    logger.info(`Total User Utterances: ${totalUserUtterances}`);
-    logger.info(`Total Agent Characters Synthesized: ${totalAgentChars}`);
-    logger.info(`Total Agent Responses: ${totalAgentResponses}`);
-    logger.info("=========================");
-
     if (usage) {
-      logger.info("===== Token Usage Metrics =====");
-      logger.info(`Total Tokens: ${usage.totalTokens}`);
-      logger.info(`Input Tokens: ${usage.inputTokens}`);
-      logger.info(`Output Tokens: ${usage.outputTokens}`);
-      logger.info("Input Token Details:");
-      logger.info(`  Cached Tokens: ${usage.inputTokenDetails.cachedTokens}`);
-      logger.info(`  Text Tokens: ${usage.inputTokenDetails.textTokens}`);
-      logger.info(`  Audio Tokens: ${usage.inputTokenDetails.audioTokens}`);
-      logger.info("  Cached Tokens Details:");
-      logger.info(
-        `    Text Tokens: ${usage.inputTokenDetails.cachedTokensDetails.textTokens}`
-      );
-      logger.info(
-        `    Audio Tokens: ${usage.inputTokenDetails.cachedTokensDetails.audioTokens}`
-      );
-      logger.info("Output Token Details:");
-      logger.info(`  Text Tokens: ${usage.outputTokenDetails.textTokens}`);
-      logger.info(`  Audio Tokens: ${usage.outputTokenDetails.audioTokens}`);
-      logger.info("=============================");
-
       // Track conversation usage in database
       try {
         await updateConversationUsageAction({
-          modelName: "gpt-4o-realtime", // Assuming this is the model used
+          modelName: "gpt-4o-realtime-preview", // Fixed to match pricing data
           promptTokens: {
             text: {
               cached:
@@ -284,14 +250,7 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
     }
 
     setSessionStartTime(null); // Reset start time after logging
-  }, [
-    sessionStartTime,
-    transcriptEntries,
-    currentUser,
-    module.id,
-    setSessionStartTime,
-    usage,
-  ]);
+  }, [sessionStartTime, transcriptEntries, setSessionStartTime, usage]);
 
   const handleToggleConversation = useCallback(async () => {
     if (chatState.isConversationActive) {
@@ -317,13 +276,7 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
       ); // Debug log
       setChatState((prev) => ({ ...prev, isConversationActive: true }));
     }
-  }, [
-    chatState.isConversationActive,
-    startMicrophone,
-    connect,
-    module.id,
-    logUsageMetrics,
-  ]);
+  }, [chatState.isConversationActive, startMicrophone, connect, module.id]);
 
   const handleCountdownComplete = useCallback(async () => {
     logger.info(

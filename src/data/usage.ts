@@ -1,5 +1,127 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
+import pricingData from "./pricing.json";
+
+// Subscription tier credit allocations (monthly)
+export const SUBSCRIPTION_TIER_CREDITS = {
+  free: 100,
+  pro: 1000,
+  team: 5000,
+  enterprise: 10000,
+} as const;
+
+export type SubscriptionTier = keyof typeof SUBSCRIPTION_TIER_CREDITS;
+
+// Credit management types
+export type CreditUpdate = {
+  creditsToAdd?: number;
+  creditsToDeduct?: number;
+};
+
+// Credit system configuration
+export const CREDIT_CONFIG = {
+  // 1 credit = $0.05 USD (adjust as needed)
+  CREDIT_VALUE_USD: 0.05,
+
+  // Margin multiplier (50% markup = 1.5)
+  MARGIN_MULTIPLIER: 1.5,
+} as const;
+
+// Helper function to calculate credits from USD cost
+function calculateCreditsFromUSD(costUSD: number): number {
+  return (
+    (costUSD * CREDIT_CONFIG.MARGIN_MULTIPLIER) / CREDIT_CONFIG.CREDIT_VALUE_USD
+  );
+}
+
+// Get pricing for text models (per 1M tokens)
+function getTextModelPricing(
+  modelName: string
+): { input: number; cachedInput: number; output: number } | null {
+  const model = pricingData.latest_models_text_tokens.find(
+    (m) => m.model === modelName
+  );
+  if (!model) return null;
+
+  return {
+    input: model.input / 1_000_000, // Convert from per 1M to per token
+    cachedInput: (model.cached_input || model.input) / 1_000_000,
+    output: model.output / 1_000_000,
+  };
+}
+
+// Get pricing for image generation
+function getImagePricing(
+  modelName: string,
+  quality: ImageQuality,
+  size: ImageSize
+): number {
+  const sizeMap = {
+    square: "1024x1024",
+    portrait: "1024x1536",
+    landscape: "1536x1024",
+  };
+
+  const dimensions = sizeMap[size];
+
+  // Try original model name first, then try with underscore conversion
+  let imageModel =
+    pricingData.image_generation[
+      modelName as keyof typeof pricingData.image_generation
+    ];
+
+  if (!imageModel && modelName.includes("-")) {
+    // Convert hyphens to underscores and try again
+    const underscoreModelName = modelName.replace(/-/g, "_");
+    imageModel =
+      pricingData.image_generation[
+        underscoreModelName as keyof typeof pricingData.image_generation
+      ];
+  }
+
+  if (!imageModel) {
+    return 0;
+  }
+
+  const qualityPricing = imageModel[quality as keyof typeof imageModel];
+  if (!qualityPricing) {
+    return 0;
+  }
+
+  return qualityPricing[dimensions as keyof typeof qualityPricing] || 0;
+}
+
+// Get transcription pricing (per minute)
+function getTranscriptionPricing(): number {
+  return pricingData.whisper.transcription_per_minute;
+}
+
+// Get realtime audio pricing
+function getRealtimePricing(modelName: string): {
+  inputText: number;
+  inputAudio: number;
+  outputText: number;
+  outputAudio: number;
+} | null {
+  // Find in text models for text pricing
+  const textModel = pricingData.latest_models_text_tokens.find(
+    (m) => m.model === modelName
+  );
+  if (!textModel) return null;
+
+  // Find in audio models for audio pricing
+  const audioModel = pricingData.image_tokens.find(
+    (m) => m.model === modelName
+  );
+  if (!audioModel) return null;
+
+  return {
+    inputText: textModel.input / 1_000_000,
+    inputAudio: audioModel.input / 1_000_000,
+    outputText: textModel.output / 1_000_000,
+    outputAudio: audioModel.output / 1_000_000,
+  };
+}
 
 // Helper to get current user ID
 async function getCurrentUserId(supabase: SupabaseClient): Promise<string> {
@@ -132,7 +254,8 @@ export type Usage = {
   promptHelper: PromptHelperUsage;
   conversation: ConversationUsage;
   transcription: TranscriptionUsage;
-  calculatedUsage: number;
+  availableCredits: number;
+  usedCredits: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -147,7 +270,8 @@ type UsageRow = {
   prompt_helper: PromptHelperUsage;
   conversation: ConversationUsage;
   transcription: TranscriptionUsage;
-  calculated_usage: string;
+  available_credits: string;
+  used_credits: string;
   created_at: string;
   updated_at: string;
 };
@@ -249,7 +373,42 @@ export async function getCurrentUsage(
 
   if (!data) return null;
 
-  return mapUsageFromDB(data);
+  const usage = mapUsageFromDB(data);
+
+  // Check if this is a new record that needs credit initialization
+  // (i.e., both available_credits and used_credits are 0)
+  if (usage.availableCredits === 0 && usage.usedCredits === 0) {
+    // Get user's subscription tier from profile
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("pricing_plan")
+      .eq("id", userId)
+      .single();
+
+    if (profileError) handleError(profileError);
+
+    const subscriptionTier = (profile?.pricing_plan ||
+      "free") as SubscriptionTier;
+    const initialCredits = SUBSCRIPTION_TIER_CREDITS[subscriptionTier];
+
+    // Initialize credits for this period
+    const { data: updatedData, error: updateError } = await supabase
+      .from("usage")
+      .update({
+        available_credits: initialCredits,
+        used_credits: 0,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", usageId)
+      .select("*")
+      .single();
+
+    if (updateError) handleError(updateError);
+
+    return mapUsageFromDB(updatedData);
+  }
+
+  return usage;
 }
 
 // Get usage for a specific period
@@ -313,7 +472,18 @@ export async function updateAssessmentUsage(
     },
   };
 
-  return updateUsageRecord(supabase, { assessment: updatedAssessment });
+  // Calculate credit cost and update used credits
+  const creditCost = calculateAssessmentCreditCost(update);
+  const currentUsedCredits = current?.usedCredits || 0;
+
+  console.log(
+    `[CREDITS] Assessment (${update.modelName}): ${creditCost.toFixed(3)} credits | Total: ${(currentUsedCredits + creditCost).toFixed(2)}`
+  );
+
+  return updateUsageRecord(supabase, {
+    assessment: updatedAssessment,
+    used_credits: currentUsedCredits + creditCost,
+  });
 }
 
 // Update prompt helper usage
@@ -352,7 +522,19 @@ export async function updatePromptHelperUsage(
     },
   };
 
-  return updateUsageRecord(supabase, { prompt_helper: updatedPromptHelper });
+  // Calculate credit cost and update used credits
+  const creditCost = calculatePromptHelperCreditCost(update);
+  const currentUsedCredits = current?.usedCredits || 0;
+  const newUsedCredits = currentUsedCredits + creditCost;
+
+  console.log(
+    `[CREDITS] Prompt Helper (${update.modelName}): ${creditCost.toFixed(3)} credits | Total: ${newUsedCredits.toFixed(2)}`
+  );
+
+  return updateUsageRecord(supabase, {
+    prompt_helper: updatedPromptHelper,
+    used_credits: newUsedCredits,
+  });
 }
 
 // Update image usage
@@ -427,7 +609,19 @@ export async function updateImageUsage(
     },
   };
 
-  return updateUsageRecord(supabase, { images: updatedImages });
+  // Calculate credit cost and update used credits
+  const creditCost = calculateImageCreditCost(update);
+  const currentUsedCredits = current?.usedCredits || 0;
+  const newUsedCredits = currentUsedCredits + creditCost;
+
+  console.log(
+    `[CREDITS] Image (${update.modelName} ${update.quality}/${update.size}): ${creditCost.toFixed(3)} credits | Total: ${newUsedCredits.toFixed(2)}`
+  );
+
+  return updateUsageRecord(supabase, {
+    images: updatedImages,
+    used_credits: newUsedCredits,
+  });
 }
 
 // Update conversation usage
@@ -483,7 +677,18 @@ export async function updateConversationUsage(
     },
   };
 
-  return updateUsageRecord(supabase, { conversation: updatedConversation });
+  // Calculate credit cost and update used credits
+  const creditCost = calculateConversationCreditCost(update);
+  const currentUsedCredits = current?.usedCredits || 0;
+
+  console.log(
+    `[CREDITS] Conversation (${update.modelName}): ${creditCost.toFixed(3)} credits | Total: ${(currentUsedCredits + creditCost).toFixed(2)}`
+  );
+
+  return updateUsageRecord(supabase, {
+    conversation: updatedConversation,
+    used_credits: currentUsedCredits + creditCost,
+  });
 }
 
 // Update transcription usage
@@ -514,7 +719,18 @@ export async function updateTranscriptionUsage(
     },
   };
 
-  return updateUsageRecord(supabase, { transcription: updatedTranscription });
+  // Calculate credit cost and update used credits
+  const creditCost = calculateTranscriptionCreditCost(update);
+  const currentUsedCredits = current?.usedCredits || 0;
+
+  console.log(
+    `[CREDITS] Transcription (${update.modelName}): ${creditCost.toFixed(3)} credits | Total: ${(currentUsedCredits + creditCost).toFixed(2)}`
+  );
+
+  return updateUsageRecord(supabase, {
+    transcription: updatedTranscription,
+    used_credits: currentUsedCredits + creditCost,
+  });
 }
 
 // Get usage history for a user
@@ -547,7 +763,8 @@ async function updateUsageRecord(
     prompt_helper: PromptHelperUsage;
     conversation: ConversationUsage;
     transcription: TranscriptionUsage;
-    calculated_usage: number;
+    available_credits: number;
+    used_credits: number;
   }>
 ): Promise<Usage> {
   const userId = await getCurrentUserId(supabase);
@@ -592,7 +809,8 @@ function mapUsageFromDB(data: UsageRow): Usage {
     promptHelper: data.prompt_helper || {},
     conversation: data.conversation || {},
     transcription: data.transcription || {},
-    calculatedUsage: parseFloat(data.calculated_usage) || 0,
+    availableCredits: parseFloat(data.available_credits) || 0,
+    usedCredits: parseFloat(data.used_credits) || 0,
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at),
   };
@@ -644,4 +862,175 @@ export function getTotalImageUsageForModel(
     totalElapsedTime,
     combinations,
   };
+}
+
+// Credit Management Functions
+
+// Check if user has sufficient credits for an operation
+export async function checkCreditAvailability(
+  supabase: SupabaseClient,
+  creditsRequired: number
+): Promise<{
+  hasCredits: boolean;
+  availableCredits: number;
+  usedCredits: number;
+}> {
+  const current = await getCurrentUsage(supabase);
+
+  if (!current) {
+    return { hasCredits: false, availableCredits: 0, usedCredits: 0 };
+  }
+
+  const remainingCredits = current.availableCredits - current.usedCredits;
+
+  return {
+    hasCredits: remainingCredits >= creditsRequired,
+    availableCredits: current.availableCredits,
+    usedCredits: current.usedCredits,
+  };
+}
+
+// Add credits to user's current period
+export async function addCredits(
+  supabase: SupabaseClient,
+  creditsToAdd: number
+): Promise<Usage> {
+  const current = await getCurrentUsage(supabase);
+  const currentCredits = current?.availableCredits || 0;
+
+  return updateUsageRecord(supabase, {
+    available_credits: currentCredits + creditsToAdd,
+  });
+}
+
+// Deduct credits from user's current period
+export async function deductCredits(
+  supabase: SupabaseClient,
+  creditsToDeduct: number
+): Promise<Usage> {
+  const current = await getCurrentUsage(supabase);
+  const currentUsedCredits = current?.usedCredits || 0;
+
+  return updateUsageRecord(supabase, {
+    used_credits: currentUsedCredits + creditsToDeduct,
+  });
+}
+
+// Initialize credits for a new period based on subscription tier
+export async function initializePeriodCredits(
+  supabase: SupabaseClient,
+  subscriptionTier: SubscriptionTier
+): Promise<Usage> {
+  const baseCredits = SUBSCRIPTION_TIER_CREDITS[subscriptionTier];
+
+  return updateUsageRecord(supabase, {
+    available_credits: baseCredits,
+    used_credits: 0,
+  });
+}
+
+// Get current credit balance
+export async function getCreditBalance(supabase: SupabaseClient): Promise<{
+  availableCredits: number;
+  usedCredits: number;
+  remainingCredits: number;
+} | null> {
+  const current = await getCurrentUsage(supabase);
+
+  if (!current) return null;
+
+  return {
+    availableCredits: current.availableCredits,
+    usedCredits: current.usedCredits,
+    remainingCredits: current.availableCredits - current.usedCredits,
+  };
+}
+
+// Calculate credit cost for different usage types using real pricing data
+export function calculateAssessmentCreditCost(
+  update: AssessmentUpdate
+): number {
+  const pricing = getTextModelPricing(update.modelName);
+
+  if (!pricing) {
+    return 0;
+  }
+
+  const cachedTokens = update.promptTokens.text.cached || 0;
+  const notCachedTokens = update.promptTokens.text.notCached || 0;
+  const outputTokens = update.outputTokens || 0;
+
+  const costUSD =
+    cachedTokens * pricing.cachedInput +
+    notCachedTokens * pricing.input +
+    outputTokens * pricing.output;
+
+  return calculateCreditsFromUSD(costUSD);
+}
+
+export function calculatePromptHelperCreditCost(
+  update: PromptHelperUpdate
+): number {
+  const pricing = getTextModelPricing(update.modelName);
+
+  if (!pricing) {
+    return 0;
+  }
+
+  const cachedTokens = update.promptTokens.text.cached || 0;
+  const notCachedTokens = update.promptTokens.text.notCached || 0;
+  const outputTokens = update.outputTokens || 0;
+
+  const costUSD =
+    cachedTokens * pricing.cachedInput +
+    notCachedTokens * pricing.input +
+    outputTokens * pricing.output;
+
+  return calculateCreditsFromUSD(costUSD);
+}
+
+export function calculateImageCreditCost(update: ImageUpdate): number {
+  const costUSD = getImagePricing(
+    update.modelName,
+    update.quality,
+    update.size
+  );
+  return calculateCreditsFromUSD(costUSD);
+}
+
+export function calculateConversationCreditCost(
+  update: ConversationUpdate
+): number {
+  const pricing = getRealtimePricing(update.modelName);
+
+  if (!pricing) {
+    return 0;
+  }
+
+  const textCachedTokens = update.promptTokens.text?.cached || 0;
+  const textNotCachedTokens = update.promptTokens.text?.notCached || 0;
+  const audioCachedTokens = update.promptTokens.audio?.cached || 0;
+  const audioNotCachedTokens = update.promptTokens.audio?.notCached || 0;
+  const outputTextTokens = update.outputTokens?.text || 0;
+  const outputAudioTokens = update.outputTokens?.audio || 0;
+
+  const costUSD =
+    textCachedTokens * pricing.inputText * 0.5 + // Assuming 50% discount for cached
+    textNotCachedTokens * pricing.inputText +
+    audioCachedTokens * pricing.inputAudio * 0.5 + // Assuming 50% discount for cached
+    audioNotCachedTokens * pricing.inputAudio +
+    outputTextTokens * pricing.outputText +
+    outputAudioTokens * pricing.outputAudio;
+
+  return calculateCreditsFromUSD(costUSD);
+}
+
+export function calculateTranscriptionCreditCost(
+  update: TranscriptionUpdate
+): number {
+  const sessionLengthMinutes = (update.totalSessionLength || 0) / 60;
+  const costPerMinute = getTranscriptionPricing();
+  const costUSD = sessionLengthMinutes * costPerMinute;
+
+  return calculateCreditsFromUSD(costUSD);
 }

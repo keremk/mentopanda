@@ -10,12 +10,18 @@ import {
   updateConversationUsage,
   updateTranscriptionUsage,
   getUserUsageHistory,
+  checkCreditAvailability,
+  addCredits,
+  deductCredits,
+  initializePeriodCredits,
+  getCreditBalance,
   type Usage,
   type AssessmentUpdate,
   type PromptHelperUpdate,
   type ImageUpdate,
   type ConversationUpdate,
   type TranscriptionUpdate,
+  type SubscriptionTier,
 } from "@/data/usage";
 
 // Get current usage period for the authenticated user
@@ -78,4 +84,50 @@ export async function getUserUsageHistoryAction(
 ): Promise<Usage[]> {
   const supabase = await createClient();
   return await getUserUsageHistory(supabase, limit);
+}
+
+// Credit Management Actions
+
+// Check if user has sufficient credits
+export async function checkCreditAvailabilityAction(
+  creditsRequired: number
+): Promise<{
+  hasCredits: boolean;
+  availableCredits: number;
+  usedCredits: number;
+}> {
+  const supabase = await createClient();
+  return await checkCreditAvailability(supabase, creditsRequired);
+}
+
+// Add credits to user's account
+export async function addCreditsAction(creditsToAdd: number): Promise<Usage> {
+  const supabase = await createClient();
+  return await addCredits(supabase, creditsToAdd);
+}
+
+// Deduct credits from user's account
+export async function deductCreditsAction(
+  creditsToDeduct: number
+): Promise<Usage> {
+  const supabase = await createClient();
+  return await deductCredits(supabase, creditsToDeduct);
+}
+
+// Initialize credits for a new billing period
+export async function initializePeriodCreditsAction(
+  subscriptionTier: SubscriptionTier
+): Promise<Usage> {
+  const supabase = await createClient();
+  return await initializePeriodCredits(supabase, subscriptionTier);
+}
+
+// Get current credit balance
+export async function getCreditBalanceAction(): Promise<{
+  availableCredits: number;
+  usedCredits: number;
+  remainingCredits: number;
+} | null> {
+  const supabase = await createClient();
+  return await getCreditBalance(supabase);
 }
