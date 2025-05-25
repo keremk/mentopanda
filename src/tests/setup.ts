@@ -1,4 +1,8 @@
-import { config } from 'dotenv'
-import { resolve } from 'path'
+import { config } from "dotenv";
+import path from "path";
 
-config({ path: resolve(__dirname, '../.env') })
+// Load environment variables from .env.local for integration tests
+config({ path: path.resolve(process.cwd(), ".env.local") });
+
+// Also load from .env as fallback
+config({ path: path.resolve(process.cwd(), ".env") });

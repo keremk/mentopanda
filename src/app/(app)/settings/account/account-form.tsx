@@ -10,6 +10,7 @@ import {
 } from "@/app/actions/user-actions";
 import React, { useTransition, useState, useRef } from "react";
 import type { User } from "@/data/user";
+import type { Usage } from "@/data/usage";
 import { ImageEdit } from "@/components/image-edit";
 import { ProjectDialog } from "@/components/project-dialog";
 import { ApiKeyInput } from "@/components/api-key-input";
@@ -30,13 +31,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CreditCard } from "lucide-react";
 import { logger } from "@/lib/logger";
+
 type AccountFormProps = {
   user: User;
+  usage: Usage | null;
 };
 
-export function AccountForm({ user }: AccountFormProps) {
+export function AccountForm({ user, usage }: AccountFormProps) {
   const [isPending, startTransition] = useTransition();
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
   const [displayName, setDisplayName] = useState(user.displayName ?? "");
@@ -380,6 +383,71 @@ export function AccountForm({ user }: AccountFormProps) {
                       className="w-24"
                     >
                       Manage
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Coming Soon</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-y-2">
+          <Label className="text-muted-foreground">Credit Usage</Label>
+          <div className="grid grid-cols-[1fr_auto] gap-x-4 items-center">
+            <div className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm p-4 space-y-3">
+              {usage ? (
+                <>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Credits Used</span>
+                    <span className="font-medium">
+                      {Math.round(usage.usedCredits)} /{" "}
+                      {Math.round(usage.availableCredits)}
+                    </span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div
+                      className={cn(
+                        "h-2 rounded-full transition-all duration-300",
+                        usage.usedCredits / usage.availableCredits >= 0.9
+                          ? "bg-destructive"
+                          : usage.usedCredits / usage.availableCredits >= 0.7
+                            ? "bg-yellow-500"
+                            : "bg-brand"
+                      )}
+                      style={{
+                        width: `${Math.min(
+                          (usage.usedCredits / usage.availableCredits) * 100,
+                          100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {Math.round(usage.availableCredits - usage.usedCredits)}{" "}
+                    credits remaining
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  Unable to load credit usage
+                </div>
+              )}
+            </div>
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button
+                      type="button"
+                      variant="ghost-brand"
+                      disabled={true}
+                      className="w-24 flex items-center gap-1.5"
+                    >
+                      <CreditCard className="h-3.5 w-3.5" />
+                      Add
                     </Button>
                   </div>
                 </TooltipTrigger>
