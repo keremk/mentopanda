@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { BarChart3, Brain, LineChart, FileText } from "lucide-react";
+import { BookOpen, Mic, WandSparkles, Palette, Users } from "lucide-react";
 import { ProgressBar } from "./progress-bar";
 import { ThemedImage } from "@/components/themed-image";
 
@@ -21,8 +21,9 @@ export const features: Feature[] = [
   {
     id: 1,
     title: "Pre-built Lessons",
-    description: "Lots of pre-built lessons to get you started.",
-    icon: <BarChart3 className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+    description:
+      "Jump right in with ready-made lessons designed to teach essential communication skills.",
+    icon: <BookOpen className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
     image:
       "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//catalog.png",
     imageLight:
@@ -30,19 +31,21 @@ export const features: Feature[] = [
   },
   {
     id: 2,
-    title: "Build your unique characters",
-    description: "Create your own characters and use them in your lessons.",
-    icon: <Brain className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+    title: "Simulate conversations",
+    description:
+      "Practice live with AI using voice or text, and receive personal coaching after every session",
+    icon: <Mic className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
     image:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//characters.png",
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/simulation.png",
     imageLight:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//characters-light.png",
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/simulation-light.png",
   },
   {
     id: 3,
-    title: "Customize your lessons",
-    description: "Add your own lessons and use them.",
-    icon: <LineChart className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+    title: "Build Custom Trainings",
+    description:
+      "Create your own roleplay scenarios and characters with AI-assisted guidance — no prompt skills required.",
+    icon: <WandSparkles className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
     image:
       "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//edit-trainings.png",
     imageLight:
@@ -50,24 +53,25 @@ export const features: Feature[] = [
   },
   {
     id: 4,
-    title: "Manage your enrollments",
-    description: "Enroll yourself or your students and track their progress.",
-    icon: <FileText className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+    title: "Bring Trainings to Life",
+    description:
+      "Generate unique cover images and realistic characters to make your training sessions more engaging.",
+    icon: <Palette className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+    image:
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//characters.png",
+    imageLight:
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//characters-light.png",
+  },
+  {
+    id: 5,
+    title: "Team Management & Insights",
+    description:
+      "Invite your team, assign trainings, and track their individual progress over time.",
+    icon: <Users className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
     image:
       "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//enrollments.png",
     imageLight:
       "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//enrollments-light.png",
-  },
-  {
-    id: 5,
-    title: "Simulate conversations",
-    description:
-      "Use SOTA AI models to simulate conversations and get feedback.",
-    icon: <FileText className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
-    image:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/simulation.png",
-    imageLight:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/simulation-light.png",
   },
 ];
 
@@ -84,6 +88,9 @@ export function FeaturesSection() {
   const [progress, setProgress] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isAutoAdvancing, setIsAutoAdvancing] = useState(false);
+  const [completedFeatures, setCompletedFeatures] = useState<Set<number>>(
+    new Set()
+  );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -118,8 +125,17 @@ export function FeaturesSection() {
     setIsAutoAdvancing(true);
     setProgress(0);
 
+    // Mark current feature as completed
+    setCompletedFeatures((prev) => new Set(prev).add(activeFeature));
+
     setActiveFeature((prev) => {
       const nextIndex = prev === features.length - 1 ? 0 : prev + 1;
+
+      // If we're going back to the first feature (completing a cycle), reset all completed features
+      if (nextIndex === 0) {
+        setCompletedFeatures(new Set());
+      }
+
       requestAnimationFrame(() => {
         centerFeature(nextIndex);
       });
@@ -130,7 +146,7 @@ export function FeaturesSection() {
       setIsTransitioning(false);
       setIsAutoAdvancing(false);
     }, 300);
-  }, [centerFeature]);
+  }, [centerFeature, activeFeature]);
 
   // Progress timer effect
   useEffect(() => {
@@ -155,6 +171,8 @@ export function FeaturesSection() {
     if (index !== activeFeature) {
       setActiveFeature(index);
       setProgress(0);
+      // Reset completed features when manually switching
+      setCompletedFeatures(new Set());
     }
   };
 
@@ -199,6 +217,8 @@ export function FeaturesSection() {
     ) {
       setActiveFeature(newIndex);
       setProgress(0);
+      // Reset completed features when manually scrolling
+      setCompletedFeatures(new Set());
       centerFeature(newIndex);
     }
   }, [activeFeature, isTransitioning, isAutoAdvancing, centerFeature]);
@@ -211,6 +231,17 @@ export function FeaturesSection() {
       return () => container.removeEventListener("scroll", handleScroll);
     }
   }, [handleScroll]);
+
+  // Calculate progress for each feature
+  const getFeatureProgress = (index: number) => {
+    if (completedFeatures.has(index)) {
+      return 100; // Feature is completed, show full progress
+    }
+    if (index === activeFeature && !isTransitioning) {
+      return progress; // Current active feature shows current progress
+    }
+    return 0; // Not started or not active
+  };
 
   return (
     <section id="features" className="py-16 px-4 sm:px-6 lg:px-8 bg-background">
@@ -274,15 +305,11 @@ export function FeaturesSection() {
                           {feature.icon}
                         </div>
                         <ProgressBar
-                          progress={
-                            index === activeFeature && !isTransitioning
-                              ? progress
-                              : 0
-                          }
+                          progress={getFeatureProgress(index)}
                           isActive={index === activeFeature}
                         />
                       </div>
-                      <h3 className="text-xl font-semibold mb-3 truncate">
+                      <h3 className="text-xl font-semibold mb-3 truncate mt-4">
                         {feature.title}
                       </h3>
                       <p className="text-muted-foreground text-sm line-clamp-2">
@@ -309,15 +336,11 @@ export function FeaturesSection() {
                       {feature.icon}
                     </div>
                     <ProgressBar
-                      progress={
-                        index === activeFeature && !isTransitioning
-                          ? progress
-                          : 0
-                      }
+                      progress={getFeatureProgress(index)}
                       isActive={index === activeFeature}
                     />
                   </div>
-                  <h3 className="text-xl font-semibold mb-3">
+                  <h3 className="text-xl font-semibold mb-3 mt-4">
                     {feature.title}
                   </h3>
                   <p className="text-muted-foreground">{feature.description}</p>

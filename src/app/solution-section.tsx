@@ -1,22 +1,27 @@
-import { LayoutGrid, Users, Workflow } from "lucide-react";
+import { LayoutDashboard, Users, UserCheck } from "lucide-react";
 
 export const solutions = [
   {
     id: 1,
     title: "Engineering Managers",
-    description: "Practice how to: interview candidates, communicate design decisions, communicate with stakeholders, say no when necessary, motivate your team, give constructive feedback, and more...",
-    icon: <LayoutGrid className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+    description:
+      "Practice how to: interview candidates, communicate design decisions, communicate with stakeholders, say no when necessary, motivate your team, give constructive feedback, and more...",
+    icon: (
+      <LayoutDashboard className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+    ),
   },
   {
     id: 2,
     title: "Product Managers, Designers",
-    description: "Practice how to: practice stakeholder communications, learn to pitch ideas effectively, learn to give and receive feedback, get better at gathering user feedback, and more...",
-    icon: <Workflow className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+    description:
+      "Practice how to: practice stakeholder communications, learn to pitch ideas effectively, learn to give and receive feedback, get better at gathering user feedback, and more...",
+    icon: <UserCheck className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
   },
   {
     id: 3,
     title: "People Teams",
-    description: "Reach out to us to discuss your specific needs and we will build a custom set of lessons for your employees.",
+    description:
+      "Reach out to us to discuss your specific needs and we will build a custom set of lessons for your employees.",
     icon: <Users className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
   },
 ];
@@ -28,55 +33,93 @@ export function SolutionSection() {
         <div className="text-center mb-16">
           <div className="text-brand font-medium mb-4">SOLUTIONS</div>
           <h2 className="text-4xl font-bold mb-4">
-            Empower Your Employees with Continuous Training
+            Empower Your Teams with Ongoing, Adaptive Training
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            One-time training is not enough. Our platform is designed to provide
-            your employees with continous opportunities to practice and improve
-            their communication skills.
-          </p>
         </div>
         <div className="grid md:grid-cols-3 gap-12">
-          <div className="p-6 rounded-xl hover:bg-muted/50 transition-colors">
-            <h3 className="text-teal-600 dark:text-teal-400 font-semibold mb-3">
-              Engineering Managers
-            </h3>
-            <p className="text-muted-foreground mb-3">
-              Create lessons for your team and yourself to practice how to:
-            </p>
-            <ul className="list-disc list-inside text-muted-foreground mb-6">
-              <li>Interview candidates effectively</li>
-              <li>Communicate design decisions</li>
-              <li>Communicate with stakeholders</li>
-              <li>Say no when necessary</li>
-              <li>Motivate your team</li>
-              <li>Give constructive feedback</li>
-              <li>And more...</li>
-            </ul>
+          {/* Engineering Managers */}
+          <div className="text-center p-6 rounded-xl hover:bg-muted/50 transition-colors">
+            <div className="w-16 h-16 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+              <LayoutDashboard className="w-8 h-8 text-teal-600 dark:text-teal-400" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4">Engineering Managers</h3>
+            <div className="mx-auto max-w-sm">
+              <ul className="text-left text-muted-foreground space-y-2">
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Interview and evaluate candidates effectively
+                </li>
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Explain technical decisions with clarity
+                </li>
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Communicate with cross-functional stakeholders
+                </li>
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Say no with confidence and empathy
+                </li>
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Motivate and support your team
+                </li>
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Deliver constructive feedback
+                </li>
+              </ul>
+            </div>
           </div>
-          <div className="p-6 rounded-xl hover:bg-muted/50 transition-colors">
-            <h3 className="text-teal-600 dark:text-teal-400 font-semibold mb-3">
-              Product Managers, Designers
+
+          {/* Product Managers & Designers */}
+          <div className="text-center p-6 rounded-xl hover:bg-muted/50 transition-colors">
+            <div className="w-16 h-16 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+              <UserCheck className="w-8 h-8 text-teal-600 dark:text-teal-400" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4">
+              Product Managers & Designers
             </h3>
-            <p className="text-muted-foreground mb-3">
-              Create lessons for your team and yourself to practice how to:
-            </p>
-            <ul className="list-disc list-inside text-muted-foreground mb-6">
-              <li>Practice stakeholder communications</li>
-              <li>Learn to pitch ideas effectively</li>
-              <li>Learn to give and receive feedback</li>
-              <li>Get better at gathering user feedback</li>
-              <li>And more...</li>
-            </ul>
+            <div className="mx-auto max-w-sm">
+              <ul className="text-left text-muted-foreground space-y-2">
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Communicate product decisions clearly
+                </li>
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Pitch new ideas to stakeholders and leadership
+                </li>
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Give and receive actionable feedback
+                </li>
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Gather and respond to user insights effectively
+                </li>
+              </ul>
+            </div>
           </div>
-          <div className="p-6 rounded-xl hover:bg-muted/50 transition-colors">
-            <h3 className="text-teal-600 dark:text-teal-400 font-semibold mb-3">
-              People Teams
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              Reach out to us to discuss your specific needs and we will build a
-              custom set of lessons for your employees.
-            </p>
+
+          {/* People Teams */}
+          <div className="text-center p-6 rounded-xl hover:bg-muted/50 transition-colors">
+            <div className="w-16 h-16 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+              <Users className="w-8 h-8 text-teal-600 dark:text-teal-400" />
+            </div>
+            <h3 className="text-xl font-semibold mb-4">People Teams</h3>
+            <div className="mx-auto max-w-sm">
+              <ul className="text-left text-muted-foreground space-y-2 mb-4">
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Build a scalable, company-wide communication training program
+                </li>
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Tailor lessons to your culture and values
+                </li>
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Involve managers in creating relevant, contextual scenarios
+                </li>
+                <li className="before:content-['–'] before:mr-2 before:text-teal-500">
+                  Replace costly one-time events with continuous, trackable
+                  training
+                </li>
+              </ul>
+              <p className="text-muted-foreground">
+                Reach out to design a custom program that fits your team&apos;s
+                goals.
+              </p>
+            </div>
           </div>
         </div>
       </div>
