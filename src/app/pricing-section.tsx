@@ -17,6 +17,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import Link from "next/link";
 
 interface PricingFeature {
   text: string;
@@ -33,38 +34,68 @@ interface PricingTier {
 
 const pricingTiers: PricingTier[] = [
   {
-    name: "FREE",
+    name: "TRIAL",
     monthlyPrice: 0,
     yearlyPrice: 0,
-    description: "Pay OpenAI directly for your usage",
+    description: "Free trial for 30 days",
     features: [
-      { text: "Bring your own API Key" },
-      { text: "Create and customize your own lessons, characters" },
-      { text: "2 Starter Lessons" },
+      { text: "75 one-time free credits" },
+      { text: "No credit card required" },
+      { text: "Ability to buy more credits" },
       { text: "Community Support" },
     ],
   },
   {
-    name: "PRO",
-    monthlyPrice: 20,
-    yearlyPrice: 16,
-    description: "COMING SOON: Ideal for growing businesses and teams",
+    name: "SOLO",
+    monthlyPrice: 25,
+    yearlyPrice: 20,
+    description: "COMING SOON: Ideal for solo ICs, self learning",
     features: [
-      { text: "Everything in FREE" },
-      { text: "No need for API Key" },
-      { text: "Manage team members" },
-      { text: "Manage multiple projects" },
+      { text: "500 credits per month" },
+      { text: "Ability to buy more credits" },
       { text: "Email Support" },
     ],
     isPopular: true,
   },
   {
-    name: "CUSTOM",
+    name: "PRO",
+    monthlyPrice: 45,
+    yearlyPrice: 35,
+    description: "COMING SOON: Ideal for self learning + small teams",
+    features: [
+      { text: "1000 credits per month" },
+      { text: "Ability to buy more credits" },
+      { text: "Ability to create multiple training projects" },
+      { text: "Invite team members to your training projects" },
+      { text: "Early access to new features" },
+      { text: "Email Support" },
+    ],
+    isPopular: false,
+  },
+  {
+    name: "TEAM",
+    monthlyPrice: 35,
+    yearlyPrice: 28,
+    description: "COMING SOON: Ideal for managers, team leads",
+    features: [
+      { text: "600 pooled credits per month" },
+      { text: "Ability to buy more credits" },
+      { text: "Ability to create multiple training projects" },
+      { text: "Invite team members to your training projects" },
+      { text: "Manage progress of your team members" },
+      { text: "Email Support" },
+    ],
+    isPopular: false,
+  },
+  {
+    name: "ENTERPRISE",
     monthlyPrice: null,
     yearlyPrice: null,
-    description: "For your custom needs",
+    description: "For your custom needs, ideal for People teams",
     features: [
-      { text: "Custom lesson development for your needs" },
+      { text: "Handle your organizational training needs" },
+      { text: "Custom tailored lesson development" },
+      { text: "On-site help to get your organization started and onboarded" },
       { text: "Premium Support" },
     ],
   },
@@ -154,6 +185,15 @@ export function PricingSection() {
             </div>
           </Carousel>
         </div>
+
+        {/* Credit Usage Footnote */}
+        <div className="mt-12 text-center">
+          <div className="text-sm text-muted-foreground">
+            <p className="font-medium mb-2">Credit Usage:</p>
+            <p>1 minute Live conversation = 3 credits</p>
+            <p>1 training scenario with 4 modules/characters = 20 credits</p>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -189,10 +229,14 @@ function PricingCard({
                 ${isYearly ? tier.yearlyPrice : tier.monthlyPrice}
               </div>
               <div className="text-sm text-muted-foreground">
-                / {isYearly ? "year" : "month"}
+                / {isYearly ? "year (billed annually)" : "month"}
               </div>
             </>
-          ) : null}
+          ) : (
+            <div className="text-4xl font-bold text-muted-foreground">
+              Let&apos;s Talk
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -204,19 +248,25 @@ function PricingCard({
         ))}
       </CardContent>
       <CardFooter className="flex flex-col gap-4">
-        <Button
-          className={`w-full ${
-            tier.isPopular
-              ? "bg-brand hover:bg-brand-hover text-brand-foreground"
-              : ""
-          }`}
-          variant={tier.isPopular ? "default" : "outline"}
-          disabled={disabled}
-        >
-          {(isYearly ? tier.yearlyPrice : tier.monthlyPrice) === null
-            ? "Contact Us"
-            : "Subscribe"}
-        </Button>
+        {(isYearly ? tier.yearlyPrice : tier.monthlyPrice) === 0 ? (
+          <Button asChild className="w-full" variant="ghost-brand">
+            <Link href="/login?mode=signup">Get Started</Link>
+          </Button>
+        ) : (
+          <Button
+            className={`w-full ${
+              tier.isPopular
+                ? "bg-brand hover:bg-brand-hover text-brand-foreground"
+                : ""
+            }`}
+            variant={tier.isPopular ? "default" : "ghost-brand"}
+            disabled={disabled}
+          >
+            {(isYearly ? tier.yearlyPrice : tier.monthlyPrice) === null
+              ? "Contact Us"
+              : "Subscribe"}
+          </Button>
+        )}
         <p className="text-xs text-center text-muted-foreground">
           {tier.description}
         </p>
