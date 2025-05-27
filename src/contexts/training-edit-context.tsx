@@ -26,7 +26,6 @@ import {
 import {
   createCharacterAction,
   updateCharacterAction,
-  deleteCharacterAction,
 } from "@/app/actions/character-actions";
 import { AI_MODELS } from "@/types/models";
 import { logger } from "@/lib/logger";
@@ -530,44 +529,18 @@ export function TrainingEditProvider({
         throw new Error("Training data not available.");
       }
 
-      // Find the module to be deleted to get its character ID
-      const moduleToDelete = currentTraining.modules.find(
-        (m) => m.id === moduleId
-      );
-      const characterToDeleteId =
-        moduleToDelete?.modulePrompt.characters[0]?.id;
-
       try {
-        // 1. Delete the module from the database
+        // Delete the module from the database (this now handles character and storage cleanup)
         await deleteModuleAction(moduleId, currentTraining.id);
 
-        // 2. If module deletion was successful and it had a character, delete the character
-        if (characterToDeleteId) {
-          try {
-            logger.debug(
-              `Module ${moduleId} deleted, now deleting associated character ${characterToDeleteId}`
-            );
-            await deleteCharacterAction(characterToDeleteId);
-            logger.debug(
-              `Successfully deleted character ${characterToDeleteId} associated with module ${moduleId}`
-            );
-          } catch (charError) {
-            logger.error(
-              `Failed to delete character ${characterToDeleteId} associated with module ${moduleId}: ${charError}`
-            );
-            // Optionally, notify the user or handle this error more robustly
-            // For now, we proceed with updating the module state in the UI
-          }
-        }
-
-        // 3. Update local state by dispatching the action
+        // Update local state by dispatching the action
         dispatch({ type: "DELETE_MODULE", payload: { moduleId } });
       } catch (error) {
         logger.error(`Failed to delete module ${moduleId}: ${error}`);
         throw error; // Re-throw the error to be caught by the caller in EditModules.tsx
       }
     },
-    [state.training, dispatch] // Removed direct dependency on state.training.modules
+    [state.training, dispatch]
   );
 
   // --- New: Create and Assign Character to Module ---

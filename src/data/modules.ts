@@ -4,6 +4,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { CharacterDetails } from "./characters";
 import { AIModel, AI_MODELS, aiModelSchema } from "@/types/models";
 import { logger } from "@/lib/logger";
+import { getPathFromStorageUrl } from "@/lib/utils";
 
 export type ModuleCharacter = CharacterDetails & {
   prompt: string;
@@ -181,13 +182,155 @@ export async function deleteModule(
   moduleId: number,
   trainingId: number
 ): Promise<void> {
-  const { error } = await supabase
+  // First, get all the data we need for cleanup before deleting
+  const { data: moduleData, error: moduleError } = await supabase
+    .from("modules")
+    .select(
+      `
+      id,
+      training_id,
+      modules_characters (
+        character_id,
+        characters (
+          id,
+          avatar_url
+        )
+      )
+    `
+    )
+    .eq("id", moduleId)
+    .eq("training_id", trainingId)
+    .single();
+
+  if (moduleError) {
+    if (moduleError.code === "PGRST116") {
+      // Module not found - nothing to delete
+      return;
+    }
+    handleError(moduleError);
+  }
+
+  if (!moduleData) {
+    // No module data found
+    return;
+  }
+
+  // Collect all character IDs and avatar URLs for cleanup
+  const charactersToDelete: Array<{ id: number; avatarUrl: string | null }> =
+    [];
+
+  // Collect characters from the module
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  moduleData.modules_characters?.forEach((mc: any) => {
+    if (mc.characters) {
+      charactersToDelete.push({
+        id: mc.characters.id,
+        avatarUrl: mc.characters.avatar_url,
+      });
+      console.log(
+        `Module ${moduleId}: Found character ${mc.characters.id} with avatar: ${mc.characters.avatar_url}`
+      );
+    }
+  });
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+
+  console.log(
+    `Module ${moduleId}: Collected ${charactersToDelete.length} characters for deletion`
+  );
+
+  // Delete the module (this will cascade delete module_character relationships)
+  const { error: deleteError } = await supabase
     .from("modules")
     .delete()
     .eq("id", moduleId)
     .eq("training_id", trainingId);
 
-  if (error) handleError(error);
+  if (deleteError) handleError(deleteError);
+
+  // Clean up characters (these are not cascade deleted)
+  for (const character of charactersToDelete) {
+    try {
+      const { error: charDeleteError } = await supabase
+        .from("characters")
+        .delete()
+        .eq("id", character.id);
+
+      if (charDeleteError) {
+        console.error(
+          `Failed to delete character ${character.id}:`,
+          charDeleteError
+        );
+        // Continue with other cleanup even if one character deletion fails
+      }
+    } catch (error) {
+      console.error(`Error deleting character ${character.id}:`, error);
+    }
+  }
+
+  // Clean up storage files (character avatars)
+  // Use the robust storage deletion action for better error handling
+  const storageCleanupPromises: Promise<void>[] = [];
+
+  // Clean up character avatar images
+  console.log(
+    `Module ${moduleId}: Starting storage cleanup for ${charactersToDelete.length} characters`
+  );
+
+  for (const character of charactersToDelete) {
+    if (character.avatarUrl) {
+      console.log(
+        `Module ${moduleId}: Processing avatar URL for character ${character.id}: ${character.avatarUrl}`
+      );
+      try {
+        // Extract the storage path from the URL using utility function
+        const storagePath = getPathFromStorageUrl(character.avatarUrl);
+        console.log(
+          `Module ${moduleId}: Extracted storage path for character ${character.id}: ${storagePath}`
+        );
+        if (storagePath) {
+          // Import the storage action dynamically to avoid circular dependencies
+          const storageCleanup = import("@/app/actions/storage-actions").then(
+            async ({ deleteStorageObjectAction }) => {
+              const result = await deleteStorageObjectAction({
+                bucketName: "avatars",
+                path: storagePath,
+              });
+
+              if (!result.success) {
+                console.error(
+                  `Failed to delete character avatar ${storagePath}: ${result.error}`
+                );
+              } else {
+                console.log(
+                  `Successfully deleted character avatar: ${storagePath}`
+                );
+              }
+            }
+          );
+
+          storageCleanupPromises.push(storageCleanup);
+        }
+      } catch (error) {
+        console.error(
+          `Error processing character avatar URL ${character.avatarUrl}:`,
+          error
+        );
+      }
+    }
+  }
+
+  // Execute all storage cleanup operations in parallel (but don't await them)
+  // This ensures storage cleanup happens but doesn't block the main deletion
+  Promise.allSettled(storageCleanupPromises).then((results) => {
+    const failedCleanups = results.filter(
+      (result) => result.status === "rejected"
+    );
+    if (failedCleanups.length > 0) {
+      console.error(
+        `${failedCleanups.length} storage cleanup operations failed during module deletion`
+      );
+    }
+  });
 }
 
 export async function getModuleById2(

@@ -49,7 +49,12 @@
         "Anna",
         "Laura",
         "John",
-        "Michael"
+        "Michael",
+        "Sara",
+        "Lana",
+        "Rob",
+        "Mara",
+        "Stephen"
       ]
     },
     {
@@ -72,7 +77,7 @@
         "Mastering Constructive Feedback",
         "Effective Team Meetings"
       ],
-      "characters": ["Janet", "Taylor", "Brendon", "Anna"]
+      "characters": ["Taylor", "Janet", "Anna", "Brendon", "Lana"]
     },
     {
       "name": "Private Project 2",
@@ -87,7 +92,7 @@
         }
       ],
       "trainings": ["Effective Performance Reviews", "Hard Conversations"],
-      "characters": ["Brendon", "Anna", "Laura", "John"]
+      "characters": ["Sara", "John", "Laura", "Stephen"]
     },
     {
       "name": "Private Project 3",
@@ -98,7 +103,7 @@
         }
       ],
       "trainings": ["Career Conversations"],
-      "characters": ["Anna", "John", "Michael"]
+      "characters": ["Rob", "Michael", "Mara"]
     },
     {
       "name": "Private Project 4",
@@ -162,7 +167,7 @@
       "name": "John",
       "ai_description": "You are an engineer who wants to improve your system design skills but struggles to define concrete steps for improvement.",
       "description": "A motivated engineer seeking to advance their technical architecture capabilities.",
-      "avatar_url": "/avatars/taylor.jpg",
+      "avatar_url": "/avatars/john.png",
       "organization_id": 2,
       "ai_model": "openai",
       "voice": "Coral",
@@ -172,7 +177,57 @@
       "name": "Michael",
       "ai_description": "You are a team member who tends to go off-topic and bring up technical debt issues during sprint planning, making it difficult to stay focused on sprint goals.",
       "description": "A detail-oriented developer who is passionate about code quality and technical excellence.",
-      "avatar_url": "/avatars/brendon.jpg",
+      "avatar_url": "/avatars/michael.png",
+      "organization_id": 2,
+      "ai_model": "openai",
+      "voice": "Echo",
+      "is_public": true
+    },
+    {
+      "name": "Sara",
+      "ai_description": "You are a team member who tends to go off-topic and bring up technical debt issues during sprint planning, making it difficult to stay focused on sprint goals.",
+      "description": "A detail-oriented developer who is passionate about code quality and technical excellence.",
+      "avatar_url": "/avatars/sara.png",
+      "organization_id": 2,
+      "ai_model": "openai",
+      "voice": "Echo",
+      "is_public": true
+    },
+    {
+      "name": "Lana",
+      "ai_description": "You are a team member who tends to go off-topic and bring up technical debt issues during sprint planning, making it difficult to stay focused on sprint goals.",
+      "description": "A detail-oriented developer who is passionate about code quality and technical excellence.",
+      "avatar_url": "/avatars/lana.png",
+      "organization_id": 2,
+      "ai_model": "openai",
+      "voice": "Echo",
+      "is_public": true
+    },
+    {
+      "name": "Rob",
+      "ai_description": "You are an engineer who wants to improve your system design skills but struggles to define concrete steps for improvement.",
+      "description": "A motivated engineer seeking to advance their technical architecture capabilities.",
+      "avatar_url": "/avatars/rob.png",
+      "organization_id": 2,
+      "ai_model": "openai",
+      "voice": "Coral",
+      "is_public": true
+    },
+    {
+      "name": "Mara",
+      "ai_description": "You are a team member who tends to go off-topic and bring up technical debt issues during sprint planning, making it difficult to stay focused on sprint goals.",
+      "description": "A detail-oriented developer who is passionate about code quality and technical excellence.",
+      "avatar_url": "/avatars/mara.png",
+      "organization_id": 2,
+      "ai_model": "openai",
+      "voice": "Echo",
+      "is_public": true
+    },
+    {
+      "name": "Stephen",
+      "ai_description": "You are a team member who tends to go off-topic and bring up technical debt issues during sprint planning, making it difficult to stay focused on sprint goals.",
+      "description": "A detail-oriented developer who is passionate about code quality and technical excellence.",
+      "avatar_url": "/avatars/stephen.png",
       "organization_id": 2,
       "ai_model": "openai",
       "voice": "Echo",
@@ -280,7 +335,7 @@
           "audio_url": "https://example.com/remote-facilitation-audio",
           "characters": [
             {
-              "character_name": "Anna",
+              "character_name": "Lana",
               "prompt": "You are a team member who tends to go off-topic and bring up technical debt issues during sprint planning, making it difficult to stay focused on sprint goals."
             }
           ]
@@ -308,7 +363,7 @@
           "audio_url": "https://example.com/review-prep-audio",
           "characters": [
             {
-              "character_name": "Anna",
+              "character_name": "Sara",
               "prompt": "You are a senior engineer who excels technically but finds mentoring junior developers frustrating and time-consuming."
             }
           ]
@@ -370,7 +425,7 @@
           "audio_url": "https://example.com/conflict-management-audio",
           "characters": [
             {
-              "character_name": "Brendon",
+              "character_name": "Stephen",
               "prompt": "You are a team member who tends to go off-topic and bring up technical debt issues during sprint planning, making it difficult to stay focused on sprint goals."
             }
           ]
@@ -398,7 +453,7 @@
           "audio_url": "https://example.com/career-exploration-audio",
           "characters": [
             {
-              "character_name": "John",
+              "character_name": "Rob",
               "prompt": "You are an engineer who wants to improve your system design skills but struggles to define concrete steps for improvement."
             }
           ]
@@ -432,7 +487,7 @@
           "audio_url": "https://example.com/growth-opportunities-audio",
           "characters": [
             {
-              "character_name": "Anna",
+              "character_name": "Mara",
               "prompt": "You are an engineer who wants to improve your system design skills but struggles to define concrete steps for improvement."
             }
           ]

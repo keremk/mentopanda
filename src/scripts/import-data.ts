@@ -21,6 +21,87 @@ const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
   },
 });
 
+// Image upload functionality
+async function uploadImageToStorage(
+  imagePath: string,
+  bucketName: string,
+  storagePath: string
+): Promise<string | null> {
+  try {
+    // Read the image file
+    const imageBuffer = await fs.readFile(imagePath);
+
+    // Determine content type based on file extension
+    const extension = imagePath.split(".").pop()?.toLowerCase();
+    const contentType =
+      extension === "jpg" || extension === "jpeg" ? "image/jpeg" : "image/png";
+
+    // Upload to Supabase storage
+    const { error } = await supabase.storage
+      .from(bucketName)
+      .upload(storagePath, imageBuffer, {
+        contentType,
+        upsert: true,
+      });
+
+    if (error) {
+      logger.error(
+        `Failed to upload image ${imagePath} to ${storagePath}:`,
+        error
+      );
+      return null;
+    }
+
+    // Get the public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(storagePath);
+
+    logger.info(
+      `Successfully uploaded image: ${imagePath} -> ${publicUrlData.publicUrl}`
+    );
+    return publicUrlData.publicUrl;
+  } catch (error) {
+    logger.error(`Error uploading image ${imagePath}:`, error);
+    return null;
+  }
+}
+
+// Upload image for a specific entity (no caching to ensure unique copies)
+async function uploadImageForEntity(
+  localImagePath: string,
+  bucketName: string,
+  storagePrefix: string,
+  entityId: string | number
+): Promise<string> {
+  // Extract filename from local path
+  const filename = localImagePath.split("/").pop() || "image.jpg";
+  const storagePath = `${storagePrefix}/${entityId}/${filename}`;
+
+  // Construct the full path to the test image
+  const testImagePath = join(
+    __dirname,
+    "test-data",
+    "images",
+    localImagePath.replace(/^\//, "")
+  );
+
+  // Upload the image
+  const uploadedUrl = await uploadImageToStorage(
+    testImagePath,
+    bucketName,
+    storagePath
+  );
+
+  if (uploadedUrl) {
+    return uploadedUrl;
+  } else {
+    // Fallback to original path if upload fails
+    logger.warn(`Failed to upload ${localImagePath}, using original path`);
+    return localImagePath;
+  }
+}
+
 const assessment_text = `
 ## Introduction  
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
@@ -113,7 +194,7 @@ async function generateRandomHistoryEntries(
         .eq("trainings.project_id", projectId)
     );
 
-  if (moduleError) { 
+  if (moduleError) {
     logger.error("Error fetching project modules:", moduleError);
     return [];
   }
@@ -350,14 +431,14 @@ type TestData = {
 type TestProject = {
   name: string;
   members: TestProjectMember[];
-  trainings: string[] ;
+  trainings: string[];
   characters: string[];
 };
 
 async function createTestUsers(testData: TestData) {
   const users = testData.users.map(async (user: TestUser) => {
     try {
-      // Create user
+      // Create user first without avatar
       const { data: authData, error: authError } =
         await supabase.auth.admin.createUser({
           email: user.email,
@@ -365,7 +446,7 @@ async function createTestUsers(testData: TestData) {
           email_confirm: true,
           user_metadata: {
             display_name: user.display_name,
-            avatar_url: user.avatar_url,
+            avatar_url: null, // We'll update this after uploading
           },
         });
 
@@ -376,7 +457,33 @@ async function createTestUsers(testData: TestData) {
         return null;
       }
 
-      logger.info(`Created user: ${user.email}`);
+      // Upload user avatar if provided and it's a local path
+      let avatarUrl = user.avatar_url;
+      if (avatarUrl && !avatarUrl.startsWith("http")) {
+        avatarUrl = await uploadImageForEntity(
+          avatarUrl,
+          "avatars",
+          "user-avatars",
+          authData.user.id
+        );
+
+        // Update user metadata with the new avatar URL
+        if (avatarUrl && avatarUrl.startsWith("http")) {
+          const { error: updateError } =
+            await supabase.auth.admin.updateUserById(authData.user.id, {
+              user_metadata: {
+                display_name: user.display_name,
+                avatar_url: avatarUrl,
+              },
+            });
+
+          if (updateError) {
+            logger.error(`Failed to update user avatar: ${updateError}`);
+          }
+        }
+      }
+
+      logger.info(`Created user: ${user.email} with avatar: ${avatarUrl}`);
       const testUser: TestUser = {
         id: authData.user.id,
         email: user.email,
@@ -392,10 +499,7 @@ async function createTestUsers(testData: TestData) {
   return users;
 }
 
-async function createTestProjects(
-  testData: TestData,
-  users: TestUser[],
-) {
+async function createTestProjects(testData: TestData, users: TestUser[]) {
   let index = 0;
   for (const user of users) {
     if (user.email === "super@example.com") {
@@ -450,14 +554,14 @@ async function createTestProjects(
     const project = testData.projects[index];
     await setupProjectMembers(users, project.members, projectId, newSession);
 
-    const inputCharacters = project.characters.map(
-      (characterName) => {
+    const inputCharacters = project.characters
+      .map((characterName) => {
         const character = testData.characters.find(
           (c) => c.name === characterName
         );
         return character;
-      }
-    ).filter((c): c is TestCharacter => c !== undefined);
+      })
+      .filter((c): c is TestCharacter => c !== undefined);
 
     const characters = await createCharactersData(
       projectId,
@@ -465,15 +569,15 @@ async function createTestProjects(
       newSession
     );
     if (!characters) throw new Error("No characters created");
-    
-    const inputTrainings = project.trainings.map(
-      (trainingName) => {
+
+    const inputTrainings = project.trainings
+      .map((trainingName) => {
         const training = testData.trainings.find(
           (t) => t.title === trainingName
         );
         return training;
-      }
-    ).filter((t): t is TestTraining => t !== undefined);
+      })
+      .filter((t): t is TestTraining => t !== undefined);
     await createTrainingData(projectId, inputTrainings, characters, newSession);
 
     // await createHistoryData(newSession);
@@ -583,7 +687,7 @@ async function createTrainingData(
 
   for (const training of projectTrainings) {
     try {
-      // Create training
+      // Create training first without images
       const { data: trainingData, error: trainingError } = await supabase.auth
         .setSession(session)
         .then(() =>
@@ -593,10 +697,10 @@ async function createTrainingData(
               title: training.title,
               tagline: training.tagline,
               description: training.description,
-              image_url: training.image_url,
+              image_url: null, // We'll update this after uploading
               created_by: session.user.id,
               project_id: projectId,
-              preview_url: training.preview_url,
+              preview_url: null, // We'll update this after uploading
             })
             .select()
             .single()
@@ -604,6 +708,49 @@ async function createTrainingData(
 
       if (trainingError) throw trainingError;
       if (!trainingData) throw new Error("No training data returned");
+
+      // Now upload training images if they are local paths and update the training
+      let imageUrl = training.image_url;
+      if (imageUrl && !imageUrl.startsWith("http")) {
+        imageUrl = await uploadImageForEntity(
+          imageUrl,
+          "trainings",
+          "trainings",
+          trainingData.id
+        );
+      }
+
+      let previewUrl = training.preview_url;
+      if (previewUrl && !previewUrl.startsWith("http")) {
+        previewUrl = await uploadImageForEntity(
+          previewUrl,
+          "trainings",
+          "trainings",
+          `${trainingData.id}-preview`
+        );
+      }
+
+      // Update the training with the new image URLs if any were uploaded
+      if (
+        (imageUrl && imageUrl.startsWith("http")) ||
+        (previewUrl && previewUrl.startsWith("http"))
+      ) {
+        const { error: updateError } = await supabase.auth
+          .setSession(session)
+          .then(() =>
+            supabase
+              .from("trainings")
+              .update({
+                image_url: imageUrl,
+                preview_url: previewUrl,
+              })
+              .eq("id", trainingData.id)
+          );
+
+        if (updateError) {
+          logger.error(`Failed to update training images: ${updateError}`);
+        }
+      }
 
       // Create modules for this training
       for (const moduleItem of training.modules) {
@@ -676,6 +823,7 @@ async function createCharactersData(
   try {
     // Create characters
     for (const character of projectCharacters) {
+      // First create the character without avatar
       const { data: characterData, error: characterError } = await supabase.auth
         .setSession(session)
         .then(() =>
@@ -685,7 +833,7 @@ async function createCharactersData(
               name: character.name,
               ai_description: character.ai_description,
               description: character.description,
-              avatar_url: character.avatar_url,
+              avatar_url: null, // We'll update this after uploading
               project_id: projectId,
               created_by: session.user.id,
               voice: character.voice,
@@ -698,8 +846,37 @@ async function createCharactersData(
       if (characterError) throw characterError;
       if (!characterData) throw new Error("No character data returned");
 
+      // Now upload avatar image if it's a local path and update the character
+      let avatarUrl = character.avatar_url;
+      if (avatarUrl && !avatarUrl.startsWith("http")) {
+        avatarUrl = await uploadImageForEntity(
+          avatarUrl,
+          "avatars",
+          "character-avatars",
+          characterData.id
+        );
+
+        // Update the character with the new avatar URL
+        const { error: updateError } = await supabase.auth
+          .setSession(session)
+          .then(() =>
+            supabase
+              .from("characters")
+              .update({ avatar_url: avatarUrl })
+              .eq("id", characterData.id)
+          );
+
+        if (updateError) {
+          logger.error(`Failed to update character avatar: ${updateError}`);
+        }
+      }
+
+      // Update the character data with the final avatar URL
+      characterData.avatar_url = avatarUrl;
       characters.push(characterData);
-      logger.info(`Created character: ${character.name}`);
+      logger.info(
+        `Created character: ${character.name} with avatar: ${avatarUrl}`
+      );
     }
   } catch (error) {
     logger.error("Error creating characters:", error);

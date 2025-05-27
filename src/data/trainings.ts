@@ -1,7 +1,8 @@
-import { ModuleProgress, ModuleSummary, Module } from "./modules";
+import { ModuleProgress, ModuleSummary, Module, deleteModule } from "./modules";
 import { handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { getCurrentUserInfo, getUserId } from "./user";
+import { getPathFromStorageUrl } from "@/lib/utils";
 
 export type TrainingSummary = {
   id: number;
@@ -378,10 +379,108 @@ export async function deleteTraining(
   supabase: SupabaseClient,
   trainingId: number
 ): Promise<void> {
-  const { error } = await supabase
+  // First, get the training data and its modules
+  const { data: trainingData, error: trainingError } = await supabase
+    .from("trainings")
+    .select(
+      `
+      id,
+      image_url,
+      preview_url,
+      modules (
+        id
+      )
+    `
+    )
+    .eq("id", trainingId)
+    .single();
+
+  if (trainingError) {
+    if (trainingError.code === "PGRST116") {
+      // Training not found - nothing to delete
+      return;
+    }
+    handleError(trainingError);
+  }
+
+  if (!trainingData) {
+    // No training data found
+    return;
+  }
+
+  // Collect training images for cleanup
+  const trainingImages: Array<string> = [];
+  if (trainingData.image_url) {
+    trainingImages.push(trainingData.image_url);
+  }
+  if (trainingData.preview_url) {
+    trainingImages.push(trainingData.preview_url);
+  }
+
+  // Delete all modules (this will handle character and character avatar cleanup)
+  const moduleDeletePromises =
+    trainingData.modules?.map((module: { id: number }) =>
+      deleteModule(supabase, module.id, trainingId)
+    ) || [];
+
+  // Wait for all modules to be deleted before deleting the training
+  await Promise.all(moduleDeletePromises);
+
+  // Delete the training (this will cascade delete enrollments and any remaining relationships)
+  const { error: deleteError } = await supabase
     .from("trainings")
     .delete()
     .eq("id", trainingId);
 
-  if (error) handleError(error);
+  if (deleteError) handleError(deleteError);
+
+  // Clean up training-specific storage files (training images)
+  // Use the robust storage deletion action for better error handling
+  const storageCleanupPromises: Promise<void>[] = [];
+
+  // Clean up training images
+  for (const imageUrl of trainingImages) {
+    try {
+      // Extract the storage path from the URL using utility function
+      const storagePath = getPathFromStorageUrl(imageUrl);
+      if (storagePath) {
+        // Import the storage action dynamically to avoid circular dependencies
+        const storageCleanup = import("@/app/actions/storage-actions").then(
+          async ({ deleteStorageObjectAction }) => {
+            const result = await deleteStorageObjectAction({
+              bucketName: "trainings",
+              path: storagePath,
+            });
+
+            if (!result.success) {
+              console.error(
+                `Failed to delete training image ${storagePath}: ${result.error}`
+              );
+            } else {
+              console.log(
+                `Successfully deleted training image: ${storagePath}`
+              );
+            }
+          }
+        );
+
+        storageCleanupPromises.push(storageCleanup);
+      }
+    } catch (error) {
+      console.error(`Error processing training image URL ${imageUrl}:`, error);
+    }
+  }
+
+  // Execute all storage cleanup operations in parallel (but don't await them)
+  // This ensures storage cleanup happens but doesn't block the main deletion
+  Promise.allSettled(storageCleanupPromises).then((results) => {
+    const failedCleanups = results.filter(
+      (result) => result.status === "rejected"
+    );
+    if (failedCleanups.length > 0) {
+      console.error(
+        `${failedCleanups.length} storage cleanup operations failed during training deletion`
+      );
+    }
+  });
 }
