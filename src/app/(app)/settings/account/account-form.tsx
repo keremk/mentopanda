@@ -13,7 +13,6 @@ import type { User } from "@/data/user";
 import type { Usage } from "@/data/usage";
 import { ImageEdit } from "@/components/image-edit";
 import { ProjectDialog } from "@/components/project-dialog";
-import { ApiKeyInput } from "@/components/api-key-input";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
@@ -491,7 +490,6 @@ export function AccountForm({ user, usage }: AccountFormProps) {
           </div>
         </div>
       </div>
-      <ApiKeyInput className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm" />
     </div>
   );
 }

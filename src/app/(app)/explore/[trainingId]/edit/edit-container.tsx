@@ -26,8 +26,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ApiKeyCheckDialog } from "@/components/api-key-check-dialog";
-import { User } from "@/data/user";
 import {
   TrainingEditProvider,
   useTrainingEdit,
@@ -40,14 +38,13 @@ import { logger } from "@/lib/logger";
 // --- Prop Types ---
 // Ensure this type definition is correct and includes the necessary props
 type EditContainerProps = {
-  user: User;
   initialTraining: TrainingEdit;
   initialCharacters: CharacterSummary[];
 };
 
 // --- Inner Component ---
 // Create an inner component to access the context after the provider
-function EditContainerContent({ user }: { user: User }) {
+function EditContainerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isAIPaneOpen, setIsAIPaneOpen] = useState(true);
@@ -244,7 +241,6 @@ function EditContainerContent({ user }: { user: User }) {
       onApplyContent={aiPaneContextValue.onApplyContent}
     >
       <div className="h-full px-4 flex flex-col min-h-[calc(100vh-2rem)] pb-4">
-        <ApiKeyCheckDialog isOpenAIModule={true} user={user} />
         <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex gap-3">
           {/* Delete Button */}
           <AlertDialog>
@@ -380,7 +376,6 @@ function EditContainerContent({ user }: { user: User }) {
 // --- Exported Wrapper Component ---
 // Ensure this component accepts the correct props matching EditContainerProps
 export function EditContainer({
-  user,
   initialTraining,
   initialCharacters,
 }: EditContainerProps) {
@@ -390,7 +385,7 @@ export function EditContainer({
       initialTraining={initialTraining}
       initialCharacters={initialCharacters}
     >
-      <EditContainerContent user={user} />
+      <EditContainerContent />
     </TrainingEditProvider>
   );
 }

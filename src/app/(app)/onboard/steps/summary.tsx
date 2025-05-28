@@ -2,7 +2,7 @@ import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
-import { CheckCircle2, User, FolderKanban, Package, Key } from "lucide-react";
+import { CheckCircle2, User, FolderKanban, Package } from "lucide-react";
 import type { OnboardingData } from "../onboarding-flow";
 
 type SummaryProps = {
@@ -85,25 +85,6 @@ export function Summary({ data }: SummaryProps) {
                   ? "Including starter trainings and templates"
                   : "Starting with a clean project"}
               </p>
-            </div>
-
-            {/* API Configuration Section */}
-            <div className="px-6 py-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Key className="h-4 w-4 text-muted-foreground" />
-                <h4 className="font-medium">API Configuration</h4>
-              </div>
-              <p className="text-base">
-                {data.isApiKeyEntered
-                  ? "OpenAI API key configured"
-                  : "No API key provided"}
-              </p>
-              {!data.isApiKeyEntered && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  You can set this up in your settings page later. Without an
-                  API key, you won&apos;t be able to run AI chat sessions.
-                </p>
-              )}
             </div>
           </div>
         </div>

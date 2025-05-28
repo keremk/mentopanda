@@ -3,13 +3,11 @@
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ImageUploadButton } from "@/components/image-upload-button";
+import { ImageEdit } from "@/components/image-edit";
 import { useState } from "react";
 import Image from "next/image";
 import { updateAvatarAction } from "@/app/actions/user-actions";
 import { useToast } from "@/hooks/use-toast";
-import { getInitials } from "@/lib/utils";
 import { User } from "@/data/user";
 import { OnboardingData } from "../onboarding-flow";
 import { logger } from "@/lib/logger";
@@ -25,7 +23,6 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
   const [avatarUrl, setAvatarUrl] = useState(
     data.avatarUrl || user.avatarUrl || ""
   );
-  const [isAvatarUpdating, setIsAvatarUpdating] = useState(false);
   const { toast } = useToast();
 
   // Simple handler for display name changes
@@ -33,13 +30,17 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
     updateData({ displayName: e.target.value });
   }
 
-  async function handleAvatarUpload(url: string) {
-    setIsAvatarUpdating(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async function handleAvatarChange(newUrl: string, ..._unused: unknown[]) {
     try {
-      const response = await updateAvatarAction({ avatarUrl: url });
+      const response = await updateAvatarAction({ avatarUrl: newUrl });
       if (response.success) {
-        setAvatarUrl(url);
-        updateData({ avatarUrl: url });
+        setAvatarUrl(newUrl);
+        updateData({ avatarUrl: newUrl });
+        toast({
+          title: "Avatar updated",
+          description: "Your profile picture has been updated successfully",
+        });
       } else {
         logger.error("Failed to update avatar:", response.error);
         toast({
@@ -55,8 +56,6 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
         description: "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
-      setIsAvatarUpdating(false);
     }
   }
 
@@ -87,17 +86,19 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
       <div className="space-y-6 px-6 pb-6">
         <div className="flex flex-col md:flex-row items-center gap-8">
           <div className="space-y-4 flex flex-col items-center w-full md:w-48">
-            <Avatar className="h-32 w-32">
-              <AvatarImage src={avatarUrl} alt={data.displayName} />
-              <AvatarFallback>{getInitials(data.displayName)}</AvatarFallback>
-            </Avatar>
-            <ImageUploadButton
-              bucket="avatars"
-              folder="user-avatars"
-              onUploadComplete={handleAvatarUpload}
-              buttonText={isAvatarUpdating ? "Uploading..." : "Choose Avatar"}
+            <ImageEdit
+              initialImageUrl={avatarUrl}
+              bucketName="avatars"
+              storageFolderPath="user-avatars"
+              contextId={user.id}
+              contextType="user"
+              aspectRatio="square"
+              onImageChange={handleAvatarChange}
+              imageShape="circle"
+              imageContainerClassName="h-32 w-32"
+              buttonSize="sm"
               buttonVariant="outline"
-              buttonSize="default"
+              showButtonLabels={false}
             />
           </div>
 
@@ -122,8 +123,9 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
         <div className="bg-muted/50 p-4 rounded-lg">
           <p className="text-sm text-muted-foreground">
             Your display name will be updated when you complete the setup
-            process. Your avatar is updated immediately. You can always update
-            these later in the settings page.
+            process. Your avatar is updated immediately. You can upload a new
+            image or generate one using AI. You can always update these later in
+            the settings page.
           </p>
         </div>
       </div>
