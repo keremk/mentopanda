@@ -16,6 +16,7 @@ import { updatePromptHelperUsageAction } from "@/app/actions/usage-actions";
 import { TrainingContextData } from "@/data/ai-context";
 import { CharacterContextForAI } from "@/data/characters";
 import { logger } from "@/lib/logger";
+import { checkUserHasCredits } from "@/app/actions/credit-check";
 
 const generateMetaCharacterPrompts = (
   selectedOption: SelectedOption,
@@ -116,6 +117,19 @@ You are an expert prompt engineer. You will be given some specific instructions 
 }
 
 export async function POST(req: Request) {
+  // Check if user has sufficient credits before proceeding
+  const creditCheck = await checkUserHasCredits();
+  if (!creditCheck.hasCredits) {
+    logger.warn("Chat request blocked due to insufficient credits");
+    return new Response(
+      JSON.stringify({ error: creditCheck.error || "No credits available" }),
+      {
+        status: 402, // Payment Required
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
   const {
     messages,
     contextType,

@@ -10,6 +10,8 @@ import {
 } from "react";
 import { useChat, Message, CreateMessage } from "@ai-sdk/react";
 import { useApiKey } from "@/hooks/use-api-key";
+import { logger } from "@/lib/logger";
+
 export type ContextType = "module" | "character" | "training";
 
 export type ContextData = {
@@ -57,6 +59,8 @@ type AIPaneContextType = {
   selectedOption?: SelectedOption;
   setSelectedOption: (option: SelectedOption | undefined) => void;
   error?: Error;
+  showNoCreditsDialog: boolean;
+  setShowNoCreditsDialog: (show: boolean) => void;
 };
 
 const AIPaneContext = createContext<AIPaneContextType | undefined>(undefined);
@@ -94,6 +98,21 @@ export function AIPaneProvider({
       contextData,
       apiKey,
     },
+    onError: (error) => {
+      logger.error("AI Pane chat error:", error);
+
+      // Check if it's a credit error
+      const errorMessage = error.message || String(error);
+      if (
+        errorMessage.includes("No credits available") ||
+        errorMessage.includes("402")
+      ) {
+        logger.info(
+          "Credit error detected in AI Pane, showing NoCreditsDialog"
+        );
+        setShowNoCreditsDialog(true);
+      }
+    },
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -103,6 +122,7 @@ export function AIPaneProvider({
   const [selectedOption, setSelectedOption] = useState<
     SelectedOption | undefined
   >(undefined);
+  const [showNoCreditsDialog, setShowNoCreditsDialog] = useState(false);
 
   // Use external focused field if provided, otherwise use internal state
   const focusedField = externalFocusedField || internalFocusedField;
@@ -169,6 +189,8 @@ export function AIPaneProvider({
     selectedOption,
     setSelectedOption,
     error,
+    showNoCreditsDialog,
+    setShowNoCreditsDialog,
   };
 
   return (

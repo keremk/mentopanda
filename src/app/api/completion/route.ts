@@ -4,11 +4,25 @@ import { getModuleByIdAction2 } from "@/app/actions/moduleActions";
 import { getHistoryEntryAction } from "@/app/actions/history-actions";
 import { updateAssessmentUsageAction } from "@/app/actions/usage-actions";
 import { logger } from "@/lib/logger";
+import { checkUserHasCredits } from "@/app/actions/credit-check";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
+  // Check if user has sufficient credits before proceeding
+  const creditCheck = await checkUserHasCredits();
+  if (!creditCheck.hasCredits) {
+    logger.warn("Completion request blocked due to insufficient credits");
+    return new Response(
+      JSON.stringify({ error: creditCheck.error || "No credits available" }),
+      {
+        status: 402, // Payment Required
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
   const {
     moduleId,
     entryId,

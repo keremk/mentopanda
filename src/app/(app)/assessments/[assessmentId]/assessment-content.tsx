@@ -4,12 +4,14 @@ import { useCompletion } from "@ai-sdk/react";
 import { useEffect, useState, useCallback } from "react";
 import { updateHistoryEntryAction } from "@/app/actions/history-actions";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
+import { NoCreditsDialog } from "@/components/no-credits-dialog";
 import { useRouter } from "next/navigation";
 import { useApiKey } from "@/hooks/use-api-key";
 import { AlertTriangle, ThumbsUp, ThumbsDown, RotateCw } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
+
 type Props = {
   moduleId: number;
   entryId: number;
@@ -50,6 +52,18 @@ export default function AssessmentContent({
     },
     onError: (err) => {
       logger.error("Error fetching assessment completion:", err);
+
+      // Check if it's a credit error
+      const errorMessage = err.message || String(err);
+      if (
+        errorMessage.includes("No credits available") ||
+        errorMessage.includes("402")
+      ) {
+        logger.info(
+          "Credit error detected in assessment, showing NoCreditsDialog"
+        );
+        setShowNoCreditsDialog(true);
+      }
     },
     experimental_throttle: 500,
   });
@@ -63,17 +77,37 @@ export default function AssessmentContent({
   const [feedbackGiven, setFeedbackGiven] = useState<null | "up" | "down">(
     null
   );
+  const [showNoCreditsDialog, setShowNoCreditsDialog] = useState(false);
+
+  // Check if there's a credit-related error
+  const hasCreditError =
+    error &&
+    (error.message.includes("No credits available") ||
+      error.message.includes("402") ||
+      showNoCreditsDialog);
 
   useEffect(() => {
     setStreamedContent(completion);
   }, [completion]);
 
   useEffect(() => {
-    if (!hasTriggered && !isAssessmentCreated && !error) {
+    // Only trigger assessment generation if:
+    // 1. Not already triggered
+    // 2. Assessment not already created
+    // 3. No error occurred
+    // 4. Assessment text is not already available (existing assessment)
+    if (!hasTriggered && !isAssessmentCreated && !error && !assessmentText) {
       setHasTriggered(true);
       void complete("");
     }
-  }, [apiKey, hasTriggered, complete, isAssessmentCreated, error]);
+  }, [
+    apiKey,
+    hasTriggered,
+    complete,
+    isAssessmentCreated,
+    error,
+    assessmentText,
+  ]);
 
   const handleFeedback = useCallback(
     (feedback: "up" | "down") => {
@@ -97,14 +131,54 @@ export default function AssessmentContent({
   );
 
   const handleRedoAssessment = useCallback(() => {
+    // Reset all states for a fresh assessment generation
     setIsAssessmentCreated(false);
     setCurrentAssessmentText(undefined);
     setStreamedContent("");
     setHasTriggered(false);
     setFeedbackGiven(null);
-  }, []);
+    setShowNoCreditsDialog(false);
 
-  if (error) {
+    // Trigger new assessment generation
+    setTimeout(() => {
+      void complete("");
+    }, 100);
+  }, [complete]);
+
+  // Show credit error if there's a credit-related error and no existing assessment
+  if (hasCreditError && !currentAssessmentText) {
+    return (
+      <>
+        <div className="my-4 rounded-md border border-danger bg-card p-4 text-sm shadow-md">
+          <div className="flex items-start space-x-3">
+            <div className="mt-0.5 flex-shrink-0">
+              <AlertTriangle
+                className="h-5 w-5 text-danger"
+                aria-hidden="true"
+              />
+            </div>
+            <div>
+              <p className="font-semibold text-danger">No Credits Available</p>
+              <p className="mt-1 text-muted-foreground">
+                You don&apos;t have enough credits to generate an assessment.
+                Purchase additional credits to continue.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <NoCreditsDialog
+          isOpen={showNoCreditsDialog}
+          onOpenChange={setShowNoCreditsDialog}
+          title="No Credits Available"
+          description="You don't have enough credits to generate an assessment. Purchase additional credits to continue using AI features."
+        />
+      </>
+    );
+  }
+
+  // Show other errors (non-credit related)
+  if (error && !hasCreditError) {
     return (
       <div className="my-4 rounded-md border border-danger bg-card p-4 text-sm shadow-md">
         <div className="flex items-start space-x-3">
@@ -132,53 +206,65 @@ export default function AssessmentContent({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="prose dark:prose-invert max-w-none">
-        {isAssessmentCreated && currentAssessmentText ? (
-          <MemoizedMarkdown content={currentAssessmentText} />
-        ) : (
-          <MemoizedMarkdown content={streamedContent} />
+    <>
+      <div className="space-y-4">
+        <div className="prose dark:prose-invert max-w-none">
+          {isAssessmentCreated && currentAssessmentText ? (
+            <MemoizedMarkdown content={currentAssessmentText} />
+          ) : (
+            <MemoizedMarkdown content={streamedContent} />
+          )}
+        </div>
+
+        {isAssessmentCreated && !error && (
+          <div className="mt-6 flex items-center justify-between rounded-lg border bg-card p-4 shadow-sm">
+            <p className="text-sm text-muted-foreground">
+              Rate this assessment:
+            </p>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={feedbackGiven === "up" ? "default" : "outline"}
+                size="icon"
+                onClick={() => handleFeedback("up")}
+                disabled={feedbackGiven !== null}
+                aria-label="Helpful"
+              >
+                <ThumbsUp
+                  className={`h-5 w-5 ${feedbackGiven === "up" ? "" : "text-green-500"}`}
+                />
+              </Button>
+              <Button
+                variant={feedbackGiven === "down" ? "destructive" : "outline"}
+                size="icon"
+                onClick={() => handleFeedback("down")}
+                disabled={feedbackGiven !== null}
+                aria-label="Not Helpful"
+              >
+                <ThumbsDown
+                  className={`h-5 w-5 ${feedbackGiven === "down" ? "" : "text-red-500"}`}
+                />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRedoAssessment}
+                className="ml-4"
+                disabled={hasCreditError}
+              >
+                <RotateCw className="mr-2 h-4 w-4" />
+                Redo Assessment
+              </Button>
+            </div>
+          </div>
         )}
       </div>
 
-      {isAssessmentCreated && !error && (
-        <div className="mt-6 flex items-center justify-between rounded-lg border bg-card p-4 shadow-sm">
-          <p className="text-sm text-muted-foreground">Rate this assessment:</p>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={feedbackGiven === "up" ? "default" : "outline"}
-              size="icon"
-              onClick={() => handleFeedback("up")}
-              disabled={feedbackGiven !== null}
-              aria-label="Helpful"
-            >
-              <ThumbsUp
-                className={`h-5 w-5 ${feedbackGiven === "up" ? "" : "text-green-500"}`}
-              />
-            </Button>
-            <Button
-              variant={feedbackGiven === "down" ? "destructive" : "outline"}
-              size="icon"
-              onClick={() => handleFeedback("down")}
-              disabled={feedbackGiven !== null}
-              aria-label="Not Helpful"
-            >
-              <ThumbsDown
-                className={`h-5 w-5 ${feedbackGiven === "down" ? "" : "text-red-500"}`}
-              />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRedoAssessment}
-              className="ml-4"
-            >
-              <RotateCw className="mr-2 h-4 w-4" />
-              Redo Assessment
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
+      <NoCreditsDialog
+        isOpen={showNoCreditsDialog}
+        onOpenChange={setShowNoCreditsDialog}
+        title="No Credits Available"
+        description="You don't have enough credits to generate an assessment. Purchase additional credits to continue using AI features."
+      />
+    </>
   );
 }

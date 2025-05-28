@@ -30,6 +30,7 @@ import type { FileWithPreview } from "@/hooks/use-supabase-upload";
 import { cn } from "@/lib/utils";
 import { useApiKey } from "@/hooks/use-api-key";
 import { logger } from "@/lib/logger";
+import { NoCreditsDialog } from "@/components/no-credits-dialog";
 
 function base64ToBlob(base64: string, contentType = "image/png"): Blob {
   const byteCharacters = atob(base64);
@@ -98,6 +99,7 @@ export function ImageGenerationDialog({
     null
   );
   const [error, setError] = useState<string | null>(null);
+  const [showNoCreditsDialog, setShowNoCreditsDialog] = useState(false);
   const supabase = useMemo(() => createClient(), []);
   const [isGenerating, setIsGenerating] = useState(false);
   const hasHandledUploadSuccess = useRef(false);
@@ -131,6 +133,14 @@ export function ImageGenerationDialog({
     maxFiles: 1,
     upsert: true,
   });
+
+  // Check if there's a credit-related error
+  const hasCreditError = Boolean(
+    error &&
+      (error.includes("No credits available") ||
+        error.includes("402") ||
+        showNoCreditsDialog)
+  );
 
   const handleGenerateClick = useCallback(async () => {
     if (!contextId || typeof contextId !== "string" || contextId.length === 0) {
@@ -168,6 +178,19 @@ export function ImageGenerationDialog({
         setGeneratedImageData(result.imageData);
       } else {
         logger.error("Image generation action error:", result.error);
+
+        // Check if it's a credit error
+        if (
+          result.error &&
+          (result.error.includes("No credits available") ||
+            result.error.includes("402"))
+        ) {
+          logger.info(
+            "Credit error detected in image generation, showing NoCreditsDialog"
+          );
+          setShowNoCreditsDialog(true);
+        }
+
         setError(result.error);
       }
     } catch (err) {
@@ -344,198 +367,223 @@ export function ImageGenerationDialog({
 
   // Determine if the generate button should be disabled
   const isGenerateDisabled =
-    isLoading || (isPromptRequired && prompt.trim().length === 0);
+    isLoading ||
+    (isPromptRequired && prompt.trim().length === 0) ||
+    hasCreditError;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px] grid grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90vh]">
-        <DialogHeader className="p-6 pb-4">
-          <DialogTitle>Generate Cover Image</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="sm:max-w-[600px] grid grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90vh]">
+          <DialogHeader className="p-6 pb-4">
+            <DialogTitle>Generate Cover Image</DialogTitle>
+          </DialogHeader>
 
-        <div className="grid grid-rows-[auto_minmax(0,1fr)] gap-4 overflow-y-auto px-6 pb-4">
-          <div className="image-container-enhanced">
-            <AspectRatio
-              ratio={numericAspectRatio}
-              className="bg-muted rounded-lg relative overflow-hidden"
-            >
-              {/* Determine primary image source */}
-              {(() => {
-                const primaryImageUrl = generatedImageData
-                  ? `data:image/png;base64,${generatedImageData}`
-                  : currentImageUrl;
-                const primaryImageAlt = generatedImageData
-                  ? "Generated image preview"
-                  : "Current image";
+          <div className="grid grid-rows-[auto_minmax(0,1fr)] gap-4 overflow-y-auto px-6 pb-4">
+            <div className="image-container-enhanced">
+              <AspectRatio
+                ratio={numericAspectRatio}
+                className="bg-muted rounded-lg relative overflow-hidden"
+              >
+                {/* Determine primary image source */}
+                {(() => {
+                  const primaryImageUrl = generatedImageData
+                    ? `data:image/png;base64,${generatedImageData}`
+                    : currentImageUrl;
+                  const primaryImageAlt = generatedImageData
+                    ? "Generated image preview"
+                    : "Current image";
 
-                return (
-                  <>
-                    {/* Render the primary image if available AND no error occurred AFTER generation */}
-                    {primaryImageUrl && !(error && !isGenerating) && (
-                      <div className="image-inner w-full h-full">
-                        <Image
-                          src={primaryImageUrl}
-                          alt={primaryImageAlt}
-                          fill
-                          className={cn(
-                            "object-cover transition-opacity duration-300", // Added transition
-                            isGenerating && "opacity-50" // Dim if generating (blur handled by overlay)
-                          )}
-                          priority={!generatedImageData && !!currentImageUrl} // Prioritize initial current image load
-                        />
-                      </div>
-                    )}
+                  return (
+                    <>
+                      {/* Render the primary image if available AND no error occurred AFTER generation */}
+                      {primaryImageUrl && !(error && !isGenerating) && (
+                        <div className="image-inner w-full h-full">
+                          <Image
+                            src={primaryImageUrl}
+                            alt={primaryImageAlt}
+                            fill
+                            className={cn(
+                              "object-cover transition-opacity duration-300", // Added transition
+                              isGenerating && "opacity-50" // Dim if generating (blur handled by overlay)
+                            )}
+                            priority={!generatedImageData && !!currentImageUrl} // Prioritize initial current image load
+                          />
+                        </div>
+                      )}
 
-                    {/* Render Placeholder only if no image source AND no error occurred AFTER generation */}
-                    {!primaryImageUrl && !(error && !isGenerating) && (
-                      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                        <ImageIcon className="h-12 w-12 mb-2" />
-                        <span>Image will appear here</span>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+                      {/* Render Placeholder only if no image source AND no error occurred AFTER generation */}
+                      {!primaryImageUrl && !(error && !isGenerating) && (
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                          <ImageIcon className="h-12 w-12 mb-2" />
+                          <span>Image will appear here</span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
 
-              {/* Render Error State (if error occurred AFTER generation) */}
-              {error && !isGenerating && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/90 text-destructive px-4 text-center">
-                  {" "}
-                  {/* Increased opacity */}
-                  <ImageIcon className="h-8 w-8 mb-2" />
-                  <span>{error}</span>
-                </div>
-              )}
+                {/* Render Error State (if error occurred AFTER generation) */}
+                {error && !isGenerating && (
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/90 text-destructive px-4 text-center">
+                    {" "}
+                    {/* Increased opacity */}
+                    <ImageIcon className="h-8 w-8 mb-2" />
+                    <span>
+                      {hasCreditError ? "No credits available" : error}
+                    </span>
+                  </div>
+                )}
 
-              {/* Render Loading Overlay */}
-              {isGenerating && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md">
-                  <Loader2 className="h-8 w-8 animate-spin text-white mb-2" />
-                  <span className="text-white">Generating...</span>
-                </div>
-              )}
-            </AspectRatio>
-          </div>
+                {/* Render Loading Overlay */}
+                {isGenerating && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md">
+                    <Loader2 className="h-8 w-8 animate-spin text-white mb-2" />
+                    <span className="text-white">Generating...</span>
+                  </div>
+                )}
+              </AspectRatio>
+            </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <Label htmlFor="image-style" className="text-xs font-medium">
-                  Style
-                </Label>
-                <Select
-                  value={selectedStyle}
-                  onValueChange={(value) => setSelectedStyle(value as string)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger
-                    id="image-style"
-                    className="h-9 focus:ring-brand"
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <Label htmlFor="image-style" className="text-xs font-medium">
+                    Style
+                  </Label>
+                  <Select
+                    value={selectedStyle}
+                    onValueChange={(value) => setSelectedStyle(value as string)}
+                    disabled={isLoading || hasCreditError}
                   >
-                    <SelectValue placeholder="Select style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {imageStyles.map((style) => (
-                      <SelectItem key={style.value} value={style.value}>
-                        {style.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {showContextSwitch && (
+                    <SelectTrigger
+                      id="image-style"
+                      className="h-9 focus:ring-brand"
+                    >
+                      <SelectValue placeholder="Select style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {imageStyles.map((style) => (
+                        <SelectItem key={style.value} value={style.value}>
+                          {style.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {showContextSwitch && (
+                  <div className="flex flex-col items-center space-y-1 pt-1">
+                    <Label
+                      htmlFor="include-context"
+                      className="text-xs font-medium"
+                    >
+                      Use Context
+                    </Label>
+                    <Switch
+                      id="include-context"
+                      checked={includeContext}
+                      onCheckedChange={setIncludeContext}
+                      disabled={isLoading || hasCreditError}
+                      className="data-[state=checked]:bg-brand data-[state=unchecked]:bg-input focus-visible:ring-brand"
+                    />
+                  </div>
+                )}
                 <div className="flex flex-col items-center space-y-1 pt-1">
                   <Label
-                    htmlFor="include-context"
+                    htmlFor="use-current-image"
                     className="text-xs font-medium"
                   >
-                    Use Context
+                    Use Current
                   </Label>
                   <Switch
-                    id="include-context"
-                    checked={includeContext}
-                    onCheckedChange={setIncludeContext}
-                    disabled={isLoading}
+                    id="use-current-image"
+                    checked={useCurrentImage}
+                    onCheckedChange={setUseCurrentImage}
+                    disabled={isLoading || !currentImageUrl || hasCreditError}
                     className="data-[state=checked]:bg-brand data-[state=unchecked]:bg-input focus-visible:ring-brand"
                   />
                 </div>
-              )}
-              <div className="flex flex-col items-center space-y-1 pt-1">
-                <Label
-                  htmlFor="use-current-image"
-                  className="text-xs font-medium"
-                >
-                  Use Current
-                </Label>
-                <Switch
-                  id="use-current-image"
-                  checked={useCurrentImage}
-                  onCheckedChange={setUseCurrentImage}
-                  disabled={isLoading || !currentImageUrl}
-                  className="data-[state=checked]:bg-brand data-[state=unchecked]:bg-input focus-visible:ring-brand"
-                />
               </div>
-            </div>
 
-            <div>
-              <Label htmlFor="prompt" className="text-xs font-medium">
-                Prompt / Refinement Instructions
-              </Label>
-              <div className="mt-1 rounded-lg bg-secondary/30 border border-border/30 overflow-hidden flex flex-col group focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
-                <Textarea
-                  id="prompt"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder={
-                    isPromptRequired
-                      ? "Describe the image you want..."
-                      : "Prompt is optional but recommended. Describe changes or a new image..."
-                  }
-                  className="flex-1 min-h-[60px] max-h-[100px] resize-none border-0 bg-transparent p-3 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  onKeyDown={handleKeyDown}
-                  disabled={isLoading} // Keep textarea enabled even if button is disabled for prompt input
-                />
-                <div className="flex items-center justify-end bg-secondary/40 px-3 py-1.5 border-t border-border/20">
-                  <Button
-                    type="button"
-                    variant="ghost-brand"
-                    size="sm"
-                    onClick={handleGenerateClick}
-                    disabled={isGenerateDisabled} // Use the calculated disabled state
-                    className="h-7 rounded-full px-3 flex items-center gap-1 text-xs"
-                  >
-                    {isGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <SendHorizontal className="h-3.5 w-3.5" />
-                    )}
-                    <span>{isGenerating ? "Generating..." : "Generate"}</span>
-                  </Button>
+              <div>
+                <Label htmlFor="prompt" className="text-xs font-medium">
+                  Prompt / Refinement Instructions
+                </Label>
+                <div className="mt-1 rounded-lg bg-secondary/30 border border-border/30 overflow-hidden flex flex-col group focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
+                  <Textarea
+                    id="prompt"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder={
+                      hasCreditError
+                        ? "No credits available - purchase credits to continue..."
+                        : isPromptRequired
+                          ? "Describe the image you want..."
+                          : "Prompt is optional but recommended. Describe changes or a new image..."
+                    }
+                    className="flex-1 min-h-[60px] max-h-[100px] resize-none border-0 bg-transparent p-3 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    onKeyDown={handleKeyDown}
+                    disabled={isLoading || hasCreditError}
+                  />
+                  <div className="flex items-center justify-end bg-secondary/40 px-3 py-1.5 border-t border-border/20">
+                    <Button
+                      type="button"
+                      variant="ghost-brand"
+                      size="sm"
+                      onClick={handleGenerateClick}
+                      disabled={isGenerateDisabled}
+                      className="h-7 rounded-full px-3 flex items-center gap-1 text-xs"
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <SendHorizontal className="h-3.5 w-3.5" />
+                      )}
+                      <span>
+                        {hasCreditError
+                          ? "No Credits"
+                          : isGenerating
+                            ? "Generating..."
+                            : "Generate"}
+                      </span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <DialogFooter className="p-6 pt-4 border-t">
-          <Button variant="ghost-brand" onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button
-            variant="brand"
-            onClick={handleUseImage}
-            disabled={!generatedImageData || isLoading}
-          >
-            {uploadHook.loading && !isGenerating ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
-            {uploadHook.loading && !isGenerating
-              ? "Uploading..."
-              : "Use This Image"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="p-6 pt-4 border-t">
+            <Button
+              variant="ghost-brand"
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="brand"
+              onClick={handleUseImage}
+              disabled={!generatedImageData || isLoading || hasCreditError}
+            >
+              {uploadHook.loading && !isGenerating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {uploadHook.loading && !isGenerating
+                ? "Uploading..."
+                : "Use This Image"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <NoCreditsDialog
+        isOpen={showNoCreditsDialog}
+        onOpenChange={setShowNoCreditsDialog}
+        title="No Credits Available"
+        description="You don't have enough credits to generate images. Purchase additional credits to continue using AI features."
+      />
+    </>
   );
 }
 

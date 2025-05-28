@@ -24,6 +24,7 @@ import {
 } from "@/app/actions/history-actions";
 import { useTranscriptSave } from "@/hooks/use-transcript-save";
 import { EndChatDialog } from "@/components/end-chat-dialog";
+import { NoCreditsDialog } from "@/components/no-credits-dialog";
 import { useRouter } from "next/navigation";
 import { CountdownBar } from "@/components/countdown-bar";
 import { ChatTextEntry } from "@/components/chat-text-entry";
@@ -93,6 +94,7 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
     isConversationActive: false,
     isTimeout: false,
     showEndDialog: false,
+    showNoCreditsDialog: false,
   });
   const [historyEntryId, setHistoryEntryId] = useState<number>();
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
@@ -261,6 +263,24 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
         await connect(micStream);
       } catch (error) {
         logger.error(`Failed to connect to OpenAI: ${error}`);
+
+        // Debug logging to understand the error structure
+        logger.debug("Error object:", error);
+        logger.debug("Error type:", typeof error);
+        logger.debug("Error instanceof Error:", error instanceof Error);
+        if (error instanceof Error) {
+          logger.debug("Error message:", error.message);
+        }
+
+        // Check if it's a credit error - be more flexible with the check
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes("No credits available")) {
+          stopMicrophone(); // Stop microphone if credits are insufficient
+          setChatState((prev) => ({ ...prev, showNoCreditsDialog: true }));
+          return;
+        }
+
         toast({
           title: `Failed to connect to OpenAI, make sure your API key is correct or you have enough credits`,
           description: "Please try again.",
@@ -487,6 +507,16 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Move dialogs outside of any containers that might affect their rendering */}
+      <NoCreditsDialog
+        isOpen={chatState.showNoCreditsDialog}
+        onOpenChange={(open) =>
+          setChatState((prev) => ({ ...prev, showNoCreditsDialog: open }))
+        }
+        title="No Credits Available"
+        description="You don't have enough credits to start a conversation. Purchase additional credits to continue using AI features."
+      />
     </div>
   );
 }

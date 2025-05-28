@@ -37,12 +37,21 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
     focusedField,
     selectedOption,
     setSelectedOption,
+    error,
+    showNoCreditsDialog,
   } = useAIPane();
 
   const [isContextIncluded, setIsContextIncluded] = useState(true);
 
   // Define options based on context
   const options: AIAssistOption[] = getOptionsForContext(contextType);
+
+  // Check if there's a credit-related error
+  const hasCreditError =
+    error &&
+    (error.message.includes("No credits available") ||
+      error.message.includes("402") ||
+      showNoCreditsDialog);
 
   // Auto-select appropriate option when focused field changes
   useEffect(() => {
@@ -87,7 +96,8 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (isLoading || (!input.trim() && !isContextIncluded)) return;
+    if (isLoading || (!input.trim() && !isContextIncluded) || hasCreditError)
+      return;
 
     // Submit with the selected option
     handleSubmit(e);
@@ -98,6 +108,9 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
 
+      // Don't submit if there's a credit error
+      if (hasCreditError) return;
+
       // Simply submit the form directly
       const formElement = e.currentTarget.closest("form");
       if (formElement) {
@@ -107,7 +120,7 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
     // Pressing Enter alone will now insert a newline by default
   };
 
-  const isAskEnabled = isContextIncluded || !!input.trim();
+  const isAskEnabled = (isContextIncluded || !!input.trim()) && !hasCreditError;
 
   return (
     <TooltipProvider>
@@ -127,6 +140,7 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
                 size="sm"
                 className="text-xs h-7 px-2 py-0"
                 onClick={() => handleOptionClick(option.id)}
+                disabled={hasCreditError}
               >
                 {option.label}
               </Button>
@@ -140,12 +154,15 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
               value={input}
               onChange={handleInputChange}
               placeholder={
-                selectedOption
-                  ? `Additional instructions for ${selectedOption.label.toLowerCase()}...`
-                  : "Select an option above and add any specific instructions..."
+                hasCreditError
+                  ? "No credits available - purchase credits to continue..."
+                  : selectedOption
+                    ? `Additional instructions for ${selectedOption.label.toLowerCase()}...`
+                    : "Select an option above and add any specific instructions..."
               }
               className="flex-1 h-[40px] max-h-[80px] resize-none border-0 bg-transparent p-3 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
               onKeyDown={handleKeyDown}
+              disabled={hasCreditError}
             />
             <div className="flex items-center justify-between bg-secondary/40 px-3 py-1.5 border-t border-border/20">
               <div className="flex items-center gap-3">
@@ -160,6 +177,7 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
                       setIsContextIncluded(!!checked)
                     }
                     className="h-5 w-5 border-border data-[state=checked]:bg-brand data-[state=checked]:border-brand"
+                    disabled={hasCreditError}
                   />
                   Include context
                 </label>
@@ -174,11 +192,21 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
                     className="h-7 rounded-full px-3 flex items-center gap-1 text-xs"
                   >
                     <SendHorizontal className="h-3.5 w-3.5" />
-                    <span>{isLoading ? "Generating..." : "Ask"}</span>
+                    <span>
+                      {hasCreditError
+                        ? "No Credits"
+                        : isLoading
+                          ? "Generating..."
+                          : "Ask"}
+                    </span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Cmd+Enter to send</p>
+                  <p>
+                    {hasCreditError
+                      ? "Purchase credits to continue"
+                      : "Cmd+Enter to send"}
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </div>

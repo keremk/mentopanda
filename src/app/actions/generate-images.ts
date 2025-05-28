@@ -19,6 +19,7 @@ import {
   type ImageSize,
   type ImageDimensions,
 } from "@/lib/usage/types";
+import { checkUserHasCredits } from "./credit-check";
 
 // Define Zod schemas using the centralized config
 const imageContextTypeSchema = z.enum(["training", "character", "user"]);
@@ -324,6 +325,18 @@ export async function generateImageAction(
   input: unknown
 ): Promise<GenerateActionResult> {
   try {
+    // Check if user has sufficient credits before proceeding
+    const creditCheck = await checkUserHasCredits();
+    if (!creditCheck.hasCredits) {
+      logger.warn(
+        "Image generation request blocked due to insufficient credits"
+      );
+      return {
+        success: false,
+        error: creditCheck.error || "No credits available",
+      };
+    }
+
     // 1. Validate input
     const validationResult = generateImageSchema.safeParse(input);
     if (!validationResult.success) {

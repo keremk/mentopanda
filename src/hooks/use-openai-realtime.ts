@@ -110,12 +110,21 @@ export function useOpenAIRealtime({
   const { apiKey } = useApiKey();
 
   const tokenFetcher = async () => {
-    const { session } = await createOpenAISession({
-      apiKey: apiKey || undefined,
-      instructions: instructions,
-      voice: voice,
-    });
-    return session.client_secret.value;
+    try {
+      const { session } = await createOpenAISession({
+        apiKey: apiKey || undefined,
+        instructions: instructions,
+        voice: voice,
+      });
+      return session.client_secret.value;
+    } catch (error) {
+      // Check if it's a credit error
+      if (error instanceof Error && error.message === "No credits available") {
+        throw new Error("No credits available");
+      }
+      // Re-throw other errors
+      throw error;
+    }
   };
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
