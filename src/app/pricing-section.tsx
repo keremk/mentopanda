@@ -49,7 +49,7 @@ const pricingTiers: PricingTier[] = [
     name: "SOLO",
     monthlyPrice: 25,
     yearlyPrice: 20,
-    description: "COMING SOON: Ideal for solo ICs, self learning",
+    description: "COMING SOON: Ideal for self learning",
     features: [
       { text: "500 credits per month" },
       { text: "Ability to buy more credits" },
@@ -58,30 +58,16 @@ const pricingTiers: PricingTier[] = [
     isPopular: true,
   },
   {
-    name: "PRO",
+    name: "TEAM",
     monthlyPrice: 45,
     yearlyPrice: 35,
-    description: "COMING SOON: Ideal for self learning + small teams",
+    description: "COMING SOON: Ideal for managers, team leads",
     features: [
       { text: "1000 credits per month" },
       { text: "Ability to buy more credits" },
-      { text: "Ability to create multiple training projects" },
-      { text: "Invite team members to your training projects" },
+      { text: "Create multiple projects" },
+      { text: "Invite team members" },
       { text: "Early access to new features" },
-      { text: "Email Support" },
-    ],
-    isPopular: false,
-  },
-  {
-    name: "TEAM",
-    monthlyPrice: 35,
-    yearlyPrice: 28,
-    description: "COMING SOON: Ideal for managers, team leads",
-    features: [
-      { text: "600 pooled credits per month" },
-      { text: "Ability to buy more credits" },
-      { text: "Ability to create multiple training projects" },
-      { text: "Invite team members to your training projects" },
       { text: "Manage progress of your team members" },
       { text: "Email Support" },
     ],
@@ -93,16 +79,16 @@ const pricingTiers: PricingTier[] = [
     yearlyPrice: null,
     description: "For your custom needs, ideal for People teams",
     features: [
-      { text: "Handle your organizational training needs" },
-      { text: "Custom tailored lesson development" },
-      { text: "On-site help to get your organization started and onboarded" },
+      { text: "Handle organizational training needs" },
+      { text: "Tailored training development" },
+      { text: "Custom onboarding" },
       { text: "Premium Support" },
     ],
   },
 ];
 
 export function PricingSection() {
-  const [isYearly, setIsYearly] = useState(false);
+  const [isYearly, setIsYearly] = useState(true);
 
   // Find the index of the popular (PRO) plan to set as initial
   const popularPlanIndex = pricingTiers.findIndex((tier) => tier.isPopular);
@@ -136,7 +122,7 @@ export function PricingSection() {
         </div>
 
         {/* Desktop Layout */}
-        <div className="hidden md:grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="hidden md:grid md:grid-cols-4 gap-8 max-w-6xl mx-auto">
           {pricingTiers.map((tier) => (
             <PricingCard
               key={tier.name}

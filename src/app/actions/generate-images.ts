@@ -2,53 +2,41 @@
 
 import { z } from "zod";
 import OpenAI, { toFile } from "openai";
-import { createClient } from "@supabase/supabase-js"; // Import Supabase client
-import { getPathFromStorageUrl } from "@/lib/utils"; // Import helper
+import { createClient } from "@supabase/supabase-js";
+import { getPathFromStorageUrl } from "@/lib/utils";
 import {
   getAIContextDataForCharacterAction,
   getAIContextDataForTrainingAction,
 } from "./aicontext-actions";
 import { updateImageUsageAction } from "./usage-actions";
 import { logger } from "@/lib/logger";
-import { mapDimensionsToSize, type ImageQuality } from "@/data/usage";
+import {
+  IMAGE_CONFIG,
+  mapAspectRatioToDimensions,
+  mapAspectRatioToSize,
+  type ImageQuality,
+  type ImageAspectRatio,
+  type ImageSize,
+  type ImageDimensions,
+} from "@/lib/usage/types";
 
-// Define Zod types matching client-side types
+// Define Zod schemas using the centralized config
 const imageContextTypeSchema = z.enum(["training", "character", "user"]);
-const imageAspectRatioSchema = z.enum(["landscape", "square"]);
+const imageAspectRatioSchema = z.enum(IMAGE_CONFIG.ASPECT_RATIOS);
 
 // Helper function to get image quality from environment variable
 function getImageQuality(): ImageQuality {
   const envQuality =
     process.env.NEXT_PUBLIC_IMAGE_GENERATION_QUALITY?.toLowerCase();
 
-  switch (envQuality) {
-    case "low":
-      return "low";
-    case "medium":
-      return "medium";
-    case "high":
-      return "high";
-    default:
-      // Default to high quality if not specified
-      logger.info(
-        `Image quality not specified in environment, defaulting to 'high'`
-      );
-      return "high";
+  if (IMAGE_CONFIG.QUALITIES.includes(envQuality as ImageQuality)) {
+    return envQuality as ImageQuality;
   }
-}
 
-// Helper function to map aspect ratio to pixel dimensions
-function mapAspectRatioToDimensions(
-  aspectRatio: "landscape" | "square"
-): "1536x1024" | "1024x1024" {
-  switch (aspectRatio) {
-    case "landscape":
-      return "1536x1024";
-    case "square":
-      return "1024x1024";
-    default:
-      return "1024x1024"; // fallback
-  }
+  logger.info(
+    "Image quality not specified in environment, defaulting to 'high'"
+  );
+  return "high";
 }
 
 // Updated schema for the action input
@@ -57,16 +45,15 @@ const generateImageSchema = z
     contextId: z.string().min(1, "Context ID cannot be empty."),
     contextType: imageContextTypeSchema,
     aspectRatio: imageAspectRatioSchema,
-    prompt: z.string(), // Can be empty if only refining
+    prompt: z.string(),
     style: z.string().optional(),
-    includeContext: z.boolean().optional(), // Make includeContext optional
-    existingImageUrl: z.string().url().optional(), // <<< ADDED: URL of image to edit/use as reference
-    bucketName: z.string().min(1).optional(), // <<< ADDED: Required if existingImageUrl is provided
+    includeContext: z.boolean().optional(),
+    existingImageUrl: z.string().url().optional(),
+    bucketName: z.string().min(1).optional(),
     apiKey: z.string().optional(),
   })
   .refine(
     (data) => {
-      // Require bucketName if existingImageUrl is provided
       if (data.existingImageUrl && !data.bucketName) {
         return false;
       }
@@ -74,12 +61,11 @@ const generateImageSchema = z
     },
     {
       message: "Bucket name is required when providing an existing image URL.",
-      path: ["bucketName"], // Specify the path of the error
+      path: ["bucketName"],
     }
   );
 
 async function getImageFromSupabase(imageUrl: string, bucketName: string) {
-  // Ensure Supabase Admin Client can be created
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -88,6 +74,7 @@ async function getImageFromSupabase(imageUrl: string, bucketName: string) {
       "Server configuration error: Missing Supabase credentials for image fetching."
     );
   }
+
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -110,10 +97,9 @@ async function getImageFromSupabase(imageUrl: string, bucketName: string) {
     );
   }
 
-  const filename = imagePath.split("/").pop() || "input-image.png"; // Basic filename extraction
-  // Convert Blob to file format OpenAI SDK understands
+  const filename = imagePath.split("/").pop() || "input-image.png";
   const imageFile = await toFile(blobData, filename, {
-    type: blobData.type || "image/png", // Use Blob type or default
+    type: blobData.type || "image/png",
   });
 
   return imageFile;
@@ -124,7 +110,7 @@ async function getContextForType(
   contextId: string
 ): Promise<string | undefined> {
   logger.debug(`Context fetching requested for ${contextType}: ${contextId}`);
-  const id = parseInt(contextId); // Parse ID once
+  const id = parseInt(contextId);
 
   switch (contextType) {
     case "training": {
@@ -164,9 +150,11 @@ async function constructPrompt(
       );
     }
   }
+
   if (style && style !== "custom") {
     promptSegments.push(`The style of the image should be: ${style}`);
   }
+
   if (prompt) {
     promptSegments.push(
       `Create an image that closely matches the following description: ${prompt}`
@@ -176,20 +164,167 @@ async function constructPrompt(
   if (promptSegments.length > 0) {
     return promptSegments.join("\n\n");
   } else {
-    logger.warn("Constructing prompt resulted in no segments. ");
+    logger.warn("Constructing prompt resulted in no segments.");
     return undefined;
   }
 }
 
+// Consolidated logging function for image operations
+function logImageUsage(
+  operation: "generate" | "edit",
+  response: OpenAI.Images.ImagesResponse,
+  imageQuality: ImageQuality,
+  elapsedTimeInSeconds: number,
+  truncatedPrompt: string,
+  dimensions?: ImageDimensions
+) {
+  logger.info(
+    `===== GPT Image Usage (${operation.charAt(0).toUpperCase() + operation.slice(1)}) =====`
+  );
+  logger.info(`Model: gpt-image-1`);
+  logger.info(`Operation: ${operation}`);
+  logger.info(`Quality: ${imageQuality}`);
+  logger.info(
+    `API Call Elapsed Time: ${elapsedTimeInSeconds.toFixed(2)} seconds`
+  );
+  logger.info(`Input Prompt Characters: ${truncatedPrompt.length}`);
+
+  if (dimensions) {
+    logger.info(`Image Size: ${dimensions}`);
+  }
+
+  logger.info(`Created Timestamp: ${response.created}`);
+
+  if (response.data?.[0]?.revised_prompt) {
+    logger.info(
+      `Revised Prompt Characters: ${response.data[0].revised_prompt.length}`
+    );
+  }
+
+  if (response.usage) {
+    logger.info("Token Usage:");
+    logger.info(`  Input Tokens: ${response.usage.input_tokens}`);
+    if (response.usage.input_tokens_details) {
+      logger.info(
+        `    Image Tokens (Input): ${response.usage.input_tokens_details.image_tokens}`
+      );
+      logger.info(
+        `    Text Tokens (Input): ${response.usage.input_tokens_details.text_tokens}`
+      );
+    }
+    logger.info(`  Output Tokens: ${response.usage.output_tokens}`);
+    logger.info(`  Total Tokens: ${response.usage.total_tokens}`);
+  }
+
+  logger.info("=".repeat(operation === "generate" ? 36 : 33));
+}
+
+// Consolidated usage tracking function
+async function trackImageUsage(
+  operation: "generate" | "edit",
+  response: OpenAI.Images.ImagesResponse,
+  imageQuality: ImageQuality,
+  imageSize: ImageSize,
+  elapsedTimeInSeconds: number
+) {
+  try {
+    await updateImageUsageAction({
+      modelName: "gpt-image-1",
+      quality: imageQuality,
+      size: imageSize,
+      promptTokens: {
+        text: {
+          cached: 0,
+          notCached: response.usage?.input_tokens_details?.text_tokens || 0,
+        },
+        image: {
+          cached: 0,
+          notCached: response.usage?.input_tokens_details?.image_tokens || 0,
+        },
+      },
+      outputTokens: response.usage?.output_tokens || 0,
+      totalTokens: response.usage?.total_tokens || 0,
+      elapsedTimeSeconds: elapsedTimeInSeconds,
+    });
+    logger.info(`Usage tracked successfully for image ${operation}`);
+  } catch (usageError) {
+    logger.error(`Failed to track image ${operation} usage: ${usageError}`);
+    // Don't fail the request if usage tracking fails
+  }
+}
+
+// Consolidated image generation/edit function
+async function processImageRequest(
+  openai: OpenAI,
+  truncatedPrompt: string,
+  imageQuality: ImageQuality,
+  aspectRatio: ImageAspectRatio,
+  existingImageUrl?: string,
+  bucketName?: string
+): Promise<string | undefined> {
+  const dimensions = mapAspectRatioToDimensions(aspectRatio);
+  const imageSize = mapAspectRatioToSize(aspectRatio);
+  const startTime = Date.now();
+
+  let response: OpenAI.Images.ImagesResponse;
+  let operation: "generate" | "edit";
+
+  if (existingImageUrl && bucketName) {
+    // Edit existing image
+    operation = "edit";
+    const imageFile = await getImageFromSupabase(existingImageUrl, bucketName);
+    response = await openai.images.edit({
+      model: "gpt-image-1",
+      image: imageFile,
+      prompt: truncatedPrompt,
+      n: 1,
+    });
+  } else {
+    // Generate new image
+    operation = "generate";
+    response = await openai.images.generate({
+      model: "gpt-image-1",
+      prompt: truncatedPrompt,
+      quality: imageQuality,
+      n: 1,
+      size: dimensions as "1024x1024" | "1536x1024" | "1024x1536",
+    });
+  }
+
+  const endTime = Date.now();
+  const elapsedTimeInSeconds = (endTime - startTime) / 1000;
+  const image_base64 = response.data?.[0]?.b64_json;
+
+  if (image_base64) {
+    logImageUsage(
+      operation,
+      response,
+      imageQuality,
+      elapsedTimeInSeconds,
+      truncatedPrompt,
+      operation === "generate" ? dimensions : undefined
+    );
+    await trackImageUsage(
+      operation,
+      response,
+      imageQuality,
+      imageSize,
+      elapsedTimeInSeconds
+    );
+  }
+
+  return image_base64;
+}
+
 type GenerateActionResult =
-  | { success: true; imageData: string } // imageData is base64 string
+  | { success: true; imageData: string }
   | { success: false; error: string };
 
 export async function generateImageAction(
-  input: unknown // Keep input as unknown for initial validation
+  input: unknown
 ): Promise<GenerateActionResult> {
   try {
-    // 1. Validate input against the updated schema
+    // 1. Validate input
     const validationResult = generateImageSchema.safeParse(input);
     if (!validationResult.success) {
       logger.error("Invalid input:", validationResult.error.flatten());
@@ -205,6 +340,7 @@ export async function generateImageAction(
           (fieldErrorString ? `. Field errors: ${fieldErrorString}` : ""),
       };
     }
+
     const {
       contextId,
       contextType,
@@ -221,11 +357,10 @@ export async function generateImageAction(
     if (!finalApiKey) {
       throw new Error("Missing OpenAI API key environment variable");
     }
-    const openai = new OpenAI({
-      apiKey: finalApiKey,
-    });
 
-    // 2. Construct the prompt server-side
+    const openai = new OpenAI({ apiKey: finalApiKey });
+
+    // 2. Construct the prompt
     const resolvedPrompt = await constructPrompt(
       prompt,
       style,
@@ -244,182 +379,26 @@ export async function generateImageAction(
     const truncatedPrompt = resolvedPrompt.substring(0, 4000);
     logger.debug("Server-side Final Prompt:", truncatedPrompt);
 
-    // 4. Call OpenAI API - Conditionally use edit or generate
-    let image_base64: string | undefined;
+    // 3. Process image request (generate or edit)
     const imageQuality = getImageQuality();
+    const image_base64 = await processImageRequest(
+      openai,
+      truncatedPrompt,
+      imageQuality,
+      aspectRatio,
+      existingImageUrl,
+      bucketName
+    );
 
-    if (existingImageUrl && bucketName) {
-      try {
-        const imageFile = await getImageFromSupabase(
-          existingImageUrl,
-          bucketName
-        );
-        const startTime = Date.now(); // Start timer
-        const response = await openai.images.edit({
-          model: "gpt-image-1", // Use gpt-image-1 model
-          image: imageFile, // Pass the fetched image file
-          prompt: truncatedPrompt,
-          n: 1,
-        });
-        const endTime = Date.now(); // End timer
-        const elapsedTimeInSeconds = (endTime - startTime) / 1000;
-
-        image_base64 = response.data?.[0]?.b64_json;
-        if (image_base64) {
-          logger.info("===== GPT Image Usage (Edit) =====");
-          logger.info(`Model: gpt-image-1`);
-          logger.info(`Operation: edit`);
-          logger.info(`Quality: ${imageQuality}`);
-          logger.info(
-            `API Call Elapsed Time: ${elapsedTimeInSeconds.toFixed(2)} seconds`
-          );
-          logger.info(`Input Prompt Characters: ${truncatedPrompt.length}`);
-          logger.info(`Created Timestamp: ${response.created}`);
-          if (response.data?.[0]?.revised_prompt) {
-            logger.info(
-              `Revised Prompt Characters: ${response.data[0].revised_prompt.length}`
-            );
-          }
-          if (response.usage) {
-            logger.info("Token Usage:");
-            logger.info(`  Input Tokens: ${response.usage.input_tokens}`);
-            if (response.usage.input_tokens_details) {
-              logger.info(
-                `    Image Tokens (Input): ${response.usage.input_tokens_details.image_tokens}`
-              );
-              logger.info(
-                `    Text Tokens (Input): ${response.usage.input_tokens_details.text_tokens}`
-              );
-            }
-            logger.info(`  Output Tokens: ${response.usage.output_tokens}`);
-            logger.info(`  Total Tokens: ${response.usage.total_tokens}`);
-          }
-          logger.info("=================================");
-
-          // Track usage in database
-          try {
-            const editDimensions = mapAspectRatioToDimensions(aspectRatio);
-            await updateImageUsageAction({
-              modelName: "gpt-image-1",
-              quality: imageQuality, // Use environment-controlled quality
-              size: mapDimensionsToSize(editDimensions), // Use the actual dimensions of the image being edited
-              promptTokens: {
-                text: {
-                  cached: 0, // Image models typically don't have caching
-                  notCached:
-                    response.usage?.input_tokens_details?.text_tokens || 0,
-                },
-                image: {
-                  cached: 0, // Image models typically don't have caching
-                  notCached:
-                    response.usage?.input_tokens_details?.image_tokens || 0,
-                },
-              },
-              outputTokens: response.usage?.output_tokens || 0,
-              totalTokens: response.usage?.total_tokens || 0,
-              elapsedTimeSeconds: elapsedTimeInSeconds,
-            });
-            logger.info(`Usage tracked successfully for image edit`);
-          } catch (usageError) {
-            logger.error(`Failed to track image edit usage: ${usageError}`);
-            // Don't fail the request if usage tracking fails
-          }
-        }
-      } catch (toFileError) {
-        logger.error("Error processing image blob:", toFileError);
-        return {
-          success: false,
-          error: `Failed to process image file: ${toFileError instanceof Error ? toFileError.message : "Unknown error"}`,
-        };
-      }
-    } else {
-      // --- Generate New Image Logic ---
-      const generateSize = mapAspectRatioToDimensions(aspectRatio);
-      logger.debug(`Generating image with dynamic size: ${generateSize}`);
-      const startTime = Date.now(); // Start timer
-      const response = await openai.images.generate({
-        model: "gpt-image-1", // Use gpt-image-1 model as instructed
-        prompt: truncatedPrompt,
-        quality: imageQuality, // Use environment-controlled quality
-        n: 1,
-        size: generateSize, // Use dynamic size for generate
-      });
-      const endTime = Date.now(); // End timer
-      const elapsedTimeInSeconds = (endTime - startTime) / 1000;
-
-      image_base64 = response.data?.[0]?.b64_json;
-      if (image_base64) {
-        logger.info("===== GPT Image Usage (Generate) =====");
-        logger.info(`Model: gpt-image-1`);
-        logger.info(`Operation: generate`);
-        logger.info(`Quality: ${imageQuality}`);
-        logger.info(
-          `API Call Elapsed Time: ${elapsedTimeInSeconds.toFixed(2)} seconds`
-        );
-        logger.info(`Input Prompt Characters: ${truncatedPrompt.length}`);
-        logger.info(`Image Size: ${generateSize}`);
-        logger.info(`Created Timestamp: ${response.created}`);
-        if (response.data?.[0]?.revised_prompt) {
-          logger.info(
-            `Revised Prompt Characters: ${response.data[0].revised_prompt.length}`
-          );
-        }
-        if (response.usage) {
-          logger.info("Token Usage:");
-          logger.info(`  Input Tokens: ${response.usage.input_tokens}`);
-          if (response.usage.input_tokens_details) {
-            logger.info(
-              `    Image Tokens (Input): ${response.usage.input_tokens_details.image_tokens}`
-            );
-            logger.info(
-              `    Text Tokens (Input): ${response.usage.input_tokens_details.text_tokens}`
-            );
-          }
-          logger.info(`  Output Tokens: ${response.usage.output_tokens}`);
-          logger.info(`  Total Tokens: ${response.usage.total_tokens}`);
-        }
-        logger.info("====================================");
-
-        // Track usage in database
-        try {
-          await updateImageUsageAction({
-            modelName: "gpt-image-1",
-            quality: imageQuality, // Use environment-controlled quality
-            size: mapDimensionsToSize(generateSize),
-            promptTokens: {
-              text: {
-                cached: 0, // Image models typically don't have caching
-                notCached:
-                  response.usage?.input_tokens_details?.text_tokens || 0,
-              },
-              image: {
-                cached: 0, // Image models typically don't have caching
-                notCached:
-                  response.usage?.input_tokens_details?.image_tokens || 0,
-              },
-            },
-            outputTokens: response.usage?.output_tokens || 0,
-            totalTokens: response.usage?.total_tokens || 0,
-            elapsedTimeSeconds: elapsedTimeInSeconds,
-          });
-          logger.info(`Usage tracked successfully for image generation`);
-        } catch (usageError) {
-          logger.error(`Failed to track image generation usage: ${usageError}`);
-          // Don't fail the request if usage tracking fails
-        }
-      }
-    }
-
-    // 5. Process result
+    // 4. Process result
     if (!image_base64) {
-      logger.error("OpenAI response missing b64_json"); // Log less verbosely now
+      logger.error("OpenAI response missing b64_json");
       return {
         success: false,
         error: "Image generation/edit failed: No base64 data returned.",
       };
     }
 
-    // 6. Return base64 data directly
     return { success: true, imageData: image_base64 };
   } catch (error) {
     logger.error("Image generation action error:", error);

@@ -39,6 +39,40 @@ type AccountFormProps = {
   usage: Usage | null;
 };
 
+// Helper functions for credit calculations
+function calculateTotalUsedCredits(usage: Usage): number {
+  return Math.round(usage.usedSubscriptionCredits + usage.usedPurchasedCredits);
+}
+
+function calculateTotalAvailableCredits(usage: Usage): number {
+  return Math.round(usage.subscriptionCredits + usage.purchasedCredits);
+}
+
+function calculateRemainingCredits(usage: Usage): number {
+  return Math.round(
+    usage.subscriptionCredits -
+      usage.usedSubscriptionCredits +
+      (usage.purchasedCredits - usage.usedPurchasedCredits)
+  );
+}
+
+function calculateUsagePercentage(usage: Usage): number {
+  const totalUsed = usage.usedSubscriptionCredits + usage.usedPurchasedCredits;
+  const totalAvailable = usage.subscriptionCredits + usage.purchasedCredits;
+  return totalAvailable > 0 ? totalUsed / totalAvailable : 0;
+}
+
+function getUsageBarColor(usagePercentage: number): string {
+  if (usagePercentage >= 0.9) return "bg-destructive";
+  if (usagePercentage >= 0.7) return "bg-yellow-500";
+  return "bg-brand";
+}
+
+function formatPricingPlan(pricingPlan: string | null): string {
+  if (!pricingPlan) return "N/A";
+  return pricingPlan.charAt(0).toUpperCase() + pricingPlan.slice(1);
+}
+
 export function AccountForm({ user, usage }: AccountFormProps) {
   const [isPending, startTransition] = useTransition();
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
@@ -363,12 +397,7 @@ export function AccountForm({ user, usage }: AccountFormProps) {
           <Label className="text-muted-foreground">Current Subscription</Label>
           <div className="grid grid-cols-[1fr_auto] gap-x-4 items-center">
             <Input
-              value={
-                user.pricingPlan
-                  ? user.pricingPlan.charAt(0).toUpperCase() +
-                    user.pricingPlan.slice(1)
-                  : "N/A"
-              }
+              value={formatPricingPlan(user.pricingPlan)}
               disabled
               className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
             />
@@ -399,37 +428,40 @@ export function AccountForm({ user, usage }: AccountFormProps) {
           <div className="grid grid-cols-[1fr_auto] gap-x-4 items-center">
             <div className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm p-4 space-y-3">
               {usage ? (
-                <>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Credits Used</span>
-                    <span className="font-medium">
-                      {Math.round(usage.usedCredits)} /{" "}
-                      {Math.round(usage.availableCredits)}
-                    </span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className={cn(
-                        "h-2 rounded-full transition-all duration-300",
-                        usage.usedCredits / usage.availableCredits >= 0.9
-                          ? "bg-destructive"
-                          : usage.usedCredits / usage.availableCredits >= 0.7
-                            ? "bg-yellow-500"
-                            : "bg-brand"
-                      )}
-                      style={{
-                        width: `${Math.min(
-                          (usage.usedCredits / usage.availableCredits) * 100,
-                          100
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {Math.round(usage.availableCredits - usage.usedCredits)}{" "}
-                    credits remaining
-                  </div>
-                </>
+                (() => {
+                  const totalUsed = calculateTotalUsedCredits(usage);
+                  const totalAvailable = calculateTotalAvailableCredits(usage);
+                  const remaining = calculateRemainingCredits(usage);
+                  const usagePercentage = calculateUsagePercentage(usage);
+                  const barColor = getUsageBarColor(usagePercentage);
+
+                  return (
+                    <>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">
+                          Credits Used
+                        </span>
+                        <span className="font-medium">
+                          {totalUsed} / {totalAvailable}
+                        </span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div
+                          className={cn(
+                            "h-2 rounded-full transition-all duration-300",
+                            barColor
+                          )}
+                          style={{
+                            width: `${Math.min(usagePercentage * 100, 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {remaining} credits remaining
+                      </div>
+                    </>
+                  );
+                })()
               ) : (
                 <div className="text-sm text-muted-foreground">
                   Unable to load credit usage

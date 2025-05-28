@@ -1,16 +1,28 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
-import pricingData from "./pricing.json";
+import { getUserId } from "./user";
+import { logger } from "@/lib/logger";
 
-// Subscription tier credit allocations (monthly)
-export const SUBSCRIPTION_TIER_CREDITS = {
-  free: 100,
-  pro: 1000,
-  team: 5000,
-  enterprise: 10000,
-} as const;
-
-export type SubscriptionTier = keyof typeof SUBSCRIPTION_TIER_CREDITS;
+// Import business logic
+import {
+  calculateTextModelCreditCost,
+  calculateImageCreditCost,
+  calculateConversationCreditCost,
+  calculateTranscriptionCreditCost,
+} from "@/lib/usage/credit-calculator";
+import {
+  deductCreditsWithPriority,
+  calculateRolloverCredits,
+  initializePeriodCredits as initializePeriodCreditsLogic,
+  calculateCreditBalance as calculateCreditBalanceLogic,
+  checkSufficientCredits,
+} from "@/lib/usage/credit-manager";
+import {
+  type SubscriptionTier,
+  type CreditBalance,
+  type ImageQuality,
+  type ImageSize,
+} from "@/lib/usage/types";
 
 // Credit management types
 export type CreditUpdate = {
@@ -18,145 +30,68 @@ export type CreditUpdate = {
   creditsToDeduct?: number;
 };
 
-// Credit system configuration
-export const CREDIT_CONFIG = {
-  // 1 credit = $0.05 USD (adjust as needed)
-  CREDIT_VALUE_USD: 0.05,
+// Helper function to initialize credits for a new period with rollover logic
+async function initializePeriodCreditsInternal(
+  supabase: SupabaseClient,
+  userId: string,
+  usageId: number,
+  subscriptionTier: SubscriptionTier
+): Promise<Usage> {
+  // Get previous period's purchased credits to roll over
+  // IMPORTANT: Exclude the current usage record (usageId) when checking for previous periods
+  const { data: previousUsage } = await supabase
+    .from("usage")
+    .select("purchased_credits, used_purchased_credits")
+    .eq("user_id", userId)
+    .neq("id", usageId) // Exclude current record
+    .order("period_start", { ascending: false })
+    .limit(1);
 
-  // Margin multiplier (50% markup = 1.5)
-  MARGIN_MULTIPLIER: 1.5,
-} as const;
+  let rolloverPurchasedCredits = 0;
+  let isFirstPeriod = false;
 
-// Helper function to calculate credits from USD cost
-function calculateCreditsFromUSD(costUSD: number): number {
-  return (
-    (costUSD * CREDIT_CONFIG.MARGIN_MULTIPLIER) / CREDIT_CONFIG.CREDIT_VALUE_USD
-  );
-}
-
-// Get pricing for text models (per 1M tokens)
-function getTextModelPricing(
-  modelName: string
-): { input: number; cachedInput: number; output: number } | null {
-  const model = pricingData.latest_models_text_tokens.find(
-    (m) => m.model === modelName
-  );
-  if (!model) return null;
-
-  return {
-    input: model.input / 1_000_000, // Convert from per 1M to per token
-    cachedInput: (model.cached_input || model.input) / 1_000_000,
-    output: model.output / 1_000_000,
-  };
-}
-
-// Get pricing for image generation
-function getImagePricing(
-  modelName: string,
-  quality: ImageQuality,
-  size: ImageSize
-): number {
-  const sizeMap = {
-    square: "1024x1024",
-    portrait: "1024x1536",
-    landscape: "1536x1024",
-  };
-
-  const dimensions = sizeMap[size];
-
-  // Try original model name first, then try with underscore conversion
-  let imageModel =
-    pricingData.image_generation[
-      modelName as keyof typeof pricingData.image_generation
-    ];
-
-  if (!imageModel && modelName.includes("-")) {
-    // Convert hyphens to underscores and try again
-    const underscoreModelName = modelName.replace(/-/g, "_");
-    imageModel =
-      pricingData.image_generation[
-        underscoreModelName as keyof typeof pricingData.image_generation
-      ];
+  if (previousUsage && previousUsage.length > 0) {
+    const prev = previousUsage[0];
+    const prevPurchased = parseFloat(prev.purchased_credits) || 0;
+    const prevUsedPurchased = parseFloat(prev.used_purchased_credits) || 0;
+    rolloverPurchasedCredits = calculateRolloverCredits(
+      prevPurchased,
+      prevUsedPurchased
+    );
+    isFirstPeriod = false; // Has previous usage, so not first period
+  } else {
+    isFirstPeriod = true; // No previous usage, so this is first period
   }
 
-  if (!imageModel) {
-    return 0;
-  }
-
-  const qualityPricing = imageModel[quality as keyof typeof imageModel];
-  if (!qualityPricing) {
-    return 0;
-  }
-
-  return qualityPricing[dimensions as keyof typeof qualityPricing] || 0;
-}
-
-// Get transcription pricing (per minute)
-function getTranscriptionPricing(): number {
-  return pricingData.whisper.transcription_per_minute;
-}
-
-// Get realtime audio pricing
-function getRealtimePricing(modelName: string): {
-  inputText: number;
-  inputAudio: number;
-  outputText: number;
-  outputAudio: number;
-} | null {
-  // Find in text models for text pricing
-  const textModel = pricingData.latest_models_text_tokens.find(
-    (m) => m.model === modelName
+  // Use business logic to initialize credits
+  const creditData = initializePeriodCreditsLogic(
+    subscriptionTier,
+    rolloverPurchasedCredits,
+    isFirstPeriod
   );
-  if (!textModel) return null;
 
-  // Find in audio models for audio pricing
-  const audioModel = pricingData.image_tokens.find(
-    (m) => m.model === modelName
-  );
-  if (!audioModel) return null;
+  // Initialize credits for this period
+  const { data: updatedData, error: updateError } = await supabase
+    .from("usage")
+    .update({
+      subscription_credits: creditData.subscriptionCredits,
+      used_subscription_credits: creditData.usedSubscriptionCredits,
+      purchased_credits: creditData.purchasedCredits,
+      used_purchased_credits: creditData.usedPurchasedCredits,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", usageId)
+    .select("*")
+    .single();
 
-  return {
-    inputText: textModel.input / 1_000_000,
-    inputAudio: audioModel.input / 1_000_000,
-    outputText: textModel.output / 1_000_000,
-    outputAudio: audioModel.output / 1_000_000,
-  };
+  if (updateError) handleError(updateError);
+
+  return mapUsageFromDB(updatedData);
 }
-
-// Helper to get current user ID
-async function getCurrentUserId(supabase: SupabaseClient): Promise<string> {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) {
-    throw new Error("User not authenticated");
-  }
-  return user.id;
-}
-
-// Image quality and size types
-export type ImageQuality = "low" | "medium" | "high";
-export type ImageSize = "square" | "portrait" | "landscape";
 
 // Helper functions for image keys
 function createImageKey(quality: ImageQuality, size: ImageSize): string {
   return `${quality}-${size}`;
-}
-
-// Helper function to map pixel dimensions to size
-export function mapDimensionsToSize(dimensions: string): ImageSize {
-  switch (dimensions) {
-    case "1024x1024":
-      return "square";
-    case "1024x1536":
-      return "portrait";
-    case "1536x1024":
-      return "landscape";
-    default:
-      // Default fallback for unknown dimensions
-      return "square";
-  }
 }
 
 // Base usage per model
@@ -254,8 +189,10 @@ export type Usage = {
   promptHelper: PromptHelperUsage;
   conversation: ConversationUsage;
   transcription: TranscriptionUsage;
-  availableCredits: number;
-  usedCredits: number;
+  subscriptionCredits: number;
+  usedSubscriptionCredits: number;
+  purchasedCredits: number;
+  usedPurchasedCredits: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -270,8 +207,10 @@ type UsageRow = {
   prompt_helper: PromptHelperUsage;
   conversation: ConversationUsage;
   transcription: TranscriptionUsage;
-  available_credits: string;
-  used_credits: string;
+  subscription_credits: string;
+  used_subscription_credits: string;
+  purchased_credits: string;
+  used_purchased_credits: string;
   created_at: string;
   updated_at: string;
 };
@@ -351,7 +290,7 @@ export type TranscriptionUpdate = {
 export async function getCurrentUsage(
   supabase: SupabaseClient
 ): Promise<Usage | null> {
-  const userId = await getCurrentUserId(supabase);
+  const userId = await getUserId(supabase);
 
   // Use the helper function to get current period usage
   const { data: usageId, error: rpcError } = await supabase.rpc(
@@ -376,8 +315,8 @@ export async function getCurrentUsage(
   const usage = mapUsageFromDB(data);
 
   // Check if this is a new record that needs credit initialization
-  // (i.e., both available_credits and used_credits are 0)
-  if (usage.availableCredits === 0 && usage.usedCredits === 0) {
+  // (i.e., subscription credits are 0, indicating a new billing period)
+  if (usage.subscriptionCredits === 0) {
     // Get user's subscription tier from profile
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
@@ -389,23 +328,16 @@ export async function getCurrentUsage(
 
     const subscriptionTier = (profile?.pricing_plan ||
       "free") as SubscriptionTier;
-    const initialCredits = SUBSCRIPTION_TIER_CREDITS[subscriptionTier];
 
-    // Initialize credits for this period
-    const { data: updatedData, error: updateError } = await supabase
-      .from("usage")
-      .update({
-        available_credits: initialCredits,
-        used_credits: 0,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", usageId)
-      .select("*")
-      .single();
+    // Initialize subscription credits and roll over any purchased credits from previous period
+    const initializedUsage = await initializePeriodCreditsInternal(
+      supabase,
+      userId,
+      usageId,
+      subscriptionTier
+    );
 
-    if (updateError) handleError(updateError);
-
-    return mapUsageFromDB(updatedData);
+    return initializedUsage;
   }
 
   return usage;
@@ -416,7 +348,7 @@ export async function getUsageByPeriod(
   supabase: SupabaseClient,
   periodStart: Date
 ): Promise<Usage | null> {
-  const userId = await getCurrentUserId(supabase);
+  const userId = await getUserId(supabase);
 
   const { data, error } = await supabase
     .from("usage")
@@ -472,17 +404,36 @@ export async function updateAssessmentUsage(
     },
   };
 
-  // Calculate credit cost and update used credits
-  const creditCost = calculateAssessmentCreditCost(update);
-  const currentUsedCredits = current?.usedCredits || 0;
+  // Calculate credit cost and deduct credits
+  const creditCost = calculateTextModelCreditCost(update.modelName, {
+    cachedTokens: update.promptTokens.text.cached || 0,
+    notCachedTokens: update.promptTokens.text.notCached || 0,
+    outputTokens: update.outputTokens || 0,
+  });
 
-  console.log(
-    `[CREDITS] Assessment (${update.modelName}): ${creditCost.toFixed(3)} credits | Total: ${(currentUsedCredits + creditCost).toFixed(2)}`
+  if (!current) {
+    throw new Error("No current usage record found");
+  }
+
+  const deductionResult = deductCreditsWithPriority(
+    current.subscriptionCredits,
+    current.usedSubscriptionCredits,
+    current.purchasedCredits,
+    current.usedPurchasedCredits,
+    creditCost
+  );
+
+  logger.info(
+    `[CREDITS] Assessment (${update.modelName}): ${creditCost.toFixed(3)} credits (${deductionResult.deductedFromSubscription.toFixed(3)} subscription + ${deductionResult.deductedFromPurchased.toFixed(3)} purchased)`
   );
 
   return updateUsageRecord(supabase, {
     assessment: updatedAssessment,
-    used_credits: currentUsedCredits + creditCost,
+    used_subscription_credits:
+      current.usedSubscriptionCredits +
+      deductionResult.deductedFromSubscription,
+    used_purchased_credits:
+      current.usedPurchasedCredits + deductionResult.deductedFromPurchased,
   });
 }
 
@@ -522,18 +473,36 @@ export async function updatePromptHelperUsage(
     },
   };
 
-  // Calculate credit cost and update used credits
-  const creditCost = calculatePromptHelperCreditCost(update);
-  const currentUsedCredits = current?.usedCredits || 0;
-  const newUsedCredits = currentUsedCredits + creditCost;
+  // Calculate credit cost and deduct credits
+  const creditCost = calculateTextModelCreditCost(update.modelName, {
+    cachedTokens: update.promptTokens.text.cached || 0,
+    notCachedTokens: update.promptTokens.text.notCached || 0,
+    outputTokens: update.outputTokens || 0,
+  });
 
-  console.log(
-    `[CREDITS] Prompt Helper (${update.modelName}): ${creditCost.toFixed(3)} credits | Total: ${newUsedCredits.toFixed(2)}`
+  if (!current) {
+    throw new Error("No current usage record found");
+  }
+
+  const deductionResult = deductCreditsWithPriority(
+    current.subscriptionCredits,
+    current.usedSubscriptionCredits,
+    current.purchasedCredits,
+    current.usedPurchasedCredits,
+    creditCost
+  );
+
+  logger.info(
+    `[CREDITS] Prompt Helper (${update.modelName}): ${creditCost.toFixed(3)} credits (${deductionResult.deductedFromSubscription.toFixed(3)} subscription + ${deductionResult.deductedFromPurchased.toFixed(3)} purchased)`
   );
 
   return updateUsageRecord(supabase, {
     prompt_helper: updatedPromptHelper,
-    used_credits: newUsedCredits,
+    used_subscription_credits:
+      current.usedSubscriptionCredits +
+      deductionResult.deductedFromSubscription,
+    used_purchased_credits:
+      current.usedPurchasedCredits + deductionResult.deductedFromPurchased,
   });
 }
 
@@ -609,18 +578,44 @@ export async function updateImageUsage(
     },
   };
 
-  // Calculate credit cost and update used credits
-  const creditCost = calculateImageCreditCost(update);
-  const currentUsedCredits = current?.usedCredits || 0;
-  const newUsedCredits = currentUsedCredits + creditCost;
+  // Calculate credit cost and deduct credits
+  const creditCost = calculateImageCreditCost({
+    modelName: update.modelName,
+    quality: update.quality,
+    size: update.size,
+    textTokens: {
+      cachedTokens: update.promptTokens.text?.cached || 0,
+      notCachedTokens: update.promptTokens.text?.notCached || 0,
+    },
+    imageTokens: {
+      cachedTokens: update.promptTokens.image?.cached || 0,
+      notCachedTokens: update.promptTokens.image?.notCached || 0,
+    },
+  });
 
-  console.log(
-    `[CREDITS] Image (${update.modelName} ${update.quality}/${update.size}): ${creditCost.toFixed(3)} credits | Total: ${newUsedCredits.toFixed(2)}`
+  if (!current) {
+    throw new Error("No current usage record found");
+  }
+
+  const deductionResult = deductCreditsWithPriority(
+    current.subscriptionCredits,
+    current.usedSubscriptionCredits,
+    current.purchasedCredits,
+    current.usedPurchasedCredits,
+    creditCost
+  );
+
+  logger.info(
+    `[CREDITS] Image (${update.modelName} ${update.quality}/${update.size}): ${creditCost.toFixed(3)} credits (${deductionResult.deductedFromSubscription.toFixed(3)} subscription + ${deductionResult.deductedFromPurchased.toFixed(3)} purchased)`
   );
 
   return updateUsageRecord(supabase, {
     images: updatedImages,
-    used_credits: newUsedCredits,
+    used_subscription_credits:
+      current.usedSubscriptionCredits +
+      deductionResult.deductedFromSubscription,
+    used_purchased_credits:
+      current.usedPurchasedCredits + deductionResult.deductedFromPurchased,
   });
 }
 
@@ -677,17 +672,43 @@ export async function updateConversationUsage(
     },
   };
 
-  // Calculate credit cost and update used credits
-  const creditCost = calculateConversationCreditCost(update);
-  const currentUsedCredits = current?.usedCredits || 0;
+  // Calculate credit cost and deduct credits
+  const creditCost = calculateConversationCreditCost(update.modelName, {
+    textTokens: {
+      cachedTokens: update.promptTokens.text?.cached || 0,
+      notCachedTokens: update.promptTokens.text?.notCached || 0,
+    },
+    audioTokens: {
+      cachedTokens: update.promptTokens.audio?.cached || 0,
+      notCachedTokens: update.promptTokens.audio?.notCached || 0,
+    },
+    outputTextTokens: update.outputTokens?.text || 0,
+    outputAudioTokens: update.outputTokens?.audio || 0,
+  });
 
-  console.log(
-    `[CREDITS] Conversation (${update.modelName}): ${creditCost.toFixed(3)} credits | Total: ${(currentUsedCredits + creditCost).toFixed(2)}`
+  if (!current) {
+    throw new Error("No current usage record found");
+  }
+
+  const deductionResult = deductCreditsWithPriority(
+    current.subscriptionCredits,
+    current.usedSubscriptionCredits,
+    current.purchasedCredits,
+    current.usedPurchasedCredits,
+    creditCost
+  );
+
+  logger.info(
+    `[CREDITS] Conversation (${update.modelName}): ${creditCost.toFixed(3)} credits (${deductionResult.deductedFromSubscription.toFixed(3)} subscription + ${deductionResult.deductedFromPurchased.toFixed(3)} purchased)`
   );
 
   return updateUsageRecord(supabase, {
     conversation: updatedConversation,
-    used_credits: currentUsedCredits + creditCost,
+    used_subscription_credits:
+      current.usedSubscriptionCredits +
+      deductionResult.deductedFromSubscription,
+    used_purchased_credits:
+      current.usedPurchasedCredits + deductionResult.deductedFromPurchased,
   });
 }
 
@@ -719,17 +740,34 @@ export async function updateTranscriptionUsage(
     },
   };
 
-  // Calculate credit cost and update used credits
-  const creditCost = calculateTranscriptionCreditCost(update);
-  const currentUsedCredits = current?.usedCredits || 0;
+  // Calculate credit cost and deduct credits
+  const creditCost = calculateTranscriptionCreditCost({
+    sessionLengthMinutes: (update.totalSessionLength || 0) / 60,
+  });
 
-  console.log(
-    `[CREDITS] Transcription (${update.modelName}): ${creditCost.toFixed(3)} credits | Total: ${(currentUsedCredits + creditCost).toFixed(2)}`
+  if (!current) {
+    throw new Error("No current usage record found");
+  }
+
+  const deductionResult = deductCreditsWithPriority(
+    current.subscriptionCredits,
+    current.usedSubscriptionCredits,
+    current.purchasedCredits,
+    current.usedPurchasedCredits,
+    creditCost
+  );
+
+  logger.info(
+    `[CREDITS] Transcription (${update.modelName}): ${creditCost.toFixed(3)} credits (${deductionResult.deductedFromSubscription.toFixed(3)} subscription + ${deductionResult.deductedFromPurchased.toFixed(3)} purchased)`
   );
 
   return updateUsageRecord(supabase, {
     transcription: updatedTranscription,
-    used_credits: currentUsedCredits + creditCost,
+    used_subscription_credits:
+      current.usedSubscriptionCredits +
+      deductionResult.deductedFromSubscription,
+    used_purchased_credits:
+      current.usedPurchasedCredits + deductionResult.deductedFromPurchased,
   });
 }
 
@@ -738,7 +776,7 @@ export async function getUserUsageHistory(
   supabase: SupabaseClient,
   limit: number = 12
 ): Promise<Usage[]> {
-  const userId = await getCurrentUserId(supabase);
+  const userId = await getUserId(supabase);
 
   const { data, error } = await supabase
     .from("usage")
@@ -763,11 +801,13 @@ async function updateUsageRecord(
     prompt_helper: PromptHelperUsage;
     conversation: ConversationUsage;
     transcription: TranscriptionUsage;
-    available_credits: number;
-    used_credits: number;
+    subscription_credits: number;
+    used_subscription_credits: number;
+    purchased_credits: number;
+    used_purchased_credits: number;
   }>
 ): Promise<Usage> {
-  const userId = await getCurrentUserId(supabase);
+  const userId = await getUserId(supabase);
 
   // Get or create current usage record
   const { data: usageId, error: rpcError } = await supabase.rpc(
@@ -809,8 +849,10 @@ function mapUsageFromDB(data: UsageRow): Usage {
     promptHelper: data.prompt_helper || {},
     conversation: data.conversation || {},
     transcription: data.transcription || {},
-    availableCredits: parseFloat(data.available_credits) || 0,
-    usedCredits: parseFloat(data.used_credits) || 0,
+    subscriptionCredits: parseFloat(data.subscription_credits) || 0,
+    usedSubscriptionCredits: parseFloat(data.used_subscription_credits) || 0,
+    purchasedCredits: parseFloat(data.purchased_credits) || 0,
+    usedPurchasedCredits: parseFloat(data.used_purchased_credits) || 0,
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at),
   };
@@ -872,47 +914,54 @@ export async function checkCreditAvailability(
   creditsRequired: number
 ): Promise<{
   hasCredits: boolean;
-  availableCredits: number;
-  usedCredits: number;
+  totalAvailableCredits: number;
+  totalUsedCredits: number;
+  creditBalance: CreditBalance;
 }> {
   const current = await getCurrentUsage(supabase);
 
   if (!current) {
-    return { hasCredits: false, availableCredits: 0, usedCredits: 0 };
+    const emptyCreditBalance: CreditBalance = {
+      subscriptionCredits: 0,
+      usedSubscriptionCredits: 0,
+      availableSubscriptionCredits: 0,
+      purchasedCredits: 0,
+      usedPurchasedCredits: 0,
+      availablePurchasedCredits: 0,
+      totalAvailableCredits: 0,
+      totalUsedCredits: 0,
+      totalRemainingCredits: 0,
+    };
+    return {
+      hasCredits: false,
+      totalAvailableCredits: 0,
+      totalUsedCredits: 0,
+      creditBalance: emptyCreditBalance,
+    };
   }
 
-  const remainingCredits = current.availableCredits - current.usedCredits;
-
-  return {
-    hasCredits: remainingCredits >= creditsRequired,
-    availableCredits: current.availableCredits,
-    usedCredits: current.usedCredits,
-  };
+  return checkSufficientCredits(
+    current.subscriptionCredits,
+    current.usedSubscriptionCredits,
+    current.purchasedCredits,
+    current.usedPurchasedCredits,
+    creditsRequired
+  );
 }
 
-// Add credits to user's current period
-export async function addCredits(
+// Add purchased credits to user's current period (these roll over)
+export async function addPurchasedCredits(
   supabase: SupabaseClient,
   creditsToAdd: number
 ): Promise<Usage> {
   const current = await getCurrentUsage(supabase);
-  const currentCredits = current?.availableCredits || 0;
+
+  if (!current) {
+    throw new Error("No current usage record found");
+  }
 
   return updateUsageRecord(supabase, {
-    available_credits: currentCredits + creditsToAdd,
-  });
-}
-
-// Deduct credits from user's current period
-export async function deductCredits(
-  supabase: SupabaseClient,
-  creditsToDeduct: number
-): Promise<Usage> {
-  const current = await getCurrentUsage(supabase);
-  const currentUsedCredits = current?.usedCredits || 0;
-
-  return updateUsageRecord(supabase, {
-    used_credits: currentUsedCredits + creditsToDeduct,
+    purchased_credits: current.purchasedCredits + creditsToAdd,
   });
 }
 
@@ -921,116 +970,36 @@ export async function initializePeriodCredits(
   supabase: SupabaseClient,
   subscriptionTier: SubscriptionTier
 ): Promise<Usage> {
-  const baseCredits = SUBSCRIPTION_TIER_CREDITS[subscriptionTier];
+  const userId = await getUserId(supabase);
 
-  return updateUsageRecord(supabase, {
-    available_credits: baseCredits,
-    used_credits: 0,
-  });
+  // Get or create current usage record
+  const { data: usageId, error: rpcError } = await supabase.rpc(
+    "get_or_create_current_usage",
+    { target_user_id: userId }
+  );
+
+  if (rpcError) handleError(rpcError);
+
+  return initializePeriodCreditsInternal(
+    supabase,
+    userId,
+    usageId,
+    subscriptionTier
+  );
 }
 
-// Get current credit balance
-export async function getCreditBalance(supabase: SupabaseClient): Promise<{
-  availableCredits: number;
-  usedCredits: number;
-  remainingCredits: number;
-} | null> {
+// Get current credit balance with detailed breakdown
+export async function getCreditBalance(
+  supabase: SupabaseClient
+): Promise<CreditBalance | null> {
   const current = await getCurrentUsage(supabase);
 
   if (!current) return null;
 
-  return {
-    availableCredits: current.availableCredits,
-    usedCredits: current.usedCredits,
-    remainingCredits: current.availableCredits - current.usedCredits,
-  };
-}
-
-// Calculate credit cost for different usage types using real pricing data
-export function calculateAssessmentCreditCost(
-  update: AssessmentUpdate
-): number {
-  const pricing = getTextModelPricing(update.modelName);
-
-  if (!pricing) {
-    return 0;
-  }
-
-  const cachedTokens = update.promptTokens.text.cached || 0;
-  const notCachedTokens = update.promptTokens.text.notCached || 0;
-  const outputTokens = update.outputTokens || 0;
-
-  const costUSD =
-    cachedTokens * pricing.cachedInput +
-    notCachedTokens * pricing.input +
-    outputTokens * pricing.output;
-
-  return calculateCreditsFromUSD(costUSD);
-}
-
-export function calculatePromptHelperCreditCost(
-  update: PromptHelperUpdate
-): number {
-  const pricing = getTextModelPricing(update.modelName);
-
-  if (!pricing) {
-    return 0;
-  }
-
-  const cachedTokens = update.promptTokens.text.cached || 0;
-  const notCachedTokens = update.promptTokens.text.notCached || 0;
-  const outputTokens = update.outputTokens || 0;
-
-  const costUSD =
-    cachedTokens * pricing.cachedInput +
-    notCachedTokens * pricing.input +
-    outputTokens * pricing.output;
-
-  return calculateCreditsFromUSD(costUSD);
-}
-
-export function calculateImageCreditCost(update: ImageUpdate): number {
-  const costUSD = getImagePricing(
-    update.modelName,
-    update.quality,
-    update.size
+  return calculateCreditBalanceLogic(
+    current.subscriptionCredits,
+    current.usedSubscriptionCredits,
+    current.purchasedCredits,
+    current.usedPurchasedCredits
   );
-  return calculateCreditsFromUSD(costUSD);
-}
-
-export function calculateConversationCreditCost(
-  update: ConversationUpdate
-): number {
-  const pricing = getRealtimePricing(update.modelName);
-
-  if (!pricing) {
-    return 0;
-  }
-
-  const textCachedTokens = update.promptTokens.text?.cached || 0;
-  const textNotCachedTokens = update.promptTokens.text?.notCached || 0;
-  const audioCachedTokens = update.promptTokens.audio?.cached || 0;
-  const audioNotCachedTokens = update.promptTokens.audio?.notCached || 0;
-  const outputTextTokens = update.outputTokens?.text || 0;
-  const outputAudioTokens = update.outputTokens?.audio || 0;
-
-  const costUSD =
-    textCachedTokens * pricing.inputText * 0.5 + // Assuming 50% discount for cached
-    textNotCachedTokens * pricing.inputText +
-    audioCachedTokens * pricing.inputAudio * 0.5 + // Assuming 50% discount for cached
-    audioNotCachedTokens * pricing.inputAudio +
-    outputTextTokens * pricing.outputText +
-    outputAudioTokens * pricing.outputAudio;
-
-  return calculateCreditsFromUSD(costUSD);
-}
-
-export function calculateTranscriptionCreditCost(
-  update: TranscriptionUpdate
-): number {
-  const sessionLengthMinutes = (update.totalSessionLength || 0) / 60;
-  const costPerMinute = getTranscriptionPricing();
-  const costUSD = sessionLengthMinutes * costPerMinute;
-
-  return calculateCreditsFromUSD(costUSD);
 }

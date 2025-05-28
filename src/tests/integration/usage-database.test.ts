@@ -16,20 +16,23 @@ import {
   updateConversationUsage,
   updateTranscriptionUsage,
   updatePromptHelperUsage,
-  SUBSCRIPTION_TIER_CREDITS,
   type AssessmentUpdate,
   type ImageUpdate,
   type ConversationUpdate,
   type TranscriptionUpdate,
   type PromptHelperUpdate,
-  type SubscriptionTier,
 } from "@/data/usage";
+import {
+  SUBSCRIPTION_TIER_CREDITS,
+  type SubscriptionTier,
+} from "@/lib/usage/types";
 
 // Integration tests against real Supabase database
 describe("Usage Database Integration Tests", () => {
   let supabase: SupabaseClient;
   let testUserIds: string[] = [];
   let testUsageIds: number[] = [];
+  let testCounter = 0; // Add counter for unique test data
 
   beforeAll(async () => {
     // Create Supabase client for testing
@@ -56,9 +59,10 @@ describe("Usage Database Integration Tests", () => {
   });
 
   beforeEach(() => {
-    // Reset tracking arrays for each test
+    // Reset tracking arrays for each test and increment counter
     testUserIds = [];
     testUsageIds = [];
+    testCounter++;
   });
 
   afterEach(async () => {
@@ -89,9 +93,12 @@ describe("Usage Database Integration Tests", () => {
   }
 
   async function createTestUser(
-    email: string,
+    emailPrefix: string,
     pricingPlan: SubscriptionTier = "free"
   ): Promise<string> {
+    // Create unique email using test counter to avoid conflicts
+    const email = `${emailPrefix}-${testCounter}@example.com`;
+
     // Create auth user - the trigger will automatically create the profile
     const { data: authData, error: authError } =
       await supabase.auth.admin.createUser({
@@ -126,7 +133,7 @@ describe("Usage Database Integration Tests", () => {
 
   describe("Credit Initialization", () => {
     it("should initialize credits correctly for new free tier user", async () => {
-      const userId = await createTestUser("test-free@example.com", "free");
+      const userId = await createTestUser("test-free", "free");
 
       // Mock authenticated user for getCurrentUsage
       supabase.auth.getUser = vi.fn().mockResolvedValue({
@@ -137,8 +144,10 @@ describe("Usage Database Integration Tests", () => {
       const usage = await getCurrentUsage(supabase);
 
       expect(usage).not.toBeNull();
-      expect(usage?.availableCredits).toBe(SUBSCRIPTION_TIER_CREDITS.free);
-      expect(usage?.usedCredits).toBe(0);
+      expect(usage?.subscriptionCredits).toBe(SUBSCRIPTION_TIER_CREDITS.free);
+      expect(usage?.usedSubscriptionCredits).toBe(0);
+      expect(usage?.purchasedCredits).toBe(0);
+      expect(usage?.usedPurchasedCredits).toBe(0);
       expect(usage?.periodStart).toBeInstanceOf(Date);
 
       if (usage?.id) {
@@ -160,7 +169,7 @@ describe("Usage Database Integration Tests", () => {
       ];
 
       for (const { tier, expectedCredits } of testCases) {
-        const userId = await createTestUser(`test-${tier}@example.com`, tier);
+        const userId = await createTestUser(`test-${tier}`, tier);
 
         supabase.auth.getUser = vi.fn().mockResolvedValue({
           data: { user: { id: userId } },
@@ -169,8 +178,10 @@ describe("Usage Database Integration Tests", () => {
 
         const usage = await getCurrentUsage(supabase);
 
-        expect(usage?.availableCredits).toBe(expectedCredits);
-        expect(usage?.usedCredits).toBe(0);
+        expect(usage?.subscriptionCredits).toBe(expectedCredits);
+        expect(usage?.usedSubscriptionCredits).toBe(0);
+        expect(usage?.purchasedCredits).toBe(0);
+        expect(usage?.usedPurchasedCredits).toBe(0);
 
         if (usage?.id) {
           testUsageIds.push(usage.id);
@@ -183,7 +194,7 @@ describe("Usage Database Integration Tests", () => {
     let testUserId: string;
 
     beforeEach(async () => {
-      testUserId = await createTestUser("test-usage@example.com", "free");
+      testUserId = await createTestUser("test-usage", "free");
       supabase.auth.getUser = vi.fn().mockResolvedValue({
         data: { user: { id: testUserId } },
         error: null,
@@ -209,7 +220,9 @@ describe("Usage Database Integration Tests", () => {
       expect(result.assessment["gpt-4o"]).toBeDefined();
       expect(result.assessment["gpt-4o"].requestCount).toBe(1);
       expect(result.assessment["gpt-4o"].totalTokens).toBe(1500);
-      expect(result.usedCredits).toBeGreaterThan(0);
+      expect(
+        result.usedSubscriptionCredits + result.usedPurchasedCredits
+      ).toBeGreaterThan(0);
 
       if (result.id) {
         testUsageIds.push(result.id);
@@ -218,7 +231,7 @@ describe("Usage Database Integration Tests", () => {
 
     it("should track image usage correctly", async () => {
       const imageUpdate: ImageUpdate = {
-        modelName: "gpt_image_1",
+        modelName: "gpt-image-1",
         quality: "medium",
         size: "square",
         promptTokens: {
@@ -230,13 +243,15 @@ describe("Usage Database Integration Tests", () => {
       const result = await updateImageUsage(supabase, imageUpdate);
 
       expect(result).not.toBeNull();
-      expect(result.images["gpt_image_1"]).toBeDefined();
+      expect(result.images["gpt-image-1"]).toBeDefined();
 
       // Image usage has a nested structure: model -> quality-size key -> usage data
       const qualitySizeKey = "medium-square";
-      expect(result.images["gpt_image_1"][qualitySizeKey]).toBeDefined();
-      expect(result.images["gpt_image_1"][qualitySizeKey].requestCount).toBe(1);
-      expect(result.usedCredits).toBeGreaterThan(0);
+      expect(result.images["gpt-image-1"][qualitySizeKey]).toBeDefined();
+      expect(result.images["gpt-image-1"][qualitySizeKey].requestCount).toBe(1);
+      expect(
+        result.usedSubscriptionCredits + result.usedPurchasedCredits
+      ).toBeGreaterThan(0);
 
       if (result.id) {
         testUsageIds.push(result.id);
@@ -271,7 +286,9 @@ describe("Usage Database Integration Tests", () => {
       expect(
         result.conversation["gpt-4o-realtime-preview"].totalSessionLength
       ).toBe(60);
-      expect(result.usedCredits).toBeGreaterThan(0);
+      expect(
+        result.usedSubscriptionCredits + result.usedPurchasedCredits
+      ).toBeGreaterThan(0);
 
       if (result.id) {
         testUsageIds.push(result.id);
@@ -295,7 +312,9 @@ describe("Usage Database Integration Tests", () => {
       expect(result.transcription["whisper-1"]).toBeDefined();
       expect(result.transcription["whisper-1"].requestCount).toBe(1);
       expect(result.transcription["whisper-1"].totalSessionLength).toBe(60);
-      expect(result.usedCredits).toBeGreaterThan(0);
+      expect(
+        result.usedSubscriptionCredits + result.usedPurchasedCredits
+      ).toBeGreaterThan(0);
 
       if (result.id) {
         testUsageIds.push(result.id);
@@ -324,7 +343,9 @@ describe("Usage Database Integration Tests", () => {
       expect(result.promptHelper["gpt-4o"]).toBeDefined();
       expect(result.promptHelper["gpt-4o"].requestCount).toBe(1);
       expect(result.promptHelper["gpt-4o"].totalTokens).toBe(2300);
-      expect(result.usedCredits).toBeGreaterThan(0);
+      expect(
+        result.usedSubscriptionCredits + result.usedPurchasedCredits
+      ).toBeGreaterThan(0);
 
       if (result.id) {
         testUsageIds.push(result.id);
@@ -344,7 +365,8 @@ describe("Usage Database Integration Tests", () => {
         supabase,
         firstAssessment
       );
-      const firstUsedCredits = firstResult.usedCredits;
+      const firstUsedCredits =
+        firstResult.usedSubscriptionCredits + firstResult.usedPurchasedCredits;
 
       // Second assessment request
       const secondAssessment: AssessmentUpdate = {
@@ -361,7 +383,9 @@ describe("Usage Database Integration Tests", () => {
 
       expect(secondResult.assessment["gpt-4o"].requestCount).toBe(2);
       expect(secondResult.assessment["gpt-4o"].totalTokens).toBe(2700); // 1500 + 1200
-      expect(secondResult.usedCredits).toBeGreaterThan(firstUsedCredits);
+      expect(
+        secondResult.usedSubscriptionCredits + secondResult.usedPurchasedCredits
+      ).toBeGreaterThan(firstUsedCredits);
 
       if (secondResult.id) {
         testUsageIds.push(secondResult.id);
@@ -373,10 +397,7 @@ describe("Usage Database Integration Tests", () => {
     let testUserId: string;
 
     beforeEach(async () => {
-      testUserId = await createTestUser(
-        "test-db-functions@example.com",
-        "free"
-      );
+      testUserId = await createTestUser("test-db-functions", "free");
     });
 
     it("should test get_current_period_start function", async () => {
@@ -440,7 +461,7 @@ describe("Usage Database Integration Tests", () => {
       // For now, we'll test that the period calculation works with different user creation dates
 
       // Create user with a specific creation date by updating the profile after creation
-      const userId = await createTestUser("test-period@example.com", "free");
+      const userId = await createTestUser("test-period", "free");
 
       // Update the profile's created_at to simulate an older user
       const pastDate = new Date();

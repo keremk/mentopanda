@@ -1,13 +1,12 @@
 #!/usr/bin/env tsx
 
 import {
-  CREDIT_CONFIG,
-  calculateAssessmentCreditCost,
-  calculatePromptHelperCreditCost,
+  calculateTextModelCreditCost,
   calculateImageCreditCost,
   calculateConversationCreditCost,
   calculateTranscriptionCreditCost,
-} from "../data/usage";
+} from "../lib/usage/credit-calculator";
+import { CREDIT_CONFIG } from "../lib/usage/types";
 import type {
   ImageUpdate,
   AssessmentUpdate,
@@ -245,12 +244,33 @@ function calculateConversationScenario() {
   };
 
   const conversationCost = calculateConversationCreditCost(
-    oneMinuteConversation
+    oneMinuteConversation.modelName,
+    {
+      textTokens: {
+        cachedTokens: oneMinuteConversation.promptTokens.text?.cached || 0,
+        notCachedTokens:
+          oneMinuteConversation.promptTokens.text?.notCached || 0,
+      },
+      audioTokens: {
+        cachedTokens: oneMinuteConversation.promptTokens.audio?.cached || 0,
+        notCachedTokens:
+          oneMinuteConversation.promptTokens.audio?.notCached || 0,
+      },
+      outputTextTokens: oneMinuteConversation.outputTokens?.text || 0,
+      outputAudioTokens: oneMinuteConversation.outputTokens?.audio || 0,
+    }
   );
-  const transcriptionCost = calculateTranscriptionCreditCost(
-    oneMinuteTranscription
+  const transcriptionCost = calculateTranscriptionCreditCost({
+    sessionLengthMinutes: (oneMinuteTranscription.totalSessionLength || 0) / 60,
+  });
+  const assessmentCost = calculateTextModelCreditCost(
+    conversationAssessment.modelName,
+    {
+      cachedTokens: conversationAssessment.promptTokens.text.cached || 0,
+      notCachedTokens: conversationAssessment.promptTokens.text.notCached || 0,
+      outputTokens: conversationAssessment.outputTokens || 0,
+    }
   );
-  const assessmentCost = calculateAssessmentCreditCost(conversationAssessment);
 
   // Based on real data: 2 assessments per 1.47 minutes = 1.36 assessments per minute
   const assessmentsPerMinute = 1.36;
@@ -292,7 +312,19 @@ function calculateTrainingCreationScenario() {
     },
   };
 
-  const imageCostPerImage = calculateImageCreditCost(mediumSquareImage);
+  const imageCostPerImage = calculateImageCreditCost({
+    modelName: mediumSquareImage.modelName,
+    quality: mediumSquareImage.quality,
+    size: mediumSquareImage.size,
+    textTokens: {
+      cachedTokens: mediumSquareImage.promptTokens.text?.cached || 0,
+      notCachedTokens: mediumSquareImage.promptTokens.text?.notCached || 0,
+    },
+    imageTokens: {
+      cachedTokens: mediumSquareImage.promptTokens.image?.cached || 0,
+      notCachedTokens: mediumSquareImage.promptTokens.image?.notCached || 0,
+    },
+  });
   const totalImagesPerTraining = 5; // 1 cover + 4 characters
   const iterationMultiplier = 2.5; // Average 2-3 iterations
   const totalImageCost =
@@ -306,8 +338,14 @@ function calculateTrainingCreationScenario() {
     totalTokens: 2300,
   };
 
-  const promptHelperCost = calculatePromptHelperCreditCost(
-    trainingContentGeneration
+  const promptHelperCost = calculateTextModelCreditCost(
+    trainingContentGeneration.modelName,
+    {
+      cachedTokens: trainingContentGeneration.promptTokens.text.cached || 0,
+      notCachedTokens:
+        trainingContentGeneration.promptTokens.text.notCached || 0,
+      outputTokens: trainingContentGeneration.outputTokens || 0,
+    }
   );
 
   // Assume 3-4 prompt helper calls per training (different modules/content)

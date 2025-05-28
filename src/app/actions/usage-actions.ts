@@ -11,8 +11,7 @@ import {
   updateTranscriptionUsage,
   getUserUsageHistory,
   checkCreditAvailability,
-  addCredits,
-  deductCredits,
+  addPurchasedCredits,
   initializePeriodCredits,
   getCreditBalance,
   type Usage,
@@ -21,8 +20,8 @@ import {
   type ImageUpdate,
   type ConversationUpdate,
   type TranscriptionUpdate,
-  type SubscriptionTier,
 } from "@/data/usage";
+import { type SubscriptionTier, type CreditBalance } from "@/lib/usage/types";
 
 // Get current usage period for the authenticated user
 export async function getCurrentUsageAction(): Promise<Usage | null> {
@@ -93,25 +92,20 @@ export async function checkCreditAvailabilityAction(
   creditsRequired: number
 ): Promise<{
   hasCredits: boolean;
-  availableCredits: number;
-  usedCredits: number;
+  totalAvailableCredits: number;
+  totalUsedCredits: number;
+  creditBalance: CreditBalance;
 }> {
   const supabase = await createClient();
   return await checkCreditAvailability(supabase, creditsRequired);
 }
 
-// Add credits to user's account
-export async function addCreditsAction(creditsToAdd: number): Promise<Usage> {
-  const supabase = await createClient();
-  return await addCredits(supabase, creditsToAdd);
-}
-
-// Deduct credits from user's account
-export async function deductCreditsAction(
-  creditsToDeduct: number
+// Add purchased credits to user's account (these roll over between periods)
+export async function addPurchasedCreditsAction(
+  creditsToAdd: number
 ): Promise<Usage> {
   const supabase = await createClient();
-  return await deductCredits(supabase, creditsToDeduct);
+  return await addPurchasedCredits(supabase, creditsToAdd);
 }
 
 // Initialize credits for a new billing period
@@ -122,12 +116,8 @@ export async function initializePeriodCreditsAction(
   return await initializePeriodCredits(supabase, subscriptionTier);
 }
 
-// Get current credit balance
-export async function getCreditBalanceAction(): Promise<{
-  availableCredits: number;
-  usedCredits: number;
-  remainingCredits: number;
-} | null> {
+// Get current credit balance with detailed breakdown
+export async function getCreditBalanceAction(): Promise<CreditBalance | null> {
   const supabase = await createClient();
   return await getCreditBalance(supabase);
 }
