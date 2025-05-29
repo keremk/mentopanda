@@ -71,7 +71,6 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
           sizes="100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-transparent via-background/50 to-background/90" />
-        <div className="absolute top-4 right-4 text-4xl">🐼</div>
       </div>
 
       <CardHeader className="relative pt-6">
@@ -89,7 +88,7 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
             <ImageEdit
               initialImageUrl={avatarUrl}
               bucketName="avatars"
-              storageFolderPath="user-avatars"
+              storageFolderPath={`user-avatars/${user.id}`}
               contextId={user.id}
               contextType="user"
               aspectRatio="square"
@@ -97,21 +96,23 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
               imageShape="circle"
               imageContainerClassName="h-32 w-32"
               buttonSize="sm"
-              buttonVariant="outline"
+              buttonVariant="ghost-brand"
               showButtonLabels={false}
             />
           </div>
 
           <div className="flex-1 space-y-4 w-full">
             <div className="flex flex-col gap-y-2">
-              <Label htmlFor="displayName">Display Name</Label>
+              <Label htmlFor="displayName" className="text-sm font-medium">
+                Display Name
+              </Label>
               <Input
                 id="displayName"
                 name="displayName"
                 value={data.displayName}
                 onChange={handleDisplayNameChange}
                 placeholder="Enter your name"
-                className="bg-secondary/30 rounded-lg border-border/30 shadow-sm"
+                className="bg-secondary/30 rounded-lg border-border/30 shadow-sm focus:border-brand focus:ring-brand/20"
               />
               <p className="text-sm text-muted-foreground">
                 This is how you&apos;ll appear to others in the platform
@@ -120,7 +121,7 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
           </div>
         </div>
 
-        <div className="bg-muted/50 p-4 rounded-lg">
+        <div className="bg-brand/5 border border-brand/20 p-4 rounded-lg">
           <p className="text-sm text-muted-foreground">
             Your display name will be updated when you complete the setup
             process. Your avatar is updated immediately. You can upload a new

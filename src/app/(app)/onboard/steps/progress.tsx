@@ -19,7 +19,6 @@ export function Progress({ status }: ProgressProps) {
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-transparent via-background/50 to-background/90" />
-        <div className="absolute top-4 right-4 text-4xl">🐼</div>
       </div>
 
       <CardHeader className="relative pt-6">
@@ -33,7 +32,7 @@ export function Progress({ status }: ProgressProps) {
 
       <div className="space-y-6 px-6 pb-6">
         <div className="flex items-center gap-4">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-brand border-t-transparent" />
           <p className="text-sm text-muted-foreground">{status}</p>
         </div>
       </div>

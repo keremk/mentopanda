@@ -123,21 +123,19 @@ export function OnboardingFlow({ user }: OnboardingFlowProps) {
 
         <CardFooter className="flex justify-between">
           {currentStepIndex > 0 && currentStep !== "Progress" && (
-            <Button variant="outline" onClick={goToPreviousStep}>
+            <Button variant="ghost-brand" onClick={goToPreviousStep}>
               Back
             </Button>
           )}
           {currentStepIndex < STEPS.length - 2 && (
-            <Button
-              className="ml-auto bg-brand text-brand-foreground hover:bg-brand-hover"
-              onClick={goToNextStep}
-            >
+            <Button variant="brand" className="ml-auto" onClick={goToNextStep}>
               Next
             </Button>
           )}
           {currentStep === "Summary" && (
             <Button
-              className="ml-auto bg-brand text-brand-foreground hover:bg-brand-hover"
+              variant="brand"
+              className="ml-auto"
               onClick={handleStartSetup}
             >
               Start Setup

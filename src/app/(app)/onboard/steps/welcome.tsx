@@ -1,5 +1,6 @@
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
+import { CheckCircle2 } from "lucide-react";
 
 export function Welcome() {
   return (
@@ -14,7 +15,6 @@ export function Welcome() {
           sizes="100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-transparent via-background/50 to-background/90" />
-        <div className="absolute top-4 right-4 text-4xl">🐼</div>
       </div>
 
       <CardHeader className="relative pt-6">
@@ -34,15 +34,30 @@ export function Welcome() {
           characters to practice with.
         </p>
 
-        <div>
-          <p className="text-base mb-2 font-medium">
+        <div className="bg-brand/5 border border-brand/20 rounded-lg p-4">
+          <p className="text-base mb-3 font-medium text-brand">
             In the next few steps, we&apos;ll help you:
           </p>
 
-          <ul className="list-disc list-inside space-y-2 ml-4">
-            <li>Set up your profile with a name and avatar</li>
-            <li>Set up your basic project information</li>
-            <li>Set up your first project with pre-built training sessions</li>
+          <ul className="space-y-2 ml-2">
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-brand flex-shrink-0" />
+              <span className="text-sm">
+                Set up your profile with a name and avatar
+              </span>
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-brand flex-shrink-0" />
+              <span className="text-sm">
+                Set up your basic project information
+              </span>
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-brand flex-shrink-0" />
+              <span className="text-sm">
+                Set up your first project with pre-built training sessions
+              </span>
+            </li>
           </ul>
         </div>
 
