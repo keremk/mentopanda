@@ -57,6 +57,9 @@ export async function updateSession(
   }
 
   if (user && isProtectedRoute) {
+    // We need the session here specifically to access JWT claims (current_project_id, project_role)
+    // The user authentication was already verified above with getUser()
+    // This getSession() call is safe because we're only using it for token parsing, not authentication
     const {
       data: { session },
     } = await supabase.auth.getSession();

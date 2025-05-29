@@ -19,7 +19,9 @@ import { UserRole } from "@/data/user";
 import { cache } from "react";
 import { logger } from "@/lib/logger";
 
-export async function setupProjectAction(data: ProjectSetupData): Promise<ProjectSummary> {
+export async function setupProjectAction(
+  data: ProjectSetupData
+): Promise<ProjectSummary> {
   const supabase = await createClient();
   logger.debug("Creating project:", data.projectName);
   // Create the new project
@@ -69,7 +71,8 @@ export async function switchToProjectAction(projectId: number) {
     throw new Error("Project ID update verification failed");
   }
 
-  // Get current session
+  // Get current session for JWT refresh - this is safe because we need to refresh
+  // the session to get updated project role claims, not for authentication
   const {
     data: { session: currentSession },
   } = await supabase.auth.getSession();
@@ -106,9 +109,7 @@ export const getProjectMembersActionCached = cache(
 
     if (!omitUserId) return members;
 
-    return members.filter(
-      (member) => member.id !== omitUserId
-    );
+    return members.filter((member) => member.id !== omitUserId);
   }
 );
 
