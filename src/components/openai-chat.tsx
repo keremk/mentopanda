@@ -296,7 +296,13 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
       ); // Debug log
       setChatState((prev) => ({ ...prev, isConversationActive: true }));
     }
-  }, [chatState.isConversationActive, startMicrophone, connect, module.id]);
+  }, [
+    chatState.isConversationActive,
+    startMicrophone,
+    stopMicrophone,
+    connect,
+    module.id,
+  ]);
 
   const handleCountdownComplete = useCallback(async () => {
     logger.info(
