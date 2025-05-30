@@ -61,7 +61,7 @@ export async function signup(formData: FormData) {
     // If we have a user and session, it means email confirmation is disabled
     // or the user was automatically confirmed
     revalidatePath("/", "layout");
-    return redirect("/onboard?auth_provider=email");
+    return redirect("/onboard?auth_provider=email&invite_validated=true");
   } else {
     // Email confirmation is required
     return redirect(
@@ -121,7 +121,7 @@ export async function googleSignIn() {
     },
   });
 
-  if (error) {  
+  if (error) {
     logger.error("error", error.message);
     return redirect("/login?message=Could not authenticate with Google");
   }

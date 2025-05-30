@@ -11,6 +11,7 @@
     "test:integration": "vitest src/tests/integration --run",
     "test:unit": "vitest src/tests/unit --run",
     "test:db": "supabase test db",
+    "test:cleanup": "tsx src/tests/cleanup-test-data.ts",
     "import-data": "tsx src/scripts/import-data.ts",
     "export-data": "tsx src/scripts/export-data.ts",
     "delete-user": "tsx src/scripts/delete-user.ts",

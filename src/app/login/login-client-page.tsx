@@ -10,6 +10,11 @@ import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
 import { getLastAuthProvider } from "@/lib/store-auth-provider";
 import { useSearchParams } from "next/navigation";
+import { InviteCodeValidation } from "@/components/invite-code-validation";
+import {
+  getValidatedInviteCode,
+  clearValidatedInviteCode,
+} from "@/lib/invite-code-session";
 
 export function LoginClientPage() {
   const searchParams = useSearchParams();
@@ -18,14 +23,53 @@ export function LoginClientPage() {
 
   const isSignUp = mode === "signup";
   const [lastProvider, setLastProvider] = useState<string | null>(null);
+  const [isInviteCodeValidated, setIsInviteCodeValidated] = useState(false);
+  const [validatedInviteCode, setValidatedInviteCode] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     setLastProvider(getLastAuthProvider());
-  }, []);
+
+    // Check if invite code is already validated (from sessionStorage)
+    if (isSignUp) {
+      const storedInviteCode = getValidatedInviteCode();
+      if (storedInviteCode) {
+        setValidatedInviteCode(storedInviteCode);
+        setIsInviteCodeValidated(true);
+      }
+    } else {
+      // Clear validated invite code when not in signup mode
+      clearValidatedInviteCode();
+      setIsInviteCodeValidated(false);
+      setValidatedInviteCode(null);
+    }
+  }, [isSignUp]);
+
+  const handleInviteCodeValidation = (inviteCode: string) => {
+    setValidatedInviteCode(inviteCode);
+    setIsInviteCodeValidated(true);
+  };
+
+  // If we're in signup mode and invite code hasn't been validated yet, show validation form
+  if (isSignUp && !isInviteCodeValidated) {
+    return (
+      <InviteCodeValidation onValidationSuccess={handleInviteCodeValidation} />
+    );
+  }
 
   return (
     <Card className="w-full max-w-md border-t-4 border-t-brand shadow-md">
       <CardContent className="pt-6 pb-4 space-y-6">
+        {/* Show validated invite code confirmation for signup */}
+        {isSignUp && validatedInviteCode && (
+          <div className="text-center p-3 rounded-md border bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+            <p className="text-sm text-green-800 dark:text-green-200">
+              ✅ Invite code validated! You can now create your account.
+            </p>
+          </div>
+        )}
+
         {/* OAuth Providers */}
         <form className="space-y-4">
           <Button
@@ -144,6 +188,10 @@ export function LoginClientPage() {
               <Link
                 href="/login?mode=signup"
                 className="underline hover:text-brand transition-colors"
+                onClick={() => {
+                  // Clear any existing validated invite code when switching to signup
+                  clearValidatedInviteCode();
+                }}
               >
                 Sign up
               </Link>

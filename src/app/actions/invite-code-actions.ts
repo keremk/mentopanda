@@ -18,12 +18,18 @@ import { logger } from "@/lib/logger";
 const createInviteCodeSchema = z.object({
   code: z.string().min(1, "Code is required").optional(),
   expire_by: z.number().min(1, "Expiry days must be at least 1").optional(),
-  created_for: z.string().email("Invalid email").nullable().optional(),
+  created_for: z.string().nullable().optional(),
   codeLength: z.number().min(6).max(16).optional(),
 });
 
 const validateInviteCodeSchema = z.object({
   code: z.string().min(1, "Code is required"),
+});
+
+const createInviteCodesSchema = z.object({
+  createdFor: z.string().optional(),
+  quantity: z.number().min(1).max(50),
+  expireInDays: z.number().min(1).max(365),
 });
 
 /**
@@ -44,11 +50,48 @@ export async function createInviteCodeAction(
 }
 
 /**
+ * Create multiple invite codes
+ */
+export async function createInviteCodesAction(
+  createdFor: string | undefined,
+  quantity: number,
+  expireInDays: number
+): Promise<InviteCode[]> {
+  const supabase = await createClient();
+
+  const validated = createInviteCodesSchema.parse({
+    createdFor,
+    quantity,
+    expireInDays,
+  });
+
+  try {
+    const codes: InviteCode[] = [];
+
+    for (let i = 0; i < validated.quantity; i++) {
+      const params: CreateInviteCodeParams = {
+        expire_by: validated.expireInDays,
+        created_for: validated.createdFor || null,
+      };
+
+      const code = await createInviteCode(supabase, params);
+      codes.push(code);
+    }
+
+    return codes;
+  } catch (error) {
+    logger.error("Failed to create invite codes", error);
+    throw new Error("Failed to create invite codes");
+  }
+}
+
+/**
  * Get all invite codes for the current user
  */
 export async function getInviteCodesAction(): Promise<InviteCode[]> {
+  const supabase = await createClient();
+
   try {
-    const supabase = await createClient();
     return await getInviteCodesByUser(supabase);
   } catch (error) {
     logger.error("Failed to fetch invite codes", error);
@@ -75,12 +118,29 @@ export async function getInviteCodeAction(
  * Delete an invite code
  */
 export async function deleteInviteCodeAction(id: number): Promise<void> {
+  const supabase = await createClient();
+
   try {
-    const supabase = await createClient();
     await deleteInviteCode(supabase, id);
   } catch (error) {
     logger.error("Failed to delete invite code", error);
     throw new Error("Failed to delete invite code");
+  }
+}
+
+/**
+ * Delete multiple invite codes
+ */
+export async function deleteInviteCodesAction(ids: number[]): Promise<void> {
+  const supabase = await createClient();
+
+  try {
+    for (const id of ids) {
+      await deleteInviteCode(supabase, id);
+    }
+  } catch (error) {
+    logger.error("Failed to delete invite codes", error);
+    throw new Error("Failed to delete invite codes");
   }
 }
 
@@ -116,27 +176,4 @@ export async function getInviteCodeByCodeAction(
     logger.error("Failed to fetch invite code by code", error);
     throw new Error("Failed to fetch invite code");
   }
-}
-
-/**
- * Check if an invite code is expired (utility function)
- */
-export function isInviteCodeExpired(inviteCode: InviteCode): boolean {
-  const createdAt = new Date(inviteCode.created_at);
-  const expiryDate = new Date(
-    createdAt.getTime() + inviteCode.expire_by * 24 * 60 * 60 * 1000
-  );
-  const now = new Date();
-
-  return now > expiryDate;
-}
-
-/**
- * Get the expiry date of an invite code (utility function)
- */
-export function getInviteCodeExpiryDate(inviteCode: InviteCode): Date {
-  const createdAt = new Date(inviteCode.created_at);
-  return new Date(
-    createdAt.getTime() + inviteCode.expire_by * 24 * 60 * 60 * 1000
-  );
 }
