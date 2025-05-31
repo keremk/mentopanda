@@ -78,7 +78,8 @@ export async function updateSession(
         if (
           projectRole !== "admin" &&
           projectRole !== "super_admin" &&
-          request.nextUrl.pathname !== "/onboard"
+          request.nextUrl.pathname !== "/onboard" &&
+          !request.nextUrl.pathname.startsWith("/api/") // Don't redirect API routes
         ) {
           // Add your logic here
           return NextResponse.redirect(new URL("/onboard", request.url));

@@ -81,7 +81,7 @@ export function ImageGenerationDialog({
     imageStyles[0].value
   );
   const [includeContext, setIncludeContext] = useState(false);
-  const [useCurrentImage, setUseCurrentImage] = useState(true);
+  const [useCurrentImage, setUseCurrentImage] = useState(!!currentImageUrl);
   const [prompt, setPrompt] = useState("");
   const [generatedImageData, setGeneratedImageData] = useState<string | null>(
     null
