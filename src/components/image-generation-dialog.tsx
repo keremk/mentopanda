@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -23,7 +24,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Label } from "@/components/ui/label";
 import { SendHorizontal, Loader2, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
-import { generateImageAction } from "@/app/actions/generate-images";
+
 import { toast } from "@/hooks/use-toast";
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import type { FileWithPreview } from "@/hooks/use-supabase-upload";
@@ -66,19 +67,6 @@ const imageStyles: { value: string; label: string }[] = [
   { value: "custom", label: "Custom" },
 ];
 
-// Define a type for the action input based on usage
-type GenerateImageActionInput = {
-  contextId: string;
-  contextType: ImageContextType;
-  prompt: string;
-  style: string;
-  aspectRatio: ImageAspectRatio;
-  includeContext?: boolean;
-  existingImageUrl?: string;
-  bucketName?: string;
-  apiKey?: string;
-};
-
 export function ImageGenerationDialog({
   isOpen,
   onClose,
@@ -100,6 +88,15 @@ export function ImageGenerationDialog({
   );
   const [error, setError] = useState<string | null>(null);
   const [showNoCreditsDialog, setShowNoCreditsDialog] = useState(false);
+  const [intermediateImageData, setIntermediateImageData] = useState<
+    string | null
+  >(null);
+  const [streamStatus, setStreamStatus] = useState<string>("");
+  const [currentStep, setCurrentStep] = useState<number>(0);
+  const [totalSteps, setTotalSteps] = useState<number>(2);
+  const [currentResponseId, setCurrentResponseId] = useState<string | null>(
+    null
+  );
   const supabase = useMemo(() => createClient(), []);
   const [isGenerating, setIsGenerating] = useState(false);
   const hasHandledUploadSuccess = useRef(false);
@@ -150,9 +147,14 @@ export function ImageGenerationDialog({
 
     setIsGenerating(true);
     setError(null);
+    setGeneratedImageData(null);
+    setIntermediateImageData(null);
+    setStreamStatus("");
+    setCurrentStep(0);
+    setTotalSteps(2);
 
     try {
-      const actionInput: GenerateImageActionInput = {
+      const requestBody: Record<string, unknown> = {
         contextId,
         contextType,
         prompt: prompt.trim(),
@@ -163,41 +165,161 @@ export function ImageGenerationDialog({
 
       // Conditionally add context flag
       if (showContextSwitch) {
-        actionInput.includeContext = includeContext;
+        requestBody.includeContext = includeContext;
       }
 
-      // Conditionally add existing image URL and bucket name
-      if (useCurrentImage && currentImageUrl && bucketName) {
-        actionInput.existingImageUrl = currentImageUrl;
-        actionInput.bucketName = bucketName;
+      // Add multi-turn editing support when editing a generated image
+      if (useCurrentImage && currentResponseId) {
+        requestBody.previousResponseId = currentResponseId;
+      }
+      // Add existing image URL for first-time editing of stored images
+      else if (useCurrentImage && currentImageUrl && bucketName) {
+        requestBody.existingImageUrl = currentImageUrl;
+        requestBody.bucketName = bucketName;
       }
 
-      const result = await generateImageAction(actionInput);
+      const response = await fetch("/api/image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-      if (result.success) {
-        setGeneratedImageData(result.imageData);
-      } else {
-        logger.error("Image generation action error:", result.error);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-        // Check if it's a credit error
-        if (
-          result.error &&
-          (result.error.includes("No credits available") ||
-            result.error.includes("402"))
-        ) {
-          logger.info(
-            "Credit error detected in image generation, showing NoCreditsDialog"
-          );
-          setShowNoCreditsDialog(true);
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No reader available");
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              // Log event type and metadata without base64 data
+              const logData = { ...data };
+              if (logData.imageData) {
+                logData.imageData = `[base64 data: ${logData.imageData.length} chars]`;
+              }
+              logger.debug(
+                `🔍 DEBUG: Received streaming event: ${data.type}`,
+                logData
+              );
+
+              switch (data.type) {
+                case "status":
+                  logger.debug("📊 STATUS event:", {
+                    type: data.type,
+                    message: data.message,
+                    step: data.step,
+                    totalSteps: data.totalSteps,
+                  });
+                  setStreamStatus(data.message);
+                  setCurrentStep(data.step);
+                  setTotalSteps(data.totalSteps);
+                  break;
+
+                case "intermediate":
+                  logger.debug("🖼️ INTERMEDIATE event:", {
+                    type: data.type,
+                    message: data.message,
+                    step: data.step,
+                    imageDataLength: data.imageData?.length,
+                  });
+                  setIntermediateImageData(data.imageData);
+                  setStreamStatus(data.message);
+                  setCurrentStep(data.step);
+                  break;
+
+                case "final":
+                  logger.debug("✅ FINAL event received in dialog!");
+                  logger.debug("✅ Image data length:", data.imageData?.length);
+                  logger.debug("✅ About to call setGeneratedImageData");
+                  setGeneratedImageData(data.imageData);
+                  logger.debug(
+                    "✅ Called setGeneratedImageData - button should be enabled now"
+                  );
+                  setStreamStatus(data.message);
+                  setCurrentStep(data.step);
+                  // Store response ID for potential multi-turn editing
+                  if (data.responseId) {
+                    setCurrentResponseId(data.responseId);
+                    logger.debug(
+                      "✅ Stored response ID for editing:",
+                      data.responseId
+                    );
+                  }
+                  // Auto-switch to "Use Current" mode after any generation
+                  if (!useCurrentImage) {
+                    setUseCurrentImage(true);
+                    logger.debug("✅ Auto-switched to Use Current mode");
+                  }
+                  logger.info(
+                    `Image generation completed in ${data.elapsedTime?.toFixed(2)}s`
+                  );
+                  break;
+
+                case "error":
+                  logger.debug("❌ ERROR event:", {
+                    type: data.type,
+                    error: data.error,
+                  });
+                  logger.error("Streaming image generation error:", data.error);
+
+                  // Check if it's a credit error
+                  if (
+                    data.error &&
+                    (data.error.includes("No credits available") ||
+                      data.error.includes("402"))
+                  ) {
+                    logger.info(
+                      "Credit error detected in streaming image generation, showing NoCreditsDialog"
+                    );
+                    setShowNoCreditsDialog(true);
+                  }
+
+                  setError(data.error);
+                  break;
+
+                default:
+                  logger.debug(
+                    `❓ UNKNOWN event type: ${data.type}`,
+                    logData
+                  );
+                  break;
+              }
+            } catch (parseError) {
+              logger.error("Error parsing streaming data:", parseError);
+            }
+          }
         }
-
-        setError(result.error);
       }
     } catch (err) {
-      logger.error("Generation action invocation error:", err);
+      logger.error("Streaming generation error:", err);
       setError("An unexpected error occurred trying to generate the image.");
     } finally {
+      logger.debug("🏁 Stream completed, final state:", {
+        generatedImageData: !!generatedImageData,
+        generatedImageDataLength: generatedImageData?.length,
+        error,
+      });
       setIsGenerating(false);
+      setStreamStatus("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -211,6 +333,8 @@ export function ImageGenerationDialog({
     useCurrentImage,
     currentImageUrl,
     bucketName,
+    apiKey,
+    currentResponseId,
   ]);
 
   const handleUseImage = useCallback(async () => {
@@ -371,12 +495,24 @@ export function ImageGenerationDialog({
     (isPromptRequired && prompt.trim().length === 0) ||
     hasCreditError;
 
+  // Debug button state
+  logger.debug("🔍 BUTTON DEBUG:", {
+    generatedImageData: !!generatedImageData,
+    generatedImageDataLength: generatedImageData?.length,
+    isLoading,
+    hasCreditError,
+    buttonDisabled: !generatedImageData || isLoading || hasCreditError,
+  });
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-[600px] grid grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90vh]">
           <DialogHeader className="p-6 pb-4">
             <DialogTitle>Generate Cover Image</DialogTitle>
+            <DialogDescription>
+              Create AI-generated images with customizable styles and options
+            </DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-rows-[auto_minmax(0,1fr)] gap-4 overflow-y-auto px-6 pb-4">
@@ -385,35 +521,62 @@ export function ImageGenerationDialog({
                 ratio={numericAspectRatio}
                 className="bg-muted rounded-lg relative overflow-hidden"
               >
-                {/* Determine primary image source */}
+                {/* Determine primary image source based on state and "Use Current" toggle */}
                 {(() => {
-                  const primaryImageUrl = generatedImageData
-                    ? `data:image/png;base64,${generatedImageData}`
-                    : currentImageUrl;
-                  const primaryImageAlt = generatedImageData
-                    ? "Generated image preview"
-                    : "Current image";
+                  let imageUrl: string | null = null;
+                  let imageAlt = "";
+
+                  // Always show generated or intermediate images (these override everything)
+                  if (generatedImageData) {
+                    imageUrl = `data:image/png;base64,${generatedImageData}`;
+                    imageAlt = "Generated image preview";
+                  } else if (intermediateImageData) {
+                    imageUrl = `data:image/png;base64,${intermediateImageData}`;
+                    imageAlt = "Intermediate image preview";
+                  }
+                  // Only show current image if "Use Current" is enabled and not generating
+                  else if (
+                    useCurrentImage &&
+                    currentImageUrl &&
+                    !isGenerating
+                  ) {
+                    imageUrl = currentImageUrl;
+                    imageAlt = "Current image";
+                  }
 
                   return (
                     <>
-                      {/* Render the primary image if available AND no error occurred AFTER generation */}
-                      {primaryImageUrl && !(error && !isGenerating) && (
+                      {/* Render the image if available AND no error occurred AFTER generation */}
+                      {imageUrl && !(error && !isGenerating) && (
                         <div className="image-inner w-full h-full">
                           <Image
-                            src={primaryImageUrl}
-                            alt={primaryImageAlt}
+                            src={imageUrl}
+                            alt={imageAlt}
                             fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             className={cn(
-                              "object-cover transition-opacity duration-300", // Added transition
-                              isGenerating && "opacity-50" // Dim if generating (blur handled by overlay)
+                              "object-cover transition-opacity duration-300",
+                              isGenerating &&
+                                !generatedImageData &&
+                                "opacity-70" // Dim intermediate images
                             )}
-                            priority={!generatedImageData && !!currentImageUrl} // Prioritize initial current image load
+                            priority={
+                              !generatedImageData &&
+                              !intermediateImageData &&
+                              !!currentImageUrl
+                            }
                           />
+                          {/* Show step indicator overlay for intermediate images */}
+                          {intermediateImageData && !generatedImageData && (
+                            <div className="absolute top-2 left-2 z-10 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                              Step {currentStep} of {totalSteps}
+                            </div>
+                          )}
                         </div>
                       )}
 
                       {/* Render Placeholder only if no image source AND no error occurred AFTER generation */}
-                      {!primaryImageUrl && !(error && !isGenerating) && (
+                      {!imageUrl && !(error && !isGenerating) && (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                           <ImageIcon className="h-12 w-12 mb-2" />
                           <span>Image will appear here</span>
@@ -439,7 +602,14 @@ export function ImageGenerationDialog({
                 {isGenerating && (
                   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md">
                     <Loader2 className="h-8 w-8 animate-spin text-white mb-2" />
-                    <span className="text-white">Generating...</span>
+                    <span className="text-white">
+                      {streamStatus || "Generating..."}
+                    </span>
+                    {currentStep > 0 && totalSteps > 0 && (
+                      <div className="text-white/80 text-sm mt-1">
+                        Step {currentStep} of {totalSteps}
+                      </div>
+                    )}
                   </div>
                 )}
               </AspectRatio>
@@ -499,7 +669,11 @@ export function ImageGenerationDialog({
                     id="use-current-image"
                     checked={useCurrentImage}
                     onCheckedChange={setUseCurrentImage}
-                    disabled={isLoading || !currentImageUrl || hasCreditError}
+                    disabled={
+                      isLoading ||
+                      (!currentImageUrl && !generatedImageData) ||
+                      hasCreditError
+                    }
                     className="data-[state=checked]:bg-brand data-[state=unchecked]:bg-input focus-visible:ring-brand"
                   />
                 </div>
@@ -543,8 +717,12 @@ export function ImageGenerationDialog({
                         {hasCreditError
                           ? "No Credits"
                           : isGenerating
-                            ? "Generating..."
-                            : "Generate"}
+                            ? useCurrentImage
+                              ? "Editing..."
+                              : "Generating..."
+                            : useCurrentImage
+                              ? "Edit"
+                              : "Generate"}
                       </span>
                     </Button>
                   </div>
