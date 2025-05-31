@@ -1,3 +1,4 @@
+export const runtime = "edge";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import OpenAI from "openai";
 import { NextRequest } from "next/server";
@@ -80,6 +81,11 @@ async function constructPrompt(
 ): Promise<string> {
   const promptSegments: string[] = [];
 
+  // Add explicit instruction to generate an image
+  promptSegments.push(
+    "Please generate an image using the image_generation tool."
+  );
+
   if (includeContext) {
     const context = await getContextForType(contextType, contextId);
     if (context) {
@@ -95,9 +101,9 @@ async function constructPrompt(
     promptSegments.push(`Description: ${prompt}`);
   }
 
-  return promptSegments.length > 0
+  return promptSegments.length > 1
     ? promptSegments.join("\n\n")
-    : "Generate a creative image";
+    : "Please generate an image using the image_generation tool.";
 }
 
 // Fetch image from Supabase storage and convert to base64
@@ -328,7 +334,7 @@ export async function POST(request: NextRequest) {
             {
               role: "user",
               content: [
-                { type: "input_text", text: finalPrompt },
+                { type: "input_text", text: `Edit this image: ${finalPrompt}` },
                 {
                   type: "input_image",
                   image_url: `data:image/png;base64,${existingImageBase64}`,
@@ -363,7 +369,18 @@ export async function POST(request: NextRequest) {
               partial_images: partialImagesCount,
             } as any,
           ],
+          tool_choice: "required", // Force the model to use a tool
         };
+
+        logger.debug("🔧 API Parameters:", {
+          model: apiParams.model,
+          inputType: typeof apiParams.input,
+          inputIsArray: Array.isArray(apiParams.input),
+          toolsCount: apiParams.tools.length,
+          toolChoice: apiParams.tool_choice,
+          hasStream: apiParams.stream,
+          hasPreviousResponseId: !!apiParams.previous_response_id,
+        });
 
         // Add previous_response_id for multi-turn image generation if provided
         if (requestData.previousResponseId) {
@@ -499,6 +516,7 @@ export async function POST(request: NextRequest) {
                     ? "Image editing complete"
                     : "Image generation complete",
                   responseId: response?.id, // Include response ID for multi-turn generation
+                  elapsedTime: elapsedTimeInSeconds, // Include elapsed time for frontend logging
                 });
               } else {
                 logger.error(

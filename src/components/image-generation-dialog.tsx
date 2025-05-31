@@ -297,10 +297,7 @@ export function ImageGenerationDialog({
                   break;
 
                 default:
-                  logger.debug(
-                    `❓ UNKNOWN event type: ${data.type}`,
-                    logData
-                  );
+                  logger.debug(`❓ UNKNOWN event type: ${data.type}`, logData);
                   break;
               }
             } catch (parseError) {
@@ -526,23 +523,22 @@ export function ImageGenerationDialog({
                   let imageUrl: string | null = null;
                   let imageAlt = "";
 
-                  // Always show generated or intermediate images (these override everything)
-                  if (generatedImageData) {
-                    imageUrl = `data:image/png;base64,${generatedImageData}`;
-                    imageAlt = "Generated image preview";
-                  } else if (intermediateImageData) {
+                  // During generation, show intermediate images regardless of toggle
+                  if (isGenerating && intermediateImageData) {
                     imageUrl = `data:image/png;base64,${intermediateImageData}`;
                     imageAlt = "Intermediate image preview";
                   }
-                  // Only show current image if "Use Current" is enabled and not generating
-                  else if (
-                    useCurrentImage &&
-                    currentImageUrl &&
-                    !isGenerating
-                  ) {
-                    imageUrl = currentImageUrl;
-                    imageAlt = "Current image";
+                  // If "Use Current" is true, show the current image (generated or existing)
+                  else if (useCurrentImage) {
+                    if (generatedImageData) {
+                      imageUrl = `data:image/png;base64,${generatedImageData}`;
+                      imageAlt = "Generated image preview";
+                    } else if (currentImageUrl) {
+                      imageUrl = currentImageUrl;
+                      imageAlt = "Current image";
+                    }
                   }
+                  // If "Use Current" is false, show blank (no image) to indicate new generation
 
                   return (
                     <>
@@ -561,9 +557,12 @@ export function ImageGenerationDialog({
                                 "opacity-70" // Dim intermediate images
                             )}
                             priority={
+                              !isGenerating &&
+                              useCurrentImage &&
                               !generatedImageData &&
                               !intermediateImageData &&
-                              !!currentImageUrl
+                              !!currentImageUrl &&
+                              imageUrl === currentImageUrl
                             }
                           />
                           {/* Show step indicator overlay for intermediate images */}
