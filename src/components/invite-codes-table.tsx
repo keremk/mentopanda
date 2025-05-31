@@ -139,6 +139,7 @@ export function InviteCodesTable({
         description: `${codes.length} codes copied to clipboard`,
       });
     } catch (error) {
+      logger.error(`Failed to copy invite codes: ${error}`);
       toast({
         title: "Error",
         description: "Failed to copy to clipboard",
