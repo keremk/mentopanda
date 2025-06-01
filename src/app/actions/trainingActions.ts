@@ -50,5 +50,4 @@ export async function createTrainingAction() {
 export async function deleteTrainingAction(trainingId: number) {
   const supabase = await createClient();
   await deleteTraining(supabase, trainingId);
-  redirect("/explore");
 }
