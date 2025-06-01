@@ -1,4 +1,4 @@
-export const runtime = "edge";
+// export const runtime = "edge";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import OpenAI from "openai";
 import { NextRequest } from "next/server";
