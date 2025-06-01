@@ -13,6 +13,7 @@ import {
 import {
   IMAGE_CONFIG,
   mapAspectRatioToSize,
+  mapAspectRatioToDimensions,
   type ImageQuality,
   type ImageAspectRatio,
 } from "@/lib/usage/types";
@@ -265,6 +266,16 @@ export async function POST(request: NextRequest) {
         const requestData = validationResult.data;
         const apiKey = requestData.apiKey || process.env.OPENAI_API_KEY;
 
+        logger.debug("🎯 Image generation request:", {
+          contextType: requestData.contextType,
+          contextId: requestData.contextId,
+          aspectRatio: requestData.aspectRatio,
+          dimensions: mapAspectRatioToDimensions(requestData.aspectRatio),
+          quality: getImageQuality(),
+          hasExistingImage: !!requestData.existingImageUrl,
+          hasPreviousResponseId: !!requestData.previousResponseId,
+        });
+
         if (!apiKey) {
           sendData({
             type: "error",
@@ -367,6 +378,8 @@ export async function POST(request: NextRequest) {
             {
               type: "image_generation" as any,
               partial_images: partialImagesCount,
+              size: mapAspectRatioToDimensions(requestData.aspectRatio),
+              quality: getImageQuality(),
             } as any,
           ],
           tool_choice: "required", // Force the model to use a tool
@@ -380,6 +393,8 @@ export async function POST(request: NextRequest) {
           toolChoice: apiParams.tool_choice,
           hasStream: apiParams.stream,
           hasPreviousResponseId: !!apiParams.previous_response_id,
+          imageSize: apiParams.tools[0].size,
+          imageQuality: apiParams.tools[0].quality,
         });
 
         // Add previous_response_id for multi-turn image generation if provided
