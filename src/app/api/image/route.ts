@@ -296,7 +296,7 @@ export async function POST(request: NextRequest) {
           requestData.includeContext
         );
 
-        const partialImagesCount = 3; // Number of partial images
+        const partialImagesCount = 2; // Number of partial images
 
         // Check if we're editing an existing image
         let existingImageBase64: string | null = null;
