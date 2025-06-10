@@ -5,6 +5,7 @@ import { getHistoryEntryAction } from "@/app/actions/history-actions";
 import { updateAssessmentUsageAction } from "@/app/actions/usage-actions";
 import { logger } from "@/lib/logger";
 import { checkUserHasCredits } from "@/app/actions/credit-check";
+import { MODEL_NAMES } from "@/types/models";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
     Create a very detailed assessment properly formatted in markdown with clearly defined sections when you are presented the transcript of the conversation. Do not provide a score, only the assessment.
   `;
   const result = streamText({
-    model: openai("gpt-4o"),
+    model: openai(MODEL_NAMES.OPENAI_GPT4O),
     system: systemPrompt,
     prompt: `Transcript:\n
      ${historyEntry.transcriptText}
@@ -102,7 +103,7 @@ export async function POST(req: Request) {
         // Track usage in database
         try {
           await updateAssessmentUsageAction({
-            modelName: "gpt-4o",
+            modelName: MODEL_NAMES.OPENAI_GPT4O,
             promptTokens: {
               text: {
                 cached: cachedPromptTokens,

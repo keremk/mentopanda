@@ -11,6 +11,7 @@ import type {
   ImageGenerationParams,
   TranscriptionParams,
 } from "@/lib/usage/types";
+import { MODEL_NAMES } from "@/types/models";
 
 describe("Credit Calculator", () => {
   describe("calculateTextModelCreditCost", () => {
@@ -125,7 +126,7 @@ describe("Credit Calculator", () => {
       };
 
       const credits = calculateConversationCreditCost(
-        "gpt-4o-realtime-preview",
+        MODEL_NAMES.OPENAI_REALTIME,
         audioUsage
       );
 

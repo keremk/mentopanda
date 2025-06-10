@@ -17,6 +17,7 @@ import { TrainingContextData } from "@/data/ai-context";
 import { CharacterContextForAI } from "@/data/characters";
 import { logger } from "@/lib/logger";
 import { checkUserHasCredits } from "@/app/actions/credit-check";
+import { MODEL_NAMES } from "@/types/models";
 
 const generateMetaCharacterPrompts = (
   selectedOption: SelectedOption,
@@ -198,7 +199,7 @@ export async function POST(req: Request) {
   logger.debug(`System Prompt:`, JSON.stringify(systemPrompt, null, 2));
 
   const result = streamText({
-    model: openai.chat("gpt-4o"),
+    model: openai.chat(MODEL_NAMES.OPENAI_GPT4O),
     system: systemPrompt,
     messages,
     temperature: 0.3,
@@ -227,7 +228,7 @@ export async function POST(req: Request) {
         // Track usage in database
         try {
           await updatePromptHelperUsageAction({
-            modelName: "gpt-4o",
+            modelName: MODEL_NAMES.OPENAI_GPT4O,
             promptTokens: {
               text: {
                 cached: cachedPromptTokens,

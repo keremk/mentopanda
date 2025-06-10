@@ -26,6 +26,7 @@ import {
   SUBSCRIPTION_TIER_CREDITS,
   type SubscriptionTier,
 } from "@/lib/usage/types";
+import { MODEL_NAMES } from "@/types/models";
 
 // Integration tests against real Supabase database
 describe("Usage Database Integration Tests", () => {
@@ -260,7 +261,7 @@ describe("Usage Database Integration Tests", () => {
 
     it("should track conversation usage correctly", async () => {
       const conversationUpdate: ConversationUpdate = {
-        modelName: "gpt-4o-realtime-preview",
+        modelName: MODEL_NAMES.OPENAI_REALTIME,
         promptTokens: {
           text: { cached: 0, notCached: 768 },
           audio: { cached: 0, notCached: 700 },
@@ -279,12 +280,12 @@ describe("Usage Database Integration Tests", () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result.conversation["gpt-4o-realtime-preview"]).toBeDefined();
-      expect(result.conversation["gpt-4o-realtime-preview"].requestCount).toBe(
+      expect(result.conversation[MODEL_NAMES.OPENAI_REALTIME]).toBeDefined();
+      expect(result.conversation[MODEL_NAMES.OPENAI_REALTIME].requestCount).toBe(
         1
       );
       expect(
-        result.conversation["gpt-4o-realtime-preview"].totalSessionLength
+        result.conversation[MODEL_NAMES.OPENAI_REALTIME].totalSessionLength
       ).toBe(60);
       expect(
         result.usedSubscriptionCredits + result.usedPurchasedCredits
@@ -297,7 +298,7 @@ describe("Usage Database Integration Tests", () => {
 
     it("should track transcription usage correctly", async () => {
       const transcriptionUpdate: TranscriptionUpdate = {
-        modelName: "whisper-1",
+        modelName: MODEL_NAMES.OPENAI_WHISPER,
         totalSessionLength: 60,
         userChars: 235,
         agentChars: 712,
@@ -309,9 +310,13 @@ describe("Usage Database Integration Tests", () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result.transcription["whisper-1"]).toBeDefined();
-      expect(result.transcription["whisper-1"].requestCount).toBe(1);
-      expect(result.transcription["whisper-1"].totalSessionLength).toBe(60);
+      expect(result.transcription[MODEL_NAMES.OPENAI_WHISPER]).toBeDefined();
+      expect(result.transcription[MODEL_NAMES.OPENAI_WHISPER].requestCount).toBe(
+        1
+      );
+      expect(
+        result.transcription[MODEL_NAMES.OPENAI_WHISPER].totalSessionLength
+      ).toBe(60);
       expect(
         result.usedSubscriptionCredits + result.usedPurchasedCredits
       ).toBeGreaterThan(0);
@@ -340,9 +345,9 @@ describe("Usage Database Integration Tests", () => {
       );
 
       expect(result).not.toBeNull();
-      expect(result.promptHelper["gpt-4o"]).toBeDefined();
-      expect(result.promptHelper["gpt-4o"].requestCount).toBe(1);
-      expect(result.promptHelper["gpt-4o"].totalTokens).toBe(2300);
+      expect(result.promptHelper[MODEL_NAMES.OPENAI_GPT4O]).toBeDefined();
+      expect(result.promptHelper[MODEL_NAMES.OPENAI_GPT4O].requestCount).toBe(1);
+      expect(result.promptHelper[MODEL_NAMES.OPENAI_GPT4O].totalTokens).toBe(2300);
       expect(
         result.usedSubscriptionCredits + result.usedPurchasedCredits
       ).toBeGreaterThan(0);
@@ -355,7 +360,7 @@ describe("Usage Database Integration Tests", () => {
     it("should accumulate usage across multiple requests", async () => {
       // First assessment request
       const firstAssessment: AssessmentUpdate = {
-        modelName: "gpt-4o",
+        modelName: MODEL_NAMES.OPENAI_GPT4O,
         promptTokens: { text: { cached: 0, notCached: 1000 } },
         outputTokens: 500,
         totalTokens: 1500,
@@ -370,7 +375,7 @@ describe("Usage Database Integration Tests", () => {
 
       // Second assessment request
       const secondAssessment: AssessmentUpdate = {
-        modelName: "gpt-4o",
+        modelName: MODEL_NAMES.OPENAI_GPT4O,
         promptTokens: { text: { cached: 0, notCached: 800 } },
         outputTokens: 400,
         totalTokens: 1200,
@@ -381,8 +386,8 @@ describe("Usage Database Integration Tests", () => {
         secondAssessment
       );
 
-      expect(secondResult.assessment["gpt-4o"].requestCount).toBe(2);
-      expect(secondResult.assessment["gpt-4o"].totalTokens).toBe(2700); // 1500 + 1200
+      expect(secondResult.assessment[MODEL_NAMES.OPENAI_GPT4O].requestCount).toBe(2);
+      expect(secondResult.assessment[MODEL_NAMES.OPENAI_GPT4O].totalTokens).toBe(2700); // 1500 + 1200
       expect(
         secondResult.usedSubscriptionCredits + secondResult.usedPurchasedCredits
       ).toBeGreaterThan(firstUsedCredits);

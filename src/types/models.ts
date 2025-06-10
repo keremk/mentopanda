@@ -5,8 +5,19 @@ export const AI_MODELS = {
   GEMINI: "gemini",
 } as const;
 
+// Latest model names with versions
 export const CURRENT_MODEL_NAMES = {
-  OPENAI: "gpt-4o-realtime-preview-2024-12-17",
+  OPENAI: "gpt-4o-realtime-preview-2025-06-03",
+  GEMINI: "gemini-2.0-flash-exp",
+} as const;
+
+// Model names without versions - used in pricing calculations
+export const MODEL_NAMES = {
+  OPENAI_REALTIME: "gpt-4o-realtime-preview",
+  OPENAI_WHISPER: "whisper-1",
+  OPENAI_GPT4O: "gpt-4o",
+  OPENAI_GPT41: "gpt-4.1",
+  OPENAI_GPT_IMAGE: "gpt-image-1", 
   GEMINI: "gemini-2.0-flash-exp",
 } as const;
 

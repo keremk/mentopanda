@@ -15,6 +15,7 @@ import type {
   PromptHelperUpdate,
 } from "../data/usage";
 import pricingData from "../data/pricing.json";
+import { MODEL_NAMES } from "@/types/models";
 
 // Get pricing for text models (per 1M tokens)
 function getTextModelPricing(
@@ -209,7 +210,7 @@ function calculateConversationScenario() {
   // Normalized to per-minute costs
 
   const oneMinuteConversation: ConversationUpdate = {
-    modelName: "gpt-4o-realtime-preview",
+    modelName: MODEL_NAMES.OPENAI_REALTIME,
     promptTokens: {
       text: { cached: 0, notCached: 768 }, // Real data: 1126/1.466 = 768/min
       audio: { cached: 0, notCached: 700 }, // Real data: 1026/1.466 = 700/min
@@ -387,7 +388,7 @@ const trainingDetails = calculateTrainingCreationScenario();
 
 // Calculate actual costs without margin
 const actualConversationCost = calculateActualCost("conversation", {
-  modelName: "gpt-4o-realtime-preview",
+  modelName: MODEL_NAMES.OPENAI_REALTIME,
   promptTokens: {
     text: { cached: 0, notCached: 768 },
     audio: { cached: 0, notCached: 700 },

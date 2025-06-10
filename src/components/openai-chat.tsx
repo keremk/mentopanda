@@ -40,6 +40,7 @@ import {
   updateConversationUsageAction,
   updateTranscriptionUsageAction,
 } from "@/app/actions/usage-actions";
+import { MODEL_NAMES } from "@/types/models";
 
 type ChatProps = {
   module: Module;
@@ -200,7 +201,7 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
       // Track conversation usage in database
       try {
         await updateConversationUsageAction({
-          modelName: "gpt-4o-realtime-preview", // Fixed to match pricing data
+          modelName: MODEL_NAMES.OPENAI_REALTIME, // Fixed to match pricing data
           promptTokens: {
             text: {
               cached:

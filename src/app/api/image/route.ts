@@ -19,6 +19,7 @@ import {
 } from "@/lib/usage/types";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { getPathFromStorageUrl } from "@/lib/utils";
+import { MODEL_NAMES } from "@/types/models";
 
 // Schema for the request body
 const imageGenerationSchema = z.object({
@@ -196,7 +197,7 @@ async function trackImageUsage(
     });
 
     await updateImageUsageAction({
-      modelName: "gpt-image-1",
+      modelName: MODEL_NAMES.OPENAI_GPT_IMAGE,
       quality: imageQuality,
       size: imageSize,
       promptTokens: {
@@ -370,7 +371,7 @@ export async function POST(request: NextRequest) {
         // Prepare the API call parameters
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const apiParams: any = {
-          model: "gpt-4.1",
+          model: MODEL_NAMES.OPENAI_GPT41,
           input: apiInput,
           stream: true,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
