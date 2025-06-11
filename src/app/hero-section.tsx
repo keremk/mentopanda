@@ -5,9 +5,9 @@ import { ThemedImage } from "@/components/themed-image";
 export function HeroSection() {
   // Define light and dark theme image URLs
   const lightImageUrl =
-    "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/simulation-light.png";
+    "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/roleplay-light.png";
   const darkImageUrl =
-    "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/simulation.png";
+    "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/roleplay.png";
 
   return (
     <section className="container mx-auto px-4 pt-32 pb-20 md:pt-40 md:pb-28">
@@ -18,7 +18,7 @@ export function HeroSection() {
           </span>
         </h1>
 
-        <div className="w-full max-w-4xl relative aspect-[16/10] image-container-enhanced group">
+        <div className="w-full max-w-4xl relative aspect-[17/11] image-container-enhanced group">
           <div className="image-inner">
             <ThemedImage
               lightSrc={lightImageUrl}
@@ -26,7 +26,8 @@ export function HeroSection() {
               alt="Simulation Picture"
               fill
               priority
-              className="rounded-2xl"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 896px"
+              quality={90}
             />
           </div>
         </div>

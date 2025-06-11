@@ -25,9 +25,9 @@ export const features: Feature[] = [
       "Jump right in with ready-made lessons designed to teach essential communication skills.",
     icon: <BookOpen className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
     image:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//catalog.png",
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//trainings.png",
     imageLight:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//catalog-light.png",
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//trainings-light.png",
   },
   {
     id: 2,
@@ -36,9 +36,9 @@ export const features: Feature[] = [
       "Practice live with AI using voice or text, and receive personal coaching after every session",
     icon: <Mic className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
     image:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/simulation.png",
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/roleplay.png",
     imageLight:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/simulation-light.png",
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing/roleplay-light.png",
   },
   {
     id: 3,
@@ -47,9 +47,9 @@ export const features: Feature[] = [
       "Create your own roleplay scenarios and characters with AI-assisted guidance — no prompt skills required.",
     icon: <WandSparkles className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
     image:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//edit-trainings.png",
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//edit.png",
     imageLight:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//edit-trainings-light.png",
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//edit-light.png",
   },
   {
     id: 4,
@@ -58,9 +58,9 @@ export const features: Feature[] = [
       "Generate unique cover images and realistic characters to make your training sessions more engaging.",
     icon: <Palette className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
     image:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//characters.png",
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//images.png",
     imageLight:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//characters-light.png",
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//images-light.png",
   },
   {
     id: 5,
@@ -69,9 +69,9 @@ export const features: Feature[] = [
       "Invite your team, assign trainings, and track their individual progress over time.",
     icon: <Users className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
     image:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//enrollments.png",
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//manage.png",
     imageLight:
-      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//enrollments-light.png",
+      "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/landing//manage-light.png",
   },
 ];
 
@@ -255,7 +255,7 @@ export function FeaturesSection() {
           {/* Mobile Layout */}
           <div className="md:hidden">
             {/* Image section - shown on top for mobile */}
-            <div className="relative w-full aspect-[16/10] max-w-4xl mx-auto image-container-enhanced mb-8">
+            <div className="relative w-full aspect-[17/11] max-w-4xl mx-auto image-container-enhanced mb-8">
               <div className="image-inner">
                 {features.map((feature, index) => (
                   <ThemedImage
@@ -264,11 +264,12 @@ export function FeaturesSection() {
                     lightSrc={feature.imageLight || feature.image}
                     alt={feature.title}
                     fill
-                    className={`transition-opacity duration-300 rounded-2xl ${
+                    className={`transition-opacity duration-300 ${
                       index === activeFeature ? "opacity-100" : "opacity-0"
                     }`}
                     priority={index === 0}
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 896px"
+                    quality={90}
                   />
                 ))}
               </div>
@@ -348,7 +349,7 @@ export function FeaturesSection() {
               ))}
             </div>
 
-            <div className="relative w-full aspect-[16/10] max-w-4xl mx-auto image-container-enhanced">
+            <div className="relative w-full aspect-[17/11] max-w-4xl mx-auto image-container-enhanced">
               <div className="image-inner">
                 {features.map((feature, index) => (
                   <ThemedImage
@@ -357,11 +358,12 @@ export function FeaturesSection() {
                     lightSrc={feature.imageLight || feature.image}
                     alt={feature.title}
                     fill
-                    className={`transition-opacity duration-300 rounded-2xl ${
+                    className={`transition-opacity duration-300 ${
                       index === activeFeature ? "opacity-100" : "opacity-0"
                     }`}
                     priority={index === 0}
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 896px"
+                    quality={90}
                   />
                 ))}
               </div>

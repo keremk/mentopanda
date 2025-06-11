@@ -15,6 +15,7 @@ type ThemedImageProps = {
   height?: number;
   priority?: boolean;
   sizes?: string;
+  quality?: number;
 };
 
 export function ThemedImage({
@@ -27,6 +28,7 @@ export function ThemedImage({
   height,
   priority = false,
   sizes,
+  quality = 75,
 }: ThemedImageProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -37,7 +39,11 @@ export function ThemedImage({
   }, []);
 
   // Use appropriate image based on current theme
-  const src = !mounted ? darkSrc : resolvedTheme === "dark" ? darkSrc : lightSrc;
+  const src = !mounted
+    ? darkSrc
+    : resolvedTheme === "dark"
+      ? darkSrc
+      : lightSrc;
 
   return (
     <Image
@@ -49,6 +55,7 @@ export function ThemedImage({
       height={!fill ? height : undefined}
       priority={priority}
       sizes={sizes}
+      quality={quality}
     />
   );
 }
