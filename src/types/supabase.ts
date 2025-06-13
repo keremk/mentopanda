@@ -43,9 +43,8 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: number
-          is_public: boolean
           name: string
-          organization_id: number | null
+          project_id: number
           updated_at: string | null
           voice: string | null
         }
@@ -57,9 +56,8 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: number
-          is_public?: boolean
           name: string
-          organization_id?: number | null
+          project_id: number
           updated_at?: string | null
           voice?: string | null
         }
@@ -71,9 +69,8 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: number
-          is_public?: boolean
           name?: string
-          organization_id?: number | null
+          project_id?: number
           updated_at?: string | null
           voice?: string | null
         }
@@ -86,10 +83,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "characters_organization_id_fkey"
-            columns: ["organization_id"]
+            foreignKeyName: "characters_project_id_fkey"
+            columns: ["project_id"]
             isOneToOne: false
-            referencedRelation: "organizations"
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -184,6 +181,98 @@ export type Database = {
           {
             foreignKeyName: "history_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitations: {
+        Row: {
+          created_at: string | null
+          id: number
+          invitee_email: string
+          inviter_display_name: string
+          inviter_email: string
+          inviter_id: string
+          is_trial: boolean
+          project_id: number | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          invitee_email: string
+          inviter_display_name: string
+          inviter_email: string
+          inviter_id: string
+          is_trial?: boolean
+          project_id?: number | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          invitee_email?: string
+          inviter_display_name?: string
+          inviter_email?: string
+          inviter_id?: string
+          is_trial?: boolean
+          project_id?: number | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_inviter_id_fkey"
+            columns: ["inviter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invite_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          created_for: string | null
+          expire_by: number
+          id: number
+          validated: boolean
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          created_for?: string | null
+          expire_by?: number
+          id?: number
+          validated?: boolean
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          created_for?: string | null
+          expire_by?: number
+          id?: number
+          validated?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_codes_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -288,61 +377,114 @@ export type Database = {
           },
         ]
       }
-      organizations: {
+      profiles: {
         Row: {
           created_at: string | null
-          domain: string
+          current_project_id: number | null
+          id: string
+          pricing_plan: Database["public"]["Enums"]["pricing_plan"]
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_project_id?: number | null
+          id: string
+          pricing_plan?: Database["public"]["Enums"]["pricing_plan"]
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_project_id?: number | null
+          id?: string
+          pricing_plan?: Database["public"]["Enums"]["pricing_plan"]
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_current_project_id_fkey"
+            columns: ["current_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
           id: number
+          is_public: boolean
           name: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
-          domain: string
+          created_by?: string | null
           id?: number
+          is_public?: boolean
           name?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
-          domain?: string
+          created_by?: string | null
           id?: number
+          is_public?: boolean
           name?: string | null
           updated_at?: string | null
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          created_at: string | null
-          id: string
-          organization_id: number
-          pricing_plan: Database["public"]["Enums"]["pricing_plan"]
-          updated_at: string | null
-          user_role: Database["public"]["Enums"]["user_role"]
-        }
-        Insert: {
-          created_at?: string | null
-          id: string
-          organization_id?: number
-          pricing_plan?: Database["public"]["Enums"]["pricing_plan"]
-          updated_at?: string | null
-          user_role?: Database["public"]["Enums"]["user_role"]
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          organization_id?: number
-          pricing_plan?: Database["public"]["Enums"]["pricing_plan"]
-          updated_at?: string | null
-          user_role?: Database["public"]["Enums"]["user_role"]
         }
         Relationships: [
           {
-            foreignKeyName: "profiles_organization_id_fkey"
-            columns: ["organization_id"]
+            foreignKeyName: "projects_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: "organizations"
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects_profiles: {
+        Row: {
+          created_at: string | null
+          profile_id: string
+          project_id: number
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          profile_id: string
+          project_id: number
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          profile_id?: string
+          project_id?: number
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_profiles_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -375,9 +517,8 @@ export type Database = {
           description: string | null
           id: number
           image_url: string | null
-          is_public: boolean
-          organization_id: number | null
           preview_url: string | null
+          project_id: number
           tagline: string | null
           title: string
           updated_at: string | null
@@ -388,9 +529,8 @@ export type Database = {
           description?: string | null
           id?: number
           image_url?: string | null
-          is_public?: boolean
-          organization_id?: number | null
           preview_url?: string | null
+          project_id: number
           tagline?: string | null
           title: string
           updated_at?: string | null
@@ -401,9 +541,8 @@ export type Database = {
           description?: string | null
           id?: number
           image_url?: string | null
-          is_public?: boolean
-          organization_id?: number | null
           preview_url?: string | null
+          project_id?: number
           tagline?: string | null
           title?: string
           updated_at?: string | null
@@ -417,1194 +556,325 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "trainings_organization_id_fkey"
-            columns: ["organization_id"]
+            foreignKeyName: "trainings_project_id_fkey"
+            columns: ["project_id"]
             isOneToOne: false
-            referencedRelation: "organizations"
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
       }
+      usage: {
+        Row: {
+          assessment: Json
+          conversation: Json
+          created_at: string
+          id: number
+          images: Json
+          period_start: string
+          prompt_helper: Json
+          purchased_credits: number
+          subscription_credits: number
+          transcription: Json
+          updated_at: string
+          used_purchased_credits: number
+          used_subscription_credits: number
+          user_id: string
+        }
+        Insert: {
+          assessment?: Json
+          conversation?: Json
+          created_at?: string
+          id?: number
+          images?: Json
+          period_start: string
+          prompt_helper?: Json
+          purchased_credits?: number
+          subscription_credits?: number
+          transcription?: Json
+          updated_at?: string
+          used_purchased_credits?: number
+          used_subscription_credits?: number
+          user_id: string
+        }
+        Update: {
+          assessment?: Json
+          conversation?: Json
+          created_at?: string
+          id?: number
+          images?: Json
+          period_start?: string
+          prompt_helper?: Json
+          purchased_credits?: number
+          subscription_credits?: number
+          transcription?: Json
+          updated_at?: string
+          used_purchased_credits?: number
+          used_subscription_credits?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waiting_list: {
+        Row: {
+          comment: string | null
+          date_requested: string
+          email: string
+          id: number
+        }
+        Insert: {
+          comment?: string | null
+          date_requested?: string
+          email: string
+          id?: number
+        }
+        Update: {
+          comment?: string | null
+          date_requested?: string
+          email?: string
+          id?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
-      pg_all_foreign_keys: {
-        Row: {
-          fk_columns: unknown[] | null
-          fk_constraint_name: unknown | null
-          fk_schema_name: unknown | null
-          fk_table_name: unknown | null
-          fk_table_oid: unknown | null
-          is_deferrable: boolean | null
-          is_deferred: boolean | null
-          match_type: string | null
-          on_delete: string | null
-          on_update: string | null
-          pk_columns: unknown[] | null
-          pk_constraint_name: unknown | null
-          pk_index_name: unknown | null
-          pk_schema_name: unknown | null
-          pk_table_name: unknown | null
-          pk_table_oid: unknown | null
-        }
-        Relationships: []
-      }
-      tap_funky: {
-        Row: {
-          args: string | null
-          is_definer: boolean | null
-          is_strict: boolean | null
-          is_visible: boolean | null
-          kind: unknown | null
-          langoid: unknown | null
-          name: unknown | null
-          oid: unknown | null
-          owner: unknown | null
-          returns: string | null
-          returns_set: boolean | null
-          schema: unknown | null
-          volatility: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
-      _cleanup: {
-        Args: Record<PropertyKey, never>
+      accept_invitation: {
+        Args: { invitation_id: number; user_id: string; p_project_id?: number }
         Returns: boolean
       }
-      _contract_on: {
-        Args: {
-          "": string
-        }
-        Returns: unknown
-      }
-      _currtest: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      _db_privs: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown[]
-      }
-      _definer: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _dexists: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _expand_context: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      _expand_on: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      _expand_vol: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      _ext_exists: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _extensions:
-        | {
-            Args: Record<PropertyKey, never>
-            Returns: unknown[]
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: unknown[]
-          }
-      _funkargs: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      _get: {
-        Args: {
-          "": string
-        }
-        Returns: number
-      }
-      _get_db_owner: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      _get_dtype: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      _get_language_owner: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      _get_latest: {
-        Args: {
-          "": string
-        }
-        Returns: number[]
-      }
-      _get_note:
-        | {
-            Args: {
-              "": number
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              "": string
-            }
-            Returns: string
-          }
-      _get_opclass_owner: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      _get_rel_owner: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      _get_schema_owner: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      _get_tablespace_owner: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      _get_type_owner: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      _got_func: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _grolist: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown[]
-      }
-      _has_group: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _has_role: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _has_user: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _inherited: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _is_schema: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _is_super: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _is_trusted: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _is_verbose: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      _lang: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      _opc_exists: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _parts: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown[]
-      }
-      _pg_sv_type_array: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: unknown[]
-      }
-      _prokind: {
-        Args: {
-          p_oid: unknown
-        }
-        Returns: unknown
-      }
-      _query: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      _refine_vol: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      _relexists: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _returns: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      _strict: {
-        Args: {
-          "": unknown
-        }
-        Returns: boolean
-      }
-      _table_privs: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown[]
-      }
-      _temptypes: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      _todo: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      _vol: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
+      akeys: {
+        Args: { "": unknown }
+        Returns: string[]
       }
       authorize: {
         Args: {
           requested_permission: Database["public"]["Enums"]["app_permission"]
+          project_id: number
         }
         Returns: boolean
       }
-      can: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      casts_are: {
-        Args: {
-          "": string[]
-        }
-        Returns: string
-      }
-      col_is_null:
-        | {
-            Args: {
-              schema_name: unknown
-              table_name: unknown
-              column_name: unknown
-              description?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              table_name: unknown
-              column_name: unknown
-              description?: string
-            }
-            Returns: string
-          }
-      col_not_null:
-        | {
-            Args: {
-              schema_name: unknown
-              table_name: unknown
-              column_name: unknown
-              description?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              table_name: unknown
-              column_name: unknown
-              description?: string
-            }
-            Returns: string
-          }
-      collect_tap:
-        | {
-            Args: Record<PropertyKey, never>
-            Returns: string
-          }
-        | {
-            Args: {
-              "": string[]
-            }
-            Returns: string
-          }
-      custom_access_token_hook: {
-        Args: {
-          event: Json
-        }
-        Returns: Json
-      }
-      diag:
-        | {
-            Args: Record<PropertyKey, never>
-            Returns: string
-          }
-        | {
-            Args: Record<PropertyKey, never>
-            Returns: string
-          }
-        | {
-            Args: {
-              msg: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              msg: unknown
-            }
-            Returns: string
-          }
-      diag_test_name: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      do_tap:
-        | {
-            Args: Record<PropertyKey, never>
-            Returns: string[]
-          }
-        | {
-            Args: {
-              "": string
-            }
-            Returns: string[]
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: string[]
-          }
-      domains_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      enums_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      extensions_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      fail:
-        | {
-            Args: Record<PropertyKey, never>
-            Returns: string
-          }
-        | {
-            Args: {
-              "": string
-            }
-            Returns: string
-          }
-      findfuncs: {
-        Args: {
-          "": string
-        }
+      avals: {
+        Args: { "": unknown }
         Returns: string[]
       }
-      finish: {
-        Args: {
-          exception_on_failure?: boolean
-        }
-        Returns: string[]
-      }
-      foreign_tables_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      functions_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      get_current_user_organization_id: {
-        Args: Record<PropertyKey, never>
+      create_project: {
+        Args: { project_name: string }
         Returns: number
       }
-      get_user_id_by_email: {
+      custom_access_token_hook: {
+        Args: { event: Json }
+        Returns: Json
+      }
+      deep_copy_project: {
         Args: {
-          email: string
+          source_project_id: number
+          target_project_id: number
+          target_user_id: string
         }
+        Returns: undefined
+      }
+      each: {
+        Args: { hs: unknown }
+        Returns: Record<string, unknown>[]
+      }
+      get_character_project_id: {
+        Args: { p_character_id: number }
+        Returns: number
+      }
+      get_current_period_start: {
+        Args: { target_user_id: string }
+        Returns: string
+      }
+      get_invite_code_by_code: {
+        Args: { code_to_find: string }
+        Returns: Json
+      }
+      get_or_create_current_usage: {
+        Args: { target_user_id: string }
+        Returns: number
+      }
+      get_project_member_info: {
+        Args: { p_project_id: number; p_user_id: string }
+        Returns: Json
+      }
+      get_project_members: {
+        Args: { p_project_id: number }
+        Returns: Json
+      }
+      get_user_emails_by_ids: {
+        Args: { user_ids: string[] }
+        Returns: {
+          id: string
+          email: string
+        }[]
+      }
+      get_user_id_by_email: {
+        Args: { email: string }
         Returns: {
           id: string
         }[]
       }
       get_user_profile: {
-        Args: {
-          user_id: string
-        }
+        Args: { user_id: string }
         Returns: Json
       }
-      groups_are: {
-        Args: {
-          "": unknown[]
-        }
+      ghstore_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ghstore_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ghstore_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ghstore_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      ghstore_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hstore: {
+        Args: { "": string[] } | { "": Record<string, unknown> }
+        Returns: unknown
+      }
+      hstore_hash: {
+        Args: { "": unknown }
+        Returns: number
+      }
+      hstore_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hstore_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hstore_recv: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hstore_send: {
+        Args: { "": unknown }
         Returns: string
       }
-      has_check: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
+      hstore_subscript_handler: {
+        Args: { "": unknown }
+        Returns: unknown
       }
-      has_composite: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
+      hstore_to_array: {
+        Args: { "": unknown }
+        Returns: string[]
       }
-      has_domain: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
+      hstore_to_json: {
+        Args: { "": unknown }
+        Returns: Json
       }
-      has_enum: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
+      hstore_to_json_loose: {
+        Args: { "": unknown }
+        Returns: Json
       }
-      has_extension: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
+      hstore_to_jsonb: {
+        Args: { "": unknown }
+        Returns: Json
       }
-      has_fk: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
+      hstore_to_jsonb_loose: {
+        Args: { "": unknown }
+        Returns: Json
       }
-      has_foreign_table: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
+      hstore_to_matrix: {
+        Args: { "": unknown }
+        Returns: string[]
       }
-      has_function: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
+      hstore_version_diag: {
+        Args: { "": unknown }
+        Returns: number
       }
-      has_group: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_inherited_tables: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_language: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_materialized_view: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_opclass: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_pk: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_relation: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_role: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_schema: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_sequence: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_table: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_tablespace: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_type: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_unique: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      has_user: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      has_view: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_composite: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_domain: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_enum: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_extension: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_fk: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_foreign_table: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_function: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_group: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_inherited_tables: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_language: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_materialized_view: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_opclass: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_pk: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_relation: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_role: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_schema: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_sequence: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_table: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_tablespace: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_type: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_user: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      hasnt_view: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      in_todo: {
-        Args: Record<PropertyKey, never>
+      is_member_of_project: {
+        Args: { project_id: number }
         Returns: boolean
       }
-      index_is_primary: {
+      is_project_owner: {
+        Args: { project_id: number }
+        Returns: boolean
+      }
+      replace_module_character: {
         Args: {
-          "": unknown
+          p_module_id: number
+          p_old_character_id: number
+          p_new_character_id: number
         }
-        Returns: string
+        Returns: undefined
       }
-      index_is_unique: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
+      skeys: {
+        Args: { "": unknown }
+        Returns: string[]
       }
-      is_aggregate: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
+      svals: {
+        Args: { "": unknown }
+        Returns: string[]
       }
-      is_clustered: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      is_definer: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      is_empty: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      is_normal_function: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      is_partitioned: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      is_procedure: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      is_strict: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      is_superuser: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      is_window: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      isnt_aggregate: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      isnt_definer: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      isnt_empty: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      isnt_normal_function: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      isnt_partitioned: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      isnt_procedure: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      isnt_strict: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      isnt_superuser: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      isnt_window: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      language_is_trusted: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      languages_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      lives_ok: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      materialized_views_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      no_plan: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean[]
-      }
-      num_failed: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      ok: {
-        Args: {
-          "": boolean
-        }
-        Returns: string
-      }
-      opclasses_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      operators_are: {
-        Args: {
-          "": string[]
-        }
-        Returns: string
-      }
-      os_name: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      pass:
-        | {
-            Args: Record<PropertyKey, never>
-            Returns: string
-          }
-        | {
-            Args: {
-              "": string
-            }
-            Returns: string
-          }
-      pg_version: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      pg_version_num: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      pgtap_version: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      plan: {
-        Args: {
-          "": number
-        }
-        Returns: string
-      }
-      roles_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      runtests:
-        | {
-            Args: Record<PropertyKey, never>
-            Returns: string[]
-          }
-        | {
-            Args: {
-              "": string
-            }
-            Returns: string[]
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: string[]
-          }
-      schemas_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      sequences_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      skip:
-        | {
-            Args: {
-              "": number
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              "": string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              why: string
-              how_many: number
-            }
-            Returns: string
-          }
-      tables_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      tablespaces_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      throws_ok: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      todo:
-        | {
-            Args: {
-              how_many: number
-            }
-            Returns: boolean[]
-          }
-        | {
-            Args: {
-              how_many: number
-              why: string
-            }
-            Returns: boolean[]
-          }
-        | {
-            Args: {
-              why: string
-            }
-            Returns: boolean[]
-          }
-        | {
-            Args: {
-              why: string
-              how_many: number
-            }
-            Returns: boolean[]
-          }
-      todo_end: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean[]
-      }
-      todo_start:
-        | {
-            Args: Record<PropertyKey, never>
-            Returns: boolean[]
-          }
-        | {
-            Args: {
-              "": string
-            }
-            Returns: boolean[]
-          }
-      types_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      users_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
-      }
-      views_are: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: string
+      validate_invite_code: {
+        Args: { code_to_validate: string }
+        Returns: Json
       }
     }
     Enums: {
       app_permission:
         | "training.manage"
-        | "training.make.public"
         | "enrollment.manage"
-        | "user.select"
-        | "user.admin"
-        | "organization.admin"
+        | "project.manage"
+        | "project.member.manage"
+        | "training.history"
+        | "basic.access"
+        | "trials.manage"
       pricing_plan: "free" | "pro" | "team" | "enterprise"
       user_role: "admin" | "manager" | "member" | "super_admin"
     }
     CompositeTypes: {
-      _time_trial_type: {
-        a_time: number | null
-      }
+      [_ in never]: never
     }
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -1612,20 +882,22 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -1633,20 +905,22 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -1654,21 +928,23 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
@@ -1677,7 +953,28 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {
+      app_permission: [
+        "training.manage",
+        "enrollment.manage",
+        "project.manage",
+        "project.member.manage",
+        "training.history",
+        "basic.access",
+        "trials.manage",
+      ],
+      pricing_plan: ["free", "pro", "team", "enterprise"],
+      user_role: ["admin", "manager", "member", "super_admin"],
+    },
+  },
+} as const
 

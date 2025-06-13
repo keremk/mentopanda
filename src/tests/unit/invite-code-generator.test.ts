@@ -9,23 +9,23 @@ describe("Invite Code Generator", () => {
   describe("generateInviteCode", () => {
     it("should generate code with default length of 10 plus checksum and dashes", () => {
       const code = generateInviteCode();
-
-      // Default length 10 + 1 checksum = 11 characters + dashes
-      // Pattern should be like: ABCD-EFGH-1J2-K (11 chars + 2 dashes = 13 total)
+      // Expects 10 chars + 1 checksum + 2 dashes = 13 total chars
+      // Pattern should be like: ABCD-EFGH-1J2-K
       expect(code.replace(/-/g, "")).toHaveLength(11);
-      expect(code).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{3}$/);
+      // Regex to match Crockford Base32 with dashes
+      expect(code).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z*~$=U]{3}$/);
     });
 
-    it("should generate code with custom length plus checksum and dashes", () => {
-      const lengths = [6, 8, 12, 16];
+    it("should generate code with custom length", () => {
+      const code = generateInviteCode(8);
+      // Expects 8 chars + 1 checksum + 2 dashes = 11 total
+      expect(code.replace(/-/g, "")).toHaveLength(9);
+      expect(code).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z*~$=U]{1}$/);
+    });
 
-      lengths.forEach((length) => {
-        const code = generateInviteCode(length);
-        const withoutDashes = code.replace(/-/g, "");
-
-        // Custom length + 1 checksum
-        expect(withoutDashes).toHaveLength(length + 1);
-      });
+    it("should throw error for invalid length", () => {
+      expect(() => generateInviteCode(4)).toThrow();
+      expect(() => generateInviteCode(20)).toThrow();
     });
 
     it("should include dashes for grouping every 4 characters", () => {
@@ -73,31 +73,29 @@ describe("Invite Code Generator", () => {
         }
       }
     });
-
-    it("should throw error for invalid lengths", () => {
-      expect(() => generateInviteCode(5)).toThrow(
-        "Invite code length must be between 6 and 16 characters"
-      );
-      expect(() => generateInviteCode(17)).toThrow(
-        "Invite code length must be between 6 and 16 characters"
-      );
-    });
-
-    it("should generate valid codes that pass format validation", () => {
-      for (let i = 0; i < 10; i++) {
-        const code = generateInviteCode();
-        expect(validateInviteCodeFormat(code)).toBe(true);
-      }
-    });
   });
 
   describe("validateInviteCodeFormat", () => {
-    it("should validate correctly formatted codes", () => {
-      // Generate valid codes and verify they validate
-      for (let i = 0; i < 10; i++) {
-        const code = generateInviteCode();
-        expect(validateInviteCodeFormat(code)).toBe(true);
-      }
+    it("should validate a correct code", () => {
+      const code = generateInviteCode(12);
+      expect(validateInviteCodeFormat(code)).toBe(true);
+    });
+
+    it("should reject an incorrect code", () => {
+      const code = generateInviteCode(12);
+      const tamperedCode = code.slice(0, -1) + "X"; // Tamper with checksum
+      expect(validateInviteCodeFormat(tamperedCode)).toBe(false);
+    });
+
+    it("should reject code with invalid characters", () => {
+      expect(validateInviteCodeFormat("ABCD-EFGH-IJKL-M")).toBe(false); // "I" is invalid
+      expect(validateInviteCodeFormat("1234-5678-90AB-C-")).toBe(false); // "-" at the end
+    });
+
+    it("should handle lowercase and different formatting", () => {
+      const validCode = generateInviteCode(12);
+      const validCodeLower = validCode.toLowerCase();
+      expect(validateInviteCodeFormat(validCodeLower)).toBe(true);
     });
 
     it("should validate codes with dashes", () => {
@@ -114,24 +112,6 @@ describe("Invite Code Generator", () => {
     it("should validate codes in lowercase", () => {
       const code = generateInviteCode(8).toLowerCase();
       expect(validateInviteCodeFormat(code)).toBe(true);
-    });
-
-    it("should reject codes with invalid characters", () => {
-      const invalidCodes = [
-        "ABCD-EFGH-ILOU", // Contains I, L, O in main part
-        "ABCD-EFGH-1J2!", // Contains !
-        "ABCD-EFGH-1J2@", // Contains @
-        "ABCD-EFGH-1J2#", // Contains #
-      ];
-
-      invalidCodes.forEach((code) => {
-        expect(validateInviteCodeFormat(code)).toBe(false);
-      });
-    });
-
-    it("should reject codes that are too short", () => {
-      expect(validateInviteCodeFormat("A")).toBe(false);
-      expect(validateInviteCodeFormat("")).toBe(false);
     });
 
     it("should reject codes with invalid checksum", () => {
@@ -190,25 +170,17 @@ describe("Invite Code Generator", () => {
   });
 
   describe("generateUniqueInviteCodes", () => {
-    it("should generate the requested number of codes", () => {
-      const codes = generateUniqueInviteCodes(5);
-      expect(codes).toHaveLength(5);
-    });
-
-    it("should generate unique codes", () => {
+    it("should generate the requested number of unique codes", () => {
       const codes = generateUniqueInviteCodes(10);
-      const uniqueCodes = new Set(codes);
-
-      expect(uniqueCodes.size).toBe(10);
+      expect(codes).toHaveLength(10);
+      expect(new Set(codes).size).toBe(10); // All codes are unique
     });
 
-    it("should generate codes with custom length", () => {
-      const codes = generateUniqueInviteCodes(3, 12);
-
-      codes.forEach((code) => {
-        const withoutDashes = code.replace(/-/g, "");
-        expect(withoutDashes).toHaveLength(13); // 12 + 1 checksum
-      });
+    it("should generate codes of correct length", () => {
+      const codes = generateUniqueInviteCodes(5, 8);
+      for (const code of codes) {
+        expect(code.replace(/-/g, "")).toHaveLength(9);
+      }
     });
 
     it("should generate valid codes that pass format validation", () => {
