@@ -56,7 +56,7 @@ type TrainingEditAction =
       };
     }
   // Module List Actions
-  | { type: "ADD_MODULE"; payload: Module }
+  | { type: "ADD_MODULE_SUCCESS"; payload: { module: Module } }
   | { type: "DELETE_MODULE"; payload: { moduleId: number } }
   | { type: "REORDER_MODULES"; payload: { modules: Module[] } }
   // Module Selection
@@ -114,7 +114,7 @@ type TrainingEditAction =
     }
   // Internal Actions (for saving status)
   | { type: "SAVE_STARTED" }
-  | { type: "SAVE_SUCCESS"; payload: { savedState: TrainingEdit } }
+  | { type: "SAVE_SUCCESS" }
   | { type: "SAVE_ERROR" }
   | { type: "RESET_MODIFIED_FLAG" };
 
@@ -145,15 +145,17 @@ function trainingEditReducer(
     }
 
     // --- Module List ---
-    case "ADD_MODULE": {
-      const newModules = [...state.training.modules, action.payload];
+    case "ADD_MODULE_SUCCESS": {
+      const { module: newModule } = action.payload;
+      const newModules = [...state.training.modules, newModule];
       const newTrainingState = { ...state.training, modules: newModules };
       return {
         ...state,
         training: newTrainingState,
-        selectedModuleId: action.payload.id,
-        userModified: true,
-        saveStatus: "idle",
+        lastSavedState: newTrainingState,
+        selectedModuleId: newModule.id,
+        userModified: false,
+        saveStatus: "saved",
       };
     }
     case "DELETE_MODULE": {
@@ -428,7 +430,7 @@ function trainingEditReducer(
         isSaving: false,
         saveStatus: "saved",
         lastSavedAt: new Date(),
-        lastSavedState: action.payload.savedState,
+        lastSavedState: structuredClone(state.training),
         userModified: false,
       };
     case "SAVE_ERROR":
@@ -511,7 +513,10 @@ export function TrainingEditProvider({
             characters: [],
           },
         });
-        dispatch({ type: "ADD_MODULE", payload: newModule });
+        dispatch({
+          type: "ADD_MODULE_SUCCESS",
+          payload: { module: newModule },
+        });
       } catch (error) {
         logger.error(`Failed to add module: ${error}`);
         throw error;
@@ -825,7 +830,6 @@ export function TrainingEditProvider({
       );
       dispatch({
         type: "SAVE_SUCCESS",
-        payload: { savedState: structuredClone(currentState) },
       });
       return;
     } else if (saveOperations.length === 0 && !state.userModified) {
@@ -842,7 +846,6 @@ export function TrainingEditProvider({
       logger.debug("Auto-save successful for detected changes.");
       dispatch({
         type: "SAVE_SUCCESS",
-        payload: { savedState: structuredClone(currentState) },
       });
     } catch (error) {
       logger.error(`Auto-save failed: ${error}`);
