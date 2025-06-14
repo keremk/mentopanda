@@ -26,16 +26,20 @@ export function EditModuleForm({
   // Use the new context hook for dispatching actions
   const { dispatch } = useTrainingEdit();
 
-  // Use external tab state if provided, local state otherwise
+  // Determine the active tab - use external if provided, otherwise local
   const activeTab = externalModuleTab || localActiveTab;
 
   // Get initial tab from URL or default to "scenario", but only on first render
   useEffect(() => {
     const tabFromUrl = searchParams.get("moduleTab");
     if (tabFromUrl) {
-      setLocalActiveTab(tabFromUrl);
+      if (onModuleTabChange) {
+        onModuleTabChange(tabFromUrl);
+      } else {
+        setLocalActiveTab(tabFromUrl);
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, onModuleTabChange]);
 
   // Handle changes to direct module fields (title, instructions, etc.)
   const handleModuleFieldChange = (
@@ -72,9 +76,12 @@ export function EditModuleForm({
 
   // Function to update tab state
   const handleTabChange = (value: string) => {
-    setLocalActiveTab(value);
     if (onModuleTabChange) {
+      // If we have a parent callback, use it (controlled mode)
       onModuleTabChange(value);
+    } else {
+      // Otherwise update local state (uncontrolled mode)
+      setLocalActiveTab(value);
     }
   };
 

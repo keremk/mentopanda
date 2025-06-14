@@ -25,6 +25,7 @@ export type AIAssistOption = {
   id: string;
   label: string;
   targetField: string;
+  targetTab?: string;
 };
 
 export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
@@ -37,6 +38,7 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
     focusedField,
     selectedOption,
     setSelectedOption,
+    onTabSwitch,
     error,
     showNoCreditsDialog,
   } = useAIPane();
@@ -64,6 +66,7 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
             id: matchingOption.id,
             label: matchingOption.label,
             targetField: matchingOption.targetField,
+            // Don't include targetTab here to avoid automatic switching
           };
           setSelectedOption(option);
         }
@@ -75,10 +78,17 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
     // Find the selected option object and set it in context
     const option = options.find((opt) => opt.id === optionId);
     if (option) {
+      // If this option has a target tab, switch to it immediately
+      if (option.targetTab && onTabSwitch) {
+        onTabSwitch(option.targetTab);
+      }
+
+      // Set the selected option without targetTab to prevent repeated switches
       setSelectedOption({
         id: option.id,
         label: option.label,
         targetField: option.targetField,
+        // Don't include targetTab here to avoid the useEffect triggering
       });
     }
 
@@ -229,31 +239,37 @@ function getOptionsForContext(contextType?: string): AIAssistOption[] {
           id: "generateModuleTitle",
           label: "Generate a title",
           targetField: "title",
+          // No targetTab - title is not in any tab
         },
         {
           id: "generateModuleInstructions",
           label: "Generate user facing instructions",
           targetField: "instructions",
+          targetTab: "instructions",
         },
         {
           id: "generateScenario",
           label: "Generate a scenario",
           targetField: "scenario",
+          targetTab: "scenario",
         },
         {
           id: "generateAssessment",
           label: "Generate assessment instructions",
           targetField: "assessment",
+          targetTab: "assessment",
         },
         {
           id: "generateCharacterName",
           label: "Generate character name",
           targetField: "characterName",
+          targetTab: "character",
         },
         {
           id: "generateCharacterPrompt",
           label: "Generate character prompt",
           targetField: "characterPrompt",
+          targetTab: "character",
         },
       ];
     case "training":

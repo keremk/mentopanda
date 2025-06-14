@@ -25,6 +25,7 @@ export type SelectedOption = {
   id: string;
   label: string;
   targetField: string;
+  targetTab?: string;
 };
 
 // Field focus tracking for automatically selecting options
@@ -53,6 +54,7 @@ type AIPaneContextType = {
   contextType?: ContextType;
   contextData?: ContextData;
   applyGeneratedContent?: (content: string, targetField: string) => void;
+  onTabSwitch?: (tabName: string) => void;
   focusedField?: FocusedField;
   setFocusedField: (field: FocusedField | undefined) => void;
   clearMessages: () => void;
@@ -70,6 +72,7 @@ interface AIPaneProviderProps {
   contextType?: ContextType;
   contextData?: ContextData;
   onApplyContent?: (content: string, targetField: string) => void;
+  onTabSwitch?: (tabName: string) => void;
   focusedField?: FocusedField;
 }
 
@@ -78,6 +81,7 @@ export function AIPaneProvider({
   contextType,
   contextData,
   onApplyContent,
+  onTabSwitch,
   focusedField: externalFocusedField,
 }: AIPaneProviderProps) {
   const { apiKey } = useApiKey();
@@ -183,6 +187,7 @@ export function AIPaneProvider({
     contextType,
     contextData,
     applyGeneratedContent,
+    onTabSwitch,
     focusedField,
     setFocusedField: setInternalFocusedField,
     clearMessages,

@@ -232,6 +232,10 @@ function EditContainerContent() {
   const aiPaneContextValue = getAIPaneContext();
   const handleModuleTabChange = (value: string) => setModuleTab(value);
 
+  const handleTabSwitch = (tabName: string) => {
+    setModuleTab(tabName);
+  };
+
   if (!training) return <div>Loading...</div>; // Should ideally not happen if provider initializes correctly
 
   return (
@@ -239,6 +243,7 @@ function EditContainerContent() {
       contextType={aiPaneContextValue.contextType}
       contextData={aiPaneContextValue.contextData}
       onApplyContent={aiPaneContextValue.onApplyContent}
+      onTabSwitch={handleTabSwitch}
     >
       <div className="h-full px-4 flex flex-col min-h-[calc(100vh-2rem)] pb-4">
         <div className="mb-8 absolute top-0 right-0 p-4 z-10 flex gap-3">
