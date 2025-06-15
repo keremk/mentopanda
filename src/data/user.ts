@@ -14,6 +14,8 @@ export type AppPermission =
 
 export type UserRole = "admin" | "manager" | "member" | "super_admin";
 
+export type OnboardingStatus = "not_started" | "complete";
+
 export type User = {
   id: string;
   email: string;
@@ -29,6 +31,7 @@ export type User = {
   permissions: AppPermission[];
   trialStartDate: Date | null;
   trialEndDate: Date | null;
+  onboarding: OnboardingStatus;
   app_metadata?: {
     provider?: string;
     [key: string]: unknown;
@@ -84,6 +87,7 @@ export async function getCurrentUserInfo(
     trialEndDate: profileData.trial_end
       ? new Date(profileData.trial_end)
       : null,
+    onboarding: profileData.onboarding || "not_started",
     app_metadata: authUser.app_metadata,
   };
 
@@ -134,7 +138,7 @@ export async function updateCurrentProject(
     .update({
       current_project_id: projectId,
     })
-    .eq("id", userId) 
+    .eq("id", userId)
     .select()
     .single();
 
@@ -159,6 +163,30 @@ export async function updateUserTrial(
     .eq("id", userId);
 
   if (error) handleError(error);
+
+  return await getCurrentUserInfo(supabase);
+}
+
+export async function updateUserOnboardingStatus(
+  supabase: SupabaseClient,
+  onboardingStatus: OnboardingStatus
+): Promise<User> {
+  const userId = await getUserId(supabase);
+  const { error } = await supabase
+    .from("profiles")
+    .update({ onboarding: onboardingStatus })
+    .eq("id", userId);
+
+  if (error) handleError(error);
+
+  // Force session refresh to update JWT claims with new onboarding status
+  const { error: refreshError } = await supabase.auth.refreshSession();
+  if (refreshError) {
+    logger.error(
+      "Failed to refresh session after onboarding update:",
+      refreshError
+    );
+  }
 
   return await getCurrentUserInfo(supabase);
 }

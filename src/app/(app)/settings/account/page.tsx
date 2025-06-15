@@ -1,4 +1,4 @@
-import { getCurrentUserAction } from "@/app/actions/user-actions";
+import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 import { AccountForm } from "./account-form";
 import { Metadata } from "next";
 import { getCurrentUsageAction } from "@/app/actions/usage-actions";
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AccountSettingsPage() {
-  const user = await getCurrentUserAction();
+  const user = await getCurrentUserActionCached();
 
   let usage = null;
   try {

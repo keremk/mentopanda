@@ -9,15 +9,15 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { getCurrentUserAction } from "@/app/actions/user-actions";
 import { FeedbackButton } from "@/components/feedback-button";
 import { Suspense } from "react";
+import { User } from "@/data/user";
 
-export async function AppSidebar({
-  ...props
-}: React.ComponentProps<typeof Sidebar>) {
-  const userInfo = await getCurrentUserAction();
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+  userInfo: User;
+};
 
+export function AppSidebar({ userInfo, ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>

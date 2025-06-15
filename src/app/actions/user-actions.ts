@@ -6,6 +6,8 @@ import {
   updateUserProfile,
   updateUserAvatar,
   updateUserTrial,
+  updateUserOnboardingStatus,
+  OnboardingStatus,
 } from "@/data/user";
 import { z } from "zod";
 import { cache } from "react";
@@ -18,6 +20,10 @@ const updateProfileSchema = z.object({
 
 const updateAvatarSchema = z.object({
   avatarUrl: z.string().url(),
+});
+
+const updateOnboardingSchema = z.object({
+  onboarding: z.enum(["not_started", "complete"]),
 });
 
 // New schema for password update
@@ -79,6 +85,29 @@ export async function updateAvatarAction(data: { avatarUrl: string }) {
       return { success: false, error: "Invalid avatar URL" };
     }
     return { success: false, error: "Failed to update avatar" };
+  }
+}
+
+export async function updateOnboardingStatusAction(data: {
+  onboarding: OnboardingStatus;
+}) {
+  try {
+    // Validate input
+    const validated = updateOnboardingSchema.parse(data);
+
+    const supabase = await createClient();
+    const updatedUser = await updateUserOnboardingStatus(
+      supabase,
+      validated.onboarding
+    );
+
+    return { success: true, data: updatedUser };
+  } catch (error) {
+    logger.error("Error updating onboarding status:", error);
+    if (error instanceof z.ZodError) {
+      return { success: false, error: "Invalid onboarding status" };
+    }
+    return { success: false, error: "Failed to update onboarding status" };
   }
 }
 

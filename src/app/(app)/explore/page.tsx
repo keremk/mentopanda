@@ -1,7 +1,7 @@
 import { getTrainingsWithEnrollmentAction } from "@/app/actions/trainingActions";
 import { TrainingCard } from "@/components/training-card";
 import { Metadata } from "next";
-import { getCurrentUserAction } from "@/app/actions/user-actions";
+import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 import { CreateTrainingButton } from "@/components/create-training-button";
 
 export const metadata: Metadata = {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function ExplorePage() {
   const [trainings, user] = await Promise.all([
     getTrainingsWithEnrollmentAction(),
-    getCurrentUserAction(),
+    getCurrentUserActionCached(),
   ]);
 
   return (

@@ -457,6 +457,22 @@ async function createTestUsers(testData: TestData) {
         return null;
       }
 
+      // Update profile to set onboarding as complete and clear current_project_id
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          onboarding: "complete",
+        })
+        .eq("id", authData.user.id);
+
+      if (profileError) {
+        logger.error(
+          `Failed to update profile for ${user.email}:`,
+          profileError
+        );
+        throw profileError;
+      }
+
       // Upload user avatar if provided and it's a local path
       let avatarUrl = user.avatar_url;
       if (avatarUrl && !avatarUrl.startsWith("http")) {

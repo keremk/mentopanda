@@ -70,20 +70,15 @@ export async function updateSession(
       );
 
       // Access the custom claims
-      const currentProjectId = decodedToken.current_project_id;
-      const projectRole = decodedToken.project_role;
+      const onboardingStatus = decodedToken.onboarding;
 
-      if (currentProjectId && currentProjectId == 1) {
-        // Onboarding is not completed unless it is the super admin (which is the admin for the first project - starter project)
-        if (
-          projectRole !== "admin" &&
-          projectRole !== "super_admin" &&
-          request.nextUrl.pathname !== "/onboard" &&
-          !request.nextUrl.pathname.startsWith("/api/") // Don't redirect API routes
-        ) {
-          // Add your logic here
-          return NextResponse.redirect(new URL("/onboard", request.url));
-        }
+      // Redirect to onboarding if user hasn't completed onboarding
+      if (
+        onboardingStatus === "not_started" &&
+        request.nextUrl.pathname !== "/onboard" &&
+        !request.nextUrl.pathname.startsWith("/api/") // Don't redirect API routes
+      ) {
+        return NextResponse.redirect(new URL("/onboard", request.url));
       }
     } else {
       logger.error("No session found!");

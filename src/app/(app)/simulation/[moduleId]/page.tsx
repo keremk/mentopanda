@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getModuleByIdAction2 } from "@/app/actions/moduleActions";
 import OpenAIChat from "@/components/openai-chat";
-import { getCurrentUserAction } from "@/app/actions/user-actions";
+import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 import { AI_MODELS } from "@/types/models";
 import { Metadata } from "next";
 import { logger } from "@/lib/logger";
@@ -48,7 +48,7 @@ export default async function Page(props: Props) {
 
     const [currentModule, currentUser] = await Promise.all([
       getModule(moduleId),
-      getCurrentUserAction(),
+      getCurrentUserActionCached(),
     ]);
 
     const isOpenAIModule =

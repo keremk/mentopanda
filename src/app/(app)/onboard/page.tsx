@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import { getProjectsAction } from "@/app/actions/project-actions";
 import { OnboardingFlow } from "./onboarding-flow";
-import { getCurrentUserAction } from "@/app/actions/user-actions";
+import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 
 export default async function OnboardPage() {
   const [projects, user] = await Promise.all([
     getProjectsAction(),
-    getCurrentUserAction(),
+    getCurrentUserActionCached(),
   ]);
 
   if (!user) redirect("/login");

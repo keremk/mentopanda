@@ -27,7 +27,6 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import type { NavItem } from "@/types/nav";
-import { useEffect, useState } from "react";
 import { AppPermission } from "@/data/user";
 
 // Icon mapping on the client side
@@ -82,14 +81,6 @@ export const navItems: NavItem[] = [
 
 export function NavMain({ permissions }: { permissions: AppPermission[] }) {
   const pathname = usePathname();
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  const isOnboarding = isClient && pathname.includes("/onboard");
-
   // Helper function to check if a path is active
   const isActivePath = (itemUrl: string) => {
     // Exact match for home page
@@ -102,12 +93,6 @@ export function NavMain({ permissions }: { permissions: AppPermission[] }) {
   // Helper function to check if any child item is active
   const hasActiveChild = (subItems?: { url: string }[]) => {
     return subItems?.some((item) => isActivePath(item.url)) ?? false;
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    if (isOnboarding) {
-      e.preventDefault();
-    }
   };
 
   const availableItems = navItems.filter((item) => {
@@ -166,7 +151,7 @@ export function NavMain({ permissions }: { permissions: AppPermission[] }) {
                                 : "text-sidebar-foreground/60"
                             }
                           >
-                            <Link href={subItem.url} onClick={handleClick}>
+                            <Link href={subItem.url}>
                               <span>{subItem.title}</span>
                             </Link>
                           </SidebarMenuSubButton>
@@ -184,7 +169,6 @@ export function NavMain({ permissions }: { permissions: AppPermission[] }) {
               <SidebarMenuButton asChild tooltip={item.title}>
                 <Link
                   href={item.url}
-                  onClick={handleClick}
                   className={`flex items-center ${
                     isActive ? "text-sidebar-foreground" : "text-sidebar-foreground/60"
                   }`}

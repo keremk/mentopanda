@@ -10,7 +10,10 @@ import { Summary } from "./steps/summary";
 import { Progress } from "./steps/progress";
 import { useRouter } from "next/navigation";
 import { setupProjectAction } from "@/app/actions/project-actions";
-import { updateProfileAction } from "@/app/actions/user-actions";
+import {
+  updateProfileAction,
+  updateOnboardingStatusAction,
+} from "@/app/actions/user-actions";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/data/user";
 import { logger } from "@/lib/logger";
@@ -92,6 +95,12 @@ export function OnboardingFlow({ user }: OnboardingFlowProps) {
       await setupProjectAction({
         projectName: data.projectName,
         copyStarterContent: data.copyStarterContent,
+      });
+
+      // Mark onboarding as complete
+      setStatus("Completing onboarding...");
+      await updateOnboardingStatusAction({
+        onboarding: "complete",
       });
 
       router.push("/home");
