@@ -37,31 +37,6 @@ export default async function ManagePage() {
         {user.permissions.includes("trials.manage") && (
           <Card>
             <CardHeader>
-              <CardTitle>Trial Management</CardTitle>
-              <CardDescription>
-                Manage trial invitations and users
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>
-                Invite new users for trial access and manage existing trial
-                invitations.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button
-                asChild
-                className="bg-brand text-brand-foreground hover:bg-brand-hover w-full"
-              >
-                <Link href="/manage/trials">Manage Trials</Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
-
-        {user.permissions.includes("trials.manage") && (
-          <Card>
-            <CardHeader>
               <CardTitle>Invite Codes</CardTitle>
               <CardDescription>
                 Generate and manage invite codes

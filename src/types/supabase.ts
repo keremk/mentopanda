@@ -195,7 +195,6 @@ export type Database = {
           inviter_display_name: string
           inviter_email: string
           inviter_id: string
-          is_trial: boolean
           project_id: number | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string | null
@@ -207,7 +206,6 @@ export type Database = {
           inviter_display_name: string
           inviter_email: string
           inviter_id: string
-          is_trial?: boolean
           project_id?: number | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
@@ -219,7 +217,6 @@ export type Database = {
           inviter_display_name?: string
           inviter_email?: string
           inviter_id?: string
-          is_trial?: boolean
           project_id?: number | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
@@ -383,8 +380,6 @@ export type Database = {
           current_project_id: number | null
           id: string
           pricing_plan: Database["public"]["Enums"]["pricing_plan"]
-          trial_end: string | null
-          trial_start: string | null
           updated_at: string | null
         }
         Insert: {
@@ -392,8 +387,6 @@ export type Database = {
           current_project_id?: number | null
           id: string
           pricing_plan?: Database["public"]["Enums"]["pricing_plan"]
-          trial_end?: string | null
-          trial_start?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -401,8 +394,6 @@ export type Database = {
           current_project_id?: number | null
           id?: string
           pricing_plan?: Database["public"]["Enums"]["pricing_plan"]
-          trial_end?: string | null
-          trial_start?: string | null
           updated_at?: string | null
         }
         Relationships: [

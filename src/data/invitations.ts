@@ -11,7 +11,6 @@ export type Invitation = {
   inviterDisplayName: string;
   inviterEmail: string;
   role: UserRole;
-  isTrial: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -19,22 +18,14 @@ export type Invitation = {
 export async function createInvitation(
   supabase: SupabaseClient,
   inviteeEmail: string,
-  role: UserRole = "admin",
-  isTrial: boolean = false,
-  isPromoInvitation: boolean = false
+  role: UserRole = "admin"
 ): Promise<Invitation> {
   const user = await getCurrentUserInfo(supabase);
 
-  let projectId: number | null;
-  if (isPromoInvitation) {
-    // No need for a project id or a user role, they will create their own project
-    projectId = null;
-  } else {
-    if (!user.currentProject) {
-      throw new Error("User must belong to a project to invite others");
-    }
-    projectId = user.currentProject.id;
+  if (!user.currentProject) {
+    throw new Error("User must belong to a project to invite others");
   }
+  const projectId = user.currentProject.id;
 
   const { data, error } = await supabase
     .from("invitations")
@@ -45,7 +36,6 @@ export async function createInvitation(
       inviter_display_name: user.displayName,
       inviter_email: user.email,
       role: role,
-      is_trial: isTrial,
     })
     .select()
     .single();
@@ -61,7 +51,6 @@ export async function createInvitation(
     inviterDisplayName: data.inviter_display_name,
     inviterEmail: data.inviter_email,
     role: data.role,
-    isTrial: data.is_trial,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
@@ -82,7 +71,6 @@ export async function getInvitationsForUser(
       inviter_display_name,
       inviter_email,
       role,
-      is_trial,
       created_at,
       updated_at
     `
@@ -101,7 +89,6 @@ export async function getInvitationsForUser(
     inviterDisplayName: invitation.inviter_display_name,
     inviterEmail: invitation.inviter_email,
     role: invitation.role,
-    isTrial: invitation.is_trial,
     createdAt: invitation.created_at,
     updatedAt: invitation.updated_at,
   }));
@@ -128,7 +115,6 @@ export async function getInvitationById(
     inviterDisplayName: data.inviter_display_name,
     inviterEmail: data.inviter_email,
     role: data.role,
-    isTrial: data.is_trial,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
@@ -163,30 +149,4 @@ export async function acceptInvitation(
   if (data === null) throw new Error("Failed to accept invitation");
 
   return data;
-}
-
-export async function getTrialInvitations(
-  supabase: SupabaseClient
-): Promise<Invitation[]> {
-  const { data, error } = await supabase
-    .from("invitations")
-    .select()
-    .eq("is_trial", true)
-    .order("created_at", { ascending: false });
-
-  if (error) handleError(error);
-  if (!data) return [];
-
-  return data.map((item) => ({
-    id: item.id,
-    projectId: item.project_id,
-    inviterId: item.inviter_id,
-    inviteeEmail: item.invitee_email,
-    inviterDisplayName: item.inviter_display_name,
-    inviterEmail: item.inviter_email,
-    role: item.role,
-    isTrial: item.is_trial,
-    createdAt: item.created_at,
-    updatedAt: item.updated_at,
-  }));
 }

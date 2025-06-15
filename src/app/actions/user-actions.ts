@@ -5,13 +5,11 @@ import {
   getCurrentUserInfo,
   updateUserProfile,
   updateUserAvatar,
-  updateUserTrial,
   updateUserOnboardingStatus,
   OnboardingStatus,
 } from "@/data/user";
 import { z } from "zod";
 import { cache } from "react";
-import { Invitation } from "@/data/invitations";
 import { logger } from "@/lib/logger";
 
 const updateProfileSchema = z.object({
@@ -111,24 +109,6 @@ export async function updateOnboardingStatusAction(data: {
   }
 }
 
-export async function startTrialAction(invitation: Invitation) {
-  if (!invitation.isTrial) {
-    throw new Error("Invitation is not a trial");
-  }
-
-  const supabase = await createClient();
-  const user = await getCurrentUserInfo(supabase);
-  if (user.trialStartDate || user.trialEndDate) {
-    throw new Error("User is already on a trial");
-  }
-
-  const trialLengthInDays = 30;
-  const startDate = new Date();
-  const endDate = new Date(
-    startDate.getTime() + trialLengthInDays * 24 * 60 * 60 * 1000
-  );
-  return await updateUserTrial(supabase, startDate, endDate);
-}
 
 // --- New Password Update Action ---
 export async function updatePasswordAction(formData: FormData) {

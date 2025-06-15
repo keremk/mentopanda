@@ -34,8 +34,6 @@ type Profile = {
   pricing_plan: string; // Assuming enum maps to string
   created_at: string;
   updated_at: string;
-  trial_start: string | null;
-  trial_end: string | null;
 };
 
 type Project = {
@@ -160,7 +158,6 @@ type Invitation = {
   role: string; // user_role enum
   created_at: string;
   updated_at: string;
-  is_trial: boolean;
 };
 
 type UserData = {

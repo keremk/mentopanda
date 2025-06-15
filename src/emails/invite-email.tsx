@@ -19,14 +19,12 @@ type InviteEmailProps = {
   inviterName: string;
   inviterEmail: string;
   inviteLink: string;
-  isTrial: boolean;
 };
 
 export default function InviteEmail({
   inviterName = "Sarah Chen",
   inviterEmail = "sarah@example.com",
   inviteLink = "https://mentopanda.com/invite/abc123",
-  isTrial = true,
 }: InviteEmailProps) {
   // HSL values extracted from globals.css for better email client compatibility
   const primaryColor = "#121C2D";
@@ -37,22 +35,14 @@ export default function InviteEmail({
   const foregroundColor = "#030712"; // Default text color
 
   // Conditional text
-  const previewText = isTrial
-    ? "You're invited! Try MentoPanda Free"
-    : `${inviterName} invited you to MentoPanda!`;
-  const introText = isTrial ? (
-    <>
-      {inviterName} ({inviterEmail}) invited you to a free 2-week trial of
-      MentoPanda. Practice and improve your communication skills for challenging
-      workplace scenarios.
-    </>
-  ) : (
+  const previewText = `${inviterName} invited you to MentoPanda!`;
+  const introText = (
     <>
       {inviterName} ({inviterEmail}) invited you to join MentoPanda. Practice
       and improve your communication skills for challenging workplace scenarios.
     </>
   );
-  const buttonText = isTrial ? "Start 2-Week Free Trial" : "Join MentoPanda";
+  const buttonText = "Join MentoPanda";
 
   return (
     <Html>

@@ -9,7 +9,6 @@ export function ManageTabs() {
 
   // Set the active tab based on the current path
   const getActiveTab = () => {
-    if (pathname.includes("/trials")) return "trials";
     if (pathname.includes("/invite-codes")) return "invite-codes";
     if (pathname.includes("/waitlist")) return "waitlist";
     return "dashboard";
@@ -27,15 +26,6 @@ export function ManageTabs() {
             className="data-[state=active]:bg-background data-[state=active]:shadow-none"
           >
             <a>Dashboard</a>
-          </TabsTrigger>
-        </Link>
-        <Link href="/manage/trials" passHref legacyBehavior>
-          <TabsTrigger
-            value="trials"
-            asChild
-            className="data-[state=active]:bg-background data-[state=active]:shadow-none"
-          >
-            <a>Trial Invitations</a>
           </TabsTrigger>
         </Link>
         <Link href="/manage/invite-codes" passHref legacyBehavior>

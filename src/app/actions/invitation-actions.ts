@@ -6,7 +6,6 @@ import {
   Invitation,
   acceptInvitation,
   getInvitationById,
-  getTrialInvitations,
   getInvitationsForUser,
 } from "@/data/invitations";
 import { User, UserRole } from "@/data/user";
@@ -15,7 +14,6 @@ import { z } from "zod";
 import { Resend } from "resend";
 import InviteEmail from "@/emails/invite-email";
 import React from "react";
-import { startTrialAction } from "./user-actions";
 import { logger } from "@/lib/logger";
 
 const createInvitationSchema = z.object({
@@ -26,8 +24,6 @@ export async function createInvitationAction(
   inviteeEmail: string,
   role: UserRole,
   subject: string,
-  isTrial: boolean = false,
-  isPromoInvitation: boolean = false
 ) {
   const supabase = await createClient();
   const validated = createInvitationSchema.parse({ inviteeEmail });
@@ -38,10 +34,8 @@ export async function createInvitationAction(
       supabase,
       validated.inviteeEmail,
       role,
-      isTrial,
-      isPromoInvitation
     );
-    const emailTemplate = getInviteEmailTemplate(invitation, isPromoInvitation);
+    const emailTemplate = getInviteEmailTemplate(invitation);
     await sendInviteEmailAction(invitation, subject, emailTemplate);
   } catch (error) {
     logger.error("Failed to create invitation", error);  
@@ -55,14 +49,13 @@ export async function createInvitationAction(
 export async function resendInviteEmailAction(
   invitationId: number,
   subject: string,
-  isPromoInvitation: boolean = false
 ) {
   const supabase = await createClient();
   const invitation = await getInvitationById(supabase, invitationId);
   if (!invitation) {
     throw new Error("Invitation not found");
   }
-  const emailTemplate = getInviteEmailTemplate(invitation, isPromoInvitation);
+  const emailTemplate = getInviteEmailTemplate(invitation);
   return await sendInviteEmailAction(
     invitation,
     subject,
@@ -72,13 +65,11 @@ export async function resendInviteEmailAction(
 
 function getInviteEmailTemplate(
   invitation: Invitation,
-  isPromoInvitation: boolean
 ) {
   return InviteEmail({
     inviterName: invitation.inviterDisplayName,
     inviterEmail: invitation.inviterEmail,
-    inviteLink: `${process.env.NEXT_PUBLIC_SITE_URL}/login?mode=signup`,
-    isTrial: isPromoInvitation,
+    inviteLink: `${process.env.NEXT_PUBLIC_SITE_URL}/login?mode=signup`
   });
 }
 
@@ -96,9 +87,6 @@ export async function getInvitationsForUserAction(
 
 export async function acceptInvitationAction(invitation: Invitation, projectId?: number) {
   const supabase = await createClient();
-  if (invitation.isTrial) {
-    await startTrialAction(invitation);
-  }
   return await acceptInvitation(supabase, invitation.id, projectId);
 }
 
@@ -139,9 +127,4 @@ async function sendInviteEmailAction(
   }
 
   return data.id;
-}
-
-export async function getTrialInvitationsAction(): Promise<Invitation[]> {
-  const supabase = await createClient();
-  return await getTrialInvitations(supabase);
 }

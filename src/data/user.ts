@@ -29,8 +29,6 @@ export type User = {
   };
   projectRole: UserRole;
   permissions: AppPermission[];
-  trialStartDate: Date | null;
-  trialEndDate: Date | null;
   onboarding: OnboardingStatus;
   app_metadata?: {
     provider?: string;
@@ -81,12 +79,6 @@ export async function getCurrentUserInfo(
     currentProject: profileData.current_project,
     projectRole: profileData.project_role,
     permissions: profileData.permissions || [],
-    trialStartDate: profileData.trial_start
-      ? new Date(profileData.trial_start)
-      : null,
-    trialEndDate: profileData.trial_end
-      ? new Date(profileData.trial_end)
-      : null,
     onboarding: profileData.onboarding || "not_started",
     app_metadata: authUser.app_metadata,
   };
@@ -151,22 +143,6 @@ export async function updateCurrentProject(
   };
 }
 
-export async function updateUserTrial(
-  supabase: SupabaseClient,
-  startDate: Date,
-  endDate: Date
-) {
-  const userId = await getUserId(supabase);
-  const { error } = await supabase
-    .from("profiles")
-    .update({ trial_start: startDate, trial_end: endDate })
-    .eq("id", userId);
-
-  if (error) handleError(error);
-
-  return await getCurrentUserInfo(supabase);
-}
-
 export async function updateUserOnboardingStatus(
   supabase: SupabaseClient,
   onboardingStatus: OnboardingStatus
@@ -189,16 +165,6 @@ export async function updateUserOnboardingStatus(
   }
 
   return await getCurrentUserInfo(supabase);
-}
-
-export async function isUserOnTrial(
-  supabase: SupabaseClient
-): Promise<boolean> {
-  const user = await getCurrentUserInfo(supabase);
-
-  if (!user.trialStartDate || !user.trialEndDate) return false;
-  const now = new Date();
-  return now >= user.trialStartDate && now <= user.trialEndDate;
 }
 
 export async function hasPermission({
