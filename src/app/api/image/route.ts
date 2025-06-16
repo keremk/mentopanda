@@ -7,10 +7,6 @@ import { logger } from "@/lib/logger";
 import { checkUserHasCredits } from "@/app/actions/credit-check";
 import { updateImageUsageAction } from "@/app/actions/usage-actions";
 import {
-  getAIContextDataForCharacterAction,
-  getAIContextDataForTrainingAction,
-} from "@/app/actions/aicontext-actions";
-import {
   IMAGE_CONFIG,
   mapAspectRatioToSize,
   mapAspectRatioToDimensions,
@@ -23,8 +19,6 @@ import { MODEL_NAMES } from "@/types/models";
 
 // Schema for the request body
 const imageGenerationSchema = z.object({
-  contextId: z.string().min(1, "Context ID cannot be empty."),
-  contextType: z.enum(["training", "character", "user"]),
   aspectRatio: z.enum(IMAGE_CONFIG.ASPECT_RATIOS),
   prompt: z.string(),
   style: z.string().optional(),
@@ -45,41 +39,10 @@ function getImageQuality(): ImageQuality {
   return "high";
 }
 
-// Get context data based on type
-async function getContextForType(
-  contextType: string,
-  contextId: string
-): Promise<string | undefined> {
-  const id = parseInt(contextId);
-
-  switch (contextType) {
-    case "training": {
-      const trainingContext = await getAIContextDataForTrainingAction(
-        id,
-        undefined
-      );
-      return trainingContext
-        ? `Description of the training that you will be generating a representative common image for: ${trainingContext?.training.description}`
-        : undefined;
-    }
-    case "character": {
-      const characterContext = await getAIContextDataForCharacterAction(id);
-      return characterContext
-        ? `Description of the character that you will be generating an image for: ${characterContext?.description}`
-        : undefined;
-    }
-    default:
-      return undefined;
-  }
-}
-
 // Construct the final prompt
 async function constructPrompt(
   prompt: string,
   style: string | undefined,
-  contextType: string,
-  contextId: string,
-  includeContext: boolean
 ): Promise<string> {
   const promptSegments: string[] = [];
 
@@ -87,13 +50,6 @@ async function constructPrompt(
   promptSegments.push(
     "Please generate an image using the image_generation tool."
   );
-
-  if (includeContext) {
-    const context = await getContextForType(contextType, contextId);
-    if (context) {
-      promptSegments.push(`Context: ${context}`);
-    }
-  }
 
   if (style && style !== "custom") {
     promptSegments.push(`Style: ${style}`);
@@ -268,8 +224,6 @@ export async function POST(request: NextRequest) {
         const apiKey = requestData.apiKey || process.env.OPENAI_API_KEY;
 
         logger.debug("🎯 Image generation request:", {
-          contextType: requestData.contextType,
-          contextId: requestData.contextId,
           aspectRatio: requestData.aspectRatio,
           dimensions: mapAspectRatioToDimensions(requestData.aspectRatio),
           quality: getImageQuality(),
@@ -292,9 +246,6 @@ export async function POST(request: NextRequest) {
         const finalPrompt = await constructPrompt(
           requestData.prompt,
           requestData.style,
-          requestData.contextType,
-          requestData.contextId,
-          requestData.includeContext
         );
 
         const partialImagesCount = 2; // Number of partial images

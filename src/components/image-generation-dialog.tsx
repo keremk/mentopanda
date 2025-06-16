@@ -53,17 +53,19 @@ type ImageGenerationDialogProps = {
   contextType: ImageContextType;
   onImageGenerated: (url: string, path: string) => void;
   aspectRatio: ImageAspectRatio;
-  showContextSwitch?: boolean;
   currentImageUrl?: string | null;
 };
 
 const imageStyles: { value: string; label: string }[] = [
-  { value: "anime", label: "Anime" },
-  { value: "cartoon", label: "Cartoon" },
-  { value: "sketch", label: "Sketch" },
+  { value: "anime, ghibli", label: "Anime" },
   { value: "pixar 3D", label: "Pixar 3D" },
-  { value: "photorealistic", label: "Photorealistic" },
-  { value: "cinematic", label: "Cinematic" },
+  { value: "cartoon, comic book, cel shading", label: "Cartoon" },
+  { value: "low poly, isometric art", label: "Low Poly" },
+  { value: "watercolor, impressionist, monet", label: "Watercolor" },
+  { value: "steampunk, victorian, science fiction", label: "Steampunk" },
+  { value: "sketch, pencil drawing", label: "Sketch" },
+  { value: "photorealistic, hyperrealistic", label: "Photorealistic" },
+  { value: "cinematic, dramatic lighting", label: "Cinematic" },
   { value: "custom", label: "Custom" },
 ];
 
@@ -74,13 +76,11 @@ export function ImageGenerationDialog({
   contextType,
   onImageGenerated,
   aspectRatio,
-  showContextSwitch = false,
   currentImageUrl,
 }: ImageGenerationDialogProps) {
   const [selectedStyle, setSelectedStyle] = useState<string>(
     imageStyles[0].value
   );
-  const [includeContext, setIncludeContext] = useState(false);
   const [useCurrentImage, setUseCurrentImage] = useState(!!currentImageUrl);
   const [prompt, setPrompt] = useState("");
   const [generatedImageData, setGeneratedImageData] = useState<string | null>(
@@ -155,18 +155,11 @@ export function ImageGenerationDialog({
 
     try {
       const requestBody: Record<string, unknown> = {
-        contextId,
-        contextType,
         prompt: prompt.trim(),
         style: selectedStyle,
         aspectRatio,
         apiKey,
       };
-
-      // Conditionally add context flag
-      if (showContextSwitch) {
-        requestBody.includeContext = includeContext;
-      }
 
       // Add multi-turn editing support when editing a generated image
       if (useCurrentImage && currentResponseId) {
@@ -324,8 +317,6 @@ export function ImageGenerationDialog({
     contextType,
     prompt,
     selectedStyle,
-    includeContext,
-    showContextSwitch,
     aspectRatio,
     useCurrentImage,
     currentImageUrl,
@@ -484,7 +475,7 @@ export function ImageGenerationDialog({
   const isLoading = isGenerating || uploadHook.loading;
 
   // Determine if a prompt is absolutely required
-  const isPromptRequired = !includeContext && !useCurrentImage;
+  const isPromptRequired = !useCurrentImage;
 
   // Determine if the generate button should be disabled
   const isGenerateDisabled =
@@ -640,23 +631,6 @@ export function ImageGenerationDialog({
                     </SelectContent>
                   </Select>
                 </div>
-                {showContextSwitch && (
-                  <div className="flex flex-col items-center space-y-1 pt-1">
-                    <Label
-                      htmlFor="include-context"
-                      className="text-xs font-medium"
-                    >
-                      Use Context
-                    </Label>
-                    <Switch
-                      id="include-context"
-                      checked={includeContext}
-                      onCheckedChange={setIncludeContext}
-                      disabled={isLoading || hasCreditError}
-                      className="data-[state=checked]:bg-brand data-[state=unchecked]:bg-input focus-visible:ring-brand"
-                    />
-                  </div>
-                )}
                 <div className="flex flex-col items-center space-y-1 pt-1">
                   <Label
                     htmlFor="use-current-image"
