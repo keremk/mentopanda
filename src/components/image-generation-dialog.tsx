@@ -78,11 +78,18 @@ export function ImageGenerationDialog({
   aspectRatio,
   currentImageUrl,
 }: ImageGenerationDialogProps) {
+  // TEMPORARY: Set to true to re-enable "Use Current" functionality
+  const ENABLE_USE_CURRENT = false;
+
   const [selectedStyle, setSelectedStyle] = useState<string>(
     imageStyles[0].value
   );
-  const [useCurrentImage, setUseCurrentImage] = useState(!!currentImageUrl);
+  const [useCurrentImage, setUseCurrentImage] = useState(
+    ENABLE_USE_CURRENT ? !!currentImageUrl : false
+  );
   const [prompt, setPrompt] = useState("");
+  const [lastUsedStyle, setLastUsedStyle] = useState<string | null>(null);
+  const [lastUsedPrompt, setLastUsedPrompt] = useState<string | null>(null);
   const [generatedImageData, setGeneratedImageData] = useState<string | null>(
     null
   );
@@ -290,14 +297,18 @@ export function ImageGenerationDialog({
                     data.responseId
                   );
                 }
-                // Auto-switch to "Use Current" mode after any generation
-                if (!useCurrentImage) {
+                // Auto-switch to "Use Current" mode after any generation (only if feature enabled)
+                if (ENABLE_USE_CURRENT && !useCurrentImage) {
                   setUseCurrentImage(true);
                   logger.debug("✅ Auto-switched to Use Current mode");
                 }
                 logger.info(
                   `Image generation completed in ${data.elapsedTime?.toFixed(2)}s`
                 );
+                // Store last used values and clear prompt for next iteration
+                setLastUsedStyle(selectedStyle);
+                setLastUsedPrompt(prompt.trim());
+                setPrompt("");
                 break;
 
               case "error":
@@ -352,6 +363,15 @@ export function ImageGenerationDialog({
       apiKey,
     };
 
+    // Add previous response ID for multi-turn iteration (not editing existing images)
+    if (currentResponseId) {
+      requestBody.previousResponseId = currentResponseId;
+      logger.debug(
+        "Using previous response ID for multi-turn iteration:",
+        currentResponseId
+      );
+    }
+
     // Call the background API endpoint to initiate generation
     const initiateResponse = await fetch("/api/image/background", {
       method: "POST",
@@ -389,9 +409,14 @@ export function ImageGenerationDialog({
     logger.debug("🚀 Background generation initiated:", {
       responseId,
       status: initiateData.status,
+      isIteration: !!currentResponseId,
     });
 
-    setStreamStatus("Starting image generation...");
+    setStreamStatus(
+      currentResponseId
+        ? "Starting image iteration..."
+        : "Starting image generation..."
+    );
 
     // Start polling for status with configurable interval (default 5 seconds)
     const pollInterval = 5000; // 5 seconds
@@ -440,7 +465,10 @@ export function ImageGenerationDialog({
         ) {
           // Update status message and continue polling (no step indicators for background generation)
           setStreamStatus(
-            statusData.message || "Image generation in progress..."
+            statusData.message ||
+              (currentResponseId
+                ? "Image iteration in progress..."
+                : "Image generation in progress...")
           );
 
           // Schedule next poll
@@ -462,15 +490,20 @@ export function ImageGenerationDialog({
             );
           }
 
-          // Auto-switch to "Use Current" mode after any generation
-          if (!useCurrentImage) {
+          // Auto-switch to "Use Current" mode after any generation (only if feature enabled)
+          if (ENABLE_USE_CURRENT && !useCurrentImage) {
             setUseCurrentImage(true);
             logger.debug("✅ Auto-switched to Use Current mode");
           }
 
           logger.info(
-            `Background image generation completed after ${pollCount} polls`
+            `Background image ${currentResponseId ? "iteration" : "generation"} completed after ${pollCount} polls`
           );
+
+          // Store last used values and clear prompt for next iteration
+          setLastUsedStyle(selectedStyle);
+          setLastUsedPrompt(prompt.trim());
+          setPrompt("");
         } else {
           // Generation failed or other terminal state
           const errorMsg =
@@ -637,13 +670,21 @@ export function ImageGenerationDialog({
   // Define isLoading state before return
   const isLoading = isGenerating || uploadHook.loading;
 
+  // Check if user has made changes for iteration
+  const hasStyleChanged = currentResponseId && selectedStyle !== lastUsedStyle;
+  const hasPromptChanged =
+    currentResponseId && prompt.trim() !== (lastUsedPrompt || "");
+  const hasChangesForIteration = hasStyleChanged || hasPromptChanged;
+
   // Determine if a prompt is absolutely required
-  const isPromptRequired = !useCurrentImage;
+  // For first generation: prompt required
+  // For iteration: changes in style or prompt required
+  const isPromptRequired = !currentResponseId && prompt.trim().length === 0;
 
   // Determine if the generate button should be disabled
   const isGenerateDisabled =
     isLoading ||
-    (isPromptRequired && prompt.trim().length === 0) ||
+    (currentResponseId ? !hasChangesForIteration : isPromptRequired) ||
     hasCreditError;
 
   // Debug button state
@@ -681,6 +722,11 @@ export function ImageGenerationDialog({
                   if (isGenerating && intermediateImageData) {
                     imageUrl = `data:image/png;base64,${intermediateImageData}`;
                     imageAlt = "Intermediate image preview";
+                  }
+                  // If "Use Current" feature is disabled, always show generated image when available
+                  else if (!ENABLE_USE_CURRENT && generatedImageData) {
+                    imageUrl = `data:image/png;base64,${generatedImageData}`;
+                    imageAlt = "Generated image preview";
                   }
                   // If "Use Current" is true, show the current image (generated or existing)
                   else if (useCurrentImage) {
@@ -794,7 +840,11 @@ export function ImageGenerationDialog({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex flex-col items-center space-y-1 pt-1">
+                {/* TEMPORARY: Hidden when ENABLE_USE_CURRENT is false */}
+                <div
+                  className="flex flex-col items-center space-y-1 pt-1"
+                  style={{ display: ENABLE_USE_CURRENT ? "flex" : "none" }}
+                >
                   <Label
                     htmlFor="use-current-image"
                     className="text-xs font-medium"
@@ -804,8 +854,11 @@ export function ImageGenerationDialog({
                   <Switch
                     id="use-current-image"
                     checked={useCurrentImage}
-                    onCheckedChange={setUseCurrentImage}
+                    onCheckedChange={
+                      ENABLE_USE_CURRENT ? setUseCurrentImage : undefined
+                    }
                     disabled={
+                      !ENABLE_USE_CURRENT ||
                       isLoading ||
                       (!currentImageUrl && !generatedImageData) ||
                       hasCreditError
@@ -855,10 +908,14 @@ export function ImageGenerationDialog({
                           : isGenerating
                             ? useCurrentImage
                               ? "Editing..."
-                              : "Generating..."
+                              : currentResponseId
+                                ? "Iterating..."
+                                : "Generating..."
                             : useCurrentImage
                               ? "Edit"
-                              : "Generate"}
+                              : currentResponseId
+                                ? "Iterate"
+                                : "Generate"}
                       </span>
                     </Button>
                   </div>
