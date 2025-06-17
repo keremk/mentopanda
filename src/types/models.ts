@@ -17,6 +17,7 @@ export const MODEL_NAMES = {
   OPENAI_WHISPER: "whisper-1",
   OPENAI_GPT4O: "gpt-4o",
   OPENAI_GPT41: "gpt-4.1",
+  OPENAI_O3: "o3",
   OPENAI_GPT_IMAGE: "gpt-image-1", 
   GEMINI: "gemini-2.0-flash-exp",
 } as const;

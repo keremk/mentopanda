@@ -139,192 +139,6 @@ export function ImageGenerationDialog({
         showNoCreditsDialog)
   );
 
-  const handleGenerateClick = useCallback(async () => {
-    if (!contextId || typeof contextId !== "string" || contextId.length === 0) {
-      setError(`Invalid or missing ${contextType} ID. Cannot generate image.`);
-      return;
-    }
-
-    setIsGenerating(true);
-    setError(null);
-    setGeneratedImageData(null);
-    setIntermediateImageData(null);
-    setStreamStatus("");
-    setCurrentStep(0);
-    setTotalSteps(2);
-
-    try {
-      const requestBody: Record<string, unknown> = {
-        prompt: prompt.trim(),
-        style: selectedStyle,
-        aspectRatio,
-        apiKey,
-      };
-
-      // Add multi-turn editing support when editing a generated image
-      if (useCurrentImage && currentResponseId) {
-        requestBody.previousResponseId = currentResponseId;
-      }
-      // Add existing image URL for first-time editing of stored images
-      else if (useCurrentImage && currentImageUrl && bucketName) {
-        requestBody.existingImageUrl = currentImageUrl;
-        requestBody.bucketName = bucketName;
-      }
-
-      const response = await fetch("/api/image", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("No reader available");
-      }
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-
-              // Log event type and metadata without base64 data
-              const logData = { ...data };
-              if (logData.imageData) {
-                logData.imageData = `[base64 data: ${logData.imageData.length} chars]`;
-              }
-              logger.debug(
-                `🔍 DEBUG: Received streaming event: ${data.type}`,
-                logData
-              );
-
-              switch (data.type) {
-                case "status":
-                  logger.debug("📊 STATUS event:", {
-                    type: data.type,
-                    message: data.message,
-                    step: data.step,
-                    totalSteps: data.totalSteps,
-                  });
-                  setStreamStatus(data.message);
-                  setCurrentStep(data.step);
-                  setTotalSteps(data.totalSteps);
-                  break;
-
-                case "intermediate":
-                  logger.debug("🖼️ INTERMEDIATE event:", {
-                    type: data.type,
-                    message: data.message,
-                    step: data.step,
-                    imageDataLength: data.imageData?.length,
-                  });
-                  setIntermediateImageData(data.imageData);
-                  setStreamStatus(data.message);
-                  setCurrentStep(data.step);
-                  break;
-
-                case "final":
-                  logger.debug("✅ FINAL event received in dialog!");
-                  logger.debug("✅ Image data length:", data.imageData?.length);
-                  logger.debug("✅ About to call setGeneratedImageData");
-                  setGeneratedImageData(data.imageData);
-                  logger.debug(
-                    "✅ Called setGeneratedImageData - button should be enabled now"
-                  );
-                  setStreamStatus(data.message);
-                  setCurrentStep(data.step);
-                  // Store response ID for potential multi-turn editing
-                  if (data.responseId) {
-                    setCurrentResponseId(data.responseId);
-                    logger.debug(
-                      "✅ Stored response ID for editing:",
-                      data.responseId
-                    );
-                  }
-                  // Auto-switch to "Use Current" mode after any generation
-                  if (!useCurrentImage) {
-                    setUseCurrentImage(true);
-                    logger.debug("✅ Auto-switched to Use Current mode");
-                  }
-                  logger.info(
-                    `Image generation completed in ${data.elapsedTime?.toFixed(2)}s`
-                  );
-                  break;
-
-                case "error":
-                  logger.debug("❌ ERROR event:", {
-                    type: data.type,
-                    error: data.error,
-                  });
-                  logger.error("Streaming image generation error:", data.error);
-
-                  // Check if it's a credit error
-                  if (
-                    data.error &&
-                    (data.error.includes("No credits available") ||
-                      data.error.includes("402"))
-                  ) {
-                    logger.info(
-                      "Credit error detected in streaming image generation, showing NoCreditsDialog"
-                    );
-                    setShowNoCreditsDialog(true);
-                  }
-
-                  setError(data.error);
-                  break;
-
-                default:
-                  logger.debug(`❓ UNKNOWN event type: ${data.type}`, logData);
-                  break;
-              }
-            } catch (parseError) {
-              logger.error("Error parsing streaming data:", parseError);
-            }
-          }
-        }
-      }
-    } catch (err) {
-      logger.error("Streaming generation error:", err);
-      setError("An unexpected error occurred trying to generate the image.");
-    } finally {
-      logger.debug("🏁 Stream completed, final state:", {
-        generatedImageData: !!generatedImageData,
-        generatedImageDataLength: generatedImageData?.length,
-        error,
-      });
-      setIsGenerating(false);
-      setStreamStatus("");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    contextId,
-    contextType,
-    prompt,
-    selectedStyle,
-    aspectRatio,
-    useCurrentImage,
-    currentImageUrl,
-    bucketName,
-    apiKey,
-    currentResponseId,
-  ]);
-
   const handleUseImage = useCallback(async () => {
     if (!generatedImageData) {
       setError("No image data available to upload.");
@@ -370,6 +184,347 @@ export function ImageGenerationDialog({
       hasHandledUploadSuccess.current = false;
     }
   }, [isOpen]);
+
+  // Function for editing existing images using streaming API
+  const editImage = useCallback(async () => {
+    const requestBody: Record<string, unknown> = {
+      prompt: prompt.trim(),
+      style: selectedStyle,
+      aspectRatio,
+      apiKey,
+    };
+
+    // Add multi-turn editing support when editing a generated image
+    if (currentResponseId) {
+      requestBody.previousResponseId = currentResponseId;
+    }
+    // Add existing image URL for first-time editing of stored images
+    else if (currentImageUrl && bucketName) {
+      requestBody.existingImageUrl = currentImageUrl;
+      requestBody.bucketName = bucketName;
+    }
+
+    const response = await fetch("/api/image", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("No reader available");
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          try {
+            const data = JSON.parse(line.slice(6));
+
+            // Log event type and metadata without base64 data
+            const logData = { ...data };
+            if (logData.imageData) {
+              logData.imageData = `[base64 data: ${logData.imageData.length} chars]`;
+            }
+            logger.debug(
+              `🔍 DEBUG: Received streaming event: ${data.type}`,
+              logData
+            );
+
+            switch (data.type) {
+              case "status":
+                logger.debug("📊 STATUS event:", {
+                  type: data.type,
+                  message: data.message,
+                  step: data.step,
+                  totalSteps: data.totalSteps,
+                });
+                setStreamStatus(data.message);
+                setCurrentStep(data.step);
+                setTotalSteps(data.totalSteps);
+                break;
+
+              case "intermediate":
+                logger.debug("🖼️ INTERMEDIATE event:", {
+                  type: data.type,
+                  message: data.message,
+                  step: data.step,
+                  imageDataLength: data.imageData?.length,
+                });
+                setIntermediateImageData(data.imageData);
+                setStreamStatus(data.message);
+                setCurrentStep(data.step);
+                break;
+
+              case "final":
+                logger.debug("✅ FINAL event received in dialog!");
+                logger.debug("✅ Image data length:", data.imageData?.length);
+                logger.debug("✅ About to call setGeneratedImageData");
+                setGeneratedImageData(data.imageData);
+                logger.debug(
+                  "✅ Called setGeneratedImageData - button should be enabled now"
+                );
+                setStreamStatus(data.message);
+                setCurrentStep(data.step);
+                // Store response ID for potential multi-turn editing
+                if (data.responseId) {
+                  setCurrentResponseId(data.responseId);
+                  logger.debug(
+                    "✅ Stored response ID for editing:",
+                    data.responseId
+                  );
+                }
+                // Auto-switch to "Use Current" mode after any generation
+                if (!useCurrentImage) {
+                  setUseCurrentImage(true);
+                  logger.debug("✅ Auto-switched to Use Current mode");
+                }
+                logger.info(
+                  `Image generation completed in ${data.elapsedTime?.toFixed(2)}s`
+                );
+                break;
+
+              case "error":
+                logger.debug("❌ ERROR event:", {
+                  type: data.type,
+                  error: data.error,
+                });
+                logger.error("Streaming image generation error:", data.error);
+
+                // Check if it's a credit error
+                if (
+                  data.error &&
+                  (data.error.includes("No credits available") ||
+                    data.error.includes("402"))
+                ) {
+                  logger.info(
+                    "Credit error detected in streaming image generation, showing NoCreditsDialog"
+                  );
+                  setShowNoCreditsDialog(true);
+                }
+
+                setError(data.error);
+                break;
+
+              default:
+                logger.debug(`❓ UNKNOWN event type: ${data.type}`, logData);
+                break;
+            }
+          } catch (parseError) {
+            logger.error("Error parsing streaming data:", parseError);
+          }
+        }
+      }
+    }
+  }, [
+    prompt,
+    selectedStyle,
+    aspectRatio,
+    apiKey,
+    currentResponseId,
+    currentImageUrl,
+    bucketName,
+    useCurrentImage,
+  ]);
+
+  // Function for generating new images using background API
+  const generateImage = useCallback(async () => {
+    const requestBody: Record<string, unknown> = {
+      prompt: prompt.trim(),
+      style: selectedStyle,
+      aspectRatio,
+      apiKey,
+    };
+
+    // Call the background API endpoint to initiate generation
+    const initiateResponse = await fetch("/api/image/background", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!initiateResponse.ok) {
+      const errorData = await initiateResponse.json().catch(() => ({}));
+
+      // Check for credit-related errors
+      if (
+        initiateResponse.status === 402 ||
+        errorData.error?.includes("No credits available") ||
+        errorData.error?.includes("402")
+      ) {
+        logger.info(
+          "Credit error detected in background image generation, showing NoCreditsDialog"
+        );
+        setShowNoCreditsDialog(true);
+        setError("No credits available");
+        return;
+      }
+
+      throw new Error(
+        errorData.error || `HTTP error! status: ${initiateResponse.status}`
+      );
+    }
+
+    const initiateData = await initiateResponse.json();
+    const responseId = initiateData.responseId;
+
+    logger.debug("🚀 Background generation initiated:", {
+      responseId,
+      status: initiateData.status,
+    });
+
+    setStreamStatus("Starting image generation...");
+
+    // Start polling for status with configurable interval (default 5 seconds)
+    const pollInterval = 5000; // 5 seconds
+    let pollCount = 0;
+    const maxPolls = 36; // 3 minutes maximum (36 * 5 seconds)
+
+    const pollForStatus = async (): Promise<void> => {
+      pollCount++;
+
+      if (pollCount > maxPolls) {
+        setError("Image generation timed out. Please try again.");
+        return;
+      }
+
+      try {
+        const statusResponse = await fetch("/api/image/background/status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            responseId,
+            aspectRatio,
+            apiKey,
+          }),
+        });
+
+        if (!statusResponse.ok) {
+          const errorData = await statusResponse.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || `Status check failed: ${statusResponse.status}`
+          );
+        }
+
+        const statusData = await statusResponse.json();
+
+        logger.debug("📊 Status poll result:", {
+          pollCount,
+          status: statusData.status,
+          hasImageData: !!statusData.imageData,
+        });
+
+        if (
+          statusData.status === "queued" ||
+          statusData.status === "in_progress"
+        ) {
+          // Update status message and continue polling (no step indicators for background generation)
+          setStreamStatus(
+            statusData.message || "Image generation in progress..."
+          );
+
+          // Schedule next poll
+          setTimeout(pollForStatus, pollInterval);
+        } else if (statusData.status === "completed" && statusData.imageData) {
+          // Generation completed successfully
+          logger.debug("✅ Background generation completed!");
+          logger.debug("✅ Image data length:", statusData.imageData?.length);
+
+          setGeneratedImageData(statusData.imageData);
+          setStreamStatus(statusData.message || "Image generation complete");
+
+          // Store response ID for potential multi-turn editing
+          if (statusData.responseId) {
+            setCurrentResponseId(statusData.responseId);
+            logger.debug(
+              "✅ Stored response ID for editing:",
+              statusData.responseId
+            );
+          }
+
+          // Auto-switch to "Use Current" mode after any generation
+          if (!useCurrentImage) {
+            setUseCurrentImage(true);
+            logger.debug("✅ Auto-switched to Use Current mode");
+          }
+
+          logger.info(
+            `Background image generation completed after ${pollCount} polls`
+          );
+        } else {
+          // Generation failed or other terminal state
+          const errorMsg =
+            statusData.error ||
+            `Generation failed with status: ${statusData.status}`;
+          logger.error("❌ Background generation failed:", errorMsg);
+          setError(errorMsg);
+        }
+      } catch (pollError) {
+        logger.error("Error during status polling:", pollError);
+        setError("Failed to check generation status. Please try again.");
+      }
+    };
+
+    // Start polling
+    setTimeout(pollForStatus, pollInterval);
+  }, [prompt, selectedStyle, aspectRatio, apiKey, useCurrentImage, totalSteps]);
+
+  const handleGenerateClick = useCallback(async () => {
+    if (!contextId || typeof contextId !== "string" || contextId.length === 0) {
+      setError(`Invalid or missing ${contextType} ID. Cannot generate image.`);
+      return;
+    }
+
+    setIsGenerating(true);
+    setError(null);
+    setGeneratedImageData(null);
+    setIntermediateImageData(null);
+    setStreamStatus("");
+    setCurrentStep(0);
+    setTotalSteps(2);
+
+    try {
+      if (useCurrentImage) {
+        // Use streaming API for image editing
+        logger.debug("🎨 Using streaming API for image editing");
+        await editImage();
+      } else {
+        // Use background API for new image generation
+        logger.debug("🆕 Using background API for new image generation");
+        await generateImage();
+      }
+    } catch (err) {
+      logger.error("Image generation error:", err);
+      setError("An unexpected error occurred trying to generate the image.");
+    } finally {
+      // Note: We don't set isGenerating to false for background generation
+      // since polling continues, but we do for streaming
+      if (useCurrentImage) {
+        setIsGenerating(false);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contextId, contextType, useCurrentImage, editImage, generateImage]);
 
   // Success handling effect for the internal upload hook
   useEffect(() => {
@@ -461,6 +616,14 @@ export function ImageGenerationDialog({
       setError(message);
     }
   }, [uploadHook.errors]);
+
+  // Reset isGenerating when polling completes (either success or error)
+  useEffect(() => {
+    if (isGenerating && (generatedImageData || error)) {
+      setIsGenerating(false);
+      setStreamStatus("");
+    }
+  }, [isGenerating, generatedImageData, error]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
