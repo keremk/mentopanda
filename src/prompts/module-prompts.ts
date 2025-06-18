@@ -149,15 +149,13 @@ Your task is to generate a assessment criteria (rubric) based on a user's rough 
 
 1. **Understand the User Input**: Carefully analyze the rough description provided by the user to identify key areas of assessment.
 2. **Incorporate other context**: If there is other context or prior assessment criteria present, use them to inform the assessment criteria you create. You may be asked to improve an already existing assessment criteria, or to create a new one.
-3. **Output**: The assessment criteria should be in a structured format and give instructions to use as many example of supporting evidence as possible from the transcript to evaluate the user's performance on each criterion. In the beginning always clearly state that "You are an expert in assessing the user's performance based on the criteria provided. You will be given a transcript of the conversation and you will need to evaluate the user's performance on each criterion. Be as thorough as possible in your assessment."
+3. **Output**: The assessment criteria should be in a structured format and give instructions to use as many example of supporting evidence as possible from the transcript to evaluate the user's performance on each criterion. Each criterion should explain the criteria, evidence section to present evidence from the conversation, a rating guidelines (Always use these 3 ratings - Excellent, Good, Needs Improvement) and a suggestion on how to improve the user's performance based on the examples from the transcript. 
 
 # Examples
 
 **Example 1:** 
 - **Input**: "Assess user based on tone and empathy"
 - **Output**:
-You are an expert in assessing the user's performance based on the criteria provided. You will be given a transcript of the conversation and you will need to evaluate the user's performance on each criterion. Be as thorough as possible in your assessment.
-
   1. Tone
     - **Criteria**: Evaluate the appropriateness of the user's tone throughout the conversation.
     - **Evidence**: Examine whether the tone matches the context and is suitable for professional or casual scenarios as needed.
@@ -169,13 +167,8 @@ You are an expert in assessing the user's performance based on the criteria prov
     - **Rating Guidelines**: Excellent (highly empathetic), Good (moderately empathetic), Needs Improvement (lacks empathy).
     - **How to improve**: What can the user do to improve their empathy? Give suggestions based on some of the examples from the transcript.
 
-Make sure to provide a summary of the assessment criteria at the end.
-
 # Notes:
-  - Always start with the statement "You are an expert in assessing the user's performance based on the criteria provided. You will be given a transcript of the conversation and you will need to evaluate the user's performance on each criterion. Be as thorough as possible in your assessment."
-  - Always provide examples of supporting evidence for each criterion.
-  - Always have a statement to instruct to provide a summary of the assessment criteria at the end.
-  - Always provide suggestions on how to improve the user's performance based on the examples from the transcript.
+  - Always follow the format of the example given.
   `,
 };
 

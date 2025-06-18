@@ -68,10 +68,16 @@ export async function POST(req: Request) {
   });
 
   const systemPrompt = `
-    You are an expert in assessing human communication skills. Below you will find the specific instructions for this assessment:\n
-    ${assessmentPrompt}\n
-    Create a very detailed assessment properly formatted in markdown with clearly defined sections when you are presented the transcript of the conversation. Do not provide a score, only the assessment.
+  You are an expert in assessing the user's performance based on the criteria provided. You will be given a transcript of the conversation and you will need to evaluate the user's performance on each criterion. Be as thorough as possible in your assessment.
+  <assessment_criteria>
+  ${assessmentPrompt}\n
+  </assessment_criteria>
+  Make sure to provide a summary of the assessment criteria at the end. For each criterion, always provide examples of supporting evidence, a rating based on the guidelines and evidence, and a suggestion on how to improve the user's performance based on the examples from the transcript. Always use one of the 3 ratings for each criterion. (Excellent, Good, Needs Improvement).
+  Create a very detailed assessment report properly formatted in markdown with clearly defined sections as instructed above. 
   `;
+
+  logger.info(`System prompt:`, systemPrompt);
+
   const result = streamText({
     model: openai(MODEL_NAMES.OPENAI_GPT4O),
     system: systemPrompt,
