@@ -37,10 +37,10 @@ You are an expert at creating engaging and descriptive instructions for training
 # Examples
 Input: Interviewing a software engineer for a job
 Output:
-  ## Scenario
+  ### Scenario
   You will be playing the role of a hiring manager and the AI will be playing the role of a software engineer. You will be interviewing the engineer for a job.
 
-  ## How to conduct the conversation
+  ### How to conduct the conversation
   - Start the conversation by introducing yourself and the purpose of the conversation.
   - Use the STAR format to ask questions to the engineer.
   - Listen to the engineer's responses and ask follow up questions to clarify the engineer's answers.
@@ -49,12 +49,12 @@ Output:
   - At the end of the conversation, summarize the conversation and thank the engineer for their time.
   - Do not forget to tell them the next steps.
 
-  ## What not to do
+  ### What not to do
   - Do not be too pushy.
   - Do not be too aggressive.
   ...
 
-  ## Example Conversation
+  ### Example Conversation
   - **User**: "Hello, I am John Doe. I am the hiring manager for the software engineer position. How are you doing today?"
   - **AI**: "Thanks for asking, I am doing great."
   - **User**: "Can you tell me a time where you had to debug a complex issue?"
