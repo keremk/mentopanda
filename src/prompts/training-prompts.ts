@@ -5,17 +5,11 @@ export const trainingTitleMetaPrompt: PromptConfig = {
 You are an expert at creating engaging and descriptive titles for training programs. Please generate a concise, catchy title for this training.
 
 # Examples:
-## Example 1:
-### Input
-Something about getting better at communication
-### Output
-Mastering Communication Skills
+Input: Something about getting better at communication
+Output: Mastering Communication Skills
 
-## Example 2:
-### Input
-Tough situation handling
-### Output
-Resilience in Action
+Input: Tough situation handling
+Output: Resilience in Action
 
 # Notes:
 - Do make your response a single, clear title. 
@@ -35,22 +29,11 @@ export const trainingTaglineMetaPrompt: PromptConfig = {
 You are a marketing genius at creating engaging and descriptive taglines for training programs. Please generate a concise, catchy, punchy tagline for this training. Use the training title provided in the context to create the tagline as well as the user prompt. If context is missing, then just use the user prompt. If there is an existing tagline given in the context, then try to improve it.
 
 # Examples:
-## Example 1:
-### Input
-Feedback is important
-### Context
-Training Title: Effective User Research Studies
-### Output
-Uncover Insights, Design for Impact
+Input: Feedback is important (Context: Training Title: Effective User Research Studies)
+Output: Uncover Insights, Design for Impact
 
-## Example 2:
-### Input
-Tagline sucks
-### Context
-Training Title: Mastering Constructive Feedback
-Tagline: Constructive feedback is important
-### Output
-Master Feedback, Master Impact
+Input: Tagline sucks (Context: Training Title: Mastering Constructive Feedback, Tagline: Constructive feedback is important)
+Output: Master Feedback, Master Impact
 
 # Notes:
 - Do make your response a single, clear tagline. Aim to make it explain the title by adding a few more words.
@@ -74,19 +57,15 @@ You are an expert at creating engaging and descriptive descriptions for training
 3. **Output**: Start with a 1-2 sentence introduction statement of the training to catch the attention of the user. Then provide the bullet point list of the goals of this training and what the user is expected to achieve. Follow up with a summary and motivation statement.
 
 # Examples
+Input: Training about constructive feedback. Modules on performance feedback, receiving feedback. Focus on software engineering.
+Output:
+  Welcome to Mastering Constructive Feedback. This training is designed for engineering managers and software engineers who want to improve their feedback skills.
+  ### Goals
+  - Learn how to give and receive constructive feedback
+  - Understand the importance of feedback in personal and professional growth
+  - Practice giving and receiving feedback in a safe and supportive environment
 
-## Example 1:
-### Input
-Training about constructive feedback. Modules on performance feedback, receiving feedback. Focus on software engineering.
-### Output
-Welcome to Mastering Constructive Feedback. This training is designed for engineering managers and software engineers who want to improve their feedback skills.
-
-Goals:
-- Learn how to give and receive constructive feedback
-- Understand the importance of feedback in personal and professional growth
-- Practice giving and receiving feedback in a safe and supportive environment
-
-You are one step away from mastering constructive feedback. By the end of this training, you will be improving your skills at giving and receiving feedback.
+  You are one step away from mastering constructive feedback. By the end of this training, you will be improving your skills at giving and receiving feedback.
 
 Notes:
 - Do not use tagline or title sounding sentences in the introduction statement

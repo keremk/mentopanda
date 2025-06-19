@@ -5,17 +5,11 @@ export const moduleTitleMetaPrompt: PromptConfig = {
 You are an expert at creating engaging and descriptive titles for training programs. Please generate a concise, catchy title for this training.
 
 # Examples:
-## Example 1:
-### Input
-Something getting better at communication
-### Output
-Mastering Communication Skills
+Input: Something getting better at communication
+Output: Mastering Communication Skills
 
-## Example 2:
-### Input
-Tough situation handling
-### Output
-Resilience in Action
+Input: Tough situation handling
+Output: Resilience in Action
 
 # Notes:
 - Do make your response a single, clear title. 
@@ -41,14 +35,12 @@ You are an expert at creating engaging and descriptive instructions for training
 3. **Output**: Start with a 1-2 sentence description of the scenario. Create detailed instructions for the user to follow. Since these are generally role playing, user may not know how to start the conversation, how to respond to the AI, what to say etc. So give some hints and tips to the user. The instructions should also include a simple example of how the conversation should go.
 
 # Examples
-
-## Example 1:
-### Input: Interviewing a software engineer for a job
-### Output:
-  **Scenario**:
+Input: Interviewing a software engineer for a job
+Output:
+  ## Scenario
   You will be playing the role of a hiring manager and the AI will be playing the role of a software engineer. You will be interviewing the engineer for a job.
 
-  **How to conduct the conversation**:
+  ## How to conduct the conversation
   - Start the conversation by introducing yourself and the purpose of the conversation.
   - Use the STAR format to ask questions to the engineer.
   - Listen to the engineer's responses and ask follow up questions to clarify the engineer's answers.
@@ -57,12 +49,12 @@ You are an expert at creating engaging and descriptive instructions for training
   - At the end of the conversation, summarize the conversation and thank the engineer for their time.
   - Do not forget to tell them the next steps.
 
-  **What not to do**:
+  ## What not to do
   - Do not be too pushy.
   - Do not be too aggressive.
   ...
 
-  **Example Conversation**:
+  ## Example Conversation
   - **User**: "Hello, I am John Doe. I am the hiring manager for the software engineer position. How are you doing today?"
   - **AI**: "Thanks for asking, I am doing great."
   - **User**: "Can you tell me a time where you had to debug a complex issue?"
@@ -77,7 +69,7 @@ Your task is to create a scenario description based on a user's rough input. The
 
 # Steps
 
-1. **Understand the User Input**: Carefully analyze the rough description provided by the user to identify key elements such as setting, characters, events, and objectives.
+1. **Understand the User Input**: Carefully analyze the rough description provided by the user to identify key elements such as setting, characters, events, and objectives. Make sure that you understand the roles of the characters and which one is the user and which one is the AI agent. If you are not sure ask the user for clarification.
 2. **Incorporate other context or prior scenarios**: If there is other context or prior scenarios, use them to inform the scenario you create. You may be asked to improve an already existing scenario, or to create a new one.
 3. **The roles**: Make sure you understand the roles of the characters involved and if not ask it before creating a response.
 3. **Elaborate on Key Elements**: Expand upon each of these elements to create a vivid and comprehensive scenario.
@@ -96,45 +88,36 @@ Provide the scenario description in a narrative format with clear delineations o
 The output should be in markdown format.
 
 # Examples
-
-**Example 1:** 
-- **Input**: "A manager is interviewing a software engineer at a tech company and asking questions to the user and expecting answers is the STAR format. This scenario is intended for the manager to hone his interviewing skills.
-- **Output**: 
-  - **Setting**: The engineer is in sitting in a zoom call with the manager. The engineer is the AI agent and the manager is the user. The manager is asking questions to the engineer and expecting answers in the STAR format but does not explicitly say so. The engineer is not aware of that format. 
- - **Roles**:
+Input: A manager is interviewing a software engineer at a tech company and asking questions to the user and expecting answers is the STAR format. This scenario is intended for the manager to hone his interviewing skills.
+Output: 
+  ### Setting
+  The engineer is in sitting in a zoom call with the manager. The engineer is the AI agent and the manager is the user. The manager is asking questions to the engineer and expecting answers in the STAR format but does not explicitly say so. The engineer is not aware of that format.
+  ### Roles
     1. Engineer - Played by AI
     2. Manager - Played by user
-  - **Events**:
+  ### Events
     1. Engineer is nervously waiting for the call.
     2. Manager is expected to ease the engineer's nerves and make the engineer feel comfortable first, so does a bit of small talk.
-  - **Objectives**: The manager needs to be able calm the candidate to ensure that the candidate is positioned at their best to reflect their real skills and experience. 
+  ### Objectives
+  The manager needs to be able calm the candidate to ensure that the candidate is positioned at their best to reflect their real skills and experience.
 
-**Example 2:** 
-- **User Input**: "An manager is explaining the need for hiring a new software engineer to their boss. The manager is the user and the boss is the AI agent. "
-- **Output**: 
-  - **Setting**: The team has been struggling a lot with the lack of resources and the manager needs to convince the boss to hire a new engineer. There may be problems like few of their current engineers are already overworked and they may be thinking of leaving but the manager is going to articulate these problems. 
-  - **Roles**:
+Input: A manager is explaining the need for hiring a new software engineer to their boss
+Output: Sorry will AI play the manager or the boss?
+Input: Manager
+Output: 
+  ### Setting
+  The manager is explaining the need for hiring a new engineer to their boss.
+  ### Roles
     1. Manager - Played by user
     2. Manager's Boss - Played by AI
-  - **Events**: 
+  ### Events
     1. Manager is explaining the need for hiring a new engineer to their boss.
-    2. The boss is not really interested in the problems and is not convinced to hire a new engineer.
-  - **Objectives**: The manager needs to be able to articulate the problems and convince the boss to hire a new engineer. 
-
-** Example 3:** 
-- **User Input**: "An manager is explaining the need for hiring a new software engineer to their boss
-- **Ask for clarification**: "Sorry will AI play the manager or the boss?"
-- **User Input**:  "Manager"
-- **Output**: 
-  - **Setting**: The manager is explaining the need for hiring a new engineer to their boss.
-  - **Roles**:
-    1. Manager - Played by user
-    2. Manager's Boss - Played by AI
-  - **Events**: 
-  
+    2. Manager's Boss is not really interested in the problems and is not convinced to hire a new engineer.
+  ### Objectives
+  The manager needs to be able to articulate the problems and convince the boss to hire a new engineer.
 
 # Notes
-
+- Ensure that you understand the roles of the character and which one is the user and which one is the AI agent. If you are not sure ask the user for clarification.
 - Ensure scenarios are adaptable for varied conversational goals, such as role-playing or exploring specific themes.
 - Consider edge cases, like integrating unexpected twists or moral dilemmas, to enhance engagement. 
 - Ensure you ask clarifying questions if you don't know the roles of the characters.
@@ -153,9 +136,8 @@ Your task is to generate a assessment criteria (rubric) based on a user's rough 
 
 # Examples
 
-**Example 1:** 
-- **Input**: "Assess user based on tone and empathy"
-- **Output**:
+Input: Assess user based on tone and empathy
+Output:
   1. Tone
     - **Criteria**: Evaluate the appropriateness of the user's tone throughout the conversation.
     - **Evidence**: Examine whether the tone matches the context and is suitable for professional or casual scenarios as needed.
@@ -211,10 +193,9 @@ Describe the behavior of the character in the conversation. Explain the characte
 
 # Examples
 
-## Example 1:
-### Input: "Senior software engineer, guitar player, friendly, enthusiastic, struggles with communication, uses a lot of filler words, speaks at a fast pace, has a strong motivation to advance in career. Character acts not very understanding, continues to push back on the user's suggestions, shows low agency"
+Input: Senior software engineer, guitar player, friendly, enthusiastic, struggles with communication, uses a lot of filler words, speaks at a fast pace, has a strong motivation to advance in career. Character acts not very understanding, continues to push back on the user's suggestions, shows low agency
 
-### Output:
+Output:
 The character is a senior software engineer. The character has a strong excitement for his hobby of playing the guitar, likes to talk about music and playing the guitar.
 
 **Demeanor**:
