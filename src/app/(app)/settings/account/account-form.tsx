@@ -8,7 +8,8 @@ import {
   updateAvatarAction,
   updatePasswordAction,
 } from "@/app/actions/user-actions";
-import React, { useTransition, useState, useRef } from "react";
+import React, { useTransition, useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import type { User } from "@/data/user";
 import type { Usage } from "@/data/usage";
 import { ImageEdit } from "@/components/image-edit";
@@ -78,6 +79,14 @@ export function AccountForm({ user, usage }: AccountFormProps) {
   const [displayName, setDisplayName] = useState(user.displayName ?? "");
   const [showProjectDialog, setShowProjectDialog] = useState(false);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+
+  // Check if we should open the project dialog automatically
+  useEffect(() => {
+    if (searchParams.get("openProject") === "true") {
+      setShowProjectDialog(true);
+    }
+  }, [searchParams]);
 
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isPasswordUpdating, setIsPasswordUpdating] = useState(false);

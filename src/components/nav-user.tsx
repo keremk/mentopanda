@@ -70,7 +70,7 @@ export function NavUser({
 
   return (
     <SidebarMenu>
-      <SidebarMenuItem>
+      <SidebarMenuItem className="pl-1.5 pb-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
@@ -113,7 +113,7 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild className="flex items-center gap-2">
-                <Link href="/settings/account">
+                <Link href="/settings/account?openProject=true">
                   <FolderKanban className="h-4 w-4" />
                   <span className="truncate">{user.projectName}</span>
                 </Link>
