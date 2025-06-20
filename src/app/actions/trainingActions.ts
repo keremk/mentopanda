@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { revalidateTag } from "next/cache";
 import {
   getTrainingById,
   getTrainingWithProgress,
@@ -35,7 +36,12 @@ export async function getTrainingsWithEnrollmentAction() {
 
 export async function updateTrainingAction(training: UpdateTrainingInput) {
   const supabase = await createClient();
-  return await updateTraining(supabase, training);
+  const result = await updateTraining(supabase, training);
+
+  // Revalidate training cache
+  revalidateTag(`training-${training.id}`);
+
+  return result;
 }
 
 export async function createTrainingAction() {

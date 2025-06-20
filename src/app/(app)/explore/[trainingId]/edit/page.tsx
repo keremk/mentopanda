@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { getTrainingByIdForEditAction } from "@/app/actions/trainingActions";
 import { EditContainer } from "./edit-container";
-import { getCharactersActionCached } from "@/app/actions/character-actions";
+import { getCharactersAction } from "@/app/actions/character-actions";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
+
+export const dynamic = "force-dynamic";
 
 export default async function EditTrainingPage(props: {
   params: Promise<{ trainingId: number }>;
@@ -11,7 +13,7 @@ export default async function EditTrainingPage(props: {
   const user = await getCurrentUserAction();
   const [training, characters] = await Promise.all([
     getTrainingByIdForEditAction(params.trainingId),
-    getCharactersActionCached(user.currentProject.id),
+    getCharactersAction(user.currentProject.id),
   ]);
 
   if (!training) {
@@ -20,9 +22,6 @@ export default async function EditTrainingPage(props: {
 
   // Pass data as props to the client component
   return (
-    <EditContainer
-      initialTraining={training}
-      initialCharacters={characters}
-    />
+    <EditContainer initialTraining={training} initialCharacters={characters} />
   );
 }

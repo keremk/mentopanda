@@ -15,6 +15,11 @@ export const getCharactersActionCached = cache(async (projectId: number) => {
   return await getCharacters(supabase, projectId);
 });
 
+export async function getCharactersAction(projectId: number) {
+  const supabase = await createClient();
+  return await getCharacters(supabase, projectId);
+}
+
 export async function getCharacterDetailsAction(characterId: string) {
   const supabase = await createClient();
   return await getCharacterDetails(supabase, characterId);
