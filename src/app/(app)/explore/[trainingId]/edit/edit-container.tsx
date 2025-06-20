@@ -394,3 +394,5 @@ export function EditContainer({
     </TrainingEditProvider>
   );
 }
+
+export const dynamic = "force-dynamic";
