@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Search, GripVertical, PlayIcon } from "lucide-react";
+import { Search, PlayIcon } from "lucide-react";
 import { EnrollmentButton } from "@/components/enrollment-button";
 import { TrainingSummary } from "@/data/trainings";
 import { ThemedImage } from "@/components/themed-image";
@@ -33,9 +33,6 @@ export function EnrolledTrainingsCard({
     <Card className="w-full h-[310px] flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
         <CardTitle className="text-2xl font-bold">Enrolled Trainings</CardTitle>
-        <div className="drag-handle cursor-move">
-          <GripVertical size={20} className="text-gray-400" />
-        </div>
       </CardHeader>
       <CardContent className="h-[calc(100%-73px)] overflow-y-auto">
         <div className="space-y-4">

@@ -9,7 +9,6 @@ import {
   isMonday,
 } from "date-fns";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { GripVertical } from "lucide-react";
 import { getTrainingHeatmapDataAction } from "@/app/actions/history-actions";
 
 export async function TrainingSessionsHeatmap({
@@ -46,9 +45,6 @@ export async function TrainingSessionsHeatmap({
     <Card className="w-full h-full flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
         <CardTitle>Training Heatmap</CardTitle>
-        <div className="drag-handle cursor-move">
-          <GripVertical size={20} className="text-gray-400" />
-        </div>
       </CardHeader>
       <CardContent className="flex-grow p-4">
         <div className="flex justify-center">
