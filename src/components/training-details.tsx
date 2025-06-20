@@ -21,8 +21,6 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { useTheme } from "next-themes";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { getInitials } from "@/lib/utils";
 
 interface TrainingDetailsProps {
   training: TrainingWithProgress;
@@ -83,20 +81,6 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
         </div>
       </div>
       <div>
-        {training.previewUrl && (
-          <Accordion type="single" collapsible className="mb-4">
-            <AccordionItem value="video">
-              <AccordionTrigger>Video Introduction</AccordionTrigger>
-              <AccordionContent>
-                <video controls className="w-full">
-                  <source src={training.previewUrl} type="video/mp4" />
-                  Your browser does not support the video element.
-                </video>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        )}
-
         <div className="space-y-6">
           <h3 className="text-lg font-semibold">Modules</h3>
           {hasModules ? (
@@ -116,60 +100,8 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
                   </div>
 
                   <Accordion type="multiple" className="space-y-2">
-                    <AccordionItem value="instructions">
-                      <AccordionTrigger>Instructions</AccordionTrigger>
-                      <AccordionContent>
-                        <div className="text-sm text-muted-foreground">
-                          <MemoizedMarkdown
-                            content={
-                              module.instructions ||
-                              "No instructions available."
-                            }
-                          />
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="character">
-                      <AccordionTrigger>Character</AccordionTrigger>
-                      <AccordionContent>
-                        {module.characters?.[0] ? (
-                          <div className="flex items-start space-x-4">
-                            <Avatar>
-                              <AvatarImage
-                                src={
-                                  module.characters[0].avatarUrl ?? undefined
-                                }
-                                alt={module.characters[0].name}
-                              />
-                              <AvatarFallback>
-                                {getInitials(module.characters[0].name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <h5 className="font-semibold">
-                                {module.characters[0].name}
-                              </h5>
-                              <div className="text-sm text-muted-foreground">
-                                <MemoizedMarkdown
-                                  content={
-                                    module.characters[0].description ||
-                                    "No description available."
-                                  }
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No character assigned.
-                          </p>
-                        )}
-                      </AccordionContent>
-                    </AccordionItem>
-
                     {module.history.length > 0 && (
-                      <AccordionItem value="history">
+                      <AccordionItem value="history" className="border-b-0">
                         <AccordionTrigger>Practice History</AccordionTrigger>
                         <AccordionContent>
                           <Table>
