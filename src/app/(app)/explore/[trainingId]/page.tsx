@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTrainingByIdForEditAction } from "@/app/actions/trainingActions";
-import { Pencil } from "lucide-react";
+import { Pencil, ArrowLeft } from "lucide-react";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { ThemedImage } from "@/components/themed-image";
 import { CharacterDetailsView } from "@/components/character-details";
@@ -73,15 +73,23 @@ export default async function TrainingDetailsPage(props: {
   return (
     <div className="container mx-auto px-4 py-2">
       <div className="absolute top-0 right-0 p-4 z-10">
-        <Button asChild variant="ghost-brand">
-          <Link
-            href={`/explore/${training.id}/edit`}
-            className="flex items-center"
-          >
-            <Pencil className="mr-2 h-4 w-4" />
-            Edit
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="ghost-brand">
+            <Link href="/explore" className="flex items-center">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Link>
+          </Button>
+          <Button asChild variant="ghost-brand">
+            <Link
+              href={`/explore/${training.id}/edit`}
+              className="flex items-center"
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="mx-6">
