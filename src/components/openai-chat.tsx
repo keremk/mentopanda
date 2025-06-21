@@ -41,10 +41,58 @@ import {
   updateTranscriptionUsageAction,
 } from "@/app/actions/usage-actions";
 import { MODEL_NAMES } from "@/types/models";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { TranscriptEntry } from "@/types/chat-types";
 
 type ChatProps = {
   module: Module;
   currentUser: User;
+};
+
+type OpenAIChatContentProps = {
+  module: Module;
+  currentUser: User;
+};
+
+type LayoutProps = {
+  module: Module;
+  currentUser: User;
+  chatState: {
+    isConversationActive: boolean;
+    isTimeout: boolean;
+    showEndDialog: boolean;
+    showNoCreditsDialog: boolean;
+  };
+  setChatState: React.Dispatch<
+    React.SetStateAction<{
+      isConversationActive: boolean;
+      isTimeout: boolean;
+      showEndDialog: boolean;
+      showNoCreditsDialog: boolean;
+    }>
+  >;
+  audioRef: React.RefObject<HTMLAudioElement>;
+  sessionDurationMinutes: number;
+  HARD_TIMEOUT_MINUTES: number;
+  handleCountdownComplete: () => void;
+  handleDurationChange: (newDuration: number) => void;
+  rolePlayers: RolePlayer[];
+  handleToggleConversation: () => void;
+  isMuted: boolean;
+  unmuteMicrophone: () => void;
+  muteMicrophone: () => void;
+  handleSendMessage: (message: string) => void;
+  handleEndWithoutSaving: () => Promise<void>;
+  handleEndAndSave: () => Promise<void>;
+  transcriptEntries: TranscriptEntry[];
 };
 
 function createPrompt(modulePrompt: ModulePrompt) {
@@ -87,7 +135,285 @@ export default function OpenAIChat({ module, currentUser }: ChatProps) {
   );
 }
 
-function OpenAIChatContent({ module, currentUser }: ChatProps) {
+function DesktopLayout({
+  module,
+  chatState,
+  setChatState,
+  audioRef,
+  sessionDurationMinutes,
+  HARD_TIMEOUT_MINUTES,
+  handleCountdownComplete,
+  handleDurationChange,
+  rolePlayers,
+  handleToggleConversation,
+  isMuted,
+  unmuteMicrophone,
+  muteMicrophone,
+  handleSendMessage,
+  handleEndWithoutSaving,
+  handleEndAndSave,
+  transcriptEntries,
+}: LayoutProps) {
+  return (
+    <div className="grid lg:grid-cols-[max-content,1fr] grid-cols-1 gap-4 lg:gap-4 h-[calc(100vh-4rem)] grid-rows-[auto,1fr] lg:grid-rows-1 p-4">
+      <div className="mx-auto lg:mx-0">
+        <Card className="w-[448px] max-w-full">
+          <CardHeader className="pb-0">
+            <CountdownBar
+              initialMinutes={sessionDurationMinutes}
+              maxDurationMinutes={HARD_TIMEOUT_MINUTES}
+              onCountdownComplete={handleCountdownComplete}
+              onDurationChange={handleDurationChange}
+              isActive={chatState.isConversationActive}
+            />
+          </CardHeader>
+          <CardContent className="space-y-4 pb-6">
+            <audio ref={audioRef} className="hidden" />
+            <RolePlayersContainer
+              rolePlayers={rolePlayers}
+              activeRolePlayer={rolePlayers[0]?.name ?? ""}
+              isInConversation={chatState.isConversationActive}
+            >
+              <AudioVisualiser audioRef={audioRef} />
+            </RolePlayersContainer>
+            <div className="flex justify-center gap-4">
+              <Button
+                size="lg"
+                variant={chatState.isConversationActive ? "danger" : "brand"}
+                onClick={handleToggleConversation}
+                className="w-48"
+              >
+                {chatState.isConversationActive ? (
+                  <span className="flex items-center">
+                    <PhoneOff className="mr-2 h-4 w-4" />
+                    End Conversation
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <Phone className="mr-2 h-4 w-4" />
+                    Start Conversation
+                  </span>
+                )}
+              </Button>
+
+              <Button
+                size="lg"
+                variant="ghost-brand"
+                onClick={isMuted ? unmuteMicrophone : muteMicrophone}
+                className="w-48"
+              >
+                {isMuted ? (
+                  <>
+                    <MicOff className="mr-2 h-4 w-4" />
+                    Unmute Mic
+                  </>
+                ) : (
+                  <>
+                    <Mic className="mr-2 h-4 w-4" />
+                    Mute Mic
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <ChatTextEntry
+              onSendMessage={handleSendMessage}
+              isEnabled={chatState.isConversationActive}
+            />
+          </CardContent>
+          <EndChatDialog
+            isOpen={chatState.showEndDialog}
+            onOpenChange={(open) =>
+              setChatState((prev) => ({ ...prev, showEndDialog: open }))
+            }
+            onEndChat={handleEndWithoutSaving}
+            onEndAndSave={handleEndAndSave}
+            isTimeout={chatState.isTimeout}
+          />
+        </Card>
+      </div>
+
+      <div className="h-full overflow-hidden">
+        <Tabs defaultValue="instructions" className="h-full flex flex-col">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="instructions">Instructions</TabsTrigger>
+            <TabsTrigger value="transcript">Transcript</TabsTrigger>
+          </TabsList>
+          <TabsContent
+            value="instructions"
+            className="flex-1 mt-4 overflow-auto"
+          >
+            <Card>
+              <CardContent className="pt-6">
+                {module.instructions ? (
+                  <MemoizedMarkdown content={module.instructions} />
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    No instructions available.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="transcript" className="flex-1 mt-4 overflow-auto">
+            <Card>
+              <CardContent className="pt-6">
+                <TranscriptDisplay transcriptEntries={transcriptEntries} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+      <NoCreditsDialog
+        isOpen={chatState.showNoCreditsDialog}
+        onOpenChange={(open) =>
+          setChatState((prev) => ({ ...prev, showNoCreditsDialog: open }))
+        }
+        title="No Credits Available"
+        description="You don't have enough credits to start a conversation. Purchase additional credits to continue using AI features."
+      />
+    </div>
+  );
+}
+
+function MobileLayout({
+  module,
+  chatState,
+  setChatState,
+  audioRef,
+  sessionDurationMinutes,
+  HARD_TIMEOUT_MINUTES,
+  handleCountdownComplete,
+  handleDurationChange,
+  rolePlayers,
+  handleToggleConversation,
+  isMuted,
+  unmuteMicrophone,
+  muteMicrophone,
+  handleEndWithoutSaving,
+  handleEndAndSave,
+  transcriptEntries,
+}: LayoutProps) {
+  return (
+    <div className="flex flex-col h-screen p-4">
+      <div className="flex-grow flex flex-col items-center space-y-4">
+        <CountdownBar
+          initialMinutes={sessionDurationMinutes}
+          maxDurationMinutes={HARD_TIMEOUT_MINUTES}
+          onCountdownComplete={handleCountdownComplete}
+          onDurationChange={handleDurationChange}
+          isActive={chatState.isConversationActive}
+          className="w-full"
+        />
+        <audio ref={audioRef} className="hidden" />
+        <RolePlayersContainer
+          rolePlayers={rolePlayers}
+          activeRolePlayer={rolePlayers[0]?.name ?? ""}
+          isInConversation={chatState.isConversationActive}
+        >
+          <AudioVisualiser audioRef={audioRef} />
+        </RolePlayersContainer>
+        <div className="flex flex-col items-center justify-center gap-4 w-full">
+          <Button
+            size="lg"
+            variant={chatState.isConversationActive ? "danger" : "brand"}
+            onClick={handleToggleConversation}
+            className="w-full max-w-xs"
+          >
+            {chatState.isConversationActive ? (
+              <span className="flex items-center">
+                <PhoneOff className="mr-2 h-4 w-4" />
+                End Conversation
+              </span>
+            ) : (
+              <span className="flex items-center">
+                <Phone className="mr-2 h-4 w-4" />
+                Start Conversation
+              </span>
+            )}
+          </Button>
+          <Button
+            size="lg"
+            variant="ghost-brand"
+            onClick={isMuted ? unmuteMicrophone : muteMicrophone}
+            className="w-full max-w-xs"
+          >
+            {isMuted ? (
+              <>
+                <MicOff className="mr-2 h-4 w-4" />
+                Unmute Mic
+              </>
+            ) : (
+              <>
+                <Mic className="mr-2 h-4 w-4" />
+                Mute Mic
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+      <div className="fixed bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex justify-around gap-4">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="flex-1">
+                Instructions
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-4/5 flex flex-col">
+              <SheetHeader>
+                <SheetTitle>Instructions</SheetTitle>
+              </SheetHeader>
+              <ScrollArea className="flex-1 pr-4 -mr-4">
+                {module.instructions ? (
+                  <MemoizedMarkdown content={module.instructions} />
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    No instructions available.
+                  </p>
+                )}
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="flex-1">
+                Transcript
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-4/5 flex flex-col">
+              <SheetHeader>
+                <SheetTitle>Transcript</SheetTitle>
+              </SheetHeader>
+              <ScrollArea className="flex-1 pr-4 -mr-4">
+                <TranscriptDisplay transcriptEntries={transcriptEntries} />
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+      <EndChatDialog
+        isOpen={chatState.showEndDialog}
+        onOpenChange={(open) =>
+          setChatState((prev) => ({ ...prev, showEndDialog: open }))
+        }
+        onEndChat={handleEndWithoutSaving}
+        onEndAndSave={handleEndAndSave}
+        isTimeout={chatState.isTimeout}
+      />
+      <NoCreditsDialog
+        isOpen={chatState.showNoCreditsDialog}
+        onOpenChange={(open) =>
+          setChatState((prev) => ({ ...prev, showNoCreditsDialog: open }))
+        }
+        title="No Credits Available"
+        description="You don't have enough credits to start a conversation. Purchase additional credits to continue using AI features."
+      />
+    </div>
+  );
+}
+
+function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
   const audioRef = useRef<HTMLAudioElement>(
     null
   ) as React.RefObject<HTMLAudioElement>;
@@ -404,126 +730,32 @@ function OpenAIChatContent({ module, currentUser }: ChatProps) {
     [module.modulePrompt.characters]
   );
 
-  return (
-    <div className="grid lg:grid-cols-[max-content,1fr] grid-cols-1 gap-4 lg:gap-4 h-[calc(100vh-4rem)] grid-rows-[auto,1fr] lg:grid-rows-1 p-4">
-      <div className="mx-auto lg:mx-0">
-        <Card className="w-[448px] max-w-full">
-          <CardHeader className="pb-0">
-            <CountdownBar
-              initialMinutes={sessionDurationMinutes}
-              maxDurationMinutes={HARD_TIMEOUT_MINUTES}
-              onCountdownComplete={handleCountdownComplete}
-              onDurationChange={handleDurationChange}
-              isActive={chatState.isConversationActive}
-            />
-          </CardHeader>
-          <CardContent className="space-y-4 pb-6">
-            <audio ref={audioRef} className="hidden" />
-            <RolePlayersContainer
-              rolePlayers={rolePlayers}
-              activeRolePlayer={rolePlayers[0]?.name ?? ""}
-              isInConversation={chatState.isConversationActive}
-            >
-              <AudioVisualiser audioRef={audioRef} />
-            </RolePlayersContainer>
-            <div className="flex justify-center gap-4">
-              <Button
-                size="lg"
-                variant={chatState.isConversationActive ? "danger" : "brand"}
-                onClick={handleToggleConversation}
-                className="w-48"
-              >
-                {chatState.isConversationActive ? (
-                  <span className="flex items-center">
-                    <PhoneOff className="mr-2 h-4 w-4" />
-                    End Conversation
-                  </span>
-                ) : (
-                  <span className="flex items-center">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Start Conversation
-                  </span>
-                )}
-              </Button>
+  const isMobile = useIsMobile();
 
-              <Button
-                size="lg"
-                variant="ghost-brand"
-                onClick={isMuted ? unmuteMicrophone : muteMicrophone}
-                className="w-48"
-              >
-                {isMuted ? (
-                  <>
-                    <MicOff className="mr-2 h-4 w-4" />
-                    Unmute Mic
-                  </>
-                ) : (
-                  <>
-                    <Mic className="mr-2 h-4 w-4" />
-                    Mute Mic
-                  </>
-                )}
-              </Button>
-            </div>
+  const layoutProps: LayoutProps = {
+    module,
+    currentUser,
+    chatState,
+    setChatState,
+    audioRef,
+    sessionDurationMinutes,
+    HARD_TIMEOUT_MINUTES,
+    handleCountdownComplete,
+    handleDurationChange,
+    rolePlayers,
+    handleToggleConversation,
+    isMuted,
+    unmuteMicrophone,
+    muteMicrophone,
+    handleSendMessage,
+    handleEndWithoutSaving,
+    handleEndAndSave,
+    transcriptEntries,
+  };
 
-            <ChatTextEntry
-              onSendMessage={handleSendMessage}
-              isEnabled={chatState.isConversationActive}
-            />
-          </CardContent>
-          <EndChatDialog
-            isOpen={chatState.showEndDialog}
-            onOpenChange={(open) =>
-              setChatState((prev) => ({ ...prev, showEndDialog: open }))
-            }
-            onEndChat={handleEndWithoutSaving}
-            onEndAndSave={handleEndAndSave}
-            isTimeout={chatState.isTimeout}
-          />
-        </Card>
-      </div>
-
-      <div className="h-full overflow-hidden">
-        <Tabs defaultValue="instructions" className="h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="instructions">Instructions</TabsTrigger>
-            <TabsTrigger value="transcript">Transcript</TabsTrigger>
-          </TabsList>
-          <TabsContent
-            value="instructions"
-            className="flex-1 mt-4 overflow-auto"
-          >
-            <Card>
-              <CardContent className="pt-6">
-                {module.instructions ? (
-                  <MemoizedMarkdown content={module.instructions} />
-                ) : (
-                  <p className="text-muted-foreground text-sm">
-                    No instructions available.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="transcript" className="flex-1 mt-4 overflow-auto">
-            <Card>
-              <CardContent className="pt-6">
-                <TranscriptDisplay transcriptEntries={transcriptEntries} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Move dialogs outside of any containers that might affect their rendering */}
-      <NoCreditsDialog
-        isOpen={chatState.showNoCreditsDialog}
-        onOpenChange={(open) =>
-          setChatState((prev) => ({ ...prev, showNoCreditsDialog: open }))
-        }
-        title="No Credits Available"
-        description="You don't have enough credits to start a conversation. Purchase additional credits to continue using AI features."
-      />
-    </div>
+  return isMobile ? (
+    <MobileLayout {...layoutProps} />
+  ) : (
+    <DesktopLayout {...layoutProps} />
   );
 }
