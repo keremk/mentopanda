@@ -249,7 +249,7 @@ export function FeaturesSection() {
         <div className="text-center mb-16">
           <div className="text-brand font-medium mb-4">FEATURES</div>
           <h2 className="text-4xl font-bold mb-16">
-            User Flows and Navigational Structures
+            Create, Practice, and Perfect Communication Skills
           </h2>
 
           {/* Mobile Layout */}
