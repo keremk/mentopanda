@@ -27,7 +27,7 @@ const generateMetaCharacterPrompts = (
 
   const characterPrompt = `
 # Instructions:
-${characterPrompts[selectedOption.id].metaPrompt || basePrompt}
+${characterPrompts[selectedOption.id]?.metaPrompt || basePrompt}
 
 # Currently available character information:
 Character Name: ${characterContext?.name}
@@ -46,7 +46,7 @@ const generateMetaModulePrompts = (
 
   const modulePrompt = `
 # Instructions:
-${modulePrompts[selectedOption.id].metaPrompt || basePrompt}
+${modulePrompts[selectedOption.id]?.metaPrompt || basePrompt}
 
 # Currently available module information:
 Training Title: ${trainingContext?.training.title}
@@ -69,7 +69,7 @@ const generateMetaTrainingPrompts = (
 
   const trainingPrompt = `
 # Instructions:
-${trainingPrompts[selectedOption.id].metaPrompt || basePrompt}
+${trainingPrompts[selectedOption.id]?.metaPrompt || basePrompt}
 
 # Currently available training information:
 Training Title: ${trainingContext?.training.title}
