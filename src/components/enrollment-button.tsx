@@ -8,9 +8,10 @@ import {
 } from "@/app/actions/enrollment-actions";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PlusIcon, MinusIcon } from "lucide-react";
+import { PlusIcon, LogOut } from "lucide-react";
 import { UnenrollConfirmDialog } from "./unenroll-confirm-dialog";
 import { logger } from "@/lib/logger";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EnrollmentButtonProps {
   trainingId: number;
@@ -20,6 +21,7 @@ interface EnrollmentButtonProps {
   onUnenroll?: (trainingId: number) => void;
   onOptimisticEnrollmentChange?: (enrolled: boolean) => void;
   trainingTitle?: string;
+  alwaysShowButtonTitle?: boolean;
 }
 
 export function EnrollmentButton({
@@ -30,11 +32,13 @@ export function EnrollmentButton({
   onUnenroll,
   onOptimisticEnrollmentChange,
   trainingTitle,
+  alwaysShowButtonTitle = true,
 }: EnrollmentButtonProps) {
   const [enrolled, setEnrolled] = useState(initialEnrollmentStatus ?? false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const router = useRouter();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (initialEnrollmentStatus !== undefined) {
@@ -90,6 +94,8 @@ export function EnrollmentButton({
     }
   };
 
+  const showText = !isMobile || alwaysShowButtonTitle;
+
   return (
     <>
       <Button
@@ -99,11 +105,11 @@ export function EnrollmentButton({
         disabled={isLoading}
       >
         {enrolled ? (
-          <MinusIcon className="mr-2 h-4 w-4" />
+          <LogOut className={showText ? "mr-2 h-4 w-4" : "h-4 w-4"} />
         ) : (
-          <PlusIcon className="mr-2 h-4 w-4" />
+          <PlusIcon className={showText ? "mr-2 h-4 w-4" : "h-4 w-4"} />
         )}
-        {enrolled ? "Leave" : "Join"}
+        {showText && (enrolled ? "Leave" : "Join")}
       </Button>
 
       <UnenrollConfirmDialog

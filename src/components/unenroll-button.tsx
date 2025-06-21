@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { UnenrollConfirmDialog } from "./unenroll-confirm-dialog";
-import { TrashIcon } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { unenrollFromTrainingAction } from "@/app/actions/enrollment-actions";
 import { useState } from "react";
@@ -75,7 +75,7 @@ export function UnenrollButton({
         disabled={disabled || !trainingId || isLoading}
         onClick={() => setIsOpen(true)}
       >
-        <TrashIcon className="h-4 w-4 mr-1" />
+        <LogOut className="h-4 w-4 mr-1" />
         {label}
       </Button>
 

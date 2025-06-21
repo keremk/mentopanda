@@ -79,7 +79,7 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
               </Button>
             )}
             <UnenrollButton
-              label="Unenroll"
+              label=" Leave"
               trainingId={training.id}
               trainingTitle={training.title}
               disabled={!training}

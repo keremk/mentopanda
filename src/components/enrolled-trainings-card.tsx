@@ -9,6 +9,7 @@ import { TrainingSummary } from "@/data/trainings";
 import { ThemedImage } from "@/components/themed-image";
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type EnrolledTrainingsCardProps = {
   trainings: TrainingSummary[];
@@ -19,6 +20,7 @@ export function EnrolledTrainingsCard({
 }: EnrolledTrainingsCardProps) {
   const [displayedTrainings, setDisplayedTrainings] =
     useState<TrainingSummary[]>(initialTrainings);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     setDisplayedTrainings(initialTrainings);
@@ -63,8 +65,10 @@ export function EnrolledTrainingsCard({
                   <TableCell className="text-right p-2">
                     <Button variant="ghost-brand" asChild>
                       <Link href={`/enrollments/${training.id}`}>
-                        <PlayIcon className="mr-2 h-4 w-4" />
-                        Train
+                        <PlayIcon
+                          className={!isMobile ? "mr-2 h-4 w-4" : "h-4 w-4"}
+                        />
+                        {!isMobile && "Train"}
                       </Link>
                     </Button>
                   </TableCell>
@@ -74,6 +78,7 @@ export function EnrolledTrainingsCard({
                       trainingId={training.id}
                       isEnrolled={true}
                       onUnenroll={handleUnenroll}
+                      alwaysShowButtonTitle={false}
                     />
                   </TableCell>
                 </TableRow>
