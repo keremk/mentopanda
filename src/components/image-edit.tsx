@@ -31,6 +31,7 @@ type ImageEditProps = {
   aspectRatio: ImageAspectRatio;
   allowedFileTypes?: string[];
   maxFileSize?: number;
+  title?: string;
 
   // Callbacks
   onImageChange: (
@@ -63,6 +64,7 @@ export function ImageEdit({
   aspectRatio,
   allowedFileTypes,
   maxFileSize,
+  title,
   // Callbacks
   onImageChange,
   // Styling & Layout
@@ -276,6 +278,7 @@ export function ImageEdit({
         aspectRatio={aspectRatio}
         onImageGenerated={handleGenerationComplete}
         currentImageUrl={currentImageUrl}
+        title={title}
       />
     </div>
   );

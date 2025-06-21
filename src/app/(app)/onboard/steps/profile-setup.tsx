@@ -98,6 +98,7 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
               buttonSize="sm"
               buttonVariant="ghost-brand"
               showButtonLabels={false}
+              title="Update Your Avatar"
             />
           </div>
 

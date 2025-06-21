@@ -77,6 +77,7 @@ export function EditTrainingForm() {
             imageContainerClassName="aspect-video"
             buttonSize="default"
             buttonSpacing="mt-3"
+            title="Update Training Image"
           />
         </div>
 

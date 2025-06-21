@@ -54,6 +54,7 @@ type ImageGenerationDialogProps = {
   onImageGenerated: (url: string, path: string) => void;
   aspectRatio: ImageAspectRatio;
   currentImageUrl?: string | null;
+  title?: string;
 };
 
 const imageStyles: { value: string; label: string }[] = [
@@ -77,6 +78,7 @@ export function ImageGenerationDialog({
   onImageGenerated,
   aspectRatio,
   currentImageUrl,
+  title = "Generate Cover Image",
 }: ImageGenerationDialogProps) {
   // TEMPORARY: Set to true to re-enable "Use Current" functionality
   const ENABLE_USE_CURRENT = false;
@@ -114,6 +116,16 @@ export function ImageGenerationDialog({
     if (aspectRatio === "landscape") return 16 / 9;
     if (aspectRatio === "square") return 1;
     return 16 / 9; // Default fallback if needed
+  }, [aspectRatio]);
+
+  const imageContainerClasses = useMemo(() => {
+    const baseClasses = "w-full mx-auto";
+    if (aspectRatio === "landscape") {
+      // Wider for landscape images to give them more presence
+      return `${baseClasses} max-w-[20rem] sm:max-w-[22rem] md:max-w-[24rem] lg:max-w-[32rem] xl:max-w-[40rem]`;
+    }
+    // Use user's preferred, more constrained sizes for square images
+    return `${baseClasses} max-w-[14rem] sm:max-w-[16rem] md:max-w-[16rem] lg:max-w-[18rem]`;
   }, [aspectRatio]);
 
   // Determine bucket and path based on contextType
@@ -699,16 +711,16 @@ export function ImageGenerationDialog({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[600px] grid grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90vh]">
+        <DialogContent className="grid grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90vh]">
           <DialogHeader className="p-6 pb-4">
-            <DialogTitle>Generate Cover Image</DialogTitle>
+            <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
-              Create AI-generated images with customizable styles and options
+              Create AI-generated images with customizable styles
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-rows-[auto_minmax(0,1fr)] gap-4 overflow-y-auto px-6 pb-4">
-            <div className="image-container-enhanced">
+            <div className={imageContainerClasses}>
               <AspectRatio
                 ratio={numericAspectRatio}
                 className="bg-muted rounded-lg relative overflow-hidden"

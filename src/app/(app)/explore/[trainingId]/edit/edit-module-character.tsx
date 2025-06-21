@@ -211,6 +211,7 @@ export function EditModuleCharacter() {
                   buttonSize="sm"
                   buttonVariant="ghost-brand"
                   showButtonLabels={false}
+                  title="Update Character Avatar"
                 />
               </div>
               <div className="flex-1 space-y-4">

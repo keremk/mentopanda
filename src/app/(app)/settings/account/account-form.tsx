@@ -224,6 +224,7 @@ export function AccountForm({ user, usage }: AccountFormProps) {
             buttonSpacing="mt-3"
             buttonContainerClassName="w-full flex justify-center"
             showButtonLabels={true}
+            title="Update Your Avatar"
           />
         </div>
       </div>
