@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, type LucideIcon } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 import {
   Home,
   BookOpen,
@@ -13,21 +13,14 @@ import {
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
   SidebarGroup,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import type { NavItem } from "@/types/nav";
 import { AppPermission } from "@/data/user";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Icon mapping on the client side
 const iconMap: Record<string, LucideIcon> = {
@@ -64,6 +57,7 @@ export const navItems: NavItem[] = [
     url: "/team",
     iconKey: "users",
     permissions: ["project.member.manage"],
+    hideOnMobile: true,
   },
   {
     title: "Settings",
@@ -81,6 +75,7 @@ export const navItems: NavItem[] = [
 
 export function NavMain({ permissions }: { permissions: AppPermission[] }) {
   const pathname = usePathname();
+  const isMobile = useIsMobile();
   // Helper function to check if a path is active
   const isActivePath = (itemUrl: string) => {
     // Exact match for home page
@@ -96,6 +91,9 @@ export function NavMain({ permissions }: { permissions: AppPermission[] }) {
   };
 
   const availableItems = navItems.filter((item) => {
+    if (isMobile && item.hideOnMobile) {
+      return false;
+    }
     if (item.permissions) {
       return item.permissions.some((permission) =>
         permissions.includes(permission)
@@ -108,61 +106,8 @@ export function NavMain({ permissions }: { permissions: AppPermission[] }) {
     <SidebarGroup>
       <SidebarMenu>
         {availableItems.map((item) => {
-          const hasSubItems = item.items && item.items.length > 0;
           const Icon = iconMap[item.iconKey];
           const isActive = isActivePath(item.url) || hasActiveChild(item.items);
-
-          if (hasSubItems) {
-            return (
-              <Collapsible
-                key={item.title}
-                asChild
-                defaultOpen={isActive}
-                className="group/collapsible"
-              >
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      tooltip={item.title}
-                      className={isActive ? "text-sidebar-foreground" : "text-sidebar-foreground/60"}
-                    >
-                      {Icon && (
-                        <Icon
-                          className={
-                            isActive
-                              ? "text-brand"
-                              : "text-sidebar-foreground/60"
-                          }
-                        />
-                      )}
-                      <span>{item.title}</span>
-                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {item.items?.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton
-                            asChild
-                            className={
-                              isActivePath(subItem.url)
-                                ? "text-brand"
-                                : "text-sidebar-foreground/60"
-                            }
-                          >
-                            <Link href={subItem.url}>
-                              <span>{subItem.title}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            );
-          }
 
           return (
             <SidebarMenuItem key={item.title}>
@@ -170,15 +115,15 @@ export function NavMain({ permissions }: { permissions: AppPermission[] }) {
                 <Link
                   href={item.url}
                   className={`flex items-center ${
-                    isActive ? "text-sidebar-foreground" : "text-sidebar-foreground/60"
+                    isActive
+                      ? "text-sidebar-foreground"
+                      : "text-sidebar-foreground/60"
                   }`}
                 >
                   {Icon && (
                     <Icon
                       className={
-                        isActive
-                          ? "text-brand"
-                          : "text-sidebar-foreground/60"
+                        isActive ? "text-brand" : "text-sidebar-foreground/60"
                       }
                     />
                   )}
