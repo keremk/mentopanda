@@ -6,6 +6,7 @@ import {
   updateUserProfile,
   updateUserAvatar,
   updateUserOnboardingStatus,
+  checkOnboardingStatus,
   OnboardingStatus,
 } from "@/data/user";
 import { z } from "zod";
@@ -109,6 +110,20 @@ export async function updateOnboardingStatusAction(data: {
   }
 }
 
+/**
+ * Get the onboarding status of a user
+ */
+export async function checkOnboardingStatusAction(
+  userId: string
+): Promise<OnboardingStatus | null> {
+  try {
+    const supabase = await createClient();
+    return await checkOnboardingStatus(supabase, userId);
+  } catch (error) {
+    logger.error("Error checking onboarding status:", error);
+    return null;
+  }
+}
 
 // --- New Password Update Action ---
 export async function updatePasswordAction(formData: FormData) {

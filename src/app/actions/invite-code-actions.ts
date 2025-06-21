@@ -14,6 +14,7 @@ import {
 import { createClient } from "@/utils/supabase/server";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { cookies } from "next/headers";
 
 const createInviteCodeSchema = z.object({
   code: z.string().min(1, "Code is required").optional(),
@@ -141,6 +142,39 @@ export async function deleteInviteCodesAction(ids: number[]): Promise<void> {
   } catch (error) {
     logger.error("Failed to delete invite codes", error);
     throw new Error("Failed to delete invite codes");
+  }
+}
+
+/**
+ * Validate an invite code and set cookie if valid (can be called by non-authenticated users)
+ */
+export async function validateInviteCodeWithCookieAction(
+  code: string
+): Promise<ValidateInviteCodeResult> {
+  try {
+    const validated = validateInviteCodeSchema.parse({ code });
+    const supabase = await createClient();
+
+    const result = await validateInviteCode(supabase, validated.code);
+
+    // If validation successful, set secure cookie
+    if (result.isValid) {
+      const cookieStore = await cookies();
+      cookieStore.set("inviteValidated", "true", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 30, // 30 minutes
+        path: "/",
+      });
+
+      logger.debug("Set invite validation cookie for successful validation");
+    }
+
+    return result;
+  } catch (error) {
+    logger.error("Failed to validate invite code", error);
+    throw new Error("Failed to validate invite code");
   }
 }
 

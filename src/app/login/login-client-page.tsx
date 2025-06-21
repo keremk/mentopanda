@@ -11,10 +11,7 @@ import { useState, useEffect } from "react";
 import { getLastAuthProvider } from "@/lib/store-auth-provider";
 import { useSearchParams } from "next/navigation";
 import { InviteCodeValidation } from "@/components/invite-code-validation";
-import {
-  getValidatedInviteCode,
-  clearValidatedInviteCode,
-} from "@/lib/invite-code-session";
+// Remove sessionStorage dependencies - now using cookies
 
 export function LoginClientPage() {
   const searchParams = useSearchParams();
@@ -31,16 +28,8 @@ export function LoginClientPage() {
   useEffect(() => {
     setLastProvider(getLastAuthProvider());
 
-    // Check if invite code is already validated (from sessionStorage)
-    if (isSignUp) {
-      const storedInviteCode = getValidatedInviteCode();
-      if (storedInviteCode) {
-        setValidatedInviteCode(storedInviteCode);
-        setIsInviteCodeValidated(true);
-      }
-    } else {
-      // Clear validated invite code when not in signup mode
-      clearValidatedInviteCode();
+    // Reset invite validation state based on mode
+    if (!isSignUp) {
       setIsInviteCodeValidated(false);
       setValidatedInviteCode(null);
     }
@@ -188,10 +177,6 @@ export function LoginClientPage() {
               <Link
                 href="/login?mode=signup"
                 className="underline hover:text-brand transition-colors"
-                onClick={() => {
-                  // Clear any existing validated invite code when switching to signup
-                  clearValidatedInviteCode();
-                }}
               >
                 Sign up
               </Link>

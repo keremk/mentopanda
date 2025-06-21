@@ -167,6 +167,33 @@ export async function updateUserOnboardingStatus(
   return await getCurrentUserInfo(supabase);
 }
 
+/**
+ * Check the onboarding status of a user
+ */
+export async function checkOnboardingStatus(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<OnboardingStatus | null> {
+  try {
+    // Get user profile to check onboarding status
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("onboarding")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      logger.debug(`Profile not found or error for user ${userId}`);
+      return null;
+    }
+
+    return profile.onboarding as OnboardingStatus;
+  } catch (error) {
+    logger.error(`Error checking onboarding status for user ${userId}:`, error);
+    return null;
+  }
+}
+
 export async function hasPermission({
   supabase,
   permission,

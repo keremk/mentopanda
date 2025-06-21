@@ -4,11 +4,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { validateInviteCodeAction } from "@/app/actions/invite-code-actions";
+import { validateInviteCodeWithCookieAction } from "@/app/actions/invite-code-actions";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { InfoIcon, CheckCircleIcon } from "lucide-react";
-import { storeValidatedInviteCode } from "@/lib/invite-code-session";
 import { logger } from "@/lib/logger";
 import { WaitlistDialog } from "@/components/waitlist-dialog";
 
@@ -36,16 +35,15 @@ export function InviteCodeValidation({
     setError(null);
 
     try {
-      const validation = await validateInviteCodeAction(inviteCode.trim());
+      const validation = await validateInviteCodeWithCookieAction(
+        inviteCode.trim()
+      );
 
       if (validation.isValid) {
         toast({
           title: "Invite code validated!",
           description: "You can now proceed with creating your account.",
         });
-
-        // Store the validated invite code for the signup process
-        storeValidatedInviteCode(inviteCode.trim());
 
         onValidationSuccess(inviteCode.trim());
       } else {

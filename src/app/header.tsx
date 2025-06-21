@@ -187,9 +187,6 @@ export function Header() {
           </NavigationMenu>
           <div className="hidden lg:flex items-center gap-4">
             <ThemeToggle />
-            <Button variant="outline" asChild>
-              <Link href="/login?mode=signin">Login</Link>
-            </Button>
             <Button
               className="bg-brand hover:bg-brand-hover text-brand-foreground"
               asChild
@@ -198,14 +195,6 @@ export function Header() {
             </Button>
           </div>
           <div className="lg:hidden flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="px-3 text-sm"
-              asChild
-            >
-              <Link href="/login?mode=signin">Login</Link>
-            </Button>
             <Button
               size="sm"
               className="bg-brand hover:bg-brand-hover text-brand-foreground px-3 text-sm"
