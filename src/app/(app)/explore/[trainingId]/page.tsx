@@ -80,7 +80,7 @@ export default async function TrainingDetailsPage(props: {
               Back
             </Link>
           </Button>
-          <Button asChild variant="ghost-brand">
+          <Button asChild variant="ghost-brand" className="hidden md:flex">
             <Link
               href={`/explore/${training.id}/edit`}
               className="flex items-center"
