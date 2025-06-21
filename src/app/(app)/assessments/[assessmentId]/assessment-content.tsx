@@ -217,11 +217,11 @@ export default function AssessmentContent({
         </div>
 
         {isAssessmentCreated && !error && (
-          <div className="mt-6 flex items-center justify-between rounded-lg border bg-card p-4 shadow-sm">
+          <div className="mt-6 flex flex-col items-start gap-4 rounded-lg border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               Rate this assessment:
             </p>
-            <div className="flex items-center space-x-2">
+            <div className="flex w-full items-center justify-end space-x-2 sm:w-auto">
               <Button
                 variant={feedbackGiven === "up" ? "default" : "outline"}
                 size="icon"
@@ -248,7 +248,7 @@ export default function AssessmentContent({
                 variant="outline"
                 size="sm"
                 onClick={handleRedoAssessment}
-                className="ml-4"
+                className="ml-auto"
                 disabled={hasCreditError}
               >
                 <RotateCw className="mr-2 h-4 w-4" />

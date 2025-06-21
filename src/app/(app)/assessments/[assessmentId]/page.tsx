@@ -55,8 +55,8 @@ export default async function AssessmentPage(props: Props) {
   }
 
   return (
-    <div className="container mx-auto py-2">
-      <Tabs defaultValue="assessment" className="w-full max-w-4xl mx-auto">
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <Tabs defaultValue="assessment" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="assessment">Assessment</TabsTrigger>
           <TabsTrigger value="transcript">Transcript</TabsTrigger>
