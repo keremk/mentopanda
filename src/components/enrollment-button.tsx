@@ -9,13 +9,7 @@ import {
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PlusIcon, MinusIcon } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { UnenrollConfirmDialog } from "./unenroll-confirm-dialog";
 import { logger } from "@/lib/logger";
 
 interface EnrollmentButtonProps {
@@ -25,6 +19,7 @@ interface EnrollmentButtonProps {
   variant?: "ghost-brand" | "brand";
   onUnenroll?: (trainingId: number) => void;
   onOptimisticEnrollmentChange?: (enrolled: boolean) => void;
+  trainingTitle?: string;
 }
 
 export function EnrollmentButton({
@@ -34,6 +29,7 @@ export function EnrollmentButton({
   variant = "ghost-brand",
   onUnenroll,
   onOptimisticEnrollmentChange,
+  trainingTitle,
 }: EnrollmentButtonProps) {
   const [enrolled, setEnrolled] = useState(initialEnrollmentStatus ?? false);
   const [isLoading, setIsLoading] = useState(false);
@@ -110,24 +106,13 @@ export function EnrollmentButton({
         {enrolled ? "Leave" : "Join"}
       </Button>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Unenrollment</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to leave this training?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="ghost-danger" onClick={() => handleEnrollment()}>
-              Leave
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <UnenrollConfirmDialog
+        isOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        trainingTitle={trainingTitle || "this training"}
+        onConfirm={handleEnrollment}
+        isLoading={isLoading}
+      />
     </>
   );
 }

@@ -1,17 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { UnenrollConfirmDialog } from "./unenroll-confirm-dialog";
 import { TrashIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { unenrollFromTrainingAction } from "@/app/actions/enrollment-actions";
@@ -24,6 +14,8 @@ type UnenrollButtonProps = {
   trainingTitle?: string;
   nextTrainingId?: number;
   disabled?: boolean;
+  label?: string;
+  className?: string;
 };
 
 export function UnenrollButton({
@@ -31,6 +23,8 @@ export function UnenrollButton({
   trainingTitle,
   nextTrainingId,
   disabled,
+  label = "Remove",
+  className,
 }: UnenrollButtonProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -73,34 +67,25 @@ export function UnenrollButton({
   }
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger asChild>
-        <Button
-          variant="ghost-danger"
-          size="sm"
-          className="flex-1"
-          disabled={disabled || !trainingId || isLoading}
-        >
-          <TrashIcon className="h-4 w-4 mr-1" />
-          Remove
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Unenroll from training</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to unenroll from &quot;{trainingTitle}&quot;?
-            This will remove your access to this training and all associated
-            progress.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleUnenroll} disabled={isLoading}>
-            {isLoading ? "Unenrolling..." : "Unenroll"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <Button
+        variant="ghost-danger"
+        size={className ? undefined : "sm"}
+        className={`flex-1 ${className ? `rounded-md px-3 ${className}` : ""}`}
+        disabled={disabled || !trainingId || isLoading}
+        onClick={() => setIsOpen(true)}
+      >
+        <TrashIcon className="h-4 w-4 mr-1" />
+        {label}
+      </Button>
+
+      <UnenrollConfirmDialog
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+        trainingTitle={trainingTitle}
+        onConfirm={handleUnenroll}
+        isLoading={isLoading}
+      />
+    </>
   );
 }

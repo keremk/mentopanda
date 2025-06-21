@@ -21,6 +21,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { useTheme } from "next-themes";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
+import { UnenrollButton } from "./unenroll-button";
 
 interface TrainingDetailsProps {
   training: TrainingWithProgress;
@@ -72,6 +73,13 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
               No Modules Available
             </Button>
           )}
+          <UnenrollButton
+            label="Unenroll"
+            trainingId={training.id}
+            trainingTitle={training.title}
+            disabled={!training}
+            className="h-14"
+          />
         </div>
         <div>
           <h1 className="text-2xl font-bold">{training.title}</h1>
