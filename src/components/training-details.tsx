@@ -46,42 +46,50 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-row items-start space-x-4">
-        <div className="flex flex-col space-y-4">
-          <Image
-            src={training.imageUrl || fallbackImage}
-            alt={`${training.title} cover`}
-            width={200}
-            height={200}
-            className="rounded-lg"
-            sizes="200px"
-          />
-          {hasModules ? (
-            randomModuleId ? (
-              <Link href={`/simulation/${randomModuleId}`}>
-                <Button className="w-full" variant="brand">
-                  Start Random Module
+      {/* Mobile-first responsive layout */}
+      <div className="flex flex-col space-y-6 md:flex-row md:items-start md:space-x-6 md:space-y-0">
+        {/* Image and buttons section */}
+        <div className="flex flex-col space-y-4 md:flex-shrink-0">
+          <div className="w-full max-w-xs mx-auto md:mx-0 md:w-40">
+            <Image
+              src={training.imageUrl || fallbackImage}
+              alt={`${training.title} cover`}
+              width={200}
+              height={200}
+              className="w-full h-auto rounded-lg"
+              sizes="(max-width: 768px) 288px, 160px"
+            />
+          </div>
+          <div className="flex flex-col space-y-2 w-full max-w-xs mx-auto md:mx-0 md:w-40">
+            {hasModules ? (
+              randomModuleId ? (
+                <Link href={`/simulation/${randomModuleId}`}>
+                  <Button className="w-full" variant="brand">
+                    Start Random Module
+                  </Button>
+                </Link>
+              ) : (
+                <Button disabled className="w-full">
+                  All Modules Completed
                 </Button>
-              </Link>
+              )
             ) : (
               <Button disabled className="w-full">
-                All Modules Completed
+                No Modules Available
               </Button>
-            )
-          ) : (
-            <Button disabled className="w-full">
-              No Modules Available
-            </Button>
-          )}
-          <UnenrollButton
-            label="Unenroll"
-            trainingId={training.id}
-            trainingTitle={training.title}
-            disabled={!training}
-            className="h-14"
-          />
+            )}
+            <UnenrollButton
+              label="Unenroll"
+              trainingId={training.id}
+              trainingTitle={training.title}
+              disabled={!training}
+              className="h-14"
+            />
+          </div>
         </div>
-        <div>
+
+        {/* Title and description section */}
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold">{training.title}</h1>
           <div className="my-4 text-muted-foreground">
             <MemoizedMarkdown content={training.description || ""} />
@@ -95,18 +103,27 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
             training.modules.map((module) => (
               <div key={module.id} className="border rounded-lg p-4">
                 <div className="flex flex-col space-y-4">
-                  <div className="flex justify-between items-center">
+                  {/* Module title on top */}
+                  <div>
                     <h4 className="text-lg font-semibold">{module.title}</h4>
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm text-muted-foreground">
-                        Practices: {module.practiceCount}
-                      </span>
-                      <Link href={`/simulation/${module.id}`}>
-                        <Button variant="ghost-brand">Start Module</Button>
-                      </Link>
-                    </div>
                   </div>
 
+                  {/* Practices count and start button directly under title */}
+                  <div className="flex flex-col space-y-3 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
+                    <span className="text-sm text-muted-foreground">
+                      Practices: {module.practiceCount}
+                    </span>
+                    <Link href={`/simulation/${module.id}`}>
+                      <Button
+                        variant="ghost-brand"
+                        className="w-full sm:w-auto"
+                      >
+                        Start Module
+                      </Button>
+                    </Link>
+                  </div>
+
+                  {/* Practice history accordion */}
                   <Accordion type="multiple" className="space-y-2">
                     {module.history.length > 0 && (
                       <AccordionItem value="history" className="border-b-0">
@@ -115,9 +132,11 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead>Practice #</TableHead>
-                                <TableHead>Completed</TableHead>
-                                <TableHead className="text-right">
+                                <TableHead className="text-center">#</TableHead>
+                                <TableHead className="text-center">
+                                  Date
+                                </TableHead>
+                                <TableHead className="text-center">
                                   Actions
                                 </TableHead>
                               </TableRow>
@@ -149,7 +168,7 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
                                         href={`/assessments/${practice.id}`}
                                       >
                                         <Button variant="outline" size="sm">
-                                          View Assessment
+                                          View
                                         </Button>
                                       </Link>
                                     </TableCell>
