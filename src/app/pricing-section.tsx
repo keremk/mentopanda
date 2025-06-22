@@ -215,7 +215,7 @@ function PricingCard({
                 ${isYearly ? tier.yearlyPrice : tier.monthlyPrice}
               </div>
               <div className="text-sm text-muted-foreground">
-                / {isYearly ? "year (billed annually)" : "month"}
+                / {isYearly ? "month (billed annually)" : "month"}
               </div>
             </>
           ) : (
