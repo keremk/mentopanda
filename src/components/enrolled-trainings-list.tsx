@@ -22,14 +22,14 @@ export function EnrolledTrainingsList({
       : "/placeholder-training.svg";
 
   return (
-    <div className="w-20 sm:w-64 border-r border-border h-full flex flex-col">
+    <div className="w-full md:w-64 border-r border-border h-full flex flex-col">
       <div className="flex-1 overflow-y-auto">
-        <nav className="space-y-1 p-1 sm:p-2">
+        <nav className="space-y-1 p-2">
           {trainings.map((training) => (
             <Link
               key={training.id}
               href={`/enrollments/${training.id}`}
-              className={`flex items-center gap-3 p-1 sm:p-2 rounded-lg hover:bg-accent transition-colors
+              className={`flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors
                 ${
                   training.id.toString() === selectedTrainingId
                     ? "bg-accent"
@@ -44,7 +44,7 @@ export function EnrolledTrainingsList({
                   className="object-cover rounded-md"
                 />
               </div>
-              <h3 className="text-sm font-medium leading-tight line-clamp-2 text-foreground hidden sm:block">
+              <h3 className="text-sm font-medium leading-tight line-clamp-2 text-foreground">
                 {training.title}
               </h3>
             </Link>

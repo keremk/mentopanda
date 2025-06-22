@@ -13,7 +13,9 @@ export default async function TrainingsLayout({
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] py-2">
       <div className="flex flex-1 border-t h-full overflow-hidden">
-        <EnrolledTrainingsList trainings={trainings} />
+        <div className="hidden md:block">
+          <EnrolledTrainingsList trainings={trainings} />
+        </div>
         <div className="flex-1 overflow-y-auto w-full">{children}</div>
       </div>
     </div>
