@@ -12,6 +12,13 @@ import { PlusIcon, LogOut } from "lucide-react";
 import { UnenrollConfirmDialog } from "./unenroll-confirm-dialog";
 import { logger } from "@/lib/logger";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface EnrollmentButtonProps {
   trainingId: number;
@@ -22,6 +29,44 @@ interface EnrollmentButtonProps {
   onOptimisticEnrollmentChange?: (enrolled: boolean) => void;
   trainingTitle?: string;
   alwaysShowButtonTitle?: boolean;
+}
+
+interface EnrollmentSuccessfulDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  trainingTitle: string;
+  onStartTraining: () => void;
+}
+
+function EnrollmentSuccessfulDialog({
+  isOpen,
+  onOpenChange,
+  trainingTitle,
+  onStartTraining,
+}: EnrollmentSuccessfulDialogProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Successfully Enrolled! 🎉</DialogTitle>
+        </DialogHeader>
+        <div className="py-4">
+          <p className="text-muted-foreground">
+            You are now enrolled in <strong>{trainingTitle}</strong>. Ready to
+            start your learning journey?
+          </p>
+        </div>
+        <DialogFooter className="flex-row justify-end gap-2">
+          <Button variant="ghost-brand" onClick={() => onOpenChange(false)}>
+            Keep Exploring
+          </Button>
+          <Button variant="brand" onClick={onStartTraining}>
+            Start Training
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function EnrollmentButton({
@@ -37,6 +82,7 @@ export function EnrollmentButton({
   const [enrolled, setEnrolled] = useState(initialEnrollmentStatus ?? false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const router = useRouter();
   const isMobile = useIsMobile();
 
@@ -72,6 +118,8 @@ export function EnrollmentButton({
         }
       } else {
         await enrollInTrainingAction(trainingId);
+        // Show success dialog after successful enrollment
+        setIsSuccessDialogOpen(true);
       }
       router.refresh();
     } catch (error) {
@@ -92,6 +140,11 @@ export function EnrollmentButton({
     } else {
       handleEnrollment();
     }
+  };
+
+  const handleStartTraining = () => {
+    setIsSuccessDialogOpen(false);
+    router.push(`/enrollments/${trainingId}`);
   };
 
   const showText = !isMobile || alwaysShowButtonTitle;
@@ -118,6 +171,13 @@ export function EnrollmentButton({
         trainingTitle={trainingTitle || "this training"}
         onConfirm={handleEnrollment}
         isLoading={isLoading}
+      />
+
+      <EnrollmentSuccessfulDialog
+        isOpen={isSuccessDialogOpen}
+        onOpenChange={setIsSuccessDialogOpen}
+        trainingTitle={trainingTitle || "this training"}
+        onStartTraining={handleStartTraining}
       />
     </>
   );
