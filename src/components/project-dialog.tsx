@@ -42,10 +42,11 @@ export function ProjectDialog({
   const { toast } = useToast();
 
   useEffect(() => {
-    if (open && view === "list") {
+    if (open) {
+      setView("list");
       getProjectsAction().then(setProjects);
     }
-  }, [open, view]);
+  }, [open]);
 
   async function handleProjectSwitch() {
     if (!selectedProjectId) return;
