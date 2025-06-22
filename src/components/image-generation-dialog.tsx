@@ -22,7 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Label } from "@/components/ui/label";
-import { SendHorizontal, Loader2, Image as ImageIcon } from "lucide-react";
+import { Loader2, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 
 import { toast } from "@/hooks/use-toast";
@@ -125,7 +125,7 @@ export function ImageGenerationDialog({
       return `${baseClasses} max-w-[20rem] sm:max-w-[22rem] md:max-w-[24rem] lg:max-w-[32rem] xl:max-w-[40rem]`;
     }
     // Use user's preferred, more constrained sizes for square images
-    return `${baseClasses} max-w-[14rem] sm:max-w-[16rem] md:max-w-[16rem] lg:max-w-[18rem]`;
+    return `${baseClasses} max-w-[13rem] sm:max-w-[14rem] md:max-w-[16rem] lg:max-w-[19rem]`;
   }, [aspectRatio]);
 
   // Determine bucket and path based on contextType
@@ -896,41 +896,10 @@ export function ImageGenerationDialog({
                           ? "Describe the image you want..."
                           : "Prompt is optional but recommended. Describe changes or a new image..."
                     }
-                    className="flex-1 min-h-[60px] max-h-[100px] resize-none border-0 bg-transparent p-3 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="flex-1 min-h-[80px] max-h-[120px] resize-none border-0 bg-transparent p-3 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
                     onKeyDown={handleKeyDown}
                     disabled={isLoading || hasCreditError}
                   />
-                  <div className="flex items-center justify-end bg-secondary/40 px-3 py-1.5 border-t border-border/20">
-                    <Button
-                      type="button"
-                      variant="ghost-brand"
-                      size="sm"
-                      onClick={handleGenerateClick}
-                      disabled={isGenerateDisabled}
-                      className="h-7 rounded-full px-3 flex items-center gap-1 text-xs"
-                    >
-                      {isGenerating ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <SendHorizontal className="h-3.5 w-3.5" />
-                      )}
-                      <span>
-                        {hasCreditError
-                          ? "No Credits"
-                          : isGenerating
-                            ? useCurrentImage
-                              ? "Editing..."
-                              : currentResponseId
-                                ? "Iterating..."
-                                : "Generating..."
-                            : useCurrentImage
-                              ? "Edit"
-                              : currentResponseId
-                                ? "Iterate"
-                                : "Generate"}
-                      </span>
-                    </Button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -943,6 +912,20 @@ export function ImageGenerationDialog({
               disabled={isLoading}
             >
               Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="ghost-brand"
+              onClick={handleGenerateClick}
+              disabled={isGenerateDisabled}
+            >
+              {hasCreditError
+                ? "No Credits"
+                : useCurrentImage
+                  ? "Edit"
+                  : currentResponseId
+                    ? "Iterate"
+                    : "Generate"}
             </Button>
             <Button
               variant="brand"
