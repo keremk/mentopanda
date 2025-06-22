@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { useApiKey } from "@/hooks/use-api-key";
 import { logger } from "@/lib/logger";
 import { NoCreditsDialog } from "@/components/no-credits-dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function base64ToBlob(base64: string, contentType = "image/png"): Blob {
   const byteCharacters = atob(base64);
@@ -110,6 +111,7 @@ export function ImageGenerationDialog({
   const [isGenerating, setIsGenerating] = useState(false);
   const hasHandledUploadSuccess = useRef(false);
   const { apiKey } = useApiKey();
+  const isMobile = useIsMobile();
 
   // Parse aspect ratio string for the component prop
   const numericAspectRatio = useMemo(() => {
@@ -679,6 +681,12 @@ export function ImageGenerationDialog({
     }
   };
 
+  const handleBlur = () => {
+    if (isMobile) {
+      window.scrollTo(0, 0);
+    }
+  };
+
   // Define isLoading state before return
   const isLoading = isGenerating || uploadHook.loading;
 
@@ -898,6 +906,7 @@ export function ImageGenerationDialog({
                     }
                     className="flex-1 min-h-[80px] max-h-[120px] resize-none border-0 bg-transparent p-3 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
                     onKeyDown={handleKeyDown}
+                    onBlur={handleBlur}
                     disabled={isLoading || hasCreditError}
                   />
                 </div>
