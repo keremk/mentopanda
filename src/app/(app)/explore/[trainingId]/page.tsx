@@ -10,6 +10,11 @@ import type { CharacterDetails } from "@/data/characters";
 import { AI_MODELS } from "@/types/models";
 import { isEnrolledAction } from "@/app/actions/enrollment-actions";
 import { TrainingActionsRow } from "@/components/training-actions-row";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Training",
+};
 
 function YouTubeEmbed({ url }: { url: string }) {
   const videoId = url.split("v=")[1];

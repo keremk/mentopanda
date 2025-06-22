@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { getEnrolledTrainingsActionCached } from "@/app/actions/enrollment-actions";
 import { redirect } from "next/navigation";
 import { getCurrentUserActionCached } from "@/app/actions/user-actions";
+
 export const metadata: Metadata = {
   title: "Enrollments",
 };

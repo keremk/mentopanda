@@ -1,6 +1,11 @@
 import { redirect } from "next/navigation";
 import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 import { getProjectMembersActionCached } from "@/app/actions/project-actions";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Team",
+};
 
 export default async function TeamPage() {
   // Reuse the cached data from the layout

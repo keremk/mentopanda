@@ -3,6 +3,11 @@ import { getTrainingByIdForEditAction } from "@/app/actions/trainingActions";
 import { EditContainer } from "./edit-container";
 import { getCharactersAction } from "@/app/actions/character-actions";
 import { getCurrentUserAction } from "@/app/actions/user-actions";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Edit Training",
+};
 
 export const dynamic = "force-dynamic";
 

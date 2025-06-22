@@ -13,6 +13,11 @@ import { XCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TranscriptDisplay } from "@/components/transcript-display";
 import AssessmentContent from "./assessment-content";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Assessment",
+};
 
 type Props = {
   params: Promise<{

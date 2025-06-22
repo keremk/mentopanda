@@ -2,6 +2,12 @@ import { TrainingDetails } from "@/components/training-details";
 import { notFound } from "next/navigation";
 import { getTrainingWithProgressAction } from "@/app/actions/trainingActions";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Enrollments",
+};
+
 type TrainingPageProps = {
   params: Promise<{
     trainingId: number;

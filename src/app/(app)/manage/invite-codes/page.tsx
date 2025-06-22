@@ -5,7 +5,7 @@ import { InviteCodesManager } from "@/components/invite-codes-manager";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Manage Invite Codes",
+  title: "Invite Codes",
 };
 
 export default async function ManageInviteCodesPage() {

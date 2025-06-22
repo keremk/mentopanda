@@ -4,7 +4,7 @@ import { Metadata } from "next";
 import { getCurrentUsageAction } from "@/app/actions/usage-actions";
 
 export const metadata: Metadata = {
-  title: "Account Settings",
+  title: "Settings",
 };
 
 export default async function AccountSettingsPage() {

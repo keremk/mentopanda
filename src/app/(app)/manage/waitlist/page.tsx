@@ -5,7 +5,7 @@ import { WaitlistManager } from "@/components/waitlist-manager";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Manage Waiting List",
+  title: "Waiting List",
 };
 
 export default async function ManageWaitlistPage() {

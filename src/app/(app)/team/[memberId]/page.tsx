@@ -6,7 +6,11 @@ import { TrainingHistory } from "@/components/training-history";
 import { TrainingSessionsHeatmap } from "@/components/training-sessions-heatmap";
 import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 
+export const metadata: Metadata = {
+  title: "Team",
+};
 export default async function TeamMemberPage(props: {
   params: Promise<{ memberId: string }>;
 }) {
