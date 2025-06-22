@@ -715,7 +715,7 @@ export function ImageGenerationDialog({
           <DialogHeader className="p-6 pb-4">
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>
-              Create AI-generated images with customizable styles
+              AI-generated images with custom styles
             </DialogDescription>
           </DialogHeader>
 
