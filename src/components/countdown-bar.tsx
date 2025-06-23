@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,47 +23,56 @@ export function CountdownBar({
   className,
   isActive = false,
 }: CountdownBarProps) {
-  const [timeLeft, setTimeLeft] = useState(0);
   const [durationMinutes, setDurationMinutes] = useState(initialMinutes);
-  const [hasStarted, setHasStarted] = useState(false);
+  const [startTime, setStartTime] = useState<number | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [, forceUpdate] = useState({});
+
+  const stableOnCountdownComplete = useCallback(onCountdownComplete, [
+    onCountdownComplete,
+  ]);
 
   useEffect(() => {
     setDurationMinutes(initialMinutes);
   }, [initialMinutes]);
 
   useEffect(() => {
-    if (isActive && !hasStarted && !isCompleted) {
-      setTimeLeft(durationMinutes * 60);
-      setHasStarted(true);
+    if (isActive && !startTime && !isCompleted) {
+      setStartTime(Date.now());
       setIsCompleted(false);
     } else if (!isActive) {
-      setTimeLeft(0);
-      setHasStarted(false);
+      setStartTime(null);
       setIsCompleted(false);
     }
-  }, [isActive, durationMinutes, hasStarted, isCompleted]);
+  }, [isActive, startTime, isCompleted]);
 
   useEffect(() => {
-    if (!isActive || !hasStarted || timeLeft <= 0 || isCompleted) return;
+    if (!isActive || !startTime || isCompleted) return;
 
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        const newTime = prev - 1;
-        if (newTime <= 0) {
-          clearInterval(timer);
-          setIsCompleted(true);
-          setTimeout(() => {
-            onCountdownComplete();
-          }, 50);
-          return 0;
-        }
-        return newTime;
-      });
-    }, 1000);
+      const now = Date.now();
+      const elapsedSeconds = (now - startTime) / 1000;
+      const totalSeconds = durationMinutes * 60;
+
+      if (elapsedSeconds >= totalSeconds) {
+        setIsCompleted(true);
+        setTimeout(() => {
+          stableOnCountdownComplete();
+        }, 50);
+      } else {
+        // Force re-render to update display
+        forceUpdate({});
+      }
+    }, 100); // Check every 100ms for smooth updates
 
     return () => clearInterval(timer);
-  }, [timeLeft, isActive, hasStarted, isCompleted, onCountdownComplete]);
+  }, [
+    isActive,
+    startTime,
+    isCompleted,
+    durationMinutes,
+    stableOnCountdownComplete,
+  ]);
 
   const handleIncrement = () => {
     if (isActive) return;
@@ -79,8 +88,25 @@ export function CountdownBar({
     onDurationChange(newDuration);
   };
 
-  const displayMinutes = isActive ? Math.floor(timeLeft / 60) : durationMinutes;
-  const displaySeconds = isActive ? timeLeft % 60 : 0;
+  // Calculate remaining time based on actual system time
+  const calculateTimeRemaining = () => {
+    if (!isActive || !startTime) {
+      return { minutes: durationMinutes, seconds: 0 };
+    }
+
+    const now = Date.now();
+    const elapsedSeconds = (now - startTime) / 1000;
+    const totalSeconds = durationMinutes * 60;
+    const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
+
+    return {
+      minutes: Math.floor(remainingSeconds / 60),
+      seconds: Math.floor(remainingSeconds % 60),
+    };
+  };
+
+  const { minutes: displayMinutes, seconds: displaySeconds } =
+    calculateTimeRemaining();
 
   if (isCompleted && isActive) return null;
 
