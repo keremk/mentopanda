@@ -87,6 +87,7 @@ type LayoutProps = {
   rolePlayers: RolePlayer[];
   handleToggleConversation: () => void;
   isMuted: boolean;
+  isCheckingPermissions: boolean;
   unmuteMicrophone: () => void;
   muteMicrophone: () => void;
   handleSendMessage: (message: string) => void;
@@ -147,6 +148,7 @@ function DesktopLayout({
   rolePlayers,
   handleToggleConversation,
   isMuted,
+  isCheckingPermissions,
   unmuteMicrophone,
   muteMicrophone,
   handleSendMessage,
@@ -182,11 +184,17 @@ function DesktopLayout({
                 variant={chatState.isConversationActive ? "danger" : "brand"}
                 onClick={handleToggleConversation}
                 className="w-48"
+                disabled={isCheckingPermissions}
               >
                 {chatState.isConversationActive ? (
                   <span className="flex items-center">
                     <PhoneOff className="mr-2 h-4 w-4" />
                     End Conversation
+                  </span>
+                ) : isCheckingPermissions ? (
+                  <span className="flex items-center">
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Checking Microphone...
                   </span>
                 ) : (
                   <span className="flex items-center">
@@ -288,6 +296,7 @@ function MobileLayout({
   rolePlayers,
   handleToggleConversation,
   isMuted,
+  isCheckingPermissions,
   unmuteMicrophone,
   muteMicrophone,
   handleEndWithoutSaving,
@@ -319,11 +328,17 @@ function MobileLayout({
             variant={chatState.isConversationActive ? "danger" : "brand"}
             onClick={handleToggleConversation}
             className="w-full max-w-xs"
+            disabled={isCheckingPermissions}
           >
             {chatState.isConversationActive ? (
               <span className="flex items-center">
                 <PhoneOff className="mr-2 h-4 w-4" />
                 End Conversation
+              </span>
+            ) : isCheckingPermissions ? (
+              <span className="flex items-center">
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Checking Microphone...
               </span>
             ) : (
               <span className="flex items-center">
@@ -477,7 +492,9 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     stopMicrophone,
     muteMicrophone,
     unmuteMicrophone,
+    checkMicrophoneAvailability,
     isMuted,
+    isCheckingPermissions,
   } = useMicrophone();
 
   const { connect, disconnect, sendTextMessage, usage } = useOpenAIRealtime({
@@ -585,7 +602,32 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     if (chatState.isConversationActive) {
       setChatState((prev) => ({ ...prev, showEndDialog: true }));
     } else {
-      const micStream = await startMicrophone();
+      // Check microphone availability first
+      const { isAvailable, error } = await checkMicrophoneAvailability();
+
+      if (!isAvailable && error) {
+        toast({
+          title: "Microphone Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      let micStream: MediaStream;
+      try {
+        micStream = await startMicrophone();
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        toast({
+          title: "Microphone Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
+      }
+
       try {
         await connect(micStream);
       } catch (error) {
@@ -629,6 +671,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     stopMicrophone,
     connect,
     module.id,
+    checkMicrophoneAvailability,
   ]);
 
   const handleCountdownComplete = useCallback(async () => {
@@ -745,6 +788,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     rolePlayers,
     handleToggleConversation,
     isMuted,
+    isCheckingPermissions,
     unmuteMicrophone,
     muteMicrophone,
     handleSendMessage,
