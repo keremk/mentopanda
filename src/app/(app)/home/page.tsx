@@ -7,6 +7,7 @@ import { getEnrolledTrainingsActionCached } from "@/app/actions/enrollment-actio
 import { getInvitationsForUserAction } from "@/app/actions/invitation-actions";
 import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 import { logger } from "@/lib/logger";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -23,6 +24,13 @@ export default async function HomePage() {
 
   return (
     <>
+      <div className="container mx-auto px-4 py-2">
+        <div className="absolute top-0 right-0 p-4 z-10">
+          <div className="flex gap-2">
+            <Button variant="brand">Go Panda</Button>
+          </div>
+        </div>
+      </div>
       <InvitationNotifications invitations={invitations} />
       <div className="container mx-auto p-4">
         <div className="max-w-7xl mx-auto">

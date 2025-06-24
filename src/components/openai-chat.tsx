@@ -13,8 +13,6 @@ import { useMicrophone } from "@/hooks/use-microphone";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Mic, MicOff, Phone, PhoneOff } from "lucide-react";
-import AudioVisualiser from "@/components/audio-visualiser";
-import { RolePlayersContainer } from "@/components/roleplayers-container";
 import { RolePlayer } from "@/types/chat-types";
 import { ModulePrompt } from "@/data/modules";
 import { DEFAULT_VOICE } from "@/types/models";
@@ -51,10 +49,15 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TranscriptEntry } from "@/types/chat-types";
+import { SpeakingBubble } from "./speaking-bubble";
 
 type ChatProps = {
   module: Module;
   currentUser: User;
+  handleEndWithoutSaving: () => Promise<void>;
+  handleEndAndSave: () => Promise<void>;
+  transcriptEntries: TranscriptEntry[];
+  isAgentSpeaking: boolean;
 };
 
 type OpenAIChatContentProps = {
@@ -94,6 +97,7 @@ type LayoutProps = {
   handleEndWithoutSaving: () => Promise<void>;
   handleEndAndSave: () => Promise<void>;
   transcriptEntries: TranscriptEntry[];
+  isAgentSpeaking: boolean;
 };
 
 function createPrompt(modulePrompt: ModulePrompt) {
@@ -155,6 +159,7 @@ function DesktopLayout({
   handleEndWithoutSaving,
   handleEndAndSave,
   transcriptEntries,
+  isAgentSpeaking,
 }: LayoutProps) {
   return (
     <div className="grid lg:grid-cols-[max-content,1fr] grid-cols-1 gap-4 lg:gap-4 h-[calc(100vh-4rem)] grid-rows-[auto,1fr] lg:grid-rows-1 p-4">
@@ -170,14 +175,13 @@ function DesktopLayout({
             />
           </CardHeader>
           <CardContent className="space-y-4 pb-6">
-            <audio ref={audioRef} className="hidden" />
-            <RolePlayersContainer
-              rolePlayers={rolePlayers}
-              activeRolePlayer={rolePlayers[0]?.name ?? ""}
-              isInConversation={chatState.isConversationActive}
-            >
-              <AudioVisualiser audioRef={audioRef} />
-            </RolePlayersContainer>
+            <div className="flex items-center justify-center">
+              <SpeakingBubble
+                audioRef={audioRef}
+                isPlaying={isAgentSpeaking}
+                avatarUrl={rolePlayers[0]?.avatarUrl}
+              />
+            </div>
             <div className="flex justify-center gap-4">
               <Button
                 size="lg"
@@ -302,6 +306,7 @@ function MobileLayout({
   handleEndWithoutSaving,
   handleEndAndSave,
   transcriptEntries,
+  isAgentSpeaking,
 }: LayoutProps) {
   return (
     <div className="flex flex-col h-screen p-4">
@@ -314,14 +319,13 @@ function MobileLayout({
           isActive={chatState.isConversationActive}
           className="w-full"
         />
-        <audio ref={audioRef} className="hidden" />
-        <RolePlayersContainer
-          rolePlayers={rolePlayers}
-          activeRolePlayer={rolePlayers[0]?.name ?? ""}
-          isInConversation={chatState.isConversationActive}
-        >
-          <AudioVisualiser audioRef={audioRef} />
-        </RolePlayersContainer>
+        <div className="flex items-center justify-center">
+          <SpeakingBubble
+            audioRef={audioRef}
+            isPlaying={isAgentSpeaking}
+            avatarUrl={rolePlayers[0]?.avatarUrl}
+          />
+        </div>
         <div className="flex flex-col items-center justify-center gap-4 w-full">
           <Button
             size="lg"
@@ -440,6 +444,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
   });
   const [historyEntryId, setHistoryEntryId] = useState<number>();
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [isAgentSpeaking, setIsAgentSpeaking] = useState(false);
   const { transcriptEntries, clearTranscript } = useTranscript();
   const { saveAndComplete } = useTranscriptSave({
     historyEntryId,
@@ -460,6 +465,25 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     () => createPrompt(module.modulePrompt),
     [module.modulePrompt]
   );
+
+  useEffect(() => {
+    const audioEl = audioRef.current;
+    if (!audioEl) return;
+
+    const handlePlay = () => setIsAgentSpeaking(true);
+    const handlePause = () => setIsAgentSpeaking(false);
+    const handleEnded = () => setIsAgentSpeaking(false);
+
+    audioEl.addEventListener("playing", handlePlay);
+    audioEl.addEventListener("pause", handlePause);
+    audioEl.addEventListener("ended", handleEnded);
+
+    return () => {
+      audioEl.removeEventListener("playing", handlePlay);
+      audioEl.removeEventListener("pause", handlePause);
+      audioEl.removeEventListener("ended", handleEnded);
+    };
+  }, [audioRef]);
 
   useEffect(() => {
     logger.info("Generated OpenAI Prompt:", instructions);
@@ -492,7 +516,6 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     stopMicrophone,
     muteMicrophone,
     unmuteMicrophone,
-    checkMicrophoneAvailability,
     isMuted,
     isCheckingPermissions,
   } = useMicrophone();
@@ -602,18 +625,6 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     if (chatState.isConversationActive) {
       setChatState((prev) => ({ ...prev, showEndDialog: true }));
     } else {
-      // Check microphone availability first
-      const { isAvailable, error } = await checkMicrophoneAvailability();
-
-      if (!isAvailable && error) {
-        toast({
-          title: "Microphone Error",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
       let micStream: MediaStream;
       try {
         micStream = await startMicrophone();
@@ -628,42 +639,41 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
         return;
       }
 
+      // Optimistic UI update
+      setChatState((prev) => ({ ...prev, isConversationActive: true }));
+      setSessionStartTime(Date.now());
+
       try {
         await connect(micStream);
+        const newHistoryEntryId = await createHistoryEntryAction(module.id);
+        setHistoryEntryId(newHistoryEntryId);
+        logger.info(
+          "[handleToggleConversation] Session fully established and history created."
+        );
       } catch (error) {
-        logger.error(`Failed to connect to OpenAI: ${error}`);
+        // Revert UI on failure
+        logger.error(`Failed to connect or create history entry: ${error}`);
+        stopMicrophone();
+        setSessionStartTime(null);
 
-        // Debug logging to understand the error structure
-        logger.debug("Error object:", error);
-        logger.debug("Error type:", typeof error);
-        logger.debug("Error instanceof Error:", error instanceof Error);
-        if (error instanceof Error) {
-          logger.debug("Error message:", error.message);
-        }
-
-        // Check if it's a credit error - be more flexible with the check
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        if (errorMessage.includes("No credits available")) {
-          stopMicrophone(); // Stop microphone if credits are insufficient
-          setChatState((prev) => ({ ...prev, showNoCreditsDialog: true }));
-          return;
+
+        // Revert state and handle specific errors like no credits
+        setChatState((prev) => ({
+          ...prev,
+          isConversationActive: false,
+          showNoCreditsDialog: errorMessage.includes("No credits available"),
+        }));
+
+        if (!errorMessage.includes("No credits available")) {
+          toast({
+            title: "Failed to Start Conversation",
+            description: errorMessage || "Please try again.",
+            variant: "destructive",
+          });
         }
-
-        toast({
-          title: `Failed to connect to OpenAI, make sure your API key is correct or you have enough credits`,
-          description: "Please try again.",
-        });
-        return;
       }
-
-      const newHistoryEntryId = await createHistoryEntryAction(module.id);
-      setHistoryEntryId(newHistoryEntryId);
-      setSessionStartTime(Date.now()); // Record session start time
-      logger.info(
-        "[handleToggleConversation] Session started. Start time set."
-      ); // Debug log
-      setChatState((prev) => ({ ...prev, isConversationActive: true }));
     }
   }, [
     chatState.isConversationActive,
@@ -671,7 +681,6 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     stopMicrophone,
     connect,
     module.id,
-    checkMicrophoneAvailability,
   ]);
 
   const handleCountdownComplete = useCallback(async () => {
@@ -795,11 +804,17 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     handleEndWithoutSaving,
     handleEndAndSave,
     transcriptEntries,
+    isAgentSpeaking,
   };
 
-  return isMobile ? (
-    <MobileLayout {...layoutProps} />
-  ) : (
-    <DesktopLayout {...layoutProps} />
+  return (
+    <>
+      <audio ref={audioRef} className="hidden" crossOrigin="anonymous" />
+      {isMobile ? (
+        <MobileLayout {...layoutProps} />
+      ) : (
+        <DesktopLayout {...layoutProps} />
+      )}
+    </>
   );
 }

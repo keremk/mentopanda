@@ -134,18 +134,14 @@ export function useMicrophone() {
   }, []);
 
   const startMicrophone = async (): Promise<MediaStream> => {
-    // Check availability first
-    const { isAvailable, error } = await checkMicrophoneAvailability();
-
-    if (!isAvailable && error) {
-      throw new Error(error.message);
-    }
-
+    setIsCheckingPermissions(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       microphoneStreamRef.current = stream;
+      setIsCheckingPermissions(false);
       return stream;
     } catch (error) {
+      setIsCheckingPermissions(false);
       // Re-throw with user-friendly message
       const domError = error as DOMException;
       switch (domError.name) {
