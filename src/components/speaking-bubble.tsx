@@ -3,6 +3,7 @@
 import type React from "react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
+import { logger } from "@/lib/logger";
 
 interface WindowWithAudioContext extends Window {
   webkitAudioContext: typeof AudioContext;
@@ -30,17 +31,20 @@ export function SpeakingBubble({
   const animationFrameRef = useRef<number | undefined>(undefined);
   const isAnalyzingRef = useRef(false);
   const isPlayingRef = useRef(isPlaying);
+  const prevStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
 
-  const cleanup = useCallback(() => {
+  const fullyTearDown = useCallback(() => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = undefined;
     }
+
     isAnalyzingRef.current = false;
+
     if (sourceRef.current) {
       sourceRef.current.disconnect();
       sourceRef.current = null;
@@ -50,9 +54,17 @@ export function SpeakingBubble({
       analyserRef.current = null;
     }
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      audioContextRef.current.close().catch(() => {
+        /* safari sometimes throws if already closed */
+      });
       audioContextRef.current = null;
     }
+
+    prevStreamRef.current = null;
+
+    // Mark as not playing so idle pattern isn't blocked
+    isPlayingRef.current = false;
+    simulateIdlePattern();
   }, []);
 
   const stopAnalyzing = useCallback(() => {
@@ -61,7 +73,10 @@ export function SpeakingBubble({
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = undefined;
     }
-  }, []);
+    if (!audioRef.current?.srcObject) {
+      fullyTearDown();
+    }
+  }, [audioRef, fullyTearDown]);
 
   const analyzeAudio = useCallback(() => {
     if (!analyserRef.current || !isAnalyzingRef.current) return;
@@ -98,35 +113,10 @@ export function SpeakingBubble({
       })
     );
 
+    setAnimationTime(Date.now() * 0.003);
+
     if (isAnalyzingRef.current) {
       animationFrameRef.current = requestAnimationFrame(analyzeAudio);
-    }
-  }, []);
-
-  const simulateRealisticAudio = useCallback(() => {
-    if (!isPlayingRef.current) return;
-
-    const time = Date.now() * 0.003;
-    setAnimationTime(time);
-
-    const baseLevel =
-      0.4 + Math.sin(time * 2) * 0.3 + Math.sin(time * 3.7) * 0.2;
-    const spikes = Math.random() > 0.6 ? Math.random() * 0.5 : 0;
-    const level = Math.max(0, Math.min(1, baseLevel + spikes));
-
-    setAudioLevel(level);
-    setLowFreq(0.3 + Math.sin(time * 1.2) * 0.4);
-    setMidFreq(0.2 + Math.sin(time * 2.1) * 0.3);
-
-    const frequencies = Array.from({ length: 64 }, (_, i) => {
-      const freq =
-        0.2 + Math.sin(time * 2 + i * 0.4) * 0.4 + Math.random() * 0.3 * level;
-      return Math.max(0, Math.min(1, freq));
-    });
-    setFrequencyData(frequencies);
-
-    if (isPlayingRef.current) {
-      animationFrameRef.current = requestAnimationFrame(simulateRealisticAudio);
     }
   }, []);
 
@@ -154,45 +144,41 @@ export function SpeakingBubble({
   }, []);
 
   const startAnalyzing = useCallback(async () => {
-    if (!audioRef.current || isAnalyzingRef.current) return;
+    if (!audioRef.current) return;
+
+    const stream = audioRef.current.srcObject;
+    if (!(stream instanceof MediaStream)) return; // nothing to analyse yet
+
+    if (isAnalyzingRef.current && stream === prevStreamRef.current) return;
+
+    fullyTearDown();
 
     try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext ||
-          (window as unknown as WindowWithAudioContext).webkitAudioContext)();
-      }
+      const audioContext = new (window.AudioContext ||
+        (window as unknown as WindowWithAudioContext).webkitAudioContext)();
+      audioContextRef.current = audioContext;
 
-      const audioContext = audioContextRef.current;
       if (audioContext.state === "suspended") {
         await audioContext.resume();
       }
 
-      if (!sourceRef.current) {
-        let source: AudioNode;
-        const stream = audioRef.current.srcObject;
+      const source = audioContext.createMediaStreamSource(stream);
+      sourceRef.current = source;
 
-        if (stream instanceof MediaStream) {
-          source = audioContext.createMediaStreamSource(stream);
-        } else {
-          source = audioContext.createMediaElementSource(audioRef.current);
-        }
-        sourceRef.current = source;
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.4;
+      analyserRef.current = analyser;
 
-        const analyser = audioContext.createAnalyser();
-        analyser.fftSize = 1024;
-        analyser.smoothingTimeConstant = 0.4;
-        analyserRef.current = analyser;
+      source.connect(analyser);
 
-        sourceRef.current.connect(analyserRef.current);
-      }
-
+      prevStreamRef.current = stream;
       isAnalyzingRef.current = true;
       analyzeAudio();
     } catch (error) {
-      console.error("SpeakingBubble: Error setting up audio analysis:", error);
-      simulateRealisticAudio();
+      logger.error("SpeakingBubble: Error setting up audio analysis:", error);
     }
-  }, [audioRef, analyzeAudio, simulateRealisticAudio]);
+  }, [audioRef, analyzeAudio, fullyTearDown]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -203,10 +189,36 @@ export function SpeakingBubble({
     }
   }, [isPlaying, startAnalyzing, stopAnalyzing, simulateIdlePattern]);
 
+  /*
+   * Extra safety: drive analyser setup / teardown directly from <audio> element
+   * events so we always react to the real playback lifecycle, regardless of
+   * parent-state quirks.
+   */
   useEffect(() => {
-    simulateIdlePattern();
-    return cleanup;
-  }, [cleanup, simulateIdlePattern]);
+    const audioEl = audioRef.current;
+    if (!audioEl) return;
+
+    const handlePlay = () => {
+      startAnalyzing();
+    };
+
+    const handlePauseOrEnded = () => {
+      stopAnalyzing();
+      simulateIdlePattern();
+    };
+
+    audioEl.addEventListener("play", handlePlay);
+    audioEl.addEventListener("pause", handlePauseOrEnded);
+    audioEl.addEventListener("ended", handlePauseOrEnded);
+    audioEl.addEventListener("emptied", handlePauseOrEnded); // fires when srcObject is cleared
+
+    return () => {
+      audioEl.removeEventListener("play", handlePlay);
+      audioEl.removeEventListener("pause", handlePauseOrEnded);
+      audioEl.removeEventListener("ended", handlePauseOrEnded);
+      audioEl.removeEventListener("emptied", handlePauseOrEnded);
+    };
+  }, [audioRef, startAnalyzing, stopAnalyzing, simulateIdlePattern]);
 
   return (
     <div className="relative w-80 h-80 flex items-center justify-center">
