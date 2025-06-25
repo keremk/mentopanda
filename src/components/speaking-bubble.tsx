@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 
 interface WindowWithAudioContext extends Window {
@@ -29,133 +29,47 @@ export function SpeakingBubble({
   const sourceRef = useRef<AudioNode | null>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
   const isAnalyzingRef = useRef(false);
+  const isPlayingRef = useRef(isPlaying);
 
   useEffect(() => {
-    if (isPlaying && audioRef.current) {
-      startAnalyzing();
-    } else {
-      stopAnalyzing();
-      if (!isPlaying) {
-        simulateIdlePattern();
-      }
-    }
-
-    return () => {
-      cleanup();
-    };
+    isPlayingRef.current = isPlaying;
   }, [isPlaying]);
 
-  // Start idle simulation on mount
-  useEffect(() => {
-    if (!isPlaying) {
-      simulateIdlePattern();
+  const cleanup = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = undefined;
     }
-
-    return () => {
-      cleanup();
-    };
+    isAnalyzingRef.current = false;
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
+    }
+    if (analyserRef.current) {
+      analyserRef.current.disconnect();
+      analyserRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
   }, []);
 
-  const cleanup = () => {
+  const stopAnalyzing = useCallback(() => {
+    isAnalyzingRef.current = false;
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = undefined;
     }
+  }, []);
 
-    isAnalyzingRef.current = false;
-
-    if (sourceRef.current) {
-      sourceRef.current.disconnect();
-      sourceRef.current = null;
-    }
-    if (analyserRef.current) {
-      analyserRef.current.disconnect();
-      analyserRef.current = null;
-    }
-  };
-
-  const startAnalyzing = async () => {
-    if (!audioRef.current || isAnalyzingRef.current) return;
-
-    try {
-      // Create audio context if it doesn't exist
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext ||
-          (window as unknown as WindowWithAudioContext).webkitAudioContext)();
-      }
-
-      const audioContext = audioContextRef.current;
-
-      if (audioContext.state === "suspended") {
-        await audioContext.resume();
-      }
-
-      // Always recreate the source and analyser to ensure fresh connections
-      if (sourceRef.current) {
-        sourceRef.current.disconnect();
-      }
-      if (analyserRef.current) {
-        analyserRef.current.disconnect();
-      }
-
-      let source: AudioNode;
-      const stream = audioRef.current.srcObject;
-
-      // Use MediaStreamSource if a stream is available, otherwise fall back to MediaElementSource
-      if (stream instanceof MediaStream) {
-        console.log("SpeakingBubble: Creating source from MediaStream.");
-        source = audioContext.createMediaStreamSource(stream);
-      } else {
-        console.log("SpeakingBubble: Creating source from MediaElement.");
-        source = audioContext.createMediaElementSource(audioRef.current);
-      }
-      sourceRef.current = source;
-
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 1024;
-      analyser.smoothingTimeConstant = 0.4;
-      analyserRef.current = analyser;
-
-      sourceRef.current.connect(analyserRef.current);
-      // Do not connect analyser to destination to avoid echo/double audio.
-
-      isAnalyzingRef.current = true;
-      console.log("SpeakingBubble: Audio analysis started successfully.");
-      analyzeAudio();
-    } catch (error) {
-      console.error("SpeakingBubble: Error setting up audio analysis:", error);
-      // Fall back to simulation if real audio analysis fails
-      simulateRealisticAudio();
-    }
-  };
-
-  const stopAnalyzing = () => {
-    isAnalyzingRef.current = false;
-
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = undefined;
-    }
-
-    // Disconnect and clear refs to force re-creation on next play
-    if (sourceRef.current) {
-      sourceRef.current.disconnect();
-      sourceRef.current = null;
-    }
-    if (analyserRef.current) {
-      analyserRef.current.disconnect();
-      analyserRef.current = null;
-    }
-  };
-
-  const analyzeAudio = () => {
+  const analyzeAudio = useCallback(() => {
     if (!analyserRef.current || !isAnalyzingRef.current) return;
 
     const bufferLength = analyserRef.current.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     analyserRef.current.getByteFrequencyData(dataArray);
 
-    // Calculate overall audio level with validation
     const average =
       dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
     const normalizedLevel = isNaN(average)
@@ -163,10 +77,8 @@ export function SpeakingBubble({
       : Math.max(0, Math.min(1, average / 255));
     setAudioLevel(normalizedLevel);
 
-    // Split into frequency bands for different pattern effects
     const lowEnd = Math.floor(bufferLength * 0.1);
     const midEnd = Math.floor(bufferLength * 0.4);
-
     const lowFreqData = dataArray.slice(0, lowEnd);
     const midFreqData = dataArray.slice(lowEnd, midEnd);
 
@@ -178,7 +90,6 @@ export function SpeakingBubble({
     setLowFreq(isNaN(lowAvg) ? 0 : Math.max(0, Math.min(1, lowAvg)));
     setMidFreq(isNaN(midAvg) ? 0 : Math.max(0, Math.min(1, midAvg)));
 
-    // Get detailed frequency data for patterns with validation
     const frequencies = Array.from(dataArray).slice(0, 64);
     setFrequencyData(
       frequencies.map((f) => {
@@ -190,40 +101,14 @@ export function SpeakingBubble({
     if (isAnalyzingRef.current) {
       animationFrameRef.current = requestAnimationFrame(analyzeAudio);
     }
-  };
+  }, []);
 
-  const simulateIdlePattern = () => {
-    if (isPlaying || isAnalyzingRef.current) return; // Stop simulation if audio starts playing
-
-    const time = Date.now() * 0.002;
-    setAnimationTime(time);
-
-    // Create gentle, breathing-like patterns
-    const breathingPattern = 0.3 + Math.sin(time) * 0.2;
-    const secondaryWave = 0.2 + Math.sin(time * 1.3) * 0.15;
-
-    setAudioLevel(breathingPattern);
-    setLowFreq(breathingPattern);
-    setMidFreq(secondaryWave);
-
-    // Generate simulated frequency data
-    const simulatedFreqs = Array.from({ length: 64 }, (_, i) => {
-      return 0.1 + Math.sin(time + i * 0.3) * 0.2 + Math.random() * 0.1;
-    });
-    setFrequencyData(simulatedFreqs);
-
-    if (!isPlaying && !isAnalyzingRef.current) {
-      animationFrameRef.current = requestAnimationFrame(simulateIdlePattern);
-    }
-  };
-
-  const simulateRealisticAudio = () => {
-    if (!isPlaying) return;
+  const simulateRealisticAudio = useCallback(() => {
+    if (!isPlayingRef.current) return;
 
     const time = Date.now() * 0.003;
     setAnimationTime(time);
 
-    // Simulate realistic voice patterns with more variation
     const baseLevel =
       0.4 + Math.sin(time * 2) * 0.3 + Math.sin(time * 3.7) * 0.2;
     const spikes = Math.random() > 0.6 ? Math.random() * 0.5 : 0;
@@ -233,7 +118,6 @@ export function SpeakingBubble({
     setLowFreq(0.3 + Math.sin(time * 1.2) * 0.4);
     setMidFreq(0.2 + Math.sin(time * 2.1) * 0.3);
 
-    // Generate more dynamic frequency data
     const frequencies = Array.from({ length: 64 }, (_, i) => {
       const freq =
         0.2 + Math.sin(time * 2 + i * 0.4) * 0.4 + Math.random() * 0.3 * level;
@@ -241,18 +125,93 @@ export function SpeakingBubble({
     });
     setFrequencyData(frequencies);
 
-    if (isPlaying) {
+    if (isPlayingRef.current) {
       animationFrameRef.current = requestAnimationFrame(simulateRealisticAudio);
     }
-  };
+  }, []);
+
+  const simulateIdlePattern = useCallback(() => {
+    if (isPlayingRef.current || isAnalyzingRef.current) return;
+
+    const time = Date.now() * 0.002;
+    setAnimationTime(time);
+
+    const breathingPattern = 0.3 + Math.sin(time) * 0.2;
+    const secondaryWave = 0.2 + Math.sin(time * 1.3) * 0.15;
+
+    setAudioLevel(breathingPattern);
+    setLowFreq(breathingPattern);
+    setMidFreq(secondaryWave);
+
+    const simulatedFreqs = Array.from({ length: 64 }, (_, i) => {
+      return 0.1 + Math.sin(time + i * 0.3) * 0.2 + Math.random() * 0.1;
+    });
+    setFrequencyData(simulatedFreqs);
+
+    if (!isPlayingRef.current && !isAnalyzingRef.current) {
+      animationFrameRef.current = requestAnimationFrame(simulateIdlePattern);
+    }
+  }, []);
+
+  const startAnalyzing = useCallback(async () => {
+    if (!audioRef.current || isAnalyzingRef.current) return;
+
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext ||
+          (window as unknown as WindowWithAudioContext).webkitAudioContext)();
+      }
+
+      const audioContext = audioContextRef.current;
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
+      }
+
+      if (!sourceRef.current) {
+        let source: AudioNode;
+        const stream = audioRef.current.srcObject;
+
+        if (stream instanceof MediaStream) {
+          source = audioContext.createMediaStreamSource(stream);
+        } else {
+          source = audioContext.createMediaElementSource(audioRef.current);
+        }
+        sourceRef.current = source;
+
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 1024;
+        analyser.smoothingTimeConstant = 0.4;
+        analyserRef.current = analyser;
+
+        sourceRef.current.connect(analyserRef.current);
+      }
+
+      isAnalyzingRef.current = true;
+      analyzeAudio();
+    } catch (error) {
+      console.error("SpeakingBubble: Error setting up audio analysis:", error);
+      simulateRealisticAudio();
+    }
+  }, [audioRef, analyzeAudio, simulateRealisticAudio]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      startAnalyzing();
+    } else {
+      stopAnalyzing();
+      simulateIdlePattern();
+    }
+  }, [isPlaying, startAnalyzing, stopAnalyzing, simulateIdlePattern]);
+
+  useEffect(() => {
+    simulateIdlePattern();
+    return cleanup;
+  }, [cleanup, simulateIdlePattern]);
 
   return (
     <div className="relative w-80 h-80 flex items-center justify-center">
-      {/* Main bubble container */}
       <div className="relative w-72 h-72 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 shadow-2xl overflow-hidden">
-        {/* Flowing abstract patterns inside the bubble */}
         <div className="absolute inset-0 rounded-full overflow-hidden">
-          {/* Base flowing pattern - low frequencies */}
           <div
             className="absolute inset-0 opacity-60"
             style={{
@@ -262,8 +221,6 @@ export function SpeakingBubble({
               transform: `rotate(${animationTime * 20 + lowFreq * 180}deg) scale(${1 + lowFreq * 0.5})`,
             }}
           />
-
-          {/* Mid frequency waves */}
           <div
             className="absolute inset-0 opacity-50"
             style={{
@@ -275,8 +232,6 @@ export function SpeakingBubble({
               transform: `scale(${1 + midFreq * 0.8})`,
             }}
           />
-
-          {/* High frequency sparkles */}
           {frequencyData.slice(32, 48).map((freq, i) => {
             const safeFreq = isNaN(freq) ? 0 : freq;
             return (
@@ -295,8 +250,6 @@ export function SpeakingBubble({
               />
             );
           })}
-
-          {/* Organic flowing shapes */}
           <div
             className="absolute inset-4 opacity-40"
             style={{
@@ -306,8 +259,6 @@ export function SpeakingBubble({
               transform: `rotate(${animationTime * -30 + audioLevel * 90}deg)`,
             }}
           />
-
-          {/* Frequency-based ripples */}
           {[...Array(6)].map((_, i) => {
             const freqValue = frequencyData[i * 8] || 0;
             const safeFreq = isNaN(freqValue) ? 0 : freqValue;
@@ -327,8 +278,6 @@ export function SpeakingBubble({
               />
             );
           })}
-
-          {/* Central energy core */}
           <div
             className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/40 backdrop-blur-sm"
             style={{
@@ -338,8 +287,6 @@ export function SpeakingBubble({
             }}
           />
         </div>
-
-        {/* Avatar positioned concentrically in the center */}
         <div
           className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full overflow-hidden border-2 border-white/40 shadow-lg z-10"
           style={{ width: "140px", height: "140px" }}
@@ -352,8 +299,6 @@ export function SpeakingBubble({
           />
         </div>
       </div>
-
-      {/* Subtle outer glow for the bubble only */}
       <div
         className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 opacity-20 blur-xl -z-10"
         style={{
