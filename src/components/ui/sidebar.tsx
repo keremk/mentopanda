@@ -190,15 +190,6 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
-    const [hasMounted, setHasMounted] = React.useState(false);
-
-    React.useEffect(() => {
-      setHasMounted(true);
-    }, []);
-
-    if (!hasMounted) {
-      return null;
-    }
 
     if (collapsible === "none") {
       return (
