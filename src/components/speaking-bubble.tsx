@@ -13,12 +13,19 @@ interface SpeakingBubbleProps {
   audioRef: React.RefObject<HTMLAudioElement>;
   isPlaying: boolean;
   avatarUrl?: string;
+  /**
+   * Controls visibility of the avatar. When false the avatar will be hidden and will
+   * animate into view once switched to true.
+   * Defaults to true for backward-compatibility.
+   */
+  showAvatar?: boolean;
 }
 
 export function SpeakingBubble({
   audioRef,
   isPlaying,
   avatarUrl,
+  showAvatar = true,
 }: SpeakingBubbleProps) {
   const [audioLevel, setAudioLevel] = useState(0);
   const [frequencyData, setFrequencyData] = useState<number[]>([]);
@@ -300,8 +307,16 @@ export function SpeakingBubble({
           />
         </div>
         <div
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full overflow-hidden border-2 border-white/40 shadow-lg z-10"
-          style={{ width: "140px", height: "140px" }}
+          className="absolute top-1/2 left-1/2 rounded-full overflow-hidden border-2 border-white/40 shadow-lg z-10"
+          /* Animated appearance of avatar */
+          style={{
+            width: "140px",
+            height: "140px",
+            transform: `translate(-50%, -50%) scale(${showAvatar ? 1 : 0.2})`,
+            opacity: showAvatar ? 1 : 0,
+            transition:
+              "transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease-out",
+          }}
         >
           <Image
             src={avatarUrl || "/placeholder-training.svg"}

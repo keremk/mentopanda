@@ -98,6 +98,7 @@ type LayoutProps = {
   handleEndAndSave: () => Promise<void>;
   transcriptEntries: TranscriptEntry[];
   isAgentSpeaking: boolean;
+  showAvatar: boolean;
 };
 
 function createPrompt(modulePrompt: ModulePrompt) {
@@ -160,6 +161,7 @@ function DesktopLayout({
   handleEndAndSave,
   transcriptEntries,
   isAgentSpeaking,
+  showAvatar,
 }: LayoutProps) {
   return (
     <div className="grid lg:grid-cols-[max-content,1fr] grid-cols-1 gap-4 lg:gap-4 h-[calc(100vh-4rem)] grid-rows-[auto,1fr] lg:grid-rows-1 p-4">
@@ -180,6 +182,7 @@ function DesktopLayout({
                 audioRef={audioRef}
                 isPlaying={isAgentSpeaking}
                 avatarUrl={rolePlayers[0]?.avatarUrl}
+                showAvatar={showAvatar}
               />
             </div>
             <div className="flex justify-center gap-4">
@@ -307,6 +310,7 @@ function MobileLayout({
   handleEndAndSave,
   transcriptEntries,
   isAgentSpeaking,
+  showAvatar,
 }: LayoutProps) {
   return (
     <div className="flex flex-col h-screen p-4">
@@ -324,6 +328,7 @@ function MobileLayout({
             audioRef={audioRef}
             isPlaying={isAgentSpeaking}
             avatarUrl={rolePlayers[0]?.avatarUrl}
+            showAvatar={showAvatar}
           />
         </div>
         <div className="flex flex-col items-center justify-center gap-4 w-full">
@@ -498,6 +503,9 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     () => module.modulePrompt.characters[0]?.name || "agent",
     [module.modulePrompt.characters]
   );
+
+  // Avatar should appear only after connection (historyEntryId) is established
+  const showAvatar = Boolean(historyEntryId);
 
   // Log the values directly before passing them to the hook
   logger.debug(
@@ -805,6 +813,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     handleEndAndSave,
     transcriptEntries,
     isAgentSpeaking,
+    showAvatar,
   };
 
   return (
