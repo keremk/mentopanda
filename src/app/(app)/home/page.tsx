@@ -8,6 +8,7 @@ import { getInvitationsForUserAction } from "@/app/actions/invitation-actions";
 import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
+import { GoPandaDialog } from "@/components/go-panda-dialog";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -27,7 +28,9 @@ export default async function HomePage() {
       <div className="container mx-auto px-4 py-2">
         <div className="absolute top-0 right-0 p-4 z-10">
           <div className="flex gap-2">
-            <Button variant="brand">Go Panda</Button>
+            <GoPandaDialog>
+              <Button variant="brand">Go Panda</Button>
+            </GoPandaDialog>
           </div>
         </div>
       </div>
