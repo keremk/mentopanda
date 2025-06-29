@@ -10,7 +10,7 @@ interface WindowWithAudioContext extends Window {
 }
 
 interface SpeakingBubbleProps {
-  audioRef: React.RefObject<HTMLAudioElement>;
+  audioRef: React.RefObject<HTMLAudioElement | null>;
   isPlaying: boolean;
   avatarUrl?: string;
   /**
