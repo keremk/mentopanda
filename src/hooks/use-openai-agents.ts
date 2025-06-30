@@ -26,28 +26,14 @@ export interface UseOpenAIAgentsReturn {
   audioRef: React.RefObject<HTMLAudioElement | null>;
 }
 
-export function useOpenAIAgents(agentConfig: {
-  name: string;
-  instructions: string;
-}): UseOpenAIAgentsReturn {
+export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const sessionRef = useRef<RealtimeSession | null>(null);
-  const agentRef = useRef<RealtimeAgent | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Initialize agent
-  useEffect(() => {
-    if (!agentRef.current) {
-      agentRef.current = new RealtimeAgent({
-        name: agentConfig.name,
-        instructions: agentConfig.instructions,
-      });
-    }
-  }, [agentConfig.name, agentConfig.instructions]);
 
   // Set up audio event listeners to track speaking state
   useEffect(() => {
@@ -133,8 +119,8 @@ export function useOpenAIAgents(agentConfig: {
       // Get ephemeral token from server
       const clientToken = await getToken();
 
-      if (!agentRef.current) {
-        throw new Error("Agent not initialized");
+      if (!agent) {
+        throw new Error("Agent not provided");
       }
 
       if (!audioRef.current) {
@@ -147,7 +133,7 @@ export function useOpenAIAgents(agentConfig: {
       });
 
       // Create session with the custom transport
-      const session = new RealtimeSession(agentRef.current, {
+      const session = new RealtimeSession(agent, {
         transport: customTransport,
       });
       sessionRef.current = session;
@@ -216,7 +202,7 @@ export function useOpenAIAgents(agentConfig: {
         sessionRef.current = null;
       }
     }
-  }, [isConnecting, isConnected, disconnect]);
+  }, [isConnecting, isConnected, disconnect, agent]);
 
   // Clean up on unmount
   useEffect(() => {

@@ -73,6 +73,121 @@ export async function getModulesByTrainingId(
   );
 }
 
+// Add new function to get all modules for the user's current project
+export async function getModulesForCurrentProject(
+  supabase: SupabaseClient
+): Promise<ModuleSummary[]> {
+  // Get user's current project from their profile
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated");
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("current_project_id")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError) handleError(profileError);
+  if (!profile?.current_project_id) {
+    return []; // User has no current project
+  }
+
+  // Get all trainings for the current project
+  const { data: trainings, error: trainingsError } = await supabase
+    .from("trainings")
+    .select("id")
+    .eq("project_id", profile.current_project_id);
+
+  if (trainingsError) handleError(trainingsError);
+  if (!trainings || trainings.length === 0) {
+    return []; // No trainings in current project
+  }
+
+  // Get all modules for all trainings in the project
+  const trainingIds = trainings.map((t) => t.id);
+
+  const { data, error } = await supabase
+    .from("modules")
+    .select(
+      `
+      id, 
+      title, 
+      training_id, 
+      ordinal, 
+      created_at, 
+      updated_at,
+      instructions,
+      scenario_prompt
+    `
+    )
+    .in("training_id", trainingIds)
+    .order("created_at", { ascending: false }); // Most recent first
+
+  if (error) handleError(error);
+
+  return (
+    data?.map((module) => ({
+      id: module.id,
+      title: module.title,
+      trainingId: module.training_id,
+      ordinal: module.ordinal,
+      createdAt: new Date(module.created_at),
+      updatedAt: new Date(module.updated_at),
+    })) ?? []
+  );
+}
+
+// Add function to get a random module recommendation
+export async function getRandomModuleRecommendation(
+  supabase: SupabaseClient
+): Promise<{
+  moduleId: string;
+  moduleName: string;
+  moduleDescription: string;
+} | null> {
+  const modules = await getModulesForCurrentProject(supabase);
+
+  if (modules.length === 0) {
+    return null; // No modules available for recommendation
+  }
+
+  // Select a random module
+  const randomIndex = Math.floor(Math.random() * modules.length);
+  const selectedModule = modules[randomIndex];
+
+  // Get full module details for description
+  const { data: moduleDetails, error } = await supabase
+    .from("modules")
+    .select("instructions, scenario_prompt")
+    .eq("id", selectedModule.id)
+    .single();
+
+  if (error) {
+    logger.warn("Could not get module details for recommendation:", error);
+    // Return basic info without description
+    return {
+      moduleId: selectedModule.id.toString(),
+      moduleName: selectedModule.title,
+      moduleDescription:
+        "A training module to help improve your communication skills.",
+    };
+  }
+
+  // Create a description from instructions or scenario
+  const description =
+    moduleDetails.instructions ||
+    moduleDetails.scenario_prompt ||
+    "A training module to help improve your communication skills.";
+
+  return {
+    moduleId: selectedModule.id.toString(),
+    moduleName: selectedModule.title,
+    moduleDescription: description,
+  };
+}
+
 export type UpdateModuleInput = {
   id: number;
   trainingId: number;

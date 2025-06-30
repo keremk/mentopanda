@@ -50,3 +50,15 @@ export async function getModuleByIdAction2(
   const supabase = await createClient();
   return await getModuleById2(supabase, moduleId);
 }
+
+export async function getModulesForCurrentProjectAction() {
+  const supabase = await createClient();
+  const { getModulesForCurrentProject } = await import("@/data/modules");
+  return await getModulesForCurrentProject(supabase);
+}
+
+export async function getRandomModuleRecommendationAction() {
+  const supabase = await createClient();
+  const { getRandomModuleRecommendation } = await import("@/data/modules");
+  return await getRandomModuleRecommendation(supabase);
+}
