@@ -116,27 +116,38 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
     setError(null);
 
     try {
+      logger.debug("🔑 Getting ephemeral token...");
       // Get ephemeral token from server
       const clientToken = await getToken();
+      logger.debug(
+        "✅ Token received:",
+        clientToken ? "Valid token" : "No token"
+      );
 
       if (!agent) {
         throw new Error("Agent not provided");
       }
+      logger.debug("🤖 Agent provided:", agent);
 
       if (!audioRef.current) {
         throw new Error("Audio element not available");
       }
+      logger.debug("🎵 Audio element available");
 
       // Create custom WebRTC transport with our audio element
+      logger.debug("🌐 Creating WebRTC transport...");
       const customTransport = new OpenAIRealtimeWebRTC({
         audioElement: audioRef.current,
       });
+      logger.debug("✅ WebRTC transport created");
 
       // Create session with the custom transport
+      logger.debug("🔗 Creating RealtimeSession...");
       const session = new RealtimeSession(agent, {
         transport: customTransport,
       });
       sessionRef.current = session;
+      logger.debug("✅ RealtimeSession created");
 
       // Set up event listeners for session events
       const handleError = (error: unknown) => {
@@ -173,15 +184,25 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
       }
 
       // Connect to OpenAI with the ephemeral token
+      logger.debug("📞 Connecting to OpenAI...");
       await session.connect({ apiKey: clientToken });
+      logger.debug("✅ Connected to OpenAI successfully");
 
       // Session is now connected and audio will play through our audioElement
       setIsConnected(true);
       setIsConnecting(false);
 
-      logger.info(
-        "RealtimeSession connected successfully with custom audio element"
-      );
+      // Trigger the agent to start speaking immediately using sendMessage
+      logger.debug("🎤 Triggering agent to start conversation...");
+      try {
+        // Send an empty message to trigger the agent to start the conversation
+        await session.sendMessage("");
+        logger.debug("✅ Agent conversation triggered");
+      } catch (triggerErr) {
+        logger.debug("⚠️ Failed to trigger agent start:", triggerErr);
+      }
+
+      logger.debug("🎉 RealtimeSession fully initialized and ready");
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to connect";

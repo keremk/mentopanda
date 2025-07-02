@@ -10,9 +10,10 @@ import {
   type UserStatus,
   type RecommendedModule,
 } from "@/prompts/greeting-agent";
-import { getUserStatusForGreetingAction } from "@/app/actions/history-actions";
+import { getUserTrainingStatusAction } from "@/app/actions/history-actions";
 import { getRandomModuleRecommendationAction } from "@/app/actions/moduleActions";
 import { RealtimeAgent } from "@openai/agents/realtime";
+import { logger } from "@/lib/logger";
 
 const AVATAR_URL =
   "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/avatars//gopanda.png";
@@ -21,7 +22,7 @@ const AVATAR_URL =
 const DEFAULT_USER_STATUS: UserStatus = {
   hasHadSession: false,
   lastSessionDate: new Date(),
-  lastSessionFeedback: "",
+  lastSessionAssessment: "",
   lastSessionModuleId: "",
 };
 
@@ -47,8 +48,14 @@ function MentorAgentInteraction({ agent }: { agent: RealtimeAgent }) {
   } = useOpenAIAgents(agent);
 
   const handleConnect = async () => {
+    logger.debug("🔄 Starting connection process...");
     setShowAvatar(true);
-    await connect();
+    try {
+      await connect();
+      logger.debug("✅ Connection successful");
+    } catch (err) {
+      logger.error("❌ Connection failed:", err);
+    }
   };
 
   const handleDisconnect = () => {
@@ -133,25 +140,38 @@ export function MentorAgent() {
       setAgentError(null);
 
       try {
+        logger.debug("🔄 Starting agent initialization...");
+
         // Get user status and module recommendation in parallel
         const [userStatus, moduleRecommendation] = await Promise.all([
-          getUserStatusForGreetingAction(),
+          getUserTrainingStatusAction(),
           getRandomModuleRecommendationAction(),
         ]);
+
+        logger.debug("📊 User status:", userStatus);
+        logger.debug("📚 Module recommendation:", moduleRecommendation);
 
         // Use defaults if we can't get real data
         const finalUserStatus = userStatus || DEFAULT_USER_STATUS;
         const finalModuleRecommendation =
           moduleRecommendation || DEFAULT_RECOMMENDED_MODULE;
 
+        logger.debug("✅ Final user status:", finalUserStatus);
+        logger.debug(
+          "✅ Final module recommendation:",
+          finalModuleRecommendation
+        );
+
         // Create the greeting agent with real data
         const agent = getGreetingAgent(
           finalUserStatus,
           finalModuleRecommendation
         );
+
+        logger.debug("🤖 Greeting agent created:", agent);
         setGreetingAgent(agent);
       } catch (err) {
-        console.error("Failed to initialize greeting agent:", err);
+        logger.error("❌ Failed to initialize greeting agent:", err);
         setAgentError(
           "Failed to load agent data. Using default configuration."
         );

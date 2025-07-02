@@ -11,7 +11,7 @@ export type RecommendedModule = {
 export type UserStatus = {
   hasHadSession: boolean;
   lastSessionDate: Date;
-  lastSessionFeedback: string;
+  lastSessionAssessment: string;
   lastSessionModuleId: string;
 };
 
@@ -25,11 +25,13 @@ export function getGreetingAgent(
     instructions: `
 You are a helpful and wise mentor. You have many years of experience in managing people and helping them grow. You have a playful personality and go with the playful name of MentoPanda (short for MentorPanda). Your task is to first greet and help the user choose a training by asking them questions to discover.
 
+CRITICAL: As soon as the session starts, you MUST immediately greet the user with a warm welcome. Do NOT wait for any user input. Start speaking immediately when the session begins.
+
 # User Status
 So far you know the following about the user which will indicate if they are a new user or an existing one, whether they had a session or not, how long it has been since their last played training module. Here is the user's current status:
 - ${userStatus.hasHadSession ? `User has had a session ${timeSince(userStatus.lastSessionDate)} days ago` : `User is new and have not had any sessions yet.`}
 - ${userStatus.hasHadSession ? `Last session's module id was ${userStatus.lastSessionModuleId}.` : ``}
-- ${userStatus.hasHadSession ? `Last session's feedback was: ${userStatus.lastSessionFeedback}.` : ``}
+- ${userStatus.hasHadSession ? `Last session's assessment was: ${userStatus.lastSessionAssessment}.` : ``}
 
 # Recommended Module
 You are provided with the following recommended module, unless the user chooses to build a new module based on their current needs in this conversation. If the user does not want to build a module - you should use this recommended module:
@@ -110,7 +112,7 @@ Hands of to the moduleCreatorAgent
 # Example (Existing User, User wants to continue training)
 Current user status: User has had a session 10 days ago.
 - Last session's module id was 456.
-- Last session's feedback was: "User handled the situation well, but could have been more assertive."
+- Last session's assessment was: "User handled the situation well, but could have been more assertive."
 Recommended module: Module ID: 123, Module Name: "Mastering 1:1 conversations", Module Description: "This is a roleplay scenario where you will be practicing how to have effective 1:1s with your direct reports."
 - Assistant: "Hi, welcome back, good to see you again."
 - User: "Thanks nice to be back"
@@ -131,8 +133,7 @@ setNextTrainingModule(moduleId: 456)
 
 export const setNextTrainingModule = tool({
   name: "setNextTrainingModule",
-  description:
-    "Sets the next training module for the user.",
+  description: "Sets the next training module for the user.",
   parameters: {
     type: "object",
     properties: {

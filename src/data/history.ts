@@ -244,5 +244,69 @@ export async function getTrainingHeatmapData(
 
 export async function deleteHistoryEntry(supabase: SupabaseClient, id: number) {
   const userId = await getUserId(supabase);
-  await supabase.from("history").delete().eq("id", id).eq("user_id", userId);
+
+  const { error } = await supabase
+    .from("history")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", userId);
+
+  if (error) handleError(error);
+}
+
+export type UserTrainingStatus = {
+  hasHadSession: boolean;
+  lastSessionDate: Date;
+  lastSessionAssessment: string;
+  lastSessionModuleId: string;
+};
+
+export async function getUserTrainingStatus(
+  supabase: SupabaseClient
+): Promise<UserTrainingStatus> {
+  const userId = await getUserId(supabase);
+
+  // Get the most recent completed training session
+  const { data: latestHistory, error } = await supabase
+    .from("history")
+    .select(
+      `
+      id,
+      module_id,
+      assessment_text,
+      completed_at,
+      modules (
+        id,
+        title
+      )
+    `
+    )
+    .eq("user_id", userId)
+    .not("completed_at", "is", null) // Only completed sessions
+    .order("completed_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    handleError(error);
+  }
+
+  // No sessions found - new user
+  if (!latestHistory) {
+    return {
+      hasHadSession: false,
+      lastSessionDate: new Date(),
+      lastSessionAssessment: "",
+      lastSessionModuleId: "",
+    };
+  }
+
+  // User has had sessions
+  return {
+    hasHadSession: true,
+    lastSessionDate: new Date(latestHistory.completed_at),
+    lastSessionAssessment:
+      latestHistory.assessment_text || "No assessment provided",
+    lastSessionModuleId: latestHistory.module_id.toString(),
+  };
 }
