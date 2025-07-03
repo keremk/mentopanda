@@ -6,7 +6,7 @@ import { ProgressBar } from "./progress-bar";
 import { ThemedImage } from "@/components/themed-image";
 
 const AUTOPLAY_DELAY = 5000; // 5 seconds per feature
-const PROGRESS_INTERVAL = 50; // Update progress every 50ms
+const PROGRESS_INTERVAL = 100; // Update progress every 100ms (reduced from 50ms)
 
 interface Feature {
   id: number;
@@ -119,8 +119,10 @@ export function FeaturesSection() {
     [activeFeature]
   );
 
-  // Handle auto-advance
-  const goToNextFeature = useCallback(() => {
+  // Handle auto-advance - stable reference to prevent timer recreation
+  const goToNextFeatureRef = useRef<(() => void) | null>(null);
+
+  goToNextFeatureRef.current = () => {
     setIsTransitioning(true);
     setIsAutoAdvancing(true);
     setProgress(0);
@@ -146,26 +148,40 @@ export function FeaturesSection() {
       setIsTransitioning(false);
       setIsAutoAdvancing(false);
     }, 300);
-  }, [centerFeature, activeFeature]);
+  };
 
-  // Progress timer effect
+  const goToNextFeature = useCallback(() => {
+    goToNextFeatureRef.current?.();
+  }, []);
+
+  // Progress timer effect - optimized to prevent memory leaks
   useEffect(() => {
     if (isTransitioning) return;
 
     let currentProgress = 0;
+    let animationFrameId: number | null = null;
+
     const interval = setInterval(() => {
       currentProgress += (PROGRESS_INTERVAL / AUTOPLAY_DELAY) * 100;
 
       if (currentProgress >= 100) {
         clearInterval(interval);
-        goToNextFeature();
+        // Use requestAnimationFrame to ensure goToNextFeature runs at the right time
+        animationFrameId = requestAnimationFrame(() => {
+          goToNextFeature();
+        });
       } else {
         setProgress(currentProgress);
       }
     }, PROGRESS_INTERVAL);
 
-    return () => clearInterval(interval);
-  }, [isTransitioning, goToNextFeature]);
+    return () => {
+      clearInterval(interval);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [isTransitioning, goToNextFeature]); // goToNextFeature is now stable
 
   const handleFeatureHover = (index: number) => {
     if (index !== activeFeature) {
