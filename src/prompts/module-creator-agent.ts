@@ -1,14 +1,23 @@
+import { logger } from "@/lib/logger";
 import { RealtimeAgent, tool } from "@openai/agents/realtime";
+import {
+  addAgentStep,
+  updateAgentStep,
+} from "@/contexts/agent-actions-context";
 
 export const createModule = tool({
   name: "createModule",
-  description: "Creates a new module with the information you collected in the conversation.",
+  description:
+    "Creates a new module with the information you collected in the conversation.",
   parameters: {
     type: "object",
     properties: {
-      scenario: { type: "string", description: "The scenario of the module"  },
+      scenario: { type: "string", description: "The scenario of the module" },
       character: { type: "string", description: "The character of the module" },
-      evaluationCriteria: { type: "string", description: "The evaluation criteria of the module" },
+      evaluationCriteria: {
+        type: "string",
+        description: "The evaluation criteria of the module",
+      },
     },
     required: ["scenario", "character", "evaluationCriteria"],
     additionalProperties: false,
@@ -20,9 +29,116 @@ export const createModule = tool({
       evaluationCriteria: string;
     };
 
-    console.log("createModule", { scenario, character, evaluationCriteria });
+    logger.debug("createModule started", {
+      scenario,
+      character,
+      evaluationCriteria,
+    });
 
-    return { moduleId: "123" };
+    try {
+      // Step 1: Validate input parameters
+      addAgentStep({
+        id: "validate",
+        label: "Validating module parameters",
+        status: "in_progress",
+        message: "Checking scenario, character, and evaluation criteria...",
+      });
+
+      // Simulate validation time
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      if (!scenario || !character || !evaluationCriteria) {
+        updateAgentStep("validate", "error", "Missing required parameters");
+        throw new Error("Missing required parameters");
+      }
+
+      updateAgentStep(
+        "validate",
+        "completed",
+        "All parameters validated successfully"
+      );
+
+      // Step 2: Process scenario details
+      addAgentStep({
+        id: "scenario",
+        label: "Processing scenario details",
+        status: "in_progress",
+        message: "Analyzing scenario structure and content...",
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      updateAgentStep(
+        "scenario",
+        "completed",
+        "Scenario processed and structured"
+      );
+
+      // Step 3: Create character profile
+      addAgentStep({
+        id: "character",
+        label: "Creating character profile",
+        status: "in_progress",
+        message: "Building character personality and traits...",
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+
+      updateAgentStep(
+        "character",
+        "completed",
+        "Character profile created successfully"
+      );
+
+      // Step 4: Set up evaluation criteria
+      addAgentStep({
+        id: "evaluation",
+        label: "Setting up evaluation criteria",
+        status: "in_progress",
+        message: "Configuring assessment parameters...",
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 1800));
+
+      updateAgentStep(
+        "evaluation",
+        "completed",
+        "Evaluation criteria configured"
+      );
+
+      // Step 5: Save module configuration
+      addAgentStep({
+        id: "save",
+        label: "Saving module configuration",
+        status: "in_progress",
+        message: "Persisting module data to database...",
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+
+      updateAgentStep("save", "completed", "Module saved successfully");
+
+      logger.debug("createModule completed successfully");
+
+      return {
+        moduleId: "123",
+        message:
+          "Module created successfully! You can now continue to the training session.",
+      };
+    } catch (error) {
+      logger.error("createModule failed", error);
+
+      // Emit error status for the current step
+      addAgentStep({
+        id: "error",
+        label: "Module creation failed",
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      });
+
+      throw error;
+    }
   },
 });
 
@@ -95,4 +211,3 @@ You are a helpful and wise mentor. You have many years of experience in managing
   `,
   tools: [createModule],
 });
-

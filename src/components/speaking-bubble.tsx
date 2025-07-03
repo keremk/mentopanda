@@ -71,7 +71,6 @@ export function SpeakingBubble({
 
     // Mark as not playing so idle pattern isn't blocked
     isPlayingRef.current = false;
-    simulateIdlePattern();
   }, []);
 
   const stopAnalyzing = useCallback(() => {
@@ -128,6 +127,7 @@ export function SpeakingBubble({
   }, []);
 
   const simulateIdlePattern = useCallback(() => {
+    // Stop idle animation only if playing or analyzing audio
     if (isPlayingRef.current || isAnalyzingRef.current) return;
 
     const time = Date.now() * 0.002;
@@ -145,6 +145,7 @@ export function SpeakingBubble({
     });
     setFrequencyData(simulatedFreqs);
 
+    // Continue animation as long as not playing/analyzing
     if (!isPlayingRef.current && !isAnalyzingRef.current) {
       animationFrameRef.current = requestAnimationFrame(simulateIdlePattern);
     }
@@ -192,6 +193,7 @@ export function SpeakingBubble({
       startAnalyzing();
     } else {
       stopAnalyzing();
+      // Always restart idle pattern when not playing
       simulateIdlePattern();
     }
   }, [isPlaying, startAnalyzing, stopAnalyzing, simulateIdlePattern]);
@@ -226,6 +228,46 @@ export function SpeakingBubble({
       audioEl.removeEventListener("emptied", handlePauseOrEnded);
     };
   }, [audioRef, startAnalyzing, stopAnalyzing, simulateIdlePattern]);
+
+  // Critical cleanup on unmount or when avatar is hidden
+  useEffect(() => {
+    return () => {
+      // Component is unmounting or avatar is being hidden, stop everything
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = undefined;
+      }
+
+      isAnalyzingRef.current = false;
+      isPlayingRef.current = false;
+
+      // Clean up audio analysis resources
+      if (sourceRef.current) {
+        sourceRef.current.disconnect();
+        sourceRef.current = null;
+      }
+      if (analyserRef.current) {
+        analyserRef.current.disconnect();
+        analyserRef.current = null;
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {
+          /* safari sometimes throws if already closed */
+        });
+        audioContextRef.current = null;
+      }
+
+      prevStreamRef.current = null;
+    };
+  }, []);
+
+  // Start idle animation on mount
+  useEffect(() => {
+    // Start the breathing animation immediately when component mounts
+    if (!isPlayingRef.current && !isAnalyzingRef.current) {
+      simulateIdlePattern();
+    }
+  }, [simulateIdlePattern]);
 
   return (
     <div className="relative w-80 h-80 flex items-center justify-center">

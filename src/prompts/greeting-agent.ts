@@ -1,6 +1,7 @@
 import { RealtimeAgent, tool } from "@openai/agents/realtime";
 import { timeSince } from "../lib/time-since";
 import { moduleCreatorAgent } from "./module-creator-agent";
+import { logger } from "@/lib/logger";
 
 export type RecommendedModule = {
   moduleId: string;
@@ -147,8 +148,12 @@ export const setNextTrainingModule = tool({
     additionalProperties: false,
   },
   execute: async (input) => {
-    console.log("setNextTrainingModule", input);
+    logger.debug("setNextTrainingModule", input);
+    const { moduleId } = input as { moduleId: string };
 
-    return { nextResponse: "Module set successfully" };
+    logger.debug(`Module id is set to ${moduleId}`);
+    return {
+      nextResponse: `Module set successfully with module id ${moduleId}`,
+    };
   },
 });

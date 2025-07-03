@@ -2,6 +2,7 @@
 
 import { SpeakingBubble } from "@/components/speaking-bubble";
 import { AgentActions } from "@/components/agent-actions";
+import { AgentActionsProvider } from "@/contexts/agent-actions-context";
 import { useOpenAIAgents } from "@/hooks/use-openai-agents";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -118,7 +119,9 @@ function MentorAgentInteraction({ agent }: { agent: RealtimeAgent }) {
         )}
       </div>
 
-      <AgentActions />
+      <AgentActionsProvider>
+        <AgentActions />
+      </AgentActionsProvider>
 
       {/* Hidden audio element for OpenAI SDK */}
       <audio ref={audioRef} className="hidden" />
@@ -213,7 +216,9 @@ export function MentorAgent() {
           )}
         </div>
 
-        <AgentActions />
+        <AgentActionsProvider>
+          <AgentActions />
+        </AgentActionsProvider>
       </div>
     );
   }

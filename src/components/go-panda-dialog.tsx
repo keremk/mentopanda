@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { MentorAgent } from "@/components/mentor-agent";
 import { Button } from "@/components/ui/button";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 
 export type GoPandaDialogProps = {
   /**
@@ -20,8 +20,10 @@ export type GoPandaDialogProps = {
 };
 
 export function GoPandaDialog({ children }: GoPandaDialogProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
@@ -30,10 +32,13 @@ export function GoPandaDialog({ children }: GoPandaDialogProps) {
           </DialogTitle>
         </DialogHeader>
 
-        <MentorAgent />
+        {/* Only render MentorAgent when dialog is open to ensure proper cleanup */}
+        {isOpen && <MentorAgent />}
 
         <DialogFooter className="pt-6">
-          <Button variant="ghost-brand">Dismiss</Button>
+          <Button variant="ghost-brand" onClick={() => setIsOpen(false)}>
+            Dismiss
+          </Button>
           <Button variant="brand">Go</Button>
         </DialogFooter>
       </DialogContent>
