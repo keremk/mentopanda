@@ -144,7 +144,7 @@ export async function getRandomModuleRecommendation(
   supabase: SupabaseClient
 ): Promise<{
   moduleId: string;
-  moduleName: string;
+  moduleTitle: string;
   moduleDescription: string;
 } | null> {
   const modules = await getModulesForCurrentProject(supabase);
@@ -169,7 +169,7 @@ export async function getRandomModuleRecommendation(
     // Return basic info without description
     return {
       moduleId: selectedModule.id.toString(),
-      moduleName: selectedModule.title,
+      moduleTitle: selectedModule.title,
       moduleDescription:
         "A training module to help improve your communication skills.",
     };
@@ -183,7 +183,7 @@ export async function getRandomModuleRecommendation(
 
   return {
     moduleId: selectedModule.id.toString(),
-    moduleName: selectedModule.title,
+    moduleTitle: selectedModule.title,
     moduleDescription: description,
   };
 }

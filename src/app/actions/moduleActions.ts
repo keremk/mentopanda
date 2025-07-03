@@ -8,8 +8,10 @@ import {
   UpdateModuleInput,
   getModuleById2,
   Module,
+  getModulesForCurrentProject,
 } from "@/data/modules";
 import { createClient } from "@/utils/supabase/server";
+import { getRandomModuleRecommendation } from "@/data/modules";
 
 export async function updateModuleAction(module: UpdateModuleInput) {
   const supabase = await createClient();
@@ -53,12 +55,10 @@ export async function getModuleByIdAction2(
 
 export async function getModulesForCurrentProjectAction() {
   const supabase = await createClient();
-  const { getModulesForCurrentProject } = await import("@/data/modules");
   return await getModulesForCurrentProject(supabase);
 }
 
 export async function getRandomModuleRecommendationAction() {
   const supabase = await createClient();
-  const { getRandomModuleRecommendation } = await import("@/data/modules");
   return await getRandomModuleRecommendation(supabase);
 }

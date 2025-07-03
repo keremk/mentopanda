@@ -27,6 +27,9 @@ type AgentActionsContextType = {
   addStep: (step: Omit<StatusStep, "timestamp">) => void;
   clearSteps: () => void;
   currentStep: string | null;
+  // Module navigation state
+  nextModuleId: string | null;
+  setNextModuleId: (moduleId: string | null) => void;
 };
 
 // Context
@@ -41,6 +44,7 @@ let globalContextFunctions: {
   ) => void;
   addStep: (step: Omit<StatusStep, "timestamp">) => void;
   clearSteps: () => void;
+  setNextModuleId: (moduleId: string | null) => void;
 } | null = null;
 
 // Export functions for direct use in tools
@@ -66,10 +70,18 @@ export const clearAgentSteps = () => {
   }
 };
 
+// New global function for setting next module ID
+export const setNextModuleIdGlobal = (moduleId: string | null) => {
+  if (globalContextFunctions) {
+    globalContextFunctions.setNextModuleId(moduleId);
+  }
+};
+
 // Provider component
 export function AgentActionsProvider({ children }: { children: ReactNode }) {
   const [steps, setSteps] = useState<StatusStep[]>([]);
   const [currentStep, setCurrentStep] = useState<string | null>(null);
+  const [nextModuleId, setNextModuleId] = useState<string | null>(null);
 
   const updateStep = useCallback(
     (stepId: string, status: StatusStep["status"], message?: string) => {
@@ -121,13 +133,14 @@ export function AgentActionsProvider({ children }: { children: ReactNode }) {
       updateStep,
       addStep,
       clearSteps,
+      setNextModuleId,
     };
 
     // Cleanup on unmount
     return () => {
       globalContextFunctions = null;
     };
-  }, [updateStep, addStep, clearSteps]);
+  }, [updateStep, addStep, clearSteps, setNextModuleId]);
 
   return (
     <AgentActionsContext.Provider
@@ -137,6 +150,8 @@ export function AgentActionsProvider({ children }: { children: ReactNode }) {
         addStep,
         clearSteps,
         currentStep,
+        nextModuleId,
+        setNextModuleId,
       }}
     >
       {children}

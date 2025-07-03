@@ -2,7 +2,6 @@
 
 import { SpeakingBubble } from "@/components/speaking-bubble";
 import { AgentActions } from "@/components/agent-actions";
-import { AgentActionsProvider } from "@/contexts/agent-actions-context";
 import { useOpenAIAgents } from "@/hooks/use-openai-agents";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -29,7 +28,7 @@ const DEFAULT_USER_STATUS: UserStatus = {
 
 const DEFAULT_RECOMMENDED_MODULE: RecommendedModule = {
   moduleId: "1",
-  moduleName: "Welcome Training",
+  moduleTitle: "Welcome Training",
   moduleDescription:
     "A simple introduction to communication skills training to get you started on your learning journey.",
 };
@@ -109,19 +108,9 @@ function MentorAgentInteraction({ agent }: { agent: RealtimeAgent }) {
             </Button>
           )}
         </div>
-
-        {isConnected && (
-          <div className="text-sm text-muted-foreground text-center">
-            {isSpeaking
-              ? "🗣️ MentoPanda is speaking..."
-              : "🎤 Listening... Start talking!"}
-          </div>
-        )}
       </div>
 
-      <AgentActionsProvider>
-        <AgentActions />
-      </AgentActionsProvider>
+      <AgentActions />
 
       {/* Hidden audio element for OpenAI SDK */}
       <audio ref={audioRef} className="hidden" />
@@ -216,9 +205,7 @@ export function MentorAgent() {
           )}
         </div>
 
-        <AgentActionsProvider>
-          <AgentActions />
-        </AgentActionsProvider>
+        <AgentActions />
       </div>
     );
   }

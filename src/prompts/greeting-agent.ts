@@ -2,10 +2,14 @@ import { RealtimeAgent, tool } from "@openai/agents/realtime";
 import { timeSince } from "../lib/time-since";
 import { moduleCreatorAgent } from "./module-creator-agent";
 import { logger } from "@/lib/logger";
+import {
+  setNextModuleIdGlobal,
+  addAgentStep,
+} from "@/contexts/agent-actions-context";
 
 export type RecommendedModule = {
   moduleId: string;
-  moduleName: string;
+  moduleTitle: string;
   moduleDescription: string;
 };
 
@@ -37,10 +41,12 @@ So far you know the following about the user which will indicate if they are a n
 # Recommended Module
 You are provided with the following recommended module, unless the user chooses to build a new module based on their current needs in this conversation. If the user does not want to build a module - you should use this recommended module:
 - Module ID: ${recommendedModule.moduleId} You will need to use this moduleId to set the next training module for the user.
-- Module Name: ${recommendedModule.moduleName} You can use this to explain the module to the user.
+- Module Title: ${recommendedModule.moduleTitle} You can use this to explain the module to the user.
 - Module Description:
   - ${recommendedModule.moduleDescription} 
   - You can use this to explain the module to the user.
+
+** CRITICAL:** NEVER recommend a module that is not described here. Those do not exist will cause errors and bad user experience.
 
 # Expected Workflow
 - Greet the user with a warm and friendly tone. Do not wait for the user to start the conversation.
@@ -81,6 +87,7 @@ You are provided with the following recommended module, unless the user chooses 
 ## setNextTrainingModule Usage
 - This will set the next training module id for the user.
 - You can use this tool to set the next training module for the user. You should pass in the module id that you have determined through the conversation with the user.
+- Always include the moduleTitle parameter when calling this tool so the user gets a proper confirmation message with the module name.
 
 # Example (New User, Recommended Module preferred)
 Current user status:
@@ -94,7 +101,7 @@ Recommended module: Module ID: 123, Module Name: "Mastering 1:1 conversations", 
 - User: "What is that about?"
 - Assistant: "This is a roleplay scenario where you will be practicing how to have effective 1:1s with your direct reports."
 - User: "Yes lets go"
-setNextTrainingModule(moduleId: 123)
+setNextTrainingModule(moduleId: 123, moduleTitle: "Mastering 1:1 conversations")
 - Assistant: "I am setting this up, please wait a moment."
 - Assistant: "Great all set up, now you can end this conversation, and select the Continue button in the dialog to proceed to the training. I wish you the best of luck!"
 
@@ -124,7 +131,7 @@ Recommended module: Module ID: 123, Module Name: "Mastering 1:1 conversations", 
 - Assistant: "So you want to have another session about this scenario and see if you can improve on that?"
 - User: "Yes, that would be great"
 - Assistant: "Great, I am setting this up, please wait a moment."
-setNextTrainingModule(moduleId: 456)
+setNextTrainingModule(moduleId: 456, moduleTitle: "Mastering 1:1 conversations")
 - Assistant: "Great all set up, now you can end this conversation, and select the Continue button in the dialog to proceed to the training. I wish you the best of luck!"
 `,
     tools: [setNextTrainingModule],
@@ -143,13 +150,32 @@ export const setNextTrainingModule = tool({
         description:
           "The id of the training module to set for the user. This is critical to provide as it is the only way to know which module the user will be doing next.",
       },
+      moduleTitle: {
+        type: "string",
+        description:
+          "The title/name of the training module being set. This will be displayed to the user in the confirmation message.",
+      },
     },
     required: ["moduleId"],
     additionalProperties: false,
   },
   execute: async (input) => {
     logger.debug("setNextTrainingModule", input);
-    const { moduleId } = input as { moduleId: string };
+    const { moduleId, moduleTitle } = input as {
+      moduleId: string;
+      moduleTitle?: string;
+    };
+
+    // Set the module ID in the global context for UI navigation
+    setNextModuleIdGlobal(moduleId);
+
+    // Add a confirmation step for the user
+    addAgentStep({
+      id: "training-module-selected",
+      label: "Training Module Selected",
+      status: "completed",
+      message: `You have selected **${moduleTitle || "training module"}** as your next training module. Please hit the Go button to start training.`,
+    });
 
     logger.debug(`Module id is set to ${moduleId}`);
     return {
