@@ -9,9 +9,11 @@ import {
   getModuleById2,
   Module,
   getModulesForCurrentProject,
+  getRandomModuleRecommendation,
+  findOrCreateSideQuestsTraining,
 } from "@/data/modules";
 import { createClient } from "@/utils/supabase/server";
-import { getRandomModuleRecommendation } from "@/data/modules";
+import { AI_MODELS } from "@/types/models";
 
 export async function updateModuleAction(module: UpdateModuleInput) {
   const supabase = await createClient();
@@ -61,4 +63,27 @@ export async function getModulesForCurrentProjectAction() {
 export async function getRandomModuleRecommendationAction() {
   const supabase = await createClient();
   return await getRandomModuleRecommendation(supabase);
+}
+
+export async function createSideQuestModuleAction(): Promise<Module> {
+  const supabase = await createClient();
+
+  // Find or create the Side Quests training
+  const trainingId = await findOrCreateSideQuestsTraining(supabase);
+
+  // Create the module using the existing createModuleAction
+  const result = await createModuleAction(trainingId, {
+    title: "New Module",
+    instructions: null,
+    ordinal: 1, // Default ordinal
+    modulePrompt: {
+      aiModel: AI_MODELS.OPENAI,
+      scenario: "",
+      assessment: "",
+      moderator: null,
+      characters: [],
+    },
+  });
+
+  return result;
 }

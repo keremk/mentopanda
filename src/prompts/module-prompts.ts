@@ -170,7 +170,7 @@ Notes:
   `,
 };
 
-const characterMetaPrompt: PromptConfig = {
+export const characterMetaPrompt: PromptConfig = {
   metaPrompt: `
 Your task is to generate a prompt that describes the traits and personality of the character and how they should behave in the role playing conversation. The prompt will be used as a system prompt to describe the overall scenario.
 
