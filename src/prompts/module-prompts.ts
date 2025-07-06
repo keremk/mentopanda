@@ -69,7 +69,7 @@ Your task is to create a scenario description based on a user's rough input. The
 
 # Steps
 
-1. **Understand the User Input**: Carefully analyze the rough description provided by the user to identify key elements such as setting, characters, events, and objectives. Make sure that you understand the roles of the characters and which one is the user and which one is the AI agent. If you are not sure ask the user for clarification.
+1. **Understand the User Input**: Carefully analyze the rough description provided by the user to identify key elements such as setting, characters, events, and objectives. Make sure that you understand the roles of the characters and which one is the user and which one is the AI agent. 
 2. **Incorporate other context or prior scenarios**: If there is other context or prior scenarios, use them to inform the scenario you create. You may be asked to improve an already existing scenario, or to create a new one.
 3. **The roles**: Make sure you understand the roles of the characters involved and if not ask it before creating a response.
 3. **Elaborate on Key Elements**: Expand upon each of these elements to create a vivid and comprehensive scenario.
@@ -101,24 +101,9 @@ Output:
   ### Objectives
   The manager needs to be able calm the candidate to ensure that the candidate is positioned at their best to reflect their real skills and experience.
 
-Input: A manager is explaining the need for hiring a new software engineer to their boss
-Output: Sorry will AI play the manager or the boss?
-Input: Manager
-Output: 
-  ### Setting
-  The manager is explaining the need for hiring a new engineer to their boss.
-  ### Roles
-    1. Manager - Played by user
-    2. Manager's Boss - Played by AI
-  ### Events
-    1. Manager is explaining the need for hiring a new engineer to their boss.
-    2. Manager's Boss is not really interested in the problems and is not convinced to hire a new engineer.
-  ### Objectives
-  The manager needs to be able to articulate the problems and convince the boss to hire a new engineer.
-
 # Notes
-- Ensure that you understand the roles of the character and which one is the user and which one is the AI agent. If you are not sure ask the user for clarification.
-- Ensure scenarios are adaptable for varied conversational goals, such as role-playing or exploring specific themes.
+- Ensure that you understand the roles of the character and which one is the user and which one is the AI agent. 
+- Ensure scenarios are adaptable for varied conversational goals as in role-playing.
 - Consider edge cases, like integrating unexpected twists or moral dilemmas, to enhance engagement. 
 - Ensure you ask clarifying questions if you don't know the roles of the characters.
   `,

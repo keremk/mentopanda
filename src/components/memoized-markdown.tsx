@@ -42,6 +42,14 @@ const markdownComponents: Components = {
       {children}
     </code>
   ),
+  a: ({ href, children }) => (
+    <a
+      href={href}
+      className="text-brand hover:text-brand-hover underline hover:no-underline transition-colors"
+    >
+      {children}
+    </a>
+  ),
 };
 
 // Helper to generate stable keys for blocks
@@ -56,20 +64,28 @@ function parseMarkdownIntoBlocks(markdown: string): string[] {
   return tokens.map((token) => token.raw);
 }
 
-const MemoizedMarkdownBlock = memo(function MemoizedMarkdownBlock({
-  content,
-}: {
-  content: string;
-}) {
-  return (
-    <ReactMarkdown components={markdownComponents}>{content}</ReactMarkdown>
-  );
-});
+const MemoizedMarkdownBlockWithCustomComponents = memo(
+  function MemoizedMarkdownBlockWithCustomComponents({
+    content,
+    customComponents,
+  }: {
+    content: string;
+    customComponents?: Components;
+  }) {
+    const components = customComponents
+      ? { ...markdownComponents, ...customComponents }
+      : markdownComponents;
+
+    return <ReactMarkdown components={components}>{content}</ReactMarkdown>;
+  }
+);
 
 export const MemoizedMarkdown = memo(function MemoizedMarkdown({
   content,
+  customComponents,
 }: {
   content: string;
+  customComponents?: Components;
 }) {
   // Only parse new content after it's been stable for 100ms
   const blocks = useMemo(() => parseMarkdownIntoBlocks(content), [content]);
@@ -77,8 +93,9 @@ export const MemoizedMarkdown = memo(function MemoizedMarkdown({
   return (
     <div className="space-y-2">
       {blocks.map((block, index) => (
-        <MemoizedMarkdownBlock
+        <MemoizedMarkdownBlockWithCustomComponents
           content={block}
+          customComponents={customComponents}
           key={generateStableKey(block, index)}
         />
       ))}

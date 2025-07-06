@@ -174,7 +174,7 @@ export const setNextTrainingModule = tool({
       id: "training-module-selected",
       label: "Training Module Selected",
       status: "completed",
-      message: `You have selected **${moduleTitle || "training module"}** as your next training module. Please hit the Go button to start training.`,
+      message: `You have selected **${moduleTitle || "training module"}** as your next training module. Please hit the Go button to start training or go to [Explore Trainings](/explore) to select a different module.`,
     });
 
     logger.debug(`Module id is set to ${moduleId}`);

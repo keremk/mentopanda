@@ -9,6 +9,7 @@ import { z } from "zod";
 import { createCharacter, type CreateCharacterInput } from "@/data/characters";
 import { deleteCharacter } from "@/data/characters";
 import { cache } from "react";
+import { insertModuleCharacterAction } from "@/app/actions/modules-characters-actions";
 
 export const getCharactersActionCached = cache(async (projectId: number) => {
   const supabase = await createClient();
@@ -41,6 +42,8 @@ export async function updateCharacterAction(
 
 const createCharacterSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  voice: z.string().optional(),
+  avatarUrl: z.string().optional(),
 });
 
 export async function createCharacterAction(data: CreateCharacterInput) {
@@ -77,6 +80,43 @@ export async function deleteCharacterAction(characterId: number) {
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to delete character",
+    };
+  }
+}
+
+export async function createAndAddCharacterAction(
+  moduleId: number,
+  characterData: { name: string; voice: string; avatarUrl: string },
+  prompt?: string | null,
+) {
+  try {
+    // Create the character
+    const characterResult = await createCharacterAction(characterData);
+
+    if (!characterResult.success || !characterResult.data) {
+      return characterResult;
+    }
+
+    // Add the character to the module
+    const insertResult = await insertModuleCharacterAction({
+      moduleId,
+      characterId: characterResult.data.id,
+      ordinal: 0,
+      prompt: prompt,
+    });
+
+    if (!insertResult.success) {
+      return insertResult;
+    }
+
+    return { success: true, data: characterResult.data };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create and add character",
     };
   }
 }

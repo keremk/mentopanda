@@ -18,6 +18,9 @@ export default async function HomePage() {
   const user = await getCurrentUserActionCached();
   logger.debug(`User:`, JSON.stringify(user, null, 2));
 
+  const isAdmin =
+    user.projectRole === "admin" || user.projectRole === "super_admin";
+
   const [trainings, invitations] = await Promise.all([
     getEnrolledTrainingsActionCached(user),
     getInvitationsForUserAction(user),
@@ -28,9 +31,11 @@ export default async function HomePage() {
       <div className="container mx-auto px-4 py-2">
         <div className="absolute top-0 right-0 p-4 z-10">
           <div className="flex gap-2">
-            <GoPandaDialog>
-              <Button variant="brand">Go Panda</Button>
-            </GoPandaDialog>
+            {isAdmin && (
+              <GoPandaDialog>
+                <Button variant="brand">Go Panda</Button>
+              </GoPandaDialog>
+            )}
           </div>
         </div>
       </div>

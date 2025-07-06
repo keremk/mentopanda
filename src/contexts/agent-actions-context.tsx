@@ -7,6 +7,7 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
+import { MemoizedMarkdown } from "@/components/memoized-markdown";
 
 // Status update types
 export type StatusStep = {
@@ -15,6 +16,12 @@ export type StatusStep = {
   status: "pending" | "in_progress" | "completed" | "error";
   message?: string;
   timestamp?: Date;
+};
+
+// Utility function to render agent messages with markdown
+export const renderAgentMessage = (message: string): React.ReactNode => {
+  if (!message) return message;
+  return <MemoizedMarkdown content={message} />;
 };
 
 type AgentActionsContextType = {

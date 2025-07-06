@@ -4,6 +4,8 @@ import { handleError } from "./utils";
 export type InsertModuleCharacterInput = {
   moduleId: number;
   characterId: number;
+  ordinal?: number;
+  prompt?: string | null;
 };
 
 export async function insertModuleCharacter(
@@ -13,6 +15,8 @@ export async function insertModuleCharacter(
   const { error } = await supabase.from("modules_characters").insert({
     module_id: data.moduleId,
     character_id: data.characterId,
+    ordinal: data.ordinal || 0,
+    prompt: data.prompt || null,
   });
   if (error) handleError(error);
 }

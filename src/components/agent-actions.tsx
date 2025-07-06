@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   useAgentActions,
   type StatusStep,
 } from "@/contexts/agent-actions-context";
+import { MemoizedMarkdown } from "@/components/memoized-markdown";
 
 // Status icon component
 function StatusIcon({ status }: { status: StatusStep["status"] }) {
@@ -24,6 +25,13 @@ function StatusIcon({ status }: { status: StatusStep["status"] }) {
 
 export function AgentActions() {
   const { steps } = useAgentActions();
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (endRef.current) {
+      endRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [steps.length]);
 
   return (
     <div className="w-full max-h-48 overflow-y-auto border rounded-md p-3 bg-muted/40">
@@ -40,7 +48,7 @@ export function AgentActions() {
                 <div className="leading-tight">{step.label}</div>
                 {step.message && (
                   <div className="text-xs text-muted-foreground mt-1">
-                    {step.message}
+                    <MemoizedMarkdown content={step.message} />
                   </div>
                 )}
                 {step.timestamp && (
@@ -51,6 +59,7 @@ export function AgentActions() {
               </div>
             </li>
           ))}
+          <div ref={endRef} />
         </ul>
       )}
     </div>

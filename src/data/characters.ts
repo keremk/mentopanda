@@ -161,6 +161,8 @@ export async function updateCharacter(
 
 export type CreateCharacterInput = {
   name: string;
+  voice?: string;
+  avatarUrl?: string;
 };
 
 export async function createCharacter(
@@ -176,6 +178,8 @@ export async function createCharacter(
     .from("characters")
     .insert({
       name: data.name,
+      voice: data.voice || null,
+      avatar_url: data.avatarUrl || null,
       project_id: currentProject.id,
       ai_model: AI_MODELS.OPENAI, // default to OPENAI for now
       created_by: userId,

@@ -2,8 +2,16 @@ import { logger } from "@/lib/logger";
 import { RealtimeAgent, tool } from "@openai/agents/realtime";
 import {
   addAgentStep,
+  setNextModuleIdGlobal,
   updateAgentStep,
 } from "@/contexts/agent-actions-context";
+import {
+  generateModulePrompts,
+  generateModuleFieldsFromScenario,
+  createSideQuestModuleAction,
+  generateSideQuestCharacter,
+} from "@/app/actions/moduleActions";
+import { createAndAddCharacterAction } from "@/app/actions/character-actions";
 
 export const createModule = tool({
   name: "createModule",
@@ -44,9 +52,6 @@ export const createModule = tool({
         message: "Checking scenario, character, and evaluation criteria...",
       });
 
-      // Simulate validation time
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
       if (!scenario || !character || !evaluationCriteria) {
         updateAgentStep("validate", "error", "Missing required parameters");
         throw new Error("Missing required parameters");
@@ -58,72 +63,121 @@ export const createModule = tool({
         "All parameters validated successfully"
       );
 
-      // Step 2: Process scenario details
+      // Step 2: Generate module prompts
       addAgentStep({
-        id: "scenario",
-        label: "Processing scenario details",
+        id: "prompts",
+        label: "Generating module prompts",
         status: "in_progress",
-        message: "Analyzing scenario structure and content...",
+        message:
+          "Creating AI prompts for scenario, character, and assessment...",
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      updateAgentStep(
-        "scenario",
-        "completed",
-        "Scenario processed and structured"
+      const modulePrompts = await generateModulePrompts(
+        scenario,
+        character,
+        evaluationCriteria
       );
 
-      // Step 3: Create character profile
-      addAgentStep({
-        id: "character",
-        label: "Creating character profile",
-        status: "in_progress",
-        message: "Building character personality and traits...",
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 2500));
-
       updateAgentStep(
-        "character",
+        "prompts",
         "completed",
-        "Character profile created successfully"
+        "Module prompts generated successfully"
       );
 
-      // Step 4: Set up evaluation criteria
+      // Step 3: Generate module fields from scenario
       addAgentStep({
-        id: "evaluation",
-        label: "Setting up evaluation criteria",
+        id: "fields",
+        label: "Generating module title and instructions",
         status: "in_progress",
-        message: "Configuring assessment parameters...",
+        message: "Creating module title and instructions from scenario...",
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 1800));
-
-      updateAgentStep(
-        "evaluation",
-        "completed",
-        "Evaluation criteria configured"
+      const moduleFields = await generateModuleFieldsFromScenario(
+        modulePrompts.scenarioPrompt
       );
 
-      // Step 5: Save module configuration
+      updateAgentStep(
+        "fields",
+        "completed",
+        "Module title and instructions generated"
+      );
+
+      // Step 4: Create the side quest module
       addAgentStep({
-        id: "save",
-        label: "Saving module configuration",
+        id: "module",
+        label: "Creating module",
         status: "in_progress",
-        message: "Persisting module data to database...",
+        message: "Saving module configuration to database...",
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      const createdModule = await createSideQuestModuleAction(
+        moduleFields.title,
+        moduleFields.instructions,
+        modulePrompts.scenarioPrompt,
+        modulePrompts.assessmentPrompt
+      );
 
-      updateAgentStep("save", "completed", "Module saved successfully");
+      updateAgentStep("module", "completed", "Module created successfully");
+
+      // Step 5: Generate side quest character
+      addAgentStep({
+        id: "character-gen",
+        label: "Generating character",
+        status: "in_progress",
+        message: "Creating random character with voice and avatar...",
+      });
+
+      const characterData = await generateSideQuestCharacter();
+
+      updateAgentStep(
+        "character-gen",
+        "completed",
+        "Character generated successfully"
+      );
+
+      // Step 6: Create and add character to module
+      addAgentStep({
+        id: "character-add",
+        label: "Adding character to module",
+        status: "in_progress",
+        message: "Attaching character to module with AI prompt...",
+      });
+
+      const characterResult = await createAndAddCharacterAction(
+        createdModule.id,
+        characterData,
+        modulePrompts.characterPrompt
+      );
+
+      if (!characterResult.success) {
+        updateAgentStep(
+          "character-add",
+          "error",
+          "Failed to add character to module"
+        );
+        throw new Error("Failed to add character to module");
+      }
+
+      updateAgentStep(
+        "character-add",
+        "completed",
+        "Character added to module successfully"
+      );
+
+      setNextModuleIdGlobal(createdModule.id.toString());
+
+      addAgentStep({
+        id: "module-created",
+        label: "Module created successfully",
+        status: "completed",
+        message: `🎉 Side quest module created successfully! Your module "${moduleFields.title}" is ready for training. You can optionally [edit the module](explore/${createdModule.trainingId}/edit?moduleId=${createdModule.id}) to customize it further, or continue to start your training session.`,
+      });
 
       logger.debug("createModule completed successfully");
 
       return {
-        moduleId: "123",
-        message:
-          "Module created successfully! You can now continue to the training session.",
+        moduleId: createdModule.id.toString(),
+        trainingId: createdModule.trainingId.toString(),
       };
     } catch (error) {
       logger.error("createModule failed", error);
@@ -180,6 +234,7 @@ You are a helpful and wise mentor. You have many years of experience in managing
 - If the user says "hi", "hello", or similar greetings in later messages, respond naturally and briefly (e.g., "Hello!" or "Hi there!") instead of repeating the canned greeting.
 - In general, don't say the same thing twice, always vary it to ensure the conversation feels natural.
 - Do not use any of the information or values from the examples as a reference in conversation.
+- *CRITICAL:* If there is any ambiguity in the scenario about who is playing which role, ALWAYS ask the user for clarification.
 
 ## Tone
 - Maintain a warm and friendly tone at all times.
@@ -192,6 +247,7 @@ You are a helpful and wise mentor. You have many years of experience in managing
 ## createModule Usage
 - This will create a new module with the information you collected in the conversation.
 - This will need information about the scenario, character, and evaluation criteria. Make sure to pass in all of these details. If for some reason you do not have all of the details, you can pass in null for the missing details.
+- *CRITICAL:* Inside the scenario description, make sure to include the roles of the characters and which one is the user and which one is the AI agent. 
 - This tool will also set the next training module for the user, so the user can start training immediately after successfully creating the module.
 
 # Example
@@ -203,11 +259,17 @@ You are a helpful and wise mentor. You have many years of experience in managing
 - User: "It is for a software engineer position, the interview is a behavioral interview with my potential manager."
 - Assistant: "Great! Is it for a senior role or a mid level role?"
 - User: "A senior role"
+- Assistant: "Ok great, so you will be playing the role of the candidate and AI agent will be playing the role of the interviewer. Correct?"
+- User: "Yes"
 - Assistant: "Let's think about the interviewer. What is the name of the interviewer? You said he is a potential manager, what level?"
 - User: "John Doe, he is a senior manager, probably a director or a VP"
-- Assistant: "Ok, so you are nervous about the technical questions. What are the technical questions you are nervous about?"
-- User: "I am nervous about the questions about the projects I have worked on."
-- Assistant: "Ok, so you are nervous about the questions about the projects you have worked on. What are the projects you have worked on?"
-  `,
+- Assistant: "Ok great, so can you tell me more about the interviewer? What is his demeanor, what is his speaking style? The more details you tell me, the more accurate the role-playing will be."
+- User: "He is very formal and professional, he is very direct and to the point, he is not very friendly, he is not very warm and approachable."
+- Assistant: "Now let's think about how you want to be evaluated. What are the evaluation criteria? What are the key things you want to be assessed on and provided feedback on?"
+- User: "I want to be assessed on my communication skills, my ability to give succint answers following STAR format, my ability to think on my feet, the quality of my answers"
+- Assistant: "Ok great! I think this is all the information we need. Let's start creating the module."
+- TOOL CALL: createModule. **CRITICAL:** All the details are well captured and given in the form of scenario, character, and assessment. Be as descriptive as possible.
+Assistant provides a summary of the conversation, as the tool call is being made to keep the user engaged.
+- Assistant: "Great now the module is created. You can now end this conversation and select the Continue button in the dialog to proceed to the training.`,
   tools: [createModule],
 });
