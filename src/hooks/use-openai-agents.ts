@@ -6,6 +6,8 @@ import {
 } from "@openai/agents/realtime";
 import { getToken } from "@/app/actions/openai-agents";
 import { logger } from "@/lib/logger";
+import { MODEL_NAMES } from "@/types/models";
+import { updateConversationUsageAction } from "@/app/actions/usage-actions";
 
 export interface UseOpenAIAgentsReturn {
   // Session state
@@ -34,6 +36,8 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
 
   const sessionRef = useRef<RealtimeSession | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Track session start time for session length calculation
+  const sessionStartTimeRef = useRef<number | null>(null);
 
   // Set up audio event listeners to track speaking state
   useEffect(() => {
@@ -72,8 +76,60 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
     };
   }, []);
 
+  const updateUsage = useCallback(async () => {
+    if (sessionRef.current) {
+      try {
+        const usage = sessionRef.current.usage;
+        // Calculate elapsed time in seconds
+        let elapsedTimeInSeconds = 0;
+        if (sessionStartTimeRef.current) {
+          elapsedTimeInSeconds = Math.round(
+            (Date.now() - sessionStartTimeRef.current) / 1000
+          );
+        }
+        logger.info("Usage:");
+        logger.info("Input tokens:", usage?.inputTokens);
+        logger.info("Output tokens:", usage?.outputTokens);
+        logger.info(
+          "Input tokens details:",
+          JSON.stringify(usage?.inputTokensDetails)
+        );
+        logger.info("Input tokens details:", usage?.inputTokensDetails[0].key);
+        logger.info(
+          "Output tokens details:",
+          JSON.stringify(usage?.outputTokensDetails)
+        );
+        logger.info("Total tokens:", usage?.totalTokens);
+        logger.info("Elapsed time:", elapsedTimeInSeconds);
+        // TODO: THIS IS A VERY ROUGH APPROXIMATION OF THE USAGE. WE NEED TO IMPROVE THIS. BUT THERE IS NO DATA COMING FROM OPENAI.
+        await updateConversationUsageAction({
+          modelName: MODEL_NAMES.OPENAI_REALTIME, // Fixed to match pricing data
+          promptTokens: {
+            text: {
+              cached: 0,
+              notCached: Math.max(0, usage?.inputTokens),
+            },
+            audio: {
+              cached: 0,
+              notCached: 0,
+            },
+          },
+          outputTokens: {
+            text: 0,
+            audio: usage.outputTokens || 0,
+          },
+          totalTokens: usage.totalTokens || 0,
+          totalSessionLength: elapsedTimeInSeconds,
+        });
+      } catch (err) {
+        logger.error("Error updating usage:", err);
+      }
+    }
+  }, []);
+
   const disconnect = useCallback(() => {
     if (sessionRef.current) {
+      updateUsage();
       try {
         // Clean up audio element
         if (audioRef.current) {
@@ -81,7 +137,7 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
           audioRef.current.src = "";
           audioRef.current.srcObject = null;
         }
-
+        logger.info("Updating usage before closing session");
         // Properly close the RealtimeSession
         sessionRef.current.close();
         logger.info("RealtimeSession closed successfully");
@@ -96,9 +152,11 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
     setIsConnecting(false);
     setIsSpeaking(false);
     setError(null);
+    // Reset session start time
+    sessionStartTimeRef.current = null;
 
     logger.info("RealtimeSession disconnected and cleaned up");
-  }, []);
+  }, [updateUsage]);
 
   const connect = useCallback(async () => {
     // Prevent multiple connections
@@ -114,6 +172,8 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
 
     setIsConnecting(true);
     setError(null);
+    // Set session start time
+    sessionStartTimeRef.current = Date.now();
 
     try {
       logger.debug("🔑 Getting ephemeral token...");
