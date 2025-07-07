@@ -6,6 +6,7 @@ import {
   setNextModuleIdGlobal,
   addAgentStep,
 } from "@/contexts/agent-actions-context";
+import { UserTrainingStatus } from "@/data/history";
 
 export type RecommendedModule = {
   moduleId: string;
@@ -13,15 +14,9 @@ export type RecommendedModule = {
   moduleDescription: string;
 };
 
-export type UserStatus = {
-  hasHadSession: boolean;
-  lastSessionDate: Date;
-  lastSessionAssessment: string;
-  lastSessionModuleId: string;
-};
 
 export function getGreetingAgent(
-  userStatus: UserStatus,
+  userStatus: UserTrainingStatus,
   recommendedModule: RecommendedModule
 ) {
   return new RealtimeAgent({
@@ -37,6 +32,9 @@ So far you know the following about the user which will indicate if they are a n
 - ${userStatus.hasHadSession ? `User has had a session ${timeSince(userStatus.lastSessionDate)} days ago` : `User is new and have not had any sessions yet.`}
 - ${userStatus.hasHadSession ? `Last session's module id was ${userStatus.lastSessionModuleId}.` : ``}
 - ${userStatus.hasHadSession ? `Last session's assessment was: ${userStatus.lastSessionAssessment}.` : ``}
+- ${userStatus.hasHadSession ? `Last session's module title was: ${userStatus.lastSessionModuleTitle}.` : ``}
+- ${userStatus.hasHadSession ? `Last session's module instructions were: ${userStatus.lastSessionModuleInstructions}.` : ``}
+- ${userStatus.hasHadSession ? `Last session's module scenario prompt was: ${userStatus.lastSessionModuleScenarioPrompt}.` : ``}
 
 # Recommended Module
 You are provided with the following recommended module, unless the user chooses to build a new module based on their current needs in this conversation. If the user does not want to build a module - you should use this recommended module:

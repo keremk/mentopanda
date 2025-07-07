@@ -259,6 +259,9 @@ export type UserTrainingStatus = {
   lastSessionDate: Date;
   lastSessionAssessment: string;
   lastSessionModuleId: string;
+  lastSessionModuleTitle: string;
+  lastSessionModuleInstructions: string;
+  lastSessionModuleScenarioPrompt: string;
 };
 
 export async function getUserTrainingStatus(
@@ -277,7 +280,9 @@ export async function getUserTrainingStatus(
       completed_at,
       modules (
         id,
-        title
+        title,
+        instructions,
+        scenario_prompt
       )
     `
     )
@@ -298,6 +303,9 @@ export async function getUserTrainingStatus(
       lastSessionDate: new Date(),
       lastSessionAssessment: "",
       lastSessionModuleId: "",
+      lastSessionModuleTitle: "",
+      lastSessionModuleInstructions: "",
+      lastSessionModuleScenarioPrompt: "",
     };
   }
 
@@ -308,5 +316,10 @@ export async function getUserTrainingStatus(
     lastSessionAssessment:
       latestHistory.assessment_text || "No assessment provided",
     lastSessionModuleId: latestHistory.module_id.toString(),
+    lastSessionModuleTitle: latestHistory.modules?.[0]?.title || "",
+    lastSessionModuleInstructions:
+      latestHistory.modules?.[0]?.instructions || "",
+    lastSessionModuleScenarioPrompt:
+      latestHistory.modules?.[0]?.scenario_prompt || "",
   };
 }

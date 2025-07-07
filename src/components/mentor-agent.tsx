@@ -7,23 +7,26 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import {
   getGreetingAgent,
-  type UserStatus,
   type RecommendedModule,
 } from "@/prompts/greeting-agent";
 import { getUserTrainingStatusAction } from "@/app/actions/history-actions";
 import { getRandomModuleRecommendationAction } from "@/app/actions/moduleActions";
 import { RealtimeAgent } from "@openai/agents/realtime";
 import { logger } from "@/lib/logger";
+import { UserTrainingStatus } from "@/data/history";
 
 const AVATAR_URL =
   "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/avatars//gopanda.png";
 
 // Default fallback data
-const DEFAULT_USER_STATUS: UserStatus = {
+const DEFAULT_USER_STATUS: UserTrainingStatus = {
   hasHadSession: false,
   lastSessionDate: new Date(),
   lastSessionAssessment: "",
   lastSessionModuleId: "",
+  lastSessionModuleTitle: "",
+  lastSessionModuleInstructions: "",
+  lastSessionModuleScenarioPrompt: "",
 };
 
 const DEFAULT_RECOMMENDED_MODULE: RecommendedModule = {
