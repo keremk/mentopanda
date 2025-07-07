@@ -69,11 +69,9 @@ function MentorAgentInteraction({ agent }: { agent: RealtimeAgent }) {
   // Ensure cleanup when component unmounts (e.g., dialog closing)
   useEffect(() => {
     return () => {
-      if (isConnected) {
-        disconnect();
-      }
+      disconnect();
     };
-  }, [isConnected, disconnect]);
+  }, [disconnect]);
 
   return (
     <div className="flex flex-col items-center gap-6 w-full">

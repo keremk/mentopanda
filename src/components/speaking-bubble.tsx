@@ -51,6 +51,7 @@ export function SpeakingBubble({
     }
 
     isAnalyzingRef.current = false;
+    isPlayingRef.current = false;
 
     if (sourceRef.current) {
       sourceRef.current.disconnect();
@@ -68,9 +69,6 @@ export function SpeakingBubble({
     }
 
     prevStreamRef.current = null;
-
-    // Mark as not playing so idle pattern isn't blocked
-    isPlayingRef.current = false;
   }, []);
 
   const stopAnalyzing = useCallback(() => {
@@ -79,10 +77,8 @@ export function SpeakingBubble({
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = undefined;
     }
-    if (!audioRef.current?.srcObject) {
-      fullyTearDown();
-    }
-  }, [audioRef, fullyTearDown]);
+    fullyTearDown();
+  }, [fullyTearDown]);
 
   const analyzeAudio = useCallback(() => {
     if (!analyserRef.current || !isAnalyzingRef.current) return;
@@ -229,37 +225,12 @@ export function SpeakingBubble({
     };
   }, [audioRef, startAnalyzing, stopAnalyzing, simulateIdlePattern]);
 
-  // Critical cleanup on unmount or when avatar is hidden
+  // Critical cleanup on unmount
   useEffect(() => {
     return () => {
-      // Component is unmounting or avatar is being hidden, stop everything
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = undefined;
-      }
-
-      isAnalyzingRef.current = false;
-      isPlayingRef.current = false;
-
-      // Clean up audio analysis resources
-      if (sourceRef.current) {
-        sourceRef.current.disconnect();
-        sourceRef.current = null;
-      }
-      if (analyserRef.current) {
-        analyserRef.current.disconnect();
-        analyserRef.current = null;
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {
-          /* safari sometimes throws if already closed */
-        });
-        audioContextRef.current = null;
-      }
-
-      prevStreamRef.current = null;
+      fullyTearDown();
     };
-  }, []);
+  }, [fullyTearDown]);
 
   // Start idle animation on mount
   useEffect(() => {
