@@ -94,7 +94,7 @@ function MentorAgentInteraction({ agent }: { agent: RealtimeAgent }) {
           <Button
             onClick={handleConnect}
             disabled={isConnecting || isConnected}
-            variant={isConnected ? "secondary" : "default"}
+            variant={isConnected ? "ghost-brand" : "brand"}
           >
             {isConnecting
               ? "Connecting..."
@@ -104,7 +104,7 @@ function MentorAgentInteraction({ agent }: { agent: RealtimeAgent }) {
           </Button>
 
           {isConnected && (
-            <Button onClick={handleDisconnect} variant="outline">
+            <Button onClick={handleDisconnect} variant="ghost-brand">
               End Conversation
             </Button>
           )}

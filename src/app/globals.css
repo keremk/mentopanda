@@ -56,9 +56,9 @@
     --ring: 175 70% 41%;
 
     /* Brand color for hero buttons - Teal/Turquoise shade */
-    --brand: 175 70% 41%;
+    --brand: 175 80% 41%;
     --brand-foreground: 0 0% 100%;
-    --brand-hover: 175 80% 35%;
+    --brand-hover: 175 95% 42%;
 
     --radius: 0.5rem;
 
@@ -106,9 +106,9 @@
     --danger-hover: 342 65% 40%;
 
     /* Brand color for hero buttons in dark mode - Slightly brighter teal */
-    --brand: 175 70% 45%;
+    --brand: 175 60% 35%;
     --brand-foreground: 0 0% 100%;
-    --brand-hover: 175 75% 40%;
+    --brand-hover: 175 80% 35%;
 
     --border: 216 34% 17%;
     --input: 216 34% 17%;

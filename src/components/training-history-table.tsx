@@ -47,9 +47,9 @@ export function TrainingHistoryTable({ forUserId }: { forUserId?: string }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Session Title</TableHead>
-              <TableHead>Training Title</TableHead>
-              <TableHead>Date/Time Taken</TableHead>
+              <TableHead className="text-brand">Session Title</TableHead>
+              <TableHead className="text-brand">Training Title</TableHead>
+              <TableHead className="text-brand">Date/Time Taken</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -88,7 +88,9 @@ export function TrainingHistoryTable({ forUserId }: { forUserId?: string }) {
                   if (currentPage > 1) handlePageChange(currentPage - 1);
                 }}
                 className={
-                  currentPage <= 1 ? "pointer-events-none opacity-50" : ""
+                  currentPage <= 1
+                    ? "pointer-events-none opacity-50"
+                    : "text-brand"
                 }
               />
             </PaginationItem>
@@ -96,6 +98,7 @@ export function TrainingHistoryTable({ forUserId }: { forUserId?: string }) {
               <PaginationItem key={i + 1}>
                 <PaginationLink
                   href="#"
+                  className="text-brand hover:text-brand-dark"
                   onClick={(e) => {
                     e.preventDefault();
                     handlePageChange(i + 1);
@@ -116,8 +119,8 @@ export function TrainingHistoryTable({ forUserId }: { forUserId?: string }) {
                 }}
                 className={
                   currentPage >= totalPages
-                    ? "pointer-events-none opacity-50"
-                    : ""
+                    ? "pointer-events-none opacity-50 "
+                    : "text-brand"
                 }
               />
             </PaginationItem>

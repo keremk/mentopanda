@@ -54,7 +54,7 @@ function DialogContent_WithActions({
   return (
     <>
       <DialogHeader>
-        <DialogTitle className="text-center w-full">
+        <DialogTitle className="text-center w-full text-brand">
           Meet your Mentor Agent
         </DialogTitle>
       </DialogHeader>
@@ -71,7 +71,7 @@ function DialogContent_WithActions({
           onClick={handleGoClick}
           disabled={!nextModuleId}
         >
-          Go
+          Continue
         </Button>
       </DialogFooter>
     </>

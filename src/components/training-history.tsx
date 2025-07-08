@@ -7,7 +7,7 @@ export function TrainingHistory({ forUserId }: { forUserId?: string }) {
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
-        <CardTitle>Training History</CardTitle>
+        <CardTitle className="text-brand">Training History</CardTitle>
       </CardHeader>
       <CardContent className="flex-grow overflow-auto flex flex-col">
         <Suspense fallback={<TrainingHistoryTableSkeleton />}>

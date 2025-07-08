@@ -12,5 +12,5 @@ export function PageTitle() {
     setTitle(document.title);
   }, [pathname]);
 
-  return <h1 className="text-lg font-semibold truncate">{title}</h1>;
+  return <h1 className="text-brand text-xl font-semibold truncate">{title}</h1>;
 }

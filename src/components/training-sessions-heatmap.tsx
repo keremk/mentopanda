@@ -44,7 +44,7 @@ export async function TrainingSessionsHeatmap({
   return (
     <Card className="w-full h-full flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
-        <CardTitle>Training Heatmap</CardTitle>
+        <CardTitle className="text-brand">Training Heatmap</CardTitle>
       </CardHeader>
       <CardContent className="flex-grow p-4">
         <div className="flex justify-center">

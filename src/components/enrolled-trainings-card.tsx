@@ -35,7 +35,7 @@ export function EnrolledTrainingsCard({
   return (
     <Card className="w-full h-[310px] flex flex-col">
       <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
-        <CardTitle className="text-2xl font-bold">Enrolled Trainings</CardTitle>
+        <CardTitle className="text-brand">Enrolled Trainings</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto p-0 mx-3">
         {displayedTrainings && displayedTrainings.length > 0 ? (
@@ -91,7 +91,7 @@ export function EnrolledTrainingsCard({
               No trainings enrolled yet
             </p>
             <Link href="/explore">
-              <Button size="lg">
+              <Button size="lg" variant="ghost-brand">
                 <Search className="mr-2 h-5 w-4" />
                 Explore Trainings
               </Button>
