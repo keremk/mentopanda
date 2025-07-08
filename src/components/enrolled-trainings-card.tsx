@@ -62,8 +62,8 @@ export function EnrolledTrainingsCard({
                   <TableCell className="font-semibold p-2 whitespace-pre-line break-words">
                     {training.title}
                   </TableCell>
-                  <TableCell className="text-right p-2">
-                    <Button variant="ghost-brand" asChild>
+                  <TableCell className=" p-2 w-1">
+                    <Button variant="ghost-brand" className="w-full" asChild>
                       <Link href={`/enrollments/${training.id}`}>
                         <PlayIcon
                           className={!isMobile ? "mr-2 h-4 w-4" : "h-4 w-4"}
@@ -72,11 +72,12 @@ export function EnrolledTrainingsCard({
                       </Link>
                     </Button>
                   </TableCell>
-                  <TableCell className="text-right p-2">
+                  <TableCell className="text-right p-2 w-1">
                     <EnrollmentButton
                       key={`enrollment-${training.id}`}
                       trainingId={training.id}
                       isEnrolled={true}
+                      className="w-full"
                       onUnenroll={handleUnenroll}
                       alwaysShowButtonTitle={false}
                     />
