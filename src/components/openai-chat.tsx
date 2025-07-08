@@ -51,15 +51,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { TranscriptEntry } from "@/types/chat-types";
 import { SpeakingBubble } from "./speaking-bubble";
 
-type ChatProps = {
-  module: Module;
-  currentUser: User;
-  handleEndWithoutSaving: () => Promise<void>;
-  handleEndAndSave: () => Promise<void>;
-  transcriptEntries: TranscriptEntry[];
-  isAgentSpeaking: boolean;
-};
-
 type OpenAIChatContentProps = {
   module: Module;
   currentUser: User;
@@ -133,7 +124,7 @@ ${modulePrompt.scenario}
   return prompt;
 }
 
-export default function OpenAIChat({ module, currentUser }: ChatProps) {
+export default function OpenAIChat({ module, currentUser }: OpenAIChatContentProps) {
   return (
     <TranscriptProvider>
       <OpenAIChatContent module={module} currentUser={currentUser} />
