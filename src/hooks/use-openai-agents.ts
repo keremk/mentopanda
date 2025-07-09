@@ -232,11 +232,20 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
 
       // Listen for session errors
       session.on("error", handleError);
+      session.on("transport_event", (event) => {
+        logger.info("Transport event:", JSON.stringify(event));
+      });
 
       // Listen for transport layer events if available
       if (session.transport) {
         session.transport.on("close", handleDisconnect);
         session.transport.on("error", handleError);
+        session.transport.on("usage_update", (usage) => {
+          logger.info("Usage updated:", JSON.stringify(usage));
+        });
+        session.transport.on("audio_transcript_delta", (delta) => {
+          logger.info("Audio transcript delta:", JSON.stringify(delta));
+        });
 
         session.transport.on("open", () => {
           logger.info("Transport layer connected");

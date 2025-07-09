@@ -7,6 +7,8 @@ import {
   addAgentStep,
 } from "@/contexts/agent-actions-context";
 import { UserTrainingStatus } from "@/data/history";
+import { getUserTrainingStatusAction } from "@/app/actions/history-actions";
+import { getRandomModuleRecommendationAction } from "@/app/actions/moduleActions";
 
 export type RecommendedModule = {
   moduleId: string;
@@ -14,6 +16,60 @@ export type RecommendedModule = {
   moduleDescription: string;
 };
 
+// Default fallback data
+const DEFAULT_USER_STATUS: UserTrainingStatus = {
+  hasHadSession: false,
+  lastSessionDate: new Date(),
+  lastSessionAssessment: "",
+  lastSessionModuleId: "",
+  lastSessionModuleTitle: "",
+  lastSessionModuleInstructions: "",
+  lastSessionModuleScenarioPrompt: "",
+};
+
+const DEFAULT_RECOMMENDED_MODULE: RecommendedModule = {
+  moduleId: "1",
+  moduleTitle: "Welcome Training",
+  moduleDescription:
+    "A simple introduction to communication skills training to get you started on your learning journey.",
+};
+
+/**
+ * Async factory function that loads context and creates a greeting agent
+ */
+export async function createGreetingAgentWithContext(): Promise<RealtimeAgent> {
+  logger.debug("🔄 Creating greeting agent with context...");
+
+  try {
+    // Get user status and module recommendation in parallel
+    const [userStatus, moduleRecommendation] = await Promise.all([
+      getUserTrainingStatusAction(),
+      getRandomModuleRecommendationAction(),
+    ]);
+
+    logger.debug("📊 User status:", userStatus);
+    logger.debug("📚 Module recommendation:", moduleRecommendation);
+
+    // Use defaults if we can't get real data
+    const finalUserStatus = userStatus || DEFAULT_USER_STATUS;
+    const finalModuleRecommendation =
+      moduleRecommendation || DEFAULT_RECOMMENDED_MODULE;
+
+    logger.debug("✅ Final user status:", finalUserStatus);
+    logger.debug("✅ Final module recommendation:", finalModuleRecommendation);
+
+    // Create the greeting agent with real data
+    const agent = getGreetingAgent(finalUserStatus, finalModuleRecommendation);
+
+    logger.debug("🤖 Greeting agent created successfully");
+    return agent;
+  } catch (err) {
+    logger.error("❌ Failed to load context, using defaults:", err);
+
+    // Fall back to default agent
+    return getGreetingAgent(DEFAULT_USER_STATUS, DEFAULT_RECOMMENDED_MODULE);
+  }
+}
 
 export function getGreetingAgent(
   userStatus: UserTrainingStatus,
