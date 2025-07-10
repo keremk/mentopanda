@@ -35,10 +35,10 @@ const DEFAULT_RECOMMENDED_MODULE: RecommendedModule = {
 };
 
 /**
- * Async factory function that loads context and creates a greeting agent
+ * Async factory function that loads context and creates a training navigator agent
  */
-export async function createGreetingAgentWithContext(): Promise<RealtimeAgent> {
-  logger.debug("🔄 Creating greeting agent with context...");
+export async function createTrainingNavigatorAgentWithContext(): Promise<RealtimeAgent> {
+  logger.debug("🔄 Creating training navigator agent with context...");
 
   try {
     // Get user status and module recommendation in parallel
@@ -58,20 +58,26 @@ export async function createGreetingAgentWithContext(): Promise<RealtimeAgent> {
     logger.debug("✅ Final user status:", finalUserStatus);
     logger.debug("✅ Final module recommendation:", finalModuleRecommendation);
 
-    // Create the greeting agent with real data
-    const agent = getGreetingAgent(finalUserStatus, finalModuleRecommendation);
+    // Create the training navigator agent with real data
+    const agent = getTrainingNavigatorAgent(
+      finalUserStatus,
+      finalModuleRecommendation
+    );
 
-    logger.debug("🤖 Greeting agent created successfully");
+    logger.debug("🤖 Training navigator agent created successfully");
     return agent;
   } catch (err) {
     logger.error("❌ Failed to load context, using defaults:", err);
 
     // Fall back to default agent
-    return getGreetingAgent(DEFAULT_USER_STATUS, DEFAULT_RECOMMENDED_MODULE);
+    return getTrainingNavigatorAgent(
+      DEFAULT_USER_STATUS,
+      DEFAULT_RECOMMENDED_MODULE
+    );
   }
 }
 
-export function getGreetingAgent(
+export function getTrainingNavigatorAgent(
   userStatus: UserTrainingStatus,
   recommendedModule: RecommendedModule
 ) {

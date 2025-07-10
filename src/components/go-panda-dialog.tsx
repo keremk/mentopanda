@@ -16,7 +16,7 @@ import {
   useAgentActions,
   AgentActionsProvider,
 } from "@/contexts/agent-actions-context";
-import { createGreetingAgentWithContext } from "@/prompts/greeting-agent";
+import { createTrainingNavigatorAgentWithContext } from "@/prompts/training-navigator-agent";
 
 export type GoPandaDialogProps = {
   /**
@@ -61,7 +61,9 @@ function DialogContent_WithActions({
       </DialogHeader>
 
       {/* Only render MentorAgent when dialog is open to ensure proper cleanup */}
-      {isOpen && <MentorAgent agentFactory={createGreetingAgentWithContext} />}
+      {isOpen && (
+        <MentorAgent agentFactory={createTrainingNavigatorAgentWithContext} />
+      )}
 
       <DialogFooter className="pt-6">
         <Button variant="ghost-brand" onClick={() => setIsOpen(false)}>
