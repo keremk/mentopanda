@@ -6,6 +6,12 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { PostHogProvider } from "./posthog";
 import { Banner } from "./banner";
+
+// Import memory monitoring in development
+if (process.env.NODE_ENV === "development") {
+  import("@/lib/memory-utils");
+}
+
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",

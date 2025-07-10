@@ -39,6 +39,7 @@ export function SpeakingBubble({
   const isAnalyzingRef = useRef(false);
   const isPlayingRef = useRef(isPlaying);
   const prevStreamRef = useRef<MediaStream | null>(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
     isPlayingRef.current = isPlaying;
@@ -117,7 +118,7 @@ export function SpeakingBubble({
 
     setAnimationTime(Date.now() * 0.003);
 
-    if (isAnalyzingRef.current) {
+    if (isAnalyzingRef.current && isMountedRef.current) {
       animationFrameRef.current = requestAnimationFrame(analyzeAudio);
     }
   }, []);
@@ -228,6 +229,7 @@ export function SpeakingBubble({
   // Critical cleanup on unmount
   useEffect(() => {
     return () => {
+      isMountedRef.current = false;
       fullyTearDown();
     };
   }, [fullyTearDown]);

@@ -124,7 +124,10 @@ ${modulePrompt.scenario}
   return prompt;
 }
 
-export default function OpenAIChat({ module, currentUser }: OpenAIChatContentProps) {
+export default function OpenAIChat({
+  module,
+  currentUser,
+}: OpenAIChatContentProps) {
   return (
     <TranscriptProvider>
       <OpenAIChatContent module={module} currentUser={currentUser} />
@@ -452,6 +455,10 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     ? parseInt(process.env.NEXT_PUBLIC_CHAT_HARD_TIMEOUT_MINUTES)
     : 2;
 
+  // Add AbortController to prevent async operations after unmount
+  const abortControllerRef = useRef<AbortController>(new AbortController());
+  const isMountedRef = useRef(true);
+
   // State for adjustable session duration
   const [sessionDurationMinutes, setSessionDurationMinutes] = useState(
     Math.floor(HARD_TIMEOUT_MINUTES / 2) || 1 // Default to half, min 1
@@ -466,9 +473,21 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     const audioEl = audioRef.current;
     if (!audioEl) return;
 
-    const handlePlay = () => setIsAgentSpeaking(true);
-    const handlePause = () => setIsAgentSpeaking(false);
-    const handleEnded = () => setIsAgentSpeaking(false);
+    const handlePlay = () => {
+      if (isMountedRef.current) {
+        setIsAgentSpeaking(true);
+      }
+    };
+    const handlePause = () => {
+      if (isMountedRef.current) {
+        setIsAgentSpeaking(false);
+      }
+    };
+    const handleEnded = () => {
+      if (isMountedRef.current) {
+        setIsAgentSpeaking(false);
+      }
+    };
 
     audioEl.addEventListener("playing", handlePlay);
     audioEl.addEventListener("pause", handlePause);
@@ -480,6 +499,15 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
       audioEl.removeEventListener("ended", handleEnded);
     };
   }, [audioRef]);
+
+  // Component unmount cleanup
+  useEffect(() => {
+    const abortController = abortControllerRef.current;
+    return () => {
+      isMountedRef.current = false;
+      abortController.abort();
+    };
+  }, []);
 
   useEffect(() => {
     logger.info("Generated OpenAI Prompt:", instructions);
@@ -563,7 +591,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     });
 
     if (usage) {
-      // Track conversation usage in database
+      // Track conversation usage in database - ALWAYS track, regardless of mount status
       try {
         await updateConversationUsageAction({
           modelName: MODEL_NAMES.OPENAI_REALTIME, // Fixed to match pricing data
@@ -594,14 +622,23 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
           totalTokens: usage.totalTokens || 0,
           totalSessionLength: elapsedTimeInSeconds,
         });
-        logger.info("Conversation usage tracked successfully");
+
+        // Only log success if component is still mounted
+        if (isMountedRef.current) {
+          logger.info("Conversation usage tracked successfully");
+        } else {
+          logger.info(
+            "Conversation usage tracked successfully (component unmounted)"
+          );
+        }
       } catch (error) {
+        // Always log errors, regardless of mount status
         logger.error(`Failed to track conversation usage: ${error}`);
         // Don't fail the request if usage tracking fails
       }
     }
 
-    // Track transcription usage in database
+    // Track transcription usage in database - ALWAYS track, regardless of mount status
     if (totalUserChars > 0 || totalAgentChars > 0) {
       try {
         await updateTranscriptionUsageAction({
@@ -610,8 +647,17 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
           userChars: totalUserChars,
           agentChars: totalAgentChars,
         });
-        logger.info("Transcription usage tracked successfully");
+
+        // Only log success if component is still mounted
+        if (isMountedRef.current) {
+          logger.info("Transcription usage tracked successfully");
+        } else {
+          logger.info(
+            "Transcription usage tracked successfully (component unmounted)"
+          );
+        }
       } catch (error) {
+        // Always log errors, regardless of mount status
         logger.error(`Failed to track transcription usage: ${error}`);
         // Don't fail the request if usage tracking fails
       }
