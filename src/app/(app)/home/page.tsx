@@ -8,7 +8,7 @@ import { getInvitationsForUserAction } from "@/app/actions/invitation-actions";
 import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
-import { GoPandaDialog } from "@/components/go-panda-dialog";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -32,9 +32,9 @@ export default async function HomePage() {
         <div className="absolute top-0 right-0 p-4 z-10">
           <div className="flex gap-2">
             {isAdmin && (
-              <GoPandaDialog>
-                <Button variant="brand">Go Panda</Button>
-              </GoPandaDialog>
+              <Button variant="brand" asChild>
+                <Link href="/navigator">Go Panda</Link>
+              </Button>
             )}
           </div>
         </div>

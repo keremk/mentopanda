@@ -7,8 +7,6 @@ import {
   addAgentStep,
 } from "@/contexts/agent-actions-context";
 import { UserTrainingStatus } from "@/data/history";
-import { getUserTrainingStatusAction } from "@/app/actions/history-actions";
-import { getRandomModuleRecommendationAction } from "@/app/actions/moduleActions";
 
 export type RecommendedModule = {
   moduleId: string;
@@ -17,7 +15,7 @@ export type RecommendedModule = {
 };
 
 // Default fallback data
-const DEFAULT_USER_STATUS: UserTrainingStatus = {
+export const DEFAULT_USER_STATUS: UserTrainingStatus = {
   hasHadSession: false,
   lastSessionDate: new Date(),
   lastSessionAssessment: "",
@@ -27,55 +25,12 @@ const DEFAULT_USER_STATUS: UserTrainingStatus = {
   lastSessionModuleScenarioPrompt: "",
 };
 
-const DEFAULT_RECOMMENDED_MODULE: RecommendedModule = {
+export const DEFAULT_RECOMMENDED_MODULE: RecommendedModule = {
   moduleId: "1",
   moduleTitle: "Welcome Training",
   moduleDescription:
     "A simple introduction to communication skills training to get you started on your learning journey.",
 };
-
-/**
- * Async factory function that loads context and creates a training navigator agent
- */
-export async function createTrainingNavigatorAgentWithContext(): Promise<RealtimeAgent> {
-  logger.debug("🔄 Creating training navigator agent with context...");
-
-  try {
-    // Get user status and module recommendation in parallel
-    const [userStatus, moduleRecommendation] = await Promise.all([
-      getUserTrainingStatusAction(),
-      getRandomModuleRecommendationAction(),
-    ]);
-
-    logger.debug("📊 User status:", userStatus);
-    logger.debug("📚 Module recommendation:", moduleRecommendation);
-
-    // Use defaults if we can't get real data
-    const finalUserStatus = userStatus || DEFAULT_USER_STATUS;
-    const finalModuleRecommendation =
-      moduleRecommendation || DEFAULT_RECOMMENDED_MODULE;
-
-    logger.debug("✅ Final user status:", finalUserStatus);
-    logger.debug("✅ Final module recommendation:", finalModuleRecommendation);
-
-    // Create the training navigator agent with real data
-    const agent = getTrainingNavigatorAgent(
-      finalUserStatus,
-      finalModuleRecommendation
-    );
-
-    logger.debug("🤖 Training navigator agent created successfully");
-    return agent;
-  } catch (err) {
-    logger.error("❌ Failed to load context, using defaults:", err);
-
-    // Fall back to default agent
-    return getTrainingNavigatorAgent(
-      DEFAULT_USER_STATUS,
-      DEFAULT_RECOMMENDED_MODULE
-    );
-  }
-}
 
 export function getTrainingNavigatorAgent(
   userStatus: UserTrainingStatus,
