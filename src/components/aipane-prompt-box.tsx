@@ -271,6 +271,12 @@ function getOptionsForContext(contextType?: string): AIAssistOption[] {
           targetField: "characterPrompt",
           targetTab: "character",
         },
+        {
+          id: "generatePrepCoach",
+          label: "Generate prep coach prompt",
+          targetField: "prepCoach",
+          targetTab: "prepCoach",
+        },
       ];
     case "training":
       return [

@@ -60,7 +60,7 @@ export function EditModuleForm({
   // Handle changes to nested modulePrompt fields (scenario, assessment)
   const handleModulePromptFieldChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>,
-    field: "scenario" | "assessment" // Be specific
+    field: "scenario" | "assessment" | "prepCoach" // Be specific
   ) => {
     const { value } = e.target;
     // Dispatch action to update the specific module prompt field
@@ -118,7 +118,7 @@ export function EditModuleForm({
               onValueChange={handleTabChange}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-4 bg-secondary/50 p-1 rounded-2xl">
+              <TabsList className="grid w-full grid-cols-5 bg-secondary/50 p-1 rounded-2xl">
                 <TabsTrigger
                   value="instructions"
                   className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
@@ -142,6 +142,12 @@ export function EditModuleForm({
                   className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
                 >
                   Assessment
+                </TabsTrigger>
+                <TabsTrigger
+                  value="prepCoach"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
+                >
+                  Prep Coach
                 </TabsTrigger>
               </TabsList>
 
@@ -177,6 +183,20 @@ export function EditModuleForm({
                   }
                   rows={12}
                   placeholder="Enter the prompt for the AI to assess the user's performance"
+                  className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
+                  onKeyDown={handleModuleKeyDown}
+                />
+              </TabsContent>
+
+              <TabsContent value="prepCoach" className="mt-4">
+                <AIFocusTextarea
+                  name="prepCoach"
+                  value={module.modulePrompt.prepCoach || ""}
+                  onChange={(e) =>
+                    handleModulePromptFieldChange(e, "prepCoach")
+                  }
+                  rows={12}
+                  placeholder="Enter the prompt for the AI to coach the user before the session"
                   className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
                   onKeyDown={handleModuleKeyDown}
                 />

@@ -150,6 +150,7 @@ export async function getTrainingByIdForEdit(
         scenario: module.scenario_prompt,
         assessment: module.assessment_prompt,
         moderator: module.moderator_prompt,
+        prepCoach: module.prep_coach_prompt,
         characters: module.modules_characters.map((mc: any) => ({
           id: mc.characters.id,
           name: mc.characters.name,

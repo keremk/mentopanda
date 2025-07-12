@@ -171,7 +171,6 @@ export async function generateModulePrompts(
   scenario: string,
   character: string,
   assessment: string,
-  prepCoach: string
 ): Promise<{
   scenarioPrompt: string;
   characterPrompt: string;
@@ -193,11 +192,10 @@ export async function generateModulePrompts(
   const scenarioPrompt = `${modulePrompts.generateScenario.metaPrompt}\n\nUser Input: ${scenario}`;
   const characterPrompt = `${modulePrompts.generateCharacterPrompt.metaPrompt}\n\nUser Input: ${character}`;
   const assessmentPrompt = `${modulePrompts.generateAssessment.metaPrompt}\n\nUser Input: ${assessment}`;
-  const prepCoachPrompt = `${modulePrompts.generatePrepCoach.metaPrompt}\n\nUser Input: ${prepCoach}`;
 
   try {
     // Generate all prompts in parallel
-    const [scenarioResult, characterResult, assessmentResult, prepCoachResult] =
+    const [scenarioResult, characterResult, assessmentResult] =
       await Promise.all([
         generateText({
           model: openai.chat(MODEL_NAMES.OPENAI_GPT4O),
@@ -214,12 +212,15 @@ export async function generateModulePrompts(
           prompt: assessmentPrompt,
           temperature: 0.3,
         }),
-        generateText({
-          model: openai.chat(MODEL_NAMES.OPENAI_GPT4O),
-          prompt: prepCoachPrompt,
-          temperature: 0.3,
-        }),
       ]);
+
+    const prepCoachPrompt = `${modulePrompts.generatePrepCoach.metaPrompt}\n\n## Scenario:\n${scenario}\n## Character Description:\n${character}`;
+
+    const prepCoachResult = await generateText({
+      model: openai.chat(MODEL_NAMES.OPENAI_GPT4O),
+      prompt: prepCoachPrompt,
+      temperature: 0.3,
+    });
 
     // Track usage for all three generations
     await calculateAndTrackUsage(

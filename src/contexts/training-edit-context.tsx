@@ -510,6 +510,7 @@ export function TrainingEditProvider({
             scenario: "",
             assessment: "",
             moderator: "",
+            prepCoach: "",
             characters: [],
           },
         });
@@ -700,6 +701,7 @@ export function TrainingEditProvider({
           "scenario",
           "assessment",
           "moderator",
+          "prepCoach",
         ];
         const modulePromptBaseChanged = promptFields.some(
           (field) =>
@@ -765,6 +767,7 @@ export function TrainingEditProvider({
                   scenario: currentModule.modulePrompt.scenario,
                   assessment: currentModule.modulePrompt.assessment,
                   moderator: currentModule.modulePrompt.moderator,
+                  prepCoach: currentModule.modulePrompt.prepCoach,
                   // Send the current character array - updateModuleAction MUST handle this
                   characters: currentModule.modulePrompt.characters,
                 },
