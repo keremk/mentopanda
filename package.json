@@ -2,6 +2,7 @@
   "name": "tinker-box",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "NODE_NO_WARNINGS=1 next dev --turbopack",
     "build": "next build",

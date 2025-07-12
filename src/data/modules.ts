@@ -5,7 +5,6 @@ import { CharacterDetails } from "./characters";
 import { AIModel, AI_MODELS, aiModelSchema } from "@/types/models";
 import { logger } from "@/lib/logger";
 import { getPathFromStorageUrl } from "@/lib/utils";
-import { getCurrentUserInfo } from "./user";
 
 export type ModuleCharacter = CharacterDetails & {
   prompt: string;
@@ -17,6 +16,7 @@ export type ModulePrompt = {
   scenario: string;
   assessment: string;
   moderator: string | null;
+  prepCoach: string | null;
   characters: ModuleCharacter[];
 };
 
@@ -47,6 +47,7 @@ export type ModuleContextForAI = {
   scenario: string;
   assessment: string;
   moderator: string | null;
+  prepCoach: string | null;
 };
 
 // Add this new function to get modules for a training
@@ -75,69 +76,34 @@ export async function getModulesByTrainingId(
 }
 
 // Add new function to get all modules for the user's current project
-export async function getModulesForCurrentProject(
+async function getModulesForCurrentProject(
   supabase: SupabaseClient
-): Promise<ModuleSummary[]> {
-  // Get user's current project from their profile
+): Promise<number[]> {
+  // Get user's current project from their profile and join with modules in a single query
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("User not authenticated");
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("current_project_id")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError) handleError(profileError);
-  if (!profile?.current_project_id) {
-    return []; // User has no current project
-  }
-
-  // Get all trainings for the current project
-  const { data: trainings, error: trainingsError } = await supabase
-    .from("trainings")
-    .select("id")
-    .eq("project_id", profile.current_project_id);
-
-  if (trainingsError) handleError(trainingsError);
-  if (!trainings || trainings.length === 0) {
-    return []; // No trainings in current project
-  }
-
-  // Get all modules for all trainings in the project
-  const trainingIds = trainings.map((t) => t.id);
-
   const { data, error } = await supabase
     .from("modules")
     .select(
       `
-      id, 
-      title, 
-      training_id, 
-      ordinal, 
-      created_at, 
-      updated_at,
-      instructions,
-      scenario_prompt
+      id,
+      trainings!inner (
+        project_id,
+        profiles!inner (
+          id
+        )
+      )
     `
     )
-    .in("training_id", trainingIds)
+    .eq("trainings.profiles.id", user.id)
     .order("created_at", { ascending: false }); // Most recent first
 
   if (error) handleError(error);
 
-  return (
-    data?.map((module) => ({
-      id: module.id,
-      title: module.title,
-      trainingId: module.training_id,
-      ordinal: module.ordinal,
-      createdAt: new Date(module.created_at),
-      updatedAt: new Date(module.updated_at),
-    })) ?? []
-  );
+  return data?.map((module) => module.id) ?? [];
 }
 
 // Add function to get a random module recommendation
@@ -148,29 +114,29 @@ export async function getRandomModuleRecommendation(
   moduleTitle: string;
   moduleDescription: string;
 } | null> {
-  const modules = await getModulesForCurrentProject(supabase);
+  const moduleIds = await getModulesForCurrentProject(supabase);
 
-  if (modules.length === 0) {
+  if (moduleIds.length === 0) {
     return null; // No modules available for recommendation
   }
 
-  // Select a random module
-  const randomIndex = Math.floor(Math.random() * modules.length);
-  const selectedModule = modules[randomIndex];
+  // Select a random module ID
+  const randomIndex = Math.floor(Math.random() * moduleIds.length);
+  const selectedModuleId = moduleIds[randomIndex];
 
   // Get full module details for description
   const { data: moduleDetails, error } = await supabase
     .from("modules")
-    .select("instructions, scenario_prompt")
-    .eq("id", selectedModule.id)
+    .select("title, instructions, scenario_prompt")
+    .eq("id", selectedModuleId)
     .single();
 
   if (error) {
     logger.warn("Could not get module details for recommendation:", error);
     // Return basic info without description
     return {
-      moduleId: selectedModule.id.toString(),
-      moduleTitle: selectedModule.title,
+      moduleId: selectedModuleId.toString(),
+      moduleTitle: "Training Module",
       moduleDescription:
         "A training module to help improve your communication skills.",
     };
@@ -183,57 +149,10 @@ export async function getRandomModuleRecommendation(
     "A training module to help improve your communication skills.";
 
   return {
-    moduleId: selectedModule.id.toString(),
-    moduleTitle: selectedModule.title,
+    moduleId: selectedModuleId.toString(),
+    moduleTitle: moduleDetails.title,
     moduleDescription: description,
   };
-}
-
-// Function to find or create Side Quests training and return its ID
-export async function findOrCreateSideQuestsTraining(
-  supabase: SupabaseClient
-): Promise<number> {
-  // Get user info including current project
-  const { id: userId, currentProject } = await getCurrentUserInfo(supabase);
-
-  // Check if "Side Quests" training exists in the current project
-  const { data: existingTraining, error: trainingError } = await supabase
-    .from("trainings")
-    .select("id")
-    .eq("project_id", currentProject.id)
-    .eq("title", "Side Quests")
-    .single();
-
-  if (trainingError && trainingError.code === "PGRST116") {
-    // Training doesn't exist, create it
-    const SIDE_QUESTS_DESCRIPTION =
-      "A collection of miscellaneous training modules for various communication scenarios and skill-building exercises. These side quests help you practice different situations and improve your overall communication abilities. You can add new modules by just selecting `Go Panda` button on your home page and the MentoPanda will help you create new modules by asking you a few questions. ";
-
-    const { data: newTraining, error: createError } = await supabase
-      .from("trainings")
-      .insert({
-        title: "Side Quests",
-        tagline: "For your impromptu training ideas",
-        description: SIDE_QUESTS_DESCRIPTION,
-        image_url:
-          "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/trainings//sidequests.png",
-        project_id: currentProject.id,
-        created_by: userId,
-      })
-      .select("id")
-      .single();
-
-    if (createError) handleError(createError);
-    if (!newTraining) throw new Error("Failed to create Side Quests training");
-
-    return newTraining.id;
-  } else if (trainingError) {
-    handleError(trainingError);
-    throw new Error("Failed to check for existing Side Quests training");
-  } else {
-    // Training exists, return its ID
-    return existingTraining.id;
-  }
 }
 
 export type UpdateModuleInput = {
@@ -262,6 +181,7 @@ export async function updateModule(
       scenario_prompt: module.modulePrompt.scenario,
       assessment_prompt: module.modulePrompt.assessment,
       moderator_prompt: module.modulePrompt.moderator,
+      prep_coach_prompt: module.modulePrompt.prepCoach,
       updated_at: new Date().toISOString(),
     })
     .eq("id", module.id)
@@ -277,6 +197,7 @@ export async function updateModule(
     scenario: data[0].scenario_prompt,
     assessment: data[0].assessment_prompt,
     moderator: data[0].moderator_prompt,
+    prepCoach: data[0].prep_coach_prompt,
     characters: [],
   };
 
@@ -311,6 +232,7 @@ export async function createModule(
       scenario_prompt: module.modulePrompt.scenario,
       assessment_prompt: module.modulePrompt.assessment,
       moderator_prompt: module.modulePrompt.moderator,
+      prep_coach_prompt: module.modulePrompt.prepCoach,
     })
     .select()
     .single();
@@ -325,6 +247,7 @@ export async function createModule(
     scenario: data.scenario_prompt,
     assessment: data.assessment_prompt,
     moderator: data.moderator_prompt,
+    prepCoach: data.prep_coach_prompt,
     characters: [],
   };
 
@@ -553,6 +476,7 @@ export async function getModuleById2(
     scenario: module.scenario_prompt,
     assessment: module.assessment_prompt,
     moderator: module.moderator_prompt,
+    prepCoach: module.prep_coach_prompt,
     characters: characters,
   };
 

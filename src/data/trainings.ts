@@ -484,3 +484,50 @@ export async function deleteTraining(
     }
   });
 }
+
+// Function to find or create Side Quests training and return its ID
+export async function findOrCreateSideQuestsTraining(
+  supabase: SupabaseClient
+): Promise<number> {
+  // Get user info including current project
+  const { id: userId, currentProject } = await getCurrentUserInfo(supabase);
+
+  // Check if "Side Quests" training exists in the current project
+  const { data: existingTraining, error: trainingError } = await supabase
+    .from("trainings")
+    .select("id")
+    .eq("project_id", currentProject.id)
+    .eq("title", "Side Quests")
+    .single();
+
+  if (trainingError && trainingError.code === "PGRST116") {
+    // Training doesn't exist, create it
+    const SIDE_QUESTS_DESCRIPTION =
+      "A collection of miscellaneous training modules for various communication scenarios and skill-building exercises. These side quests help you practice different situations and improve your overall communication abilities. You can add new modules by just selecting `Go Panda` button on your home page and the MentoPanda will help you create new modules by asking you a few questions. ";
+
+    const { data: newTraining, error: createError } = await supabase
+      .from("trainings")
+      .insert({
+        title: "Side Quests",
+        tagline: "For your impromptu training ideas",
+        description: SIDE_QUESTS_DESCRIPTION,
+        image_url:
+          "https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/trainings//sidequests.png",
+        project_id: currentProject.id,
+        created_by: userId,
+      })
+      .select("id")
+      .single();
+
+    if (createError) handleError(createError);
+    if (!newTraining) throw new Error("Failed to create Side Quests training");
+
+    return newTraining.id;
+  } else if (trainingError) {
+    handleError(trainingError);
+    throw new Error("Failed to check for existing Side Quests training");
+  } else {
+    // Training exists, return its ID
+    return existingTraining.id;
+  }
+}

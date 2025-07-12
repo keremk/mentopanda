@@ -20,6 +20,7 @@ type DBTraining = {
     scenario_prompt: string;
     assessment_prompt: string;
     moderator_prompt: string | null;
+    prep_coach_prompt: string | null;
     modules_characters: Array<{
       characters: {
         id: number;
@@ -49,6 +50,7 @@ export async function getAIContextDataForTraining(
         scenario_prompt,
         assessment_prompt,
         moderator_prompt,
+        prep_coach_prompt,
         modules_characters!left (
           characters (
             id, 
@@ -95,6 +97,7 @@ export async function getAIContextDataForTraining(
           scenario: typedTraining.modules[0].scenario_prompt,
           assessment: typedTraining.modules[0].assessment_prompt,
           moderator: typedTraining.modules[0].moderator_prompt,
+          prepCoach: typedTraining.modules[0].prep_coach_prompt,
         }
       : {
           title: "",
@@ -102,6 +105,7 @@ export async function getAIContextDataForTraining(
           scenario: "",
           assessment: "",
           moderator: null,
+          prepCoach: null,
         },
     characters:
       typedTraining.modules?.[0]?.modules_characters?.map((mc) => ({

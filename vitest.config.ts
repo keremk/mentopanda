@@ -1,11 +1,10 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vitest/config";
-import path from "path";
 
 export default defineConfig({
-  plugins: [],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": new URL("./src", import.meta.url).pathname,
     },
   },
   test: {

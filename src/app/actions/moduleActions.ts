@@ -10,10 +10,9 @@ import {
   UpdateModuleInput,
   getModuleById2,
   Module,
-  getModulesForCurrentProject,
   getRandomModuleRecommendation,
-  findOrCreateSideQuestsTraining,
 } from "@/data/modules";
+import { findOrCreateSideQuestsTraining } from "@/data/trainings";
 import { createClient } from "@/utils/supabase/server";
 import { AI_MODELS, MODEL_NAMES, VOICES } from "@/types/models";
 import { updatePromptHelperUsageAction } from "@/app/actions/usage-actions";
@@ -134,11 +133,6 @@ export async function getModuleByIdAction2(
   return await getModuleById2(supabase, moduleId);
 }
 
-export async function getModulesForCurrentProjectAction() {
-  const supabase = await createClient();
-  return await getModulesForCurrentProject(supabase);
-}
-
 export async function getRandomModuleRecommendationAction() {
   const supabase = await createClient();
   return await getRandomModuleRecommendation(supabase);
@@ -165,6 +159,7 @@ export async function createSideQuestModuleAction(
       scenario: scenarioPrompt || "",
       assessment: assessmentPrompt || "",
       moderator: null,
+      prepCoach: null,
       characters: [],
     },
   });
@@ -175,11 +170,13 @@ export async function createSideQuestModuleAction(
 export async function generateModulePrompts(
   scenario: string,
   character: string,
-  assessment: string
+  assessment: string,
+  prepCoach: string
 ): Promise<{
   scenarioPrompt: string;
   characterPrompt: string;
   assessmentPrompt: string;
+  prepCoachPrompt: string;
 }> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -196,10 +193,11 @@ export async function generateModulePrompts(
   const scenarioPrompt = `${modulePrompts.generateScenario.metaPrompt}\n\nUser Input: ${scenario}`;
   const characterPrompt = `${modulePrompts.generateCharacterPrompt.metaPrompt}\n\nUser Input: ${character}`;
   const assessmentPrompt = `${modulePrompts.generateAssessment.metaPrompt}\n\nUser Input: ${assessment}`;
+  const prepCoachPrompt = `${modulePrompts.generatePrepCoach.metaPrompt}\n\nUser Input: ${prepCoach}`;
 
   try {
     // Generate all prompts in parallel
-    const [scenarioResult, characterResult, assessmentResult] =
+    const [scenarioResult, characterResult, assessmentResult, prepCoachResult] =
       await Promise.all([
         generateText({
           model: openai.chat(MODEL_NAMES.OPENAI_GPT4O),
@@ -216,11 +214,16 @@ export async function generateModulePrompts(
           prompt: assessmentPrompt,
           temperature: 0.3,
         }),
+        generateText({
+          model: openai.chat(MODEL_NAMES.OPENAI_GPT4O),
+          prompt: prepCoachPrompt,
+          temperature: 0.3,
+        }),
       ]);
 
     // Track usage for all three generations
     await calculateAndTrackUsage(
-      [scenarioResult, characterResult, assessmentResult],
+      [scenarioResult, characterResult, assessmentResult, prepCoachResult],
       "module prompts generation"
     );
 
@@ -228,6 +231,7 @@ export async function generateModulePrompts(
       scenarioPrompt: scenarioResult.text,
       characterPrompt: characterResult.text,
       assessmentPrompt: assessmentResult.text,
+      prepCoachPrompt: prepCoachResult.text,
     };
   } catch (error) {
     logger.error(`Failed to generate module prompts: ${error}`);
