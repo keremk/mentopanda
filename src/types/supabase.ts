@@ -286,6 +286,7 @@ export type Database = {
           instructions: string | null
           moderator_prompt: string | null
           ordinal: number
+          prep_coach_prompt: string | null
           scenario_prompt: string | null
           title: string
           training_id: number
@@ -301,6 +302,7 @@ export type Database = {
           instructions?: string | null
           moderator_prompt?: string | null
           ordinal?: number
+          prep_coach_prompt?: string | null
           scenario_prompt?: string | null
           title: string
           training_id: number
@@ -316,6 +318,7 @@ export type Database = {
           instructions?: string | null
           moderator_prompt?: string | null
           ordinal?: number
+          prep_coach_prompt?: string | null
           scenario_prompt?: string | null
           title?: string
           training_id?: number
@@ -379,6 +382,7 @@ export type Database = {
           created_at: string | null
           current_project_id: number | null
           id: string
+          onboarding: Database["public"]["Enums"]["onboarding_status"]
           pricing_plan: Database["public"]["Enums"]["pricing_plan"]
           updated_at: string | null
         }
@@ -386,6 +390,7 @@ export type Database = {
           created_at?: string | null
           current_project_id?: number | null
           id: string
+          onboarding?: Database["public"]["Enums"]["onboarding_status"]
           pricing_plan?: Database["public"]["Enums"]["pricing_plan"]
           updated_at?: string | null
         }
@@ -393,6 +398,7 @@ export type Database = {
           created_at?: string | null
           current_project_id?: number | null
           id?: string
+          onboarding?: Database["public"]["Enums"]["onboarding_status"]
           pricing_plan?: Database["public"]["Enums"]["pricing_plan"]
           updated_at?: string | null
         }
@@ -500,6 +506,48 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      training_notes: {
+        Row: {
+          created_at: string | null
+          draft: string | null
+          module_id: number
+          notes: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          draft?: string | null
+          module_id: number
+          notes?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          draft?: string | null
+          module_id?: number
+          notes?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_notes_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trainings: {
         Row: {
@@ -641,11 +689,17 @@ export type Database = {
     }
     Functions: {
       accept_invitation: {
-        Args: { invitation_id: number; user_id: string; p_project_id?: number }
+        Args: {
+          invitation_id: number
+          user_id: string
+          p_project_id?: number
+        }
         Returns: boolean
       }
       akeys: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: string[]
       }
       authorize: {
@@ -656,15 +710,21 @@ export type Database = {
         Returns: boolean
       }
       avals: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: string[]
       }
       create_project: {
-        Args: { project_name: string }
+        Args: {
+          project_name: string
+        }
         Returns: number
       }
       custom_access_token_hook: {
-        Args: { event: Json }
+        Args: {
+          event: Json
+        }
         Returns: Json
       }
       deep_copy_project: {
@@ -676,132 +736,202 @@ export type Database = {
         Returns: undefined
       }
       each: {
-        Args: { hs: unknown }
+        Args: {
+          hs: unknown
+        }
         Returns: Record<string, unknown>[]
       }
       get_character_project_id: {
-        Args: { p_character_id: number }
+        Args: {
+          p_character_id: number
+        }
         Returns: number
       }
       get_current_period_start: {
-        Args: { target_user_id: string }
+        Args: {
+          target_user_id: string
+        }
         Returns: string
       }
       get_invite_code_by_code: {
-        Args: { code_to_find: string }
+        Args: {
+          code_to_find: string
+        }
         Returns: Json
       }
       get_or_create_current_usage: {
-        Args: { target_user_id: string }
+        Args: {
+          target_user_id: string
+        }
         Returns: number
       }
       get_project_member_info: {
-        Args: { p_project_id: number; p_user_id: string }
+        Args: {
+          p_project_id: number
+          p_user_id: string
+        }
         Returns: Json
       }
       get_project_members: {
-        Args: { p_project_id: number }
+        Args: {
+          p_project_id: number
+        }
         Returns: Json
       }
       get_user_emails_by_ids: {
-        Args: { user_ids: string[] }
+        Args: {
+          user_ids: string[]
+        }
         Returns: {
           id: string
           email: string
         }[]
       }
       get_user_id_by_email: {
-        Args: { email: string }
+        Args: {
+          email: string
+        }
         Returns: {
           id: string
         }[]
       }
       get_user_profile: {
-        Args: { user_id: string }
+        Args: {
+          user_id: string
+        }
         Returns: Json
       }
       ghstore_compress: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       ghstore_decompress: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       ghstore_in: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       ghstore_options: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: undefined
       }
       ghstore_out: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
-      hstore: {
-        Args: { "": string[] } | { "": Record<string, unknown> }
-        Returns: unknown
-      }
+      hstore:
+        | {
+            Args: {
+              "": string[]
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": Record<string, unknown>
+            }
+            Returns: unknown
+          }
       hstore_hash: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: number
       }
       hstore_in: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       hstore_out: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       hstore_recv: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       hstore_send: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: string
       }
       hstore_subscript_handler: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: unknown
       }
       hstore_to_array: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: string[]
       }
       hstore_to_json: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: Json
       }
       hstore_to_json_loose: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: Json
       }
       hstore_to_jsonb: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: Json
       }
       hstore_to_jsonb_loose: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: Json
       }
       hstore_to_matrix: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: string[]
       }
       hstore_version_diag: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: number
       }
       is_member_of_project: {
-        Args: { project_id: number }
+        Args: {
+          project_id: number
+        }
         Returns: boolean
       }
       is_project_owner: {
-        Args: { project_id: number }
+        Args: {
+          project_id: number
+        }
         Returns: boolean
       }
       replace_module_character: {
@@ -813,15 +943,21 @@ export type Database = {
         Returns: undefined
       }
       skeys: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: string[]
       }
       svals: {
-        Args: { "": unknown }
+        Args: {
+          "": unknown
+        }
         Returns: string[]
       }
       validate_invite_code: {
-        Args: { code_to_validate: string }
+        Args: {
+          code_to_validate: string
+        }
         Returns: Json
       }
     }
@@ -834,6 +970,7 @@ export type Database = {
         | "training.history"
         | "basic.access"
         | "trials.manage"
+      onboarding_status: "not_started" | "complete"
       pricing_plan: "free" | "pro" | "team" | "enterprise"
       user_role: "admin" | "manager" | "member" | "super_admin"
     }
@@ -843,29 +980,27 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type PublicSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  PublicTableNameOrOptions extends
+    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
     | { schema: keyof Database },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+        Database[PublicTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
+      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
+        PublicSchema["Views"])
+    ? (PublicSchema["Tables"] &
+        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -873,22 +1008,20 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -896,22 +1029,20 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+  PublicTableNameOrOptions extends
+    | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = PublicTableNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -919,23 +1050,21 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
+  PublicEnumNameOrOptions extends
+    | keyof PublicSchema["Enums"]
     | { schema: keyof Database },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
+    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+> = PublicEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
+    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
+    | keyof PublicSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
@@ -944,28 +1073,7 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
-export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
-  public: {
-    Enums: {
-      app_permission: [
-        "training.manage",
-        "enrollment.manage",
-        "project.manage",
-        "project.member.manage",
-        "training.history",
-        "basic.access",
-        "trials.manage",
-      ],
-      pricing_plan: ["free", "pro", "team", "enterprise"],
-      user_role: ["admin", "manager", "member", "super_admin"],
-    },
-  },
-} as const
 
