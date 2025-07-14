@@ -60,7 +60,7 @@ export default async function PrepPage(props: Props) {
 
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <h1 className="text-2xl font-bold text-brand mb-4">
-            Prepare for your training
+            Prepare for your training: {currentModule.title}
           </h1>
           <div className="w-full max-w-3xl">
             <PrepPageClient

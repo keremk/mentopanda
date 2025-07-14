@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { PrepCoach } from "./prep-coach";
 import { PrepCoachGenerator } from "./prep-coach-generator";
@@ -31,22 +31,12 @@ export function PrepPageClient({
   const [showMentor, setShowMentor] = useState(false);
   const router = useRouter();
 
-  // Check for existing notes on mount
-  useEffect(() => {
-    if (hasExistingNotes) {
-      setShowExistingNotesDialog(true);
-    } else {
-      // No existing notes, start new session
-      handleCreateNewNotes();
-    }
-  }, [hasExistingNotes]);
-
   const handleContinueToTraining = () => {
     // Navigate directly to simulation
     router.push(`/simulation/${moduleId}`);
   };
 
-  const handleCreateNewNotes = async () => {
+  const handleCreateNewNotes = useCallback(async () => {
     setShowExistingNotesDialog(false);
     setIsCreatingNewSession(true);
 
@@ -67,7 +57,17 @@ export function PrepPageClient({
     } finally {
       setIsCreatingNewSession(false);
     }
-  };
+  }, [moduleId]);
+
+  // Check for existing notes on mount
+  useEffect(() => {
+    if (hasExistingNotes) {
+      setShowExistingNotesDialog(true);
+    } else {
+      // No existing notes, start new session
+      handleCreateNewNotes();
+    }
+  }, [hasExistingNotes, handleCreateNewNotes]);
 
   // If we're still checking or setting up, show loading
   if (hasExistingNotes && showExistingNotesDialog) {
