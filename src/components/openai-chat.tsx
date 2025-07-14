@@ -38,6 +38,7 @@ import {
   updateConversationUsageAction,
   updateTranscriptionUsageAction,
 } from "@/app/actions/usage-actions";
+import { getTrainingNoteAction } from "@/app/actions/training-notes-actions";
 import { MODEL_NAMES } from "@/types/models";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -90,6 +91,7 @@ type LayoutProps = {
   transcriptEntries: TranscriptEntry[];
   isAgentSpeaking: boolean;
   showAvatar: boolean;
+  notes: string | null;
 };
 
 function createPrompt(modulePrompt: ModulePrompt) {
@@ -156,6 +158,7 @@ function DesktopLayout({
   transcriptEntries,
   isAgentSpeaking,
   showAvatar,
+  notes,
 }: LayoutProps) {
   return (
     <div className="grid lg:grid-cols-[max-content,1fr] grid-cols-1 gap-4 lg:gap-4 h-[calc(100vh-4rem)] grid-rows-[auto,1fr] lg:grid-rows-1 p-4">
@@ -244,8 +247,9 @@ function DesktopLayout({
 
       <div className="h-full overflow-hidden">
         <Tabs defaultValue="instructions" className="h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="instructions">Instructions</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="transcript">Transcript</TabsTrigger>
           </TabsList>
           <TabsContent
@@ -259,6 +263,19 @@ function DesktopLayout({
                 ) : (
                   <p className="text-muted-foreground text-sm">
                     No instructions available.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="notes" className="flex-1 mt-4 overflow-auto">
+            <Card>
+              <CardContent className="pt-6">
+                {notes ? (
+                  <MemoizedMarkdown content={notes} />
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    No notes available.
                   </p>
                 )}
               </CardContent>
@@ -305,6 +322,7 @@ function MobileLayout({
   transcriptEntries,
   isAgentSpeaking,
   showAvatar,
+  notes,
 }: LayoutProps) {
   return (
     <div className="flex flex-col h-screen p-4">
@@ -396,6 +414,27 @@ function MobileLayout({
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" className="flex-1">
+                Notes
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-4/5 flex flex-col">
+              <SheetHeader>
+                <SheetTitle>Notes</SheetTitle>
+              </SheetHeader>
+              <ScrollArea className="flex-1 pr-4 -mr-4">
+                {notes ? (
+                  <MemoizedMarkdown content={notes} />
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    No notes available.
+                  </p>
+                )}
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="flex-1">
                 Transcript
               </Button>
             </SheetTrigger>
@@ -444,6 +483,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
   const [historyEntryId, setHistoryEntryId] = useState<number>();
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [isAgentSpeaking, setIsAgentSpeaking] = useState(false);
+  const [notes, setNotes] = useState<string | null>(null);
   const { transcriptEntries, clearTranscript } = useTranscript();
   const { saveAndComplete } = useTranscriptSave({
     historyEntryId,
@@ -512,6 +552,19 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
   useEffect(() => {
     logger.info("Generated OpenAI Prompt:", instructions);
   }, [instructions]);
+
+  // Fetch training notes for the module
+  useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        const trainingNote = await getTrainingNoteAction(module.id);
+        setNotes(trainingNote?.notes || null);
+      } catch (error) {
+        logger.error(`Failed to fetch training notes: ${error}`);
+      }
+    };
+    fetchNotes();
+  }, [module.id]);
 
   const voice = useMemo(
     () => module.modulePrompt.characters[0]?.voice || DEFAULT_VOICE,
@@ -851,6 +904,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     transcriptEntries,
     isAgentSpeaking,
     showAvatar,
+    notes,
   };
 
   return (

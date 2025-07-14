@@ -63,7 +63,7 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
           <div className="flex flex-col space-y-2 w-full max-w-xs mx-auto md:mx-0 md:w-40">
             {hasModules ? (
               randomModuleId ? (
-                <Link href={`/simulation/${randomModuleId}`}>
+                <Link href={`/prep/${randomModuleId}`}>
                   <Button className="w-full" variant="brand">
                     Start Random Module
                   </Button>
@@ -113,7 +113,7 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
                     <span className="text-sm text-muted-foreground">
                       Practices: {module.practiceCount}
                     </span>
-                    <Link href={`/simulation/${module.id}`}>
+                    <Link href={`/prep/${module.id}`}>
                       <Button
                         variant="ghost-brand"
                         className="w-full sm:w-auto"
