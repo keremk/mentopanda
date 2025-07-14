@@ -15,6 +15,7 @@ import {
 } from "@/data/training-notes";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
+import { checkUserHasCredits } from "./credit-check";
 
 const createTrainingNoteSchema = z.object({
   moduleId: z.number().int().positive(),
@@ -153,6 +154,14 @@ export async function generateNotesFromDraftAction(
 ): Promise<TrainingNote> {
   try {
     const validated = moduleIdSchema.parse(moduleId);
+
+    // Check if user has sufficient credits before proceeding
+    const creditCheck = await checkUserHasCredits();
+    if (!creditCheck.hasCredits) {
+      logger.warn("Notes generation blocked due to insufficient credits");
+      throw new Error(creditCheck.error || "No credits available");
+    }
+
     const supabase = await createClient();
 
     // Get the current training note with draft content

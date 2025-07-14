@@ -18,6 +18,7 @@ import { AI_MODELS, MODEL_NAMES, VOICES } from "@/types/models";
 import { updatePromptHelperUsageAction } from "@/app/actions/usage-actions";
 import { logger } from "@/lib/logger";
 import modulePrompts from "@/prompts/module-prompts";
+import { checkUserHasCredits } from "./credit-check";
 
 // Helper function to calculate and track token usage from multiple generation results
 async function calculateAndTrackUsage(
@@ -170,13 +171,22 @@ export async function createSideQuestModuleAction(
 export async function generateModulePrompts(
   scenario: string,
   character: string,
-  assessment: string,
+  assessment: string
 ): Promise<{
   scenarioPrompt: string;
   characterPrompt: string;
   assessmentPrompt: string;
   prepCoachPrompt: string;
 }> {
+  // Check if user has sufficient credits before proceeding
+  const creditCheck = await checkUserHasCredits();
+  if (!creditCheck.hasCredits) {
+    logger.warn(
+      "Module prompts generation blocked due to insufficient credits"
+    );
+    throw new Error(creditCheck.error || "No credits available");
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error("OpenAI API key is not configured");
@@ -246,6 +256,13 @@ export async function generateModuleFieldsFromScenario(
   title: string;
   instructions: string;
 }> {
+  // Check if user has sufficient credits before proceeding
+  const creditCheck = await checkUserHasCredits();
+  if (!creditCheck.hasCredits) {
+    logger.warn("Module fields generation blocked due to insufficient credits");
+    throw new Error(creditCheck.error || "No credits available");
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error("OpenAI API key is not configured");
@@ -289,6 +306,78 @@ export async function generateModuleFieldsFromScenario(
   } catch (error) {
     logger.error(`Failed to generate module fields from scenario: ${error}`);
     throw new Error(`Failed to generate module fields from scenario: ${error}`);
+  }
+}
+
+export async function generatePrepCoachAction(
+  moduleId: number,
+  scenario: string,
+  characterPrompts: string[]
+): Promise<string> {
+  // Check if user has sufficient credits before proceeding
+  const creditCheck = await checkUserHasCredits();
+  if (!creditCheck.hasCredits) {
+    logger.warn("Prep coach generation blocked due to insufficient credits");
+    throw new Error(creditCheck.error || "No credits available");
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OpenAI API key is not configured");
+  }
+
+  // Build character description from prompts
+  const characterDescription =
+    characterPrompts.length > 0
+      ? characterPrompts.join("\n\n")
+      : "A helpful character to practice with";
+
+  // Create a configured OpenAI client instance
+  const openai = createOpenAI({
+    apiKey,
+    compatibility: "strict", // Enable strict compatibility mode for proper token counting
+  });
+
+  // Generate the prepCoach prompt
+  const prepCoachPrompt = `${modulePrompts.generatePrepCoach.metaPrompt}\n\n## Scenario:\n${scenario}\n## Character Description:\n${characterDescription}`;
+
+  try {
+    const prepCoachResult = await generateText({
+      model: openai.chat(MODEL_NAMES.OPENAI_GPT4O),
+      prompt: prepCoachPrompt,
+      temperature: 0.3,
+    });
+
+    // Track usage
+    await calculateAndTrackUsage([prepCoachResult], "prep coach generation");
+
+    // Update the module with the generated prepCoach
+    const supabase = await createClient();
+    const currentModule = await getModuleById2(supabase, moduleId);
+
+    if (!currentModule) {
+      throw new Error("Module not found");
+    }
+
+    await updateModule(supabase, {
+      id: currentModule.id,
+      trainingId: currentModule.trainingId,
+      title: currentModule.title,
+      instructions: currentModule.instructions,
+      ordinal: currentModule.ordinal,
+      modulePrompt: {
+        ...currentModule.modulePrompt,
+        prepCoach: prepCoachResult.text,
+      },
+    });
+
+    // Revalidate the module cache
+    revalidateTag(`module-${moduleId}`);
+
+    return prepCoachResult.text;
+  } catch (error) {
+    logger.error(`Failed to generate prep coach: ${error}`);
+    throw new Error(`Failed to generate prep coach: ${error}`);
   }
 }
 

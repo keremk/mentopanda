@@ -94,7 +94,6 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
           "Input tokens details:",
           JSON.stringify(usage?.inputTokensDetails)
         );
-        logger.info("Input tokens details:", usage?.inputTokensDetails[0].key);
         logger.info(
           "Output tokens details:",
           JSON.stringify(usage?.outputTokensDetails)

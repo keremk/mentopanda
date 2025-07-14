@@ -2,6 +2,7 @@
 
 import { SpeakingBubble } from "@/components/speaking-bubble";
 import { AgentActions } from "@/components/agent-actions";
+import { NoCreditsDialog } from "@/components/no-credits-dialog";
 import { useOpenAIAgents } from "@/hooks/use-openai-agents";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -20,6 +21,7 @@ export function MentorAgent({ agentFactory }: MentorAgentProps) {
   const [isLoadingAgent, setIsLoadingAgent] = useState(true);
   const [agentError, setAgentError] = useState<string | null>(null);
   const [showAvatar, setShowAvatar] = useState(false);
+  const [showNoCreditsDialog, setShowNoCreditsDialog] = useState(false);
 
   const {
     isConnected,
@@ -63,6 +65,8 @@ export function MentorAgent({ agentFactory }: MentorAgentProps) {
       logger.debug("✅ Connection successful");
     } catch (err) {
       logger.error("❌ Connection failed:", err);
+      setShowAvatar(false);
+      // Error handling is now done through the hook's error state and useEffect
     }
   };
 
@@ -80,6 +84,17 @@ export function MentorAgent({ agentFactory }: MentorAgentProps) {
 
   // Don't allow interactions when agent is not ready
   const canInteract = agent && !isLoadingAgent && !agentError;
+
+  // Check if current error is credit-related
+  const isCreditError = error && error.includes("No credits available");
+
+  // Watch for credit errors from the hook and show dialog
+  useEffect(() => {
+    if (isCreditError) {
+      logger.info("Credit error detected from hook, showing NoCreditsDialog");
+      setShowNoCreditsDialog(true);
+    }
+  }, [isCreditError]);
 
   return (
     <div className="flex flex-col items-center gap-6 w-full">
@@ -105,8 +120,8 @@ export function MentorAgent({ agentFactory }: MentorAgentProps) {
           </div>
         )}
 
-        {/* Show connection error */}
-        {error && canInteract && (
+        {/* Show connection error (but not credit errors, those show in dialog) */}
+        {error && canInteract && !isCreditError && (
           <div className="text-red-500 text-sm max-w-md text-center">
             {error}
           </div>
@@ -140,6 +155,14 @@ export function MentorAgent({ agentFactory }: MentorAgentProps) {
 
       {/* Hidden audio element for OpenAI SDK */}
       <audio ref={audioRef} className="hidden" />
+
+      {/* No Credits Dialog */}
+      <NoCreditsDialog
+        isOpen={showNoCreditsDialog}
+        onOpenChange={setShowNoCreditsDialog}
+        title="No Credits Available"
+        description="You don't have enough credits to start a conversation. Purchase additional credits to continue using AI features."
+      />
     </div>
   );
 }
