@@ -469,7 +469,9 @@ export async function getModuleById2(
     }))
     .sort((a: ModuleCharacter, b: ModuleCharacter) => a.ordinal - b.ordinal);
   /* eslint-enable @typescript-eslint/no-explicit-any */
-  const aiModel = aiModelSchema.parse(module.ai_model) as AIModel;
+  const aiModel = aiModelSchema.parse(
+    module.ai_model || AI_MODELS.OPENAI
+  ) as AIModel;
 
   const modulePrompt: ModulePrompt = {
     aiModel: aiModel,

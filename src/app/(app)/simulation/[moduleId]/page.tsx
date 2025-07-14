@@ -53,11 +53,40 @@ export default async function Page(props: Props) {
 
     const isOpenAIModule =
       currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI;
+    const isGeminiModule =
+      currentModule.modulePrompt.aiModel === AI_MODELS.GEMINI;
 
     return (
       <div className="container mx-auto w-full">
         {isOpenAIModule && (
           <OpenAIChat module={currentModule} currentUser={currentUser} />
+        )}
+        {isGeminiModule && (
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center space-y-4 max-w-md">
+              <div className="text-6xl">🤖</div>
+              <h2 className="text-xl font-semibold">
+                Gemini Simulations Coming Soon
+              </h2>
+              <p className="text-muted-foreground">
+                This module uses Gemini AI, but simulation support for Gemini is
+                currently under development. Please check back later or contact
+                support for more information.
+              </p>
+            </div>
+          </div>
+        )}
+        {!isOpenAIModule && !isGeminiModule && (
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center space-y-4 max-w-md">
+              <div className="text-6xl">⚠️</div>
+              <h2 className="text-xl font-semibold">Unsupported AI Model</h2>
+              <p className="text-muted-foreground">
+                This module uses an unsupported AI model. Please contact support
+                for assistance.
+              </p>
+            </div>
+          </div>
         )}
       </div>
     );
