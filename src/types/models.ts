@@ -15,6 +15,7 @@ export const CURRENT_MODEL_NAMES = {
 export const MODEL_NAMES = {
   OPENAI_REALTIME: "gpt-4o-realtime-preview",
   OPENAI_WHISPER: "whisper-1",
+  OPENAI_TRANSCRIBE: "gpt-4o-transcribe", // Better transcription model
   OPENAI_GPT4O: "gpt-4o",
   OPENAI_GPT41: "gpt-4.1",
   OPENAI_O3: "o3",

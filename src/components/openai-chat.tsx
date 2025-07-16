@@ -600,13 +600,14 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     isCheckingPermissions,
   } = useMicrophone();
 
-  const { connect, disconnect, sendTextMessage, usage } = useOpenAIRealtime({
-    instructions: instructions,
-    voice: voice,
-    audioRef,
-    userName: currentUser.displayName,
-    agentName: agentName,
-  });
+  const { connect, disconnect, sendTextMessage, usage, transcriptionModel } =
+    useOpenAIRealtime({
+      instructions: instructions,
+      voice: voice,
+      audioRef,
+      userName: currentUser.displayName,
+      agentName: agentName,
+    });
 
   // Callback to update duration state from CountdownBar
   const handleDurationChange = useCallback((newDuration: number) => {
@@ -695,7 +696,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     if (totalUserChars > 0 || totalAgentChars > 0) {
       try {
         await updateTranscriptionUsageAction({
-          modelName: "whisper-1", // Assuming this is the transcription model used
+          modelName: transcriptionModel || MODEL_NAMES.OPENAI_TRANSCRIBE, // Use actual model or fallback
           totalSessionLength: elapsedTimeInSeconds,
           userChars: totalUserChars,
           agentChars: totalAgentChars,
@@ -717,7 +718,13 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     }
 
     setSessionStartTime(null); // Reset start time after logging
-  }, [sessionStartTime, transcriptEntries, setSessionStartTime, usage]);
+  }, [
+    sessionStartTime,
+    transcriptEntries,
+    setSessionStartTime,
+    usage,
+    transcriptionModel,
+  ]);
 
   const handleToggleConversation = useCallback(async () => {
     if (chatState.isConversationActive) {

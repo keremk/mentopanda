@@ -101,6 +101,9 @@ export function useOpenAIRealtime({
   const providerUrl = "https://api.openai.com/v1/realtime";
   const model = CURRENT_MODEL_NAMES.OPENAI;
   const [usage, setUsage] = useState<Usage | null>(null);
+  const [transcriptionModel, setTranscriptionModel] = useState<string | null>(
+    null
+  );
   const {
     transcriptEntries,
     addTranscriptMessage,
@@ -111,11 +114,16 @@ export function useOpenAIRealtime({
 
   const tokenFetcher = async () => {
     try {
-      const { session } = await createOpenAISession({
+      const { session, transcriptionModel } = await createOpenAISession({
         apiKey: apiKey || undefined,
         instructions: instructions,
         voice: voice,
+        forceEnglishTranscription: true, // Set to false to test whisper-1 model
       });
+
+      // Store the transcription model that was actually used
+      setTranscriptionModel(transcriptionModel);
+
       return session.client_secret.value;
     } catch (error) {
       // Check if it's a credit error
@@ -161,7 +169,7 @@ export function useOpenAIRealtime({
         instructions,
         input_audio_format: "pcm16",
         output_audio_format: "pcm16",
-        input_audio_transcription: { model: "whisper-1" },
+        // Removed input_audio_transcription to preserve initialization settings
         turn_detection: turnDetection,
       },
     };
@@ -381,5 +389,5 @@ export function useOpenAIRealtime({
     sendClientEvent({ type: "response.create" });
   }
 
-  return { connect, disconnect, sendTextMessage, usage };
+  return { connect, disconnect, sendTextMessage, usage, transcriptionModel };
 }
