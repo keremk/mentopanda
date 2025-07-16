@@ -19,33 +19,27 @@ export function ManageTabs() {
   return (
     <Tabs value={activeTab} className="w-full">
       <TabsList className="bg-transparent h-full">
-        <Link href="/manage" passHref legacyBehavior>
-          <TabsTrigger
-            value="dashboard"
-            asChild
-            className="data-[state=active]:bg-background data-[state=active]:shadow-none"
-          >
-            <a>Dashboard</a>
-          </TabsTrigger>
-        </Link>
-        <Link href="/manage/invite-codes" passHref legacyBehavior>
-          <TabsTrigger
-            value="invite-codes"
-            asChild
-            className="data-[state=active]:bg-background data-[state=active]:shadow-none"
-          >
-            <a>Invite Codes</a>
-          </TabsTrigger>
-        </Link>
-        <Link href="/manage/waitlist" passHref legacyBehavior>
-          <TabsTrigger
-            value="waitlist"
-            asChild
-            className="data-[state=active]:bg-background data-[state=active]:shadow-none"
-          >
-            <a>Waiting List</a>
-          </TabsTrigger>
-        </Link>
+        <TabsTrigger
+          value="dashboard"
+          asChild
+          className="data-[state=active]:bg-background data-[state=active]:shadow-none"
+        >
+          <Link href="/manage">Dashboard</Link>
+        </TabsTrigger>
+        <TabsTrigger
+          value="invite-codes"
+          asChild
+          className="data-[state=active]:bg-background data-[state=active]:shadow-none"
+        >
+          <Link href="/manage/invite-codes">Invite Codes</Link>
+        </TabsTrigger>
+        <TabsTrigger
+          value="waitlist"
+          asChild
+          className="data-[state=active]:bg-background data-[state=active]:shadow-none"
+        >
+          <Link href="/manage/waitlist">Waiting List</Link>
+        </TabsTrigger>
       </TabsList>
     </Tabs>
   );
