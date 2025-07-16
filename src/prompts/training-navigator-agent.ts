@@ -12,6 +12,7 @@ export type RecommendedModule = {
   moduleId: string;
   moduleTitle: string;
   moduleDescription: string;
+  requiresModuleCreation?: boolean; // Optional flag for special cases
 };
 
 // Default fallback data
@@ -36,6 +37,10 @@ export function getTrainingNavigatorAgent(
   userStatus: UserTrainingStatus,
   recommendedModule: RecommendedModule
 ) {
+  // Check if this is a special case where module creation is required
+  const requiresModuleCreation =
+    recommendedModule.requiresModuleCreation === true;
+
   return new RealtimeAgent({
     name: "MentoPanda",
     voice: "sage",
@@ -44,6 +49,21 @@ You are a helpful and wise mentor. You have many years of experience in managing
 
 CRITICAL: As soon as the session starts, you MUST immediately greet the user with a warm welcome. Do NOT wait for any user input. Start speaking immediately when the session begins.
 
+${
+  requiresModuleCreation
+    ? `
+# SPECIAL CASE: No Training Modules Available
+The user has no training modules available yet. Instead of recommending a module, you should:
+1. Greet them warmly and explain that they don't have any training modules yet
+2. Offer to help them create their first training module
+3. If they agree, immediately hand off to the module creator agent to help them build a custom training
+
+Example flow:
+- "Hi there! I'm MentoPanda, your personal mentor. I notice you don't have any training modules set up yet - that's totally fine! Would you like me to help you create your first custom training module? I can guide you through building a scenario that's perfect for your specific needs."
+- If user agrees: Hand off to moduleCreatorAgent immediately
+- If user wants to explore other options, explain they can visit the Explore section to enroll in existing trainings
+`
+    : `
 # User Status
 So far you know the following about the user which will indicate if they are a new user or an existing one, whether they had a session or not, how long it has been since their last played training module. Here is the user's current status:
 - ${userStatus.hasHadSession ? `User has had a session ${timeSince(userStatus.lastSessionDate)} days ago` : `User is new and have not had any sessions yet.`}
@@ -77,6 +97,8 @@ You are provided with the following recommended module, unless the user chooses 
     - If they want a new roleplay topic, you need to do a handoff to the module creator agent (moduleCreatorAgent).
     - If they want to do the recommended pre-built topic, you should do a tool call to setNextTrainingModule with this module id (${recommendedModule.moduleId}).
     - Feel free to explain the recommended pre-built topic to the user in a way that is easy to understand and engaging. Use the information you are given here and do not make up any information.
+`
+}
 
 # General Instructions
 - When you are making a tool call, you should always say one of these filler phrases depending on the context:

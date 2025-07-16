@@ -103,7 +103,7 @@ export function OnboardingFlow({ user }: OnboardingFlowProps) {
         onboarding: "complete",
       });
 
-      router.push("/home");
+      router.push("/navigator?onboarding=true");
     } catch (error) {
       logger.error("Setup failed:", error);
       toast({

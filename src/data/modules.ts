@@ -76,7 +76,7 @@ export async function getModulesByTrainingId(
 }
 
 // Add new function to get all modules for the user's current project
-async function getModulesForCurrentProject(
+export async function getModulesForCurrentProject(
   supabase: SupabaseClient
 ): Promise<number[]> {
   // Get user's current project from their profile and join with modules in a single query
@@ -151,6 +151,63 @@ export async function getRandomModuleRecommendation(
   return {
     moduleId: selectedModuleId.toString(),
     moduleTitle: moduleDetails.title,
+    moduleDescription: description,
+  };
+}
+
+// Add function to search for modules by title within user's current project
+export async function getModuleByTitle(
+  supabase: SupabaseClient,
+  moduleTitle: string
+): Promise<{
+  moduleId: string;
+  moduleTitle: string;
+  moduleDescription: string;
+} | null> {
+  // Get user's current project from their profile and search for module by title
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated");
+
+  const { data, error } = await supabase
+    .from("modules")
+    .select(
+      `
+      id,
+      title,
+      instructions,
+      scenario_prompt,
+      trainings!inner (
+        project_id,
+        profiles!inner (
+          id
+        )
+      )
+    `
+    )
+    .eq("trainings.profiles.id", user.id)
+    .eq("title", moduleTitle)
+    .single();
+
+  if (error) {
+    logger.warn(`Could not find module with title "${moduleTitle}":`, error);
+    return null;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  // Create a description from instructions or scenario
+  const description =
+    data.instructions ||
+    data.scenario_prompt ||
+    "A training module to help improve your communication skills.";
+
+  return {
+    moduleId: data.id.toString(),
+    moduleTitle: data.title,
     moduleDescription: description,
   };
 }

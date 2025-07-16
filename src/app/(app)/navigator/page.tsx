@@ -5,18 +5,32 @@ import { Metadata } from "next";
 import { Navigator } from "./navigator";
 import { ContinueButton } from "./continue-button";
 import { getUserTrainingStatusAction } from "@/app/actions/history-actions";
-import { getRandomModuleRecommendationAction } from "@/app/actions/moduleActions";
+import {
+  getRandomModuleRecommendationAction,
+  getOnboardingModuleRecommendationAction,
+} from "@/app/actions/moduleActions";
 import { AgentActionsProvider } from "@/contexts/agent-actions-context";
 
 export const metadata: Metadata = {
   title: "Mentor Agent",
 };
 
-export default async function NavigatorPage() {
+type NavigatorPageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function NavigatorPage({
+  searchParams,
+}: NavigatorPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const isOnboarding = resolvedSearchParams.onboarding === "true";
+
   // Fetch the actual data objects on the server
   const [userStatus, moduleRecommendation] = await Promise.all([
     getUserTrainingStatusAction(),
-    getRandomModuleRecommendationAction(),
+    isOnboarding
+      ? getOnboardingModuleRecommendationAction()
+      : getRandomModuleRecommendationAction(),
   ]);
 
   return (
@@ -36,7 +50,9 @@ export default async function NavigatorPage() {
 
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <h1 className="text-2xl font-bold text-brand mb-4">
-            Meet your Mentor Agent
+            {isOnboarding
+              ? "Welcome! Let's Start Your Training Journey"
+              : "Meet your Mentor Agent"}
           </h1>
           <div className="w-full max-w-3xl">
             <Navigator
