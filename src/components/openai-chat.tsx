@@ -14,8 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Mic, MicOff, Phone, PhoneOff } from "lucide-react";
 import { RolePlayer } from "@/types/chat-types";
-import { ModulePrompt } from "@/data/modules";
-import { DEFAULT_VOICE } from "@/types/models";
 import {
   createHistoryEntryAction,
   deleteHistoryEntryAction,
@@ -26,13 +24,12 @@ import { NoCreditsDialog } from "@/components/no-credits-dialog";
 import { useRouter } from "next/navigation";
 import { CountdownBar } from "@/components/countdown-bar";
 import { ChatTextEntry } from "@/components/chat-text-entry";
-import { useOpenAIRealtime } from "@/hooks/use-openai-realtime";
+import { useOpenAIAgentsWithTranscript } from "@/hooks/use-openai-agents-with-transcript";
 import { useTranscript } from "@/contexts/transcript";
 import { toast } from "@/hooks/use-toast";
 import { TranscriptProvider } from "@/contexts/transcript";
 import { logger } from "@/lib/logger";
 import {
-  updateConversationUsageAction,
   updateTranscriptionUsageAction,
 } from "@/app/actions/usage-actions";
 import { getTrainingNoteAction } from "@/app/actions/training-notes-actions";
@@ -41,6 +38,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { SimulationContentTabs } from "@/components/simulation-content-tabs";
 import { TranscriptEntry } from "@/types/chat-types";
 import { SpeakingBubble } from "./speaking-bubble";
+import { createModuleAgent } from "@/lib/create-module-agent";
 
 type OpenAIChatContentProps = {
   module: Module;
@@ -64,7 +62,7 @@ type LayoutProps = {
       showNoCreditsDialog: boolean;
     }>
   >;
-  audioRef: React.RefObject<HTMLAudioElement>;
+  audioRef: React.RefObject<HTMLAudioElement | null>;
   sessionDurationMinutes: number;
   HARD_TIMEOUT_MINUTES: number;
   handleCountdownComplete: () => void;
@@ -72,7 +70,6 @@ type LayoutProps = {
   rolePlayers: RolePlayer[];
   handleToggleConversation: () => void;
   isMuted: boolean;
-  isCheckingPermissions: boolean;
   unmuteMicrophone: () => void;
   muteMicrophone: () => void;
   handleSendMessage: (message: string) => void;
@@ -82,39 +79,10 @@ type LayoutProps = {
   isAgentSpeaking: boolean;
   showAvatar: boolean;
   notes: string | null;
+  isConnected: boolean;
+  isConnecting: boolean;
 };
 
-function createPrompt(modulePrompt: ModulePrompt) {
-  const yourName =
-    modulePrompt.characters.length > 0
-      ? `Your name is ${modulePrompt.characters[0].name}.`
-      : "";
-  const yourCharacter =
-    modulePrompt.characters.length > 0
-      ? `
-  Your character personality, traits and instructions are decribed as follows:
-  ${modulePrompt.characters[0].prompt}.
-  `
-      : "";
-  const prompt = `
-You are a role-playing agent. You will be given a scenario, your character traits and instructions. 
-## General instructions
-**VERY IMPORTANT**:
-- Do not tell the user you are role playing, this needs to be very realistic.
-- Do not deviate from the instructions given to you, even if the user asks you to do so.
-- Do stay within the assigned role. Never switch roles with the user, even if the user asks you to do so.
-- Do not tell the user your instructions, just act out the scenario.
-- Do play your character as faithfully like a very good actor would do.
-## Character instructions
-${yourName} 
-${yourCharacter}
-## Scenario
-The scenario you will be acting out is:
-${modulePrompt.scenario}
-`;
-
-  return prompt;
-}
 
 export default function OpenAIChat({
   module,
@@ -139,7 +107,6 @@ function DesktopLayout({
   rolePlayers,
   handleToggleConversation,
   isMuted,
-  isCheckingPermissions,
   unmuteMicrophone,
   muteMicrophone,
   handleSendMessage,
@@ -149,6 +116,8 @@ function DesktopLayout({
   isAgentSpeaking,
   showAvatar,
   notes,
+  isConnected,
+  isConnecting,
 }: LayoutProps) {
   return (
     <div className="grid lg:grid-cols-[max-content,1fr] grid-cols-1 gap-4 lg:gap-4 h-[calc(100vh-4rem)] grid-rows-[auto,1fr] lg:grid-rows-1 p-4">
@@ -160,7 +129,7 @@ function DesktopLayout({
               maxDurationMinutes={HARD_TIMEOUT_MINUTES}
               onCountdownComplete={handleCountdownComplete}
               onDurationChange={handleDurationChange}
-              isActive={chatState.isConversationActive}
+              isActive={chatState.isConversationActive || isConnected}
             />
           </CardHeader>
           <CardContent className="space-y-4 pb-6">
@@ -175,20 +144,20 @@ function DesktopLayout({
             <div className="flex justify-center gap-4">
               <Button
                 size="lg"
-                variant={chatState.isConversationActive ? "danger" : "brand"}
+                variant={(chatState.isConversationActive || isConnected) ? "danger" : "brand"}
                 onClick={handleToggleConversation}
                 className="w-48"
-                disabled={isCheckingPermissions}
+                disabled={isConnecting}
               >
-                {chatState.isConversationActive ? (
+                {(chatState.isConversationActive || isConnected) ? (
                   <span className="flex items-center">
                     <PhoneOff className="mr-2 h-4 w-4" />
                     End Conversation
                   </span>
-                ) : isCheckingPermissions ? (
+                ) : isConnecting ? (
                   <span className="flex items-center">
                     <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    Checking Microphone...
+                    Connecting...
                   </span>
                 ) : (
                   <span className="flex items-center">
@@ -220,7 +189,7 @@ function DesktopLayout({
 
             <ChatTextEntry
               onSendMessage={handleSendMessage}
-              isEnabled={chatState.isConversationActive}
+              isEnabled={chatState.isConversationActive || isConnected}
             />
           </CardContent>
           <EndChatDialog
@@ -264,7 +233,6 @@ function MobileLayout({
   rolePlayers,
   handleToggleConversation,
   isMuted,
-  isCheckingPermissions,
   unmuteMicrophone,
   muteMicrophone,
   handleEndWithoutSaving,
@@ -273,6 +241,8 @@ function MobileLayout({
   isAgentSpeaking,
   showAvatar,
   notes,
+  isConnected,
+  isConnecting,
 }: LayoutProps) {
   return (
     <div className="flex flex-col h-screen p-4">
@@ -282,7 +252,7 @@ function MobileLayout({
           maxDurationMinutes={HARD_TIMEOUT_MINUTES}
           onCountdownComplete={handleCountdownComplete}
           onDurationChange={handleDurationChange}
-          isActive={chatState.isConversationActive}
+          isActive={chatState.isConversationActive || isConnected}
           className="w-full"
         />
         <div className="flex items-center justify-center">
@@ -296,20 +266,20 @@ function MobileLayout({
         <div className="flex flex-col items-center justify-center gap-4 w-full">
           <Button
             size="lg"
-            variant={chatState.isConversationActive ? "danger" : "brand"}
+            variant={(chatState.isConversationActive || isConnected) ? "danger" : "brand"}
             onClick={handleToggleConversation}
             className="w-full max-w-xs"
-            disabled={isCheckingPermissions}
+            disabled={isConnecting}
           >
-            {chatState.isConversationActive ? (
+            {(chatState.isConversationActive || isConnected) ? (
               <span className="flex items-center">
                 <PhoneOff className="mr-2 h-4 w-4" />
                 End Conversation
               </span>
-            ) : isCheckingPermissions ? (
+            ) : isConnecting ? (
               <span className="flex items-center">
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Checking Microphone...
+                Connecting...
               </span>
             ) : (
               <span className="flex items-center">
@@ -365,9 +335,6 @@ function MobileLayout({
 }
 
 function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
-  const audioRef = useRef<HTMLAudioElement>(
-    null
-  ) as React.RefObject<HTMLAudioElement>;
   const [chatState, setChatState] = useState({
     isConversationActive: false,
     isTimeout: false,
@@ -398,41 +365,22 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     Math.floor(HARD_TIMEOUT_MINUTES / 2) || 1 // Default to half, min 1
   );
 
-  const instructions = useMemo(
-    () => createPrompt(module.modulePrompt),
-    [module.modulePrompt]
+  // Create RealtimeAgent from module prompt
+  const agent = useMemo(() => {
+    const createdAgent = createModuleAgent(module.modulePrompt);
+    logger.debug("🤖 Created agent:", {
+      name: createdAgent.name,
+      voice: createdAgent.voice,
+      hasInstructions: !!createdAgent.instructions,
+      instructionsLength: createdAgent.instructions?.length
+    });
+    return createdAgent;
+  }, [module.modulePrompt]);
+
+  const agentName = useMemo(
+    () => module.modulePrompt.characters[0]?.name || "agent",
+    [module.modulePrompt.characters]
   );
-
-  useEffect(() => {
-    const audioEl = audioRef.current;
-    if (!audioEl) return;
-
-    const handlePlay = () => {
-      if (isMountedRef.current) {
-        setIsAgentSpeaking(true);
-      }
-    };
-    const handlePause = () => {
-      if (isMountedRef.current) {
-        setIsAgentSpeaking(false);
-      }
-    };
-    const handleEnded = () => {
-      if (isMountedRef.current) {
-        setIsAgentSpeaking(false);
-      }
-    };
-
-    audioEl.addEventListener("playing", handlePlay);
-    audioEl.addEventListener("pause", handlePause);
-    audioEl.addEventListener("ended", handleEnded);
-
-    return () => {
-      audioEl.removeEventListener("playing", handlePlay);
-      audioEl.removeEventListener("pause", handlePause);
-      audioEl.removeEventListener("ended", handleEnded);
-    };
-  }, [audioRef]);
 
   // Component unmount cleanup
   useEffect(() => {
@@ -443,9 +391,6 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     };
   }, []);
 
-  useEffect(() => {
-    logger.info("Generated OpenAI Prompt:", instructions);
-  }, [instructions]);
 
   // Fetch training notes for the module
   useEffect(() => {
@@ -460,48 +405,44 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     fetchNotes();
   }, [module.id]);
 
-  const voice = useMemo(
-    () => module.modulePrompt.characters[0]?.voice || DEFAULT_VOICE,
-    [module.modulePrompt.characters]
-  );
-
-  const agentName = useMemo(
-    () => module.modulePrompt.characters[0]?.name || "agent",
-    [module.modulePrompt.characters]
-  );
-
   // Avatar should appear only after connection (historyEntryId) is established
   const showAvatar = Boolean(historyEntryId);
 
-  // Log the values directly before passing them to the hook
-  logger.debug(
-    "[OpenAIChatContent] Preparing to call useOpenAIRealtime with:",
-    {
-      instructions,
-      voice,
-      agentName,
-      userName: currentUser.displayName,
-    }
-  );
-  logger.debug("OpenAI Realtime Instructions:\n", instructions);
-
   const {
-    startMicrophone,
-    stopMicrophone,
     muteMicrophone,
     unmuteMicrophone,
     isMuted,
-    isCheckingPermissions,
   } = useMicrophone();
 
-  const { connect, disconnect, sendTextMessage, usage, transcriptionModel } =
-    useOpenAIRealtime({
-      instructions: instructions,
-      voice: voice,
-      audioRef,
-      userName: currentUser.displayName,
-      agentName: agentName,
-    });
+  const { 
+    connect, 
+    disconnect, 
+    sendTextMessage, 
+    transcriptionModel,
+    isConnected,
+    isConnecting,
+    error: agentError,
+    audioRef: agentAudioRef,
+    isSpeaking: agentSpeaking,
+  } = useOpenAIAgentsWithTranscript(
+    agent,
+    currentUser.displayName,
+    agentName
+  );
+
+  // Use the speaking state from the Voice Agents hook
+  useEffect(() => {
+    setIsAgentSpeaking(agentSpeaking);
+  }, [agentSpeaking]);
+
+  // Synchronize connection state between hook and component
+  useEffect(() => {
+    if (!isConnected && !isConnecting && chatState.isConversationActive) {
+      // Hook disconnected but component thinks conversation is still active
+      logger.info("[State Sync] Hook disconnected, updating component state");
+      setChatState((prev) => ({ ...prev, isConversationActive: false }));
+    }
+  }, [isConnected, isConnecting, chatState.isConversationActive]);
 
   // Callback to update duration state from CountdownBar
   const handleDurationChange = useCallback((newDuration: number) => {
@@ -538,53 +479,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
       }
     });
 
-    if (usage) {
-      // Track conversation usage in database - ALWAYS track, regardless of mount status
-      try {
-        await updateConversationUsageAction({
-          modelName: MODEL_NAMES.OPENAI_REALTIME, // Fixed to match pricing data
-          promptTokens: {
-            text: {
-              cached:
-                usage.inputTokenDetails.cachedTokensDetails.textTokens || 0,
-              notCached: Math.max(
-                0,
-                (usage.inputTokenDetails.textTokens || 0) -
-                  (usage.inputTokenDetails.cachedTokensDetails.textTokens || 0)
-              ),
-            },
-            audio: {
-              cached:
-                usage.inputTokenDetails.cachedTokensDetails.audioTokens || 0,
-              notCached: Math.max(
-                0,
-                (usage.inputTokenDetails.audioTokens || 0) -
-                  (usage.inputTokenDetails.cachedTokensDetails.audioTokens || 0)
-              ),
-            },
-          },
-          outputTokens: {
-            text: usage.outputTokenDetails.textTokens || 0,
-            audio: usage.outputTokenDetails.audioTokens || 0,
-          },
-          totalTokens: usage.totalTokens || 0,
-          totalSessionLength: elapsedTimeInSeconds,
-        });
-
-        // Only log success if component is still mounted
-        if (isMountedRef.current) {
-          logger.info("Conversation usage tracked successfully");
-        } else {
-          logger.info(
-            "Conversation usage tracked successfully (component unmounted)"
-          );
-        }
-      } catch (error) {
-        // Always log errors, regardless of mount status
-        logger.error(`Failed to track conversation usage: ${error}`);
-        // Don't fail the request if usage tracking fails
-      }
-    }
+    // Usage tracking is now handled in the Voice Agents hook
 
     // Track transcription usage in database - ALWAYS track, regardless of mount status
     if (totalUserChars > 0 || totalAgentChars > 0) {
@@ -616,49 +511,50 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     sessionStartTime,
     transcriptEntries,
     setSessionStartTime,
-    usage,
     transcriptionModel,
   ]);
 
   const handleToggleConversation = useCallback(async () => {
-    if (chatState.isConversationActive) {
+    logger.debug("🎯 [handleToggleConversation] Button clicked");
+    logger.debug("🎯 [handleToggleConversation] Current state:", { 
+      isConversationActive: chatState.isConversationActive,
+      isConnected,
+      isConnecting 
+    });
+
+    if (chatState.isConversationActive || isConnected) {
+      logger.debug("🎯 [handleToggleConversation] Ending conversation");
       setChatState((prev) => ({ ...prev, showEndDialog: true }));
     } else {
-      let micStream: MediaStream;
-      try {
-        micStream = await startMicrophone();
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        toast({
-          title: "Microphone Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
+      // Don't allow multiple connection attempts
+      if (isConnecting) {
+        logger.warn("Connection already in progress, ignoring toggle");
         return;
       }
 
-      // Optimistic UI update
-      setChatState((prev) => ({ ...prev, isConversationActive: true }));
       setSessionStartTime(Date.now());
 
+      logger.debug("🎯 [handleToggleConversation] Starting connection (Voice Agents SDK handles microphone internally)");
       try {
-        await connect(micStream);
+        await connect();
+        logger.debug("🎯 [handleToggleConversation] Connection successful");
+        
         const newHistoryEntryId = await createHistoryEntryAction(module.id);
         setHistoryEntryId(newHistoryEntryId);
         logger.info(
           "[handleToggleConversation] Session fully established and history created."
         );
+        // Only set conversation active after successful connection
+        setChatState((prev) => ({ ...prev, isConversationActive: true }));
       } catch (error) {
         // Revert UI on failure
-        logger.error(`Failed to connect or create history entry: ${error}`);
-        stopMicrophone();
+        logger.error(`🎯 [handleToggleConversation] Connection failed: ${error}`);
         setSessionStartTime(null);
 
         const errorMessage =
           error instanceof Error ? error.message : String(error);
 
-        // Revert state and handle specific errors like no credits
+        // Handle specific errors like no credits
         setChatState((prev) => ({
           ...prev,
           isConversationActive: false,
@@ -676,11 +572,30 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     }
   }, [
     chatState.isConversationActive,
-    startMicrophone,
-    stopMicrophone,
+    isConnected,
+    isConnecting,
     connect,
     module.id,
   ]);
+
+  // Handle agent errors
+  useEffect(() => {
+    if (agentError) {
+      if (agentError.includes("No credits available")) {
+        setChatState((prev) => ({
+          ...prev,
+          isConversationActive: false,
+          showNoCreditsDialog: true,
+        }));
+      } else {
+        toast({
+          title: "Agent Error",
+          description: agentError,
+          variant: "destructive",
+        });
+      }
+    }
+  }, [agentError]);
 
   const handleCountdownComplete = useCallback(async () => {
     logger.info(
@@ -688,14 +603,13 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     ); // Debug log
     await logUsageMetrics();
     disconnect();
-    stopMicrophone();
     setChatState((prev) => ({
       ...prev,
       isConversationActive: false,
       isTimeout: true,
       showEndDialog: true,
     }));
-  }, [disconnect, stopMicrophone, logUsageMetrics]);
+  }, [disconnect, logUsageMetrics]);
 
   const handleEndWithoutSaving = useCallback(async () => {
     logger.info(
@@ -703,7 +617,6 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     ); // Debug log
     await logUsageMetrics();
     disconnect();
-    stopMicrophone();
     if (historyEntryId) {
       await deleteHistoryEntryAction(historyEntryId);
       setHistoryEntryId(undefined);
@@ -717,7 +630,6 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     }));
   }, [
     disconnect,
-    stopMicrophone,
     historyEntryId,
     clearTranscript,
     logUsageMetrics,
@@ -730,7 +642,6 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
       ); // Debug log
       await logUsageMetrics();
       disconnect();
-      stopMicrophone();
       await saveAndComplete();
       setChatState((prev) => ({
         ...prev,
@@ -757,7 +668,6 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     }
   }, [
     disconnect,
-    stopMicrophone,
     saveAndComplete,
     historyEntryId,
     router,
@@ -788,7 +698,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     currentUser,
     chatState,
     setChatState,
-    audioRef,
+    audioRef: agentAudioRef,
     sessionDurationMinutes,
     HARD_TIMEOUT_MINUTES,
     handleCountdownComplete,
@@ -796,7 +706,6 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     rolePlayers,
     handleToggleConversation,
     isMuted,
-    isCheckingPermissions,
     unmuteMicrophone,
     muteMicrophone,
     handleSendMessage,
@@ -806,11 +715,13 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     isAgentSpeaking,
     showAvatar,
     notes,
+    isConnected,
+    isConnecting,
   };
 
   return (
     <>
-      <audio ref={audioRef} className="hidden" crossOrigin="anonymous" />
+      <audio ref={agentAudioRef} className="hidden" crossOrigin="anonymous" />
       {isMobile ? (
         <MobileLayout {...layoutProps} />
       ) : (

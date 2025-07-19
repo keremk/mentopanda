@@ -1,6 +1,5 @@
 "use server";
 
-import OpenAI from "openai";
 import { checkUserHasCredits } from "./credit-check";
 import { logger } from "@/lib/logger";
 import { MODEL_NAMES } from "@/types/models";
@@ -16,18 +15,28 @@ export async function getToken() {
       throw new Error(creditCheck.error || "No credits available");
     }
 
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    // Just get an ephemeral token - session config will be done on client side
+    const response = await fetch(
+      "https://api.openai.com/v1/realtime/sessions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: MODEL_NAMES.OPENAI_REALTIME,
+          voice: "alloy", // Default voice, can be overridden on client
+        }),
+      }
+    );
 
-    const session = await openai.beta.realtime.sessions.create({
-      model: MODEL_NAMES.OPENAI_REALTIME,
-      // tracing: {
-      //   workflow_name: "MentoPanda mentor agent",
-      // },
-    });
+    if (!response.ok) {
+      throw new Error(`Failed to create session: ${response.statusText}`);
+    }
 
-    return session.client_secret.value;
+    const data = await response.json();
+    return data.client_secret.value;
   } catch (error) {
     logger.error("Error creating OpenAI agents session:", error);
 
