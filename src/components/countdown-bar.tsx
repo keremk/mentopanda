@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import "@/app/fonts.css";
 
@@ -113,50 +113,51 @@ export function CountdownBar({
   return (
     <div
       className={cn(
-        "flex items-center justify-center gap-3 bg-background border rounded-lg py-2 px-4 shadow-sm w-fit mx-auto",
+        "flex items-center gap-2 bg-background border border-brand/20 rounded-md px-3 py-1 shadow-sm w-fit h-10",
         className
       )}
     >
-      <div className="font-['DS-Digital'] text-4xl tracking-wider">
-        <span className="text-primary">
+      <Clock className="h-4 w-4 text-brand/60 mr-1" />
+      <div className="font-['DS-Digital'] text-2xl tracking-wide leading-none w-20 text-center">
+        <span className="text-brand">
           {displayMinutes.toString().padStart(2, "0")}
         </span>
         <span
           className={cn(
-            "text-primary/80",
+            "text-brand/80",
             isActive ? "animate-pulse" : "opacity-50"
           )}
         >
           :
         </span>
-        <span className="text-primary">
+        <span className="text-brand">
           {displaySeconds.toString().padStart(2, "0")}
         </span>
-        <span className="text-muted-foreground text-xs ml-2 font-mono align-baseline">
+        <span className="text-brand/60 text-xs ml-1.5 font-mono">
           MIN
         </span>
       </div>
 
-      <div className="flex flex-col">
+      <div className="flex flex-col justify-center -space-y-1">
         <Button
           variant="ghost"
           size="icon"
-          className="h-5 w-5 p-0 text-muted-foreground hover:text-primary disabled:opacity-30"
+          className="h-4 w-4 p-0 text-brand/60 hover:text-brand disabled:opacity-30"
           onClick={handleIncrement}
           disabled={isActive || durationMinutes >= maxDurationMinutes}
           aria-label="Increase duration"
         >
-          <ChevronUp className="h-4 w-4" />
+          <ChevronUp className="h-3 w-3" />
         </Button>
         <Button
           variant="ghost"
           size="icon"
-          className="h-5 w-5 p-0 text-muted-foreground hover:text-primary disabled:opacity-30"
+          className="h-4 w-4 p-0 text-brand/60 hover:text-brand disabled:opacity-30"
           onClick={handleDecrement}
           disabled={isActive || durationMinutes <= 1}
           aria-label="Decrease duration"
         >
-          <ChevronDown className="h-4 w-4" />
+          <ChevronDown className="h-3 w-3" />
         </Button>
       </div>
     </div>

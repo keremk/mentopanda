@@ -20,6 +20,8 @@ import {
 } from "@/app/actions/history-actions";
 import { useTranscriptSave } from "@/hooks/use-transcript-save";
 import { EndChatDialog } from "@/components/end-chat-dialog";
+import { SkillsDialog } from "@/components/skills-dialog";
+import { EmotionsDialog } from "@/components/emotions-dialog";
 import { NoCreditsDialog } from "@/components/no-credits-dialog";
 import { useRouter } from "next/navigation";
 import { CountdownBar } from "@/components/countdown-bar";
@@ -124,13 +126,19 @@ function DesktopLayout({
       <div className="mx-auto lg:mx-0">
         <Card className="w-[448px] max-w-full">
           <CardHeader className="pb-0">
-            <CountdownBar
-              initialMinutes={sessionDurationMinutes}
-              maxDurationMinutes={HARD_TIMEOUT_MINUTES}
-              onCountdownComplete={handleCountdownComplete}
-              onDurationChange={handleDurationChange}
-              isActive={chatState.isConversationActive || isConnected}
-            />
+            <div className="flex items-center justify-between">
+              <CountdownBar
+                initialMinutes={sessionDurationMinutes}
+                maxDurationMinutes={HARD_TIMEOUT_MINUTES}
+                onCountdownComplete={handleCountdownComplete}
+                onDurationChange={handleDurationChange}
+                isActive={chatState.isConversationActive || isConnected}
+              />
+              <div className="flex items-center gap-2">
+                <SkillsDialog disabled={chatState.isConversationActive || isConnected} />
+                <EmotionsDialog disabled={chatState.isConversationActive || isConnected} />
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4 pb-6">
             <div className="flex items-center justify-center">
@@ -247,14 +255,19 @@ function MobileLayout({
   return (
     <div className="flex flex-col h-screen p-4">
       <div className="flex-grow flex flex-col items-center space-y-4">
-        <CountdownBar
-          initialMinutes={sessionDurationMinutes}
-          maxDurationMinutes={HARD_TIMEOUT_MINUTES}
-          onCountdownComplete={handleCountdownComplete}
-          onDurationChange={handleDurationChange}
-          isActive={chatState.isConversationActive || isConnected}
-          className="w-full"
-        />
+        <div className="flex items-center justify-between w-full">
+          <CountdownBar
+            initialMinutes={sessionDurationMinutes}
+            maxDurationMinutes={HARD_TIMEOUT_MINUTES}
+            onCountdownComplete={handleCountdownComplete}
+            onDurationChange={handleDurationChange}
+            isActive={chatState.isConversationActive || isConnected}
+          />
+          <div className="flex items-center gap-2">
+            <SkillsDialog disabled={chatState.isConversationActive || isConnected} />
+            <EmotionsDialog disabled={chatState.isConversationActive || isConnected} />
+          </div>
+        </div>
         <div className="flex items-center justify-center">
           <SpeakingBubble
             audioRef={audioRef}
@@ -680,6 +693,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     },
     [sendTextMessage]
   );
+
 
   const rolePlayers: RolePlayer[] = useMemo(
     () =>
