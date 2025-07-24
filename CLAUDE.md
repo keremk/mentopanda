@@ -4,6 +4,7 @@
 - 🚀 `pnpm dev` - Run development server with turbopack
 - 🔨 `pnpm build` - Build for production
 - 🧹 `pnpm lint` - Run ESLint
+- 🧪 `pnpm typecheck` - Run typecheck
 - 🧪 `pnpm test` - Run all tests with vitest
 - 🧪 `pnpm test:integration` - Run integration tests only
 - 🧪 `pnpm test:db` - Run database tests
