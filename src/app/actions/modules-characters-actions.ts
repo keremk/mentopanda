@@ -7,6 +7,8 @@ import {
   type UpdateModuleCharacterPromptInput,
   insertModuleCharacter,
   type InsertModuleCharacterInput,
+  updateModuleCharacterAttributes,
+  type UpdateModuleCharacterAttributesInput,
 } from "@/data/modules-characters";
 
 export async function insertModuleCharacterAction(
@@ -44,6 +46,28 @@ export async function updateModuleCharacterPromptAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to update prompt",
+    };
+  }
+}
+
+export async function updateModuleCharacterAttributesAction(
+  data: UpdateModuleCharacterAttributesInput
+) {
+  try {
+    const supabase = await createClient();
+    await updateModuleCharacterAttributes(supabase, data);
+
+    // Revalidate the module data
+    revalidateTag(`module-${data.moduleId}`);
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to update character attributes",
     };
   }
 }

@@ -1,11 +1,14 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
+import { Skills, Emotions, createDefaultSkills, createDefaultEmotions } from "@/types/character-attributes";
 
 export type InsertModuleCharacterInput = {
   moduleId: number;
   characterId: number;
   ordinal?: number;
   prompt?: string | null;
+  skills?: Skills;
+  emotion?: Emotions;
 };
 
 export async function insertModuleCharacter(
@@ -17,6 +20,8 @@ export async function insertModuleCharacter(
     character_id: data.characterId,
     ordinal: data.ordinal || 0,
     prompt: data.prompt || null,
+    skills: data.skills || createDefaultSkills(),
+    emotion: data.emotion || createDefaultEmotions(),
   });
   if (error) handleError(error);
 }
@@ -25,6 +30,13 @@ export type UpdateModuleCharacterPromptInput = {
   moduleId: number;
   characterId: number;
   prompt: string | null;
+};
+
+export type UpdateModuleCharacterAttributesInput = {
+  moduleId: number;
+  characterId: number;
+  skills?: Skills;
+  emotion?: Emotions;
 };
 
 export async function updateModuleCharacterPrompt(
@@ -37,6 +49,33 @@ export async function updateModuleCharacterPrompt(
       prompt: data.prompt,
       updated_at: new Date().toISOString(),
     })
+    .match({
+      module_id: data.moduleId,
+      character_id: data.characterId,
+    });
+
+  if (error) handleError(error);
+}
+
+export async function updateModuleCharacterAttributes(
+  supabase: SupabaseClient,
+  data: UpdateModuleCharacterAttributesInput
+): Promise<void> {
+  const updateData: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (data.skills !== undefined) {
+    updateData.skills = data.skills;
+  }
+
+  if (data.emotion !== undefined) {
+    updateData.emotion = data.emotion;
+  }
+
+  const { error } = await supabase
+    .from("modules_characters")
+    .update(updateData)
     .match({
       module_id: data.moduleId,
       character_id: data.characterId,

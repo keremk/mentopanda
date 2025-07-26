@@ -5,10 +5,13 @@ import { CharacterDetails } from "./characters";
 import { AIModel, AI_MODELS, aiModelSchema } from "@/types/models";
 import { logger } from "@/lib/logger";
 import { getPathFromStorageUrl } from "@/lib/utils";
+import { Skills, Emotions } from "@/types/character-attributes";
 
 export type ModuleCharacter = CharacterDetails & {
   prompt: string;
   ordinal: number;
+  skills?: Skills;
+  emotion?: Emotions;
 };
 
 export type ModulePrompt = {
@@ -488,6 +491,8 @@ export async function getModuleById2(
       modules_characters (
         ordinal,
         prompt,
+        skills,
+        emotion,
         characters (
           id,
           name,
@@ -523,6 +528,8 @@ export async function getModuleById2(
       avatarUrl: mc.characters.avatar_url,
       prompt: mc.prompt,
       ordinal: mc.ordinal,
+      skills: mc.skills || undefined,
+      emotion: mc.emotion || undefined,
     }))
     .sort((a: ModuleCharacter, b: ModuleCharacter) => a.ordinal - b.ordinal);
   /* eslint-enable @typescript-eslint/no-explicit-any */
