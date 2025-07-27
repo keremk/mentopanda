@@ -22,6 +22,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { SkillsDialog } from "@/components/skills-dialog";
+import { EmotionsDialog } from "@/components/emotions-dialog";
+import { Skills, Emotions } from "@/types/character-attributes";
 
 export function EditModuleCharacter() {
   const { state, dispatch, getModuleById, createAndAssignCharacterToModule } =
@@ -93,6 +96,34 @@ export function EditModuleCharacter() {
         characterId,
         field: "voice",
         value: voice === undefined ? null : voice,
+      },
+    });
+  };
+
+  const handleSkillsChange = (skills: Skills) => {
+    if (!selectedModule || !selectedModule.modulePrompt.characters[0]) return;
+    const characterId = selectedModule.modulePrompt.characters[0].id;
+    logger.debug("Skills changed to:", skills);
+    dispatch({
+      type: "UPDATE_MODULE_CHARACTER_SKILLS",
+      payload: {
+        moduleId: selectedModule.id,
+        characterId,
+        skills,
+      },
+    });
+  };
+
+  const handleEmotionsChange = (emotions: Emotions) => {
+    if (!selectedModule || !selectedModule.modulePrompt.characters[0]) return;
+    const characterId = selectedModule.modulePrompt.characters[0].id;
+    logger.debug("Emotions changed to:", emotions);
+    dispatch({
+      type: "UPDATE_MODULE_CHARACTER_EMOTIONS",
+      payload: {
+        moduleId: selectedModule.id,
+        characterId,
+        emotions,
       },
     });
   };
@@ -215,17 +246,37 @@ export function EditModuleCharacter() {
                 />
               </div>
               <div className="flex-1 space-y-4">
-                <div className="flex flex-col gap-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">
-                    Name
-                  </label>
-                  <AIFocusInput
-                    name="characterName"
-                    placeholder="Character Name"
-                    value={currentCharacter.name}
-                    onChange={(e) => handleNameChange(e.target.value)}
-                    className="bg-secondary/30 rounded-lg border-border/30 shadow-sm text-sm h-9"
-                  />
+                <div className="flex gap-4">
+                  <div className="flex-1 flex flex-col gap-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Name
+                    </label>
+                    <AIFocusInput
+                      name="characterName"
+                      placeholder="Character Name"
+                      value={currentCharacter.name}
+                      onChange={(e) => handleNameChange(e.target.value)}
+                      className="bg-secondary/30 rounded-lg border-border/30 shadow-sm text-sm h-9"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Character Attributes
+                    </label>
+                    <div className="flex gap-2">
+                      <SkillsDialog
+                        mode="training-edit"
+                        skills={currentCharacter.skills}
+                        onSave={handleSkillsChange}
+                      />
+                      <EmotionsDialog
+                        mode="training-edit"
+                        emotions={currentCharacter.emotion}
+                        onSave={handleEmotionsChange}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-y-1">

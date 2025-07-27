@@ -1,19 +1,59 @@
 import { RealtimeAgent } from "@openai/agents/realtime";
 import { ModulePrompt } from "@/data/modules";
 import { DEFAULT_VOICE } from "@/types/models";
+import { Skills, Emotions } from "@/types/character-attributes";
 
-export function createModuleAgent(modulePrompt: ModulePrompt): RealtimeAgent {
+function formatSkillsAndEmotions(skills?: Skills, emotions?: Emotions): string {
+  if (!skills && !emotions) return "";
+  
+  let description = "\n## Character Attributes\n";
+  
+  if (skills) {
+    description += "Your skills are:\n";
+    Object.entries(skills).forEach(([skill, value]) => {
+      const percentage = Math.round(value * 100);
+      const level = percentage > 75 ? "high" : percentage > 50 ? "moderate" : percentage > 25 ? "low" : "minimal";
+      description += `- ${skill}: ${level} (${percentage}%)\n`;
+    });
+  }
+  
+  if (emotions) {
+    description += "\nYour emotional state is:\n";
+    Object.entries(emotions).forEach(([emotion, value]) => {
+      const percentage = Math.round(value * 100);
+      const intensity = percentage > 75 ? "very strong" : percentage > 50 ? "strong" : percentage > 25 ? "moderate" : "mild";
+      description += `- ${emotion}: ${intensity} (${percentage}%)\n`;
+    });
+  }
+  
+  description += "\nEmbody these attributes naturally in your responses and behavior.\n";
+  
+  return description;
+}
+
+export function createModuleAgent(
+  modulePrompt: ModulePrompt,
+  skillsOverride?: Skills,
+  emotionsOverride?: Emotions
+): RealtimeAgent {
   const yourName =
     modulePrompt.characters.length > 0
       ? `Your name is ${modulePrompt.characters[0].name}.`
       : "";
+  
+  const character = modulePrompt.characters[0];
+  const effectiveSkills = skillsOverride || character?.skills;
+  const effectiveEmotions = emotionsOverride || character?.emotion;
+  
   const yourCharacter =
-    modulePrompt.characters.length > 0
+    character
       ? `
   Your character personality, traits and instructions are described as follows:
-  ${modulePrompt.characters[0].prompt}.
+  ${character.prompt}.
   `
       : "";
+  
+  const attributesDescription = formatSkillsAndEmotions(effectiveSkills, effectiveEmotions);
 
   const instructions = `
 You are a role-playing agent. You will be given a scenario, your character traits and instructions. 
@@ -27,6 +67,7 @@ You are a role-playing agent. You will be given a scenario, your character trait
 ## Character instructions
 ${yourName} 
 ${yourCharacter}
+${attributesDescription}
 ## Scenario
 The scenario you will be acting out is:
 ${modulePrompt.scenario}

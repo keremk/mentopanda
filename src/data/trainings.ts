@@ -102,6 +102,8 @@ export async function getTrainingByIdForEdit(
         modules_characters (
           ordinal,
           prompt,
+          skills,
+          emotion,
           characters (
             id,
             name,
@@ -159,6 +161,8 @@ export async function getTrainingByIdForEdit(
           avatarUrl: mc.characters.avatar_url,
           prompt: mc.prompt,
           ordinal: mc.ordinal,
+          skills: mc.skills,
+          emotion: mc.emotion,
         })),
       },
     })),

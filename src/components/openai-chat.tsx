@@ -31,6 +31,7 @@ import { useTranscript } from "@/contexts/transcript";
 import { toast } from "@/hooks/use-toast";
 import { TranscriptProvider } from "@/contexts/transcript";
 import { logger } from "@/lib/logger";
+import { SimulationCustomizationProvider } from "@/contexts/simulation-customization-context";
 import {
   updateTranscriptionUsageAction,
 } from "@/app/actions/usage-actions";
@@ -41,6 +42,8 @@ import { SimulationContentTabs } from "@/components/simulation-content-tabs";
 import { TranscriptEntry } from "@/types/chat-types";
 import { SpeakingBubble } from "./speaking-bubble";
 import { createModuleAgent } from "@/lib/create-module-agent";
+import { useSimulationCustomization } from "@/contexts/simulation-customization-context";
+import { Skills, Emotions } from "@/types/character-attributes";
 
 type OpenAIChatContentProps = {
   module: Module;
@@ -83,6 +86,10 @@ type LayoutProps = {
   notes: string | null;
   isConnected: boolean;
   isConnecting: boolean;
+  effectiveSkills: Skills;
+  effectiveEmotions: Emotions;
+  onSkillsChange: (skills: Skills) => void;
+  onEmotionsChange: (emotions: Emotions) => void;
 };
 
 
@@ -92,7 +99,9 @@ export default function OpenAIChat({
 }: OpenAIChatContentProps) {
   return (
     <TranscriptProvider>
-      <OpenAIChatContent module={module} currentUser={currentUser} />
+      <SimulationCustomizationProvider>
+        <OpenAIChatContent module={module} currentUser={currentUser} />
+      </SimulationCustomizationProvider>
     </TranscriptProvider>
   );
 }
@@ -120,6 +129,10 @@ function DesktopLayout({
   notes,
   isConnected,
   isConnecting,
+  effectiveSkills,
+  effectiveEmotions,
+  onSkillsChange,
+  onEmotionsChange,
 }: LayoutProps) {
   return (
     <div className="grid lg:grid-cols-[max-content,1fr] grid-cols-1 gap-4 lg:gap-4 h-[calc(100vh-4rem)] grid-rows-[auto,1fr] lg:grid-rows-1 p-4">
@@ -135,8 +148,18 @@ function DesktopLayout({
                 isActive={chatState.isConversationActive || isConnected}
               />
               <div className="flex items-center gap-2">
-                <SkillsDialog disabled={chatState.isConversationActive || isConnected} />
-                <EmotionsDialog disabled={chatState.isConversationActive || isConnected} />
+                <SkillsDialog 
+                  disabled={chatState.isConversationActive || isConnected}
+                  mode="simulation"
+                  skills={effectiveSkills}
+                  onSave={onSkillsChange}
+                />
+                <EmotionsDialog 
+                  disabled={chatState.isConversationActive || isConnected}
+                  mode="simulation"
+                  emotions={effectiveEmotions}
+                  onSave={onEmotionsChange}
+                />
               </div>
             </div>
           </CardHeader>
@@ -251,6 +274,10 @@ function MobileLayout({
   notes,
   isConnected,
   isConnecting,
+  effectiveSkills,
+  effectiveEmotions,
+  onSkillsChange,
+  onEmotionsChange,
 }: LayoutProps) {
   return (
     <div className="flex flex-col h-screen p-4">
@@ -264,8 +291,18 @@ function MobileLayout({
             isActive={chatState.isConversationActive || isConnected}
           />
           <div className="flex items-center gap-2">
-            <SkillsDialog disabled={chatState.isConversationActive || isConnected} />
-            <EmotionsDialog disabled={chatState.isConversationActive || isConnected} />
+            <SkillsDialog 
+              disabled={chatState.isConversationActive || isConnected}
+              mode="simulation"
+              skills={effectiveSkills}
+              onSave={onSkillsChange}
+            />
+            <EmotionsDialog 
+              disabled={chatState.isConversationActive || isConnected}
+              mode="simulation"
+              emotions={effectiveEmotions}
+              onSave={onEmotionsChange}
+            />
           </div>
         </div>
         <div className="flex items-center justify-center">
@@ -354,6 +391,13 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     showEndDialog: false,
     showNoCreditsDialog: false,
   });
+  
+  const {
+    getEffectiveSkills,
+    getEffectiveEmotions,
+    setSkillsOverride,
+    setEmotionsOverride,
+  } = useSimulationCustomization();
   const [historyEntryId, setHistoryEntryId] = useState<number>();
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [isAgentSpeaking, setIsAgentSpeaking] = useState(false);
@@ -378,17 +422,31 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     Math.floor(HARD_TIMEOUT_MINUTES / 2) || 1 // Default to half, min 1
   );
 
+  // Get current character skills and emotions for the dialogs
+  const currentCharacter = module.modulePrompt.characters[0];
+  const currentSkills = currentCharacter?.skills;
+  const currentEmotions = currentCharacter?.emotion;
+  
+  const effectiveSkills = getEffectiveSkills(currentSkills);
+  const effectiveEmotions = getEffectiveEmotions(currentEmotions);
+
   // Create RealtimeAgent from module prompt
   const agent = useMemo(() => {
-    const createdAgent = createModuleAgent(module.modulePrompt);
+    const createdAgent = createModuleAgent(
+      module.modulePrompt,
+      effectiveSkills,
+      effectiveEmotions
+    );
     logger.debug("🤖 Created agent:", {
       name: createdAgent.name,
       voice: createdAgent.voice,
       hasInstructions: !!createdAgent.instructions,
-      instructionsLength: createdAgent.instructions?.length
+      instructionsLength: createdAgent.instructions?.length,
+      hasSkillsOverride: !!effectiveSkills,
+      hasEmotionsOverride: !!effectiveEmotions
     });
     return createdAgent;
-  }, [module.modulePrompt]);
+  }, [module.modulePrompt, effectiveSkills, effectiveEmotions]);
 
   const agentName = useMemo(
     () => module.modulePrompt.characters[0]?.name || "agent",
@@ -694,6 +752,20 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     [sendTextMessage]
   );
 
+  const handleSkillsChange = useCallback(
+    (skills: Skills) => {
+      setSkillsOverride(skills);
+    },
+    [setSkillsOverride]
+  );
+
+  const handleEmotionsChange = useCallback(
+    (emotions: Emotions) => {
+      setEmotionsOverride(emotions);
+    },
+    [setEmotionsOverride]
+  );
+
 
   const rolePlayers: RolePlayer[] = useMemo(
     () =>
@@ -731,6 +803,10 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     notes,
     isConnected,
     isConnecting,
+    effectiveSkills,
+    effectiveEmotions,
+    onSkillsChange: handleSkillsChange,
+    onEmotionsChange: handleEmotionsChange,
   };
 
   return (

@@ -22,6 +22,7 @@ import {
 import {
   updateModuleCharacterPromptAction,
   insertModuleCharacterAction,
+  updateModuleCharacterAttributesAction,
 } from "@/app/actions/modules-characters-actions";
 import {
   createCharacterAction,
@@ -29,6 +30,7 @@ import {
 } from "@/app/actions/character-actions";
 import { AI_MODELS } from "@/types/models";
 import { logger } from "@/lib/logger";
+import { Skills, Emotions } from "@/types/character-attributes";
 // --- State Definition ---
 
 type SaveStatus = "idle" | "saving" | "error" | "saved";
@@ -110,6 +112,23 @@ type TrainingEditAction =
           ModuleCharacter,
           "name" | "avatarUrl" | "voice" | "aiModel"
         >];
+      };
+    }
+  // New Actions: For updating character skills and emotions
+  | {
+      type: "UPDATE_MODULE_CHARACTER_SKILLS";
+      payload: {
+        moduleId: number;
+        characterId: number;
+        skills: Skills;
+      };
+    }
+  | {
+      type: "UPDATE_MODULE_CHARACTER_EMOTIONS";
+      payload: {
+        moduleId: number;
+        characterId: number;
+        emotions: Emotions;
       };
     }
   // Internal Actions (for saving status)
@@ -401,6 +420,71 @@ function trainingEditReducer(
             }
           );
           // Ensure we're creating a new object for the modulePrompt and module
+          return {
+            ...m,
+            modulePrompt: {
+              ...m.modulePrompt,
+              characters: updatedCharacters,
+            },
+          };
+        }
+        return m;
+      });
+      return {
+        ...state,
+        training: {
+          ...state.training,
+          modules: updatedModules,
+        },
+        ...baseStateUpdate,
+      };
+    }
+
+    // New Reducer Cases: UPDATE_MODULE_CHARACTER_SKILLS and UPDATE_MODULE_CHARACTER_EMOTIONS
+    case "UPDATE_MODULE_CHARACTER_SKILLS": {
+      const { moduleId, characterId, skills } = action.payload;
+      const updatedModules = state.training.modules.map((m: Module) => {
+        if (m.id === moduleId) {
+          const updatedCharacters = m.modulePrompt.characters.map(
+            (c: ModuleCharacter) => {
+              if (c.id === characterId) {
+                return { ...c, skills };
+              }
+              return c;
+            }
+          );
+          return {
+            ...m,
+            modulePrompt: {
+              ...m.modulePrompt,
+              characters: updatedCharacters,
+            },
+          };
+        }
+        return m;
+      });
+      return {
+        ...state,
+        training: {
+          ...state.training,
+          modules: updatedModules,
+        },
+        ...baseStateUpdate,
+      };
+    }
+
+    case "UPDATE_MODULE_CHARACTER_EMOTIONS": {
+      const { moduleId, characterId, emotions } = action.payload;
+      const updatedModules = state.training.modules.map((m: Module) => {
+        if (m.id === moduleId) {
+          const updatedCharacters = m.modulePrompt.characters.map(
+            (c: ModuleCharacter) => {
+              if (c.id === characterId) {
+                return { ...c, emotion: emotions };
+              }
+              return c;
+            }
+          );
           return {
             ...m,
             modulePrompt: {
@@ -743,12 +827,25 @@ export function TrainingEditProvider({
           characterPromptChanged = true;
         }
 
+        // Check for character skills and emotions changes
+        let characterAttributesChanged = false;
+        if (currentCharacter && lastSavedCharacter) {
+          // Deep compare skills and emotions objects
+          const skillsChanged = JSON.stringify(currentCharacter.skills) !== JSON.stringify(lastSavedCharacter.skills);
+          const emotionsChanged = JSON.stringify(currentCharacter.emotion) !== JSON.stringify(lastSavedCharacter.emotion);
+          characterAttributesChanged = skillsChanged || emotionsChanged;
+        } else if (currentCharacter && !lastSavedCharacter) {
+          // New character with skills/emotions
+          characterAttributesChanged = true;
+        }
+
         // If any part of the module or its prompt/character changed, determine the correct action
         if (
           modulePropsChanged ||
           modulePromptBaseChanged ||
           characterDetailsChanged ||
-          characterPromptChanged
+          characterPromptChanged ||
+          characterAttributesChanged
         ) {
           // If module properties or base prompt properties changed, use the main update action
           if (modulePropsChanged || modulePromptBaseChanged) {
@@ -796,6 +893,7 @@ export function TrainingEditProvider({
           if (
             characterPromptChanged &&
             !characterDetailsChanged &&
+            !characterAttributesChanged &&
             currentCharacter
           ) {
             logger.debug(
@@ -806,6 +904,25 @@ export function TrainingEditProvider({
                 moduleId: currentModule.id,
                 characterId: currentCharacter.id,
                 prompt: currentCharacter.prompt || null,
+              })
+            );
+          }
+
+          // If character attributes (skills/emotions) changed
+          if (
+            characterAttributesChanged &&
+            !characterDetailsChanged &&
+            currentCharacter
+          ) {
+            logger.debug(
+              `Auto-saving Character Attributes for Module ${currentModule.id}, Character ${currentCharacter.id}...`
+            );
+            saveOperations.push(
+              updateModuleCharacterAttributesAction({
+                moduleId: currentModule.id,
+                characterId: currentCharacter.id,
+                skills: currentCharacter.skills,
+                emotion: currentCharacter.emotion,
               })
             );
           }
