@@ -19,26 +19,36 @@ export function EmotionsEditor({ emotions, onChange, disabled = false }: Emotion
     });
   };
 
-  const emotionLabels: Record<keyof Emotions, { label: string; description: string }> = {
-    Neutral: {
-      label: "Neutral",
-      description: "Balanced, objective emotional state without strong reactions"
+  const emotionLabels: Record<keyof Emotions, { label: string; description: string; lowLabel: string; highLabel: string }> = {
+    Pleasure: {
+      label: "Pleasure",
+      description: "Valence: Positive/optimistic vs negative/critical",
+      lowLabel: "Critical",
+      highLabel: "Optimistic"
     },
-    Supportive: {
-      label: "Supportive", 
-      description: "Encouraging, helpful, and understanding demeanor"
+    Energy: {
+      label: "Energy", 
+      description: "Arousal: Lively/animated vs calm/measured",
+      lowLabel: "Calm",
+      highLabel: "Animated"
     },
-    Enthusiastic: {
-      label: "Enthusiastic",
-      description: "High energy, positive, and excited engagement"
+    Control: {
+      label: "Control",
+      description: "Dominance: Assertive/directive vs deferential/yielding",
+      lowLabel: "Yielding",
+      highLabel: "Assertive"
     },
-    Concerned: {
-      label: "Concerned",
-      description: "Thoughtful worry or care about outcomes and details"
+    Confidence: {
+      label: "Confidence",
+      description: "Certainty: Decisive/sure vs tentative/exploratory",
+      lowLabel: "Tentative",
+      highLabel: "Decisive"
     },
-    Frustrated: {
-      label: "Frustrated",
-      description: "Impatience or annoyance when things don't go as expected"
+    Warmth: {
+      label: "Warmth",
+      description: "Affiliation: Person-focused/friendly vs task-only/detached",
+      lowLabel: "Task-focused",
+      highLabel: "People-focused"
     },
   };
 
@@ -46,16 +56,16 @@ export function EmotionsEditor({ emotions, onChange, disabled = false }: Emotion
     if (value < 25) return "text-muted-foreground";
     
     switch (emotionKey) {
-      case "Neutral":
-        return "text-slate-600 dark:text-slate-400";
-      case "Supportive":
+      case "Pleasure":
         return "text-emerald-600 dark:text-emerald-400";
-      case "Enthusiastic":
+      case "Energy":
         return "text-brand";
-      case "Concerned":
-        return "text-amber-600 dark:text-amber-400";
-      case "Frustrated":
-        return "text-red-600 dark:text-red-400";
+      case "Control":
+        return "text-purple-600 dark:text-purple-400";
+      case "Confidence":
+        return "text-blue-600 dark:text-blue-400";
+      case "Warmth":
+        return "text-orange-600 dark:text-orange-400";
       default:
         return "text-muted-foreground";
     }
@@ -65,16 +75,16 @@ export function EmotionsEditor({ emotions, onChange, disabled = false }: Emotion
     if (value < 25) return "bg-secondary/30 border-border/30";
     
     switch (emotionKey) {
-      case "Neutral":
-        return "bg-slate-50 dark:bg-slate-950/30 border-slate-200 dark:border-slate-800";
-      case "Supportive":
+      case "Pleasure":
         return "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800";
-      case "Enthusiastic":
+      case "Energy":
         return "bg-brand/10 border-brand/20";
-      case "Concerned":
-        return "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800";
-      case "Frustrated":
-        return "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800";
+      case "Control":
+        return "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800";
+      case "Confidence":
+        return "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800";
+      case "Warmth":
+        return "bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800";
       default:
         return "bg-secondary/30 border-border/30";
     }
@@ -84,16 +94,16 @@ export function EmotionsEditor({ emotions, onChange, disabled = false }: Emotion
     if (value < 25) return "slate";
     
     switch (emotionKey) {
-      case "Neutral":
-        return "slate";
-      case "Supportive":
+      case "Pleasure":
         return "emerald";
-      case "Enthusiastic":
+      case "Energy":
         return "brand";
-      case "Concerned":
-        return "amber";
-      case "Frustrated":
-        return "red";
+      case "Control":
+        return "slate"; // Using slate for purple since we don't have purple variant
+      case "Confidence":
+        return "slate"; // Using slate for blue since we don't have blue variant
+      case "Warmth":
+        return "amber"; // Using amber for orange since we don't have orange variant
       default:
         return "brand";
     }
@@ -101,7 +111,7 @@ export function EmotionsEditor({ emotions, onChange, disabled = false }: Emotion
 
   return (
     <div className="space-y-5">
-      {Object.entries(emotionLabels).map(([emotionKey, { label, description }]) => {
+      {Object.entries(emotionLabels).map(([emotionKey, { label, description, lowLabel, highLabel }]) => {
         const value = Math.round(emotions[emotionKey as keyof Emotions] * 100); // Convert 0-1 to 0-100
         
         return (
@@ -130,10 +140,9 @@ export function EmotionsEditor({ emotions, onChange, disabled = false }: Emotion
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>Mild</span>
-                <span>Moderate</span>
-                <span>Strong</span>
-                <span>Very Strong</span>
+                <span>{lowLabel}</span>
+                <span>Balanced</span>
+                <span>{highLabel}</span>
               </div>
             </div>
           </div>

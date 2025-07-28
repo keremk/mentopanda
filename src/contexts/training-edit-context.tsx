@@ -14,6 +14,7 @@ import { Module, ModulePrompt, ModuleCharacter } from "@/data/modules";
 import { CharacterSummary, CharacterDetails } from "@/data/characters";
 import { useDebounce } from "@/hooks/use-debounce";
 import { updateTrainingAction } from "@/app/actions/trainingActions";
+import { createDefaultSkills, createDefaultEmotions } from "@/types/character-attributes";
 import {
   updateModuleAction,
   createModuleAction,
@@ -384,6 +385,8 @@ function trainingEditReducer(
         ...character, // Spread full CharacterDetails
         prompt: "", // Initialize with an empty prompt
         ordinal: 0, // Only one character per module now
+        skills: createDefaultSkills(),
+        emotion: createDefaultEmotions(),
       };
 
       const updatedModules = [...state.training.modules];

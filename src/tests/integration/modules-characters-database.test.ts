@@ -139,11 +139,11 @@ describe("Modules Characters Database Integration Tests", () => {
       };
 
       const customEmotions: Emotions = {
-        Neutral: 0.1,
-        Supportive: 0.9,
-        Enthusiastic: 0.8,
-        Concerned: 0.2,
-        Frustrated: 0.0,
+        Pleasure: 0.1,
+        Energy: 0.9,
+        Control: 0.8,
+        Confidence: 0.2,
+        Warmth: 0.0,
       };
 
       const insertData: InsertModuleCharacterInput = {
@@ -364,11 +364,11 @@ describe("Modules Characters Database Integration Tests", () => {
 
       // Update only emotions
       const newEmotions: Emotions = {
-        Neutral: 0.1,
-        Supportive: 0.2,
-        Enthusiastic: 0.9,
-        Concerned: 0.8,
-        Frustrated: 0.7,
+        Pleasure: 0.1,
+        Energy: 0.2,
+        Control: 0.9,
+        Confidence: 0.8,
+        Warmth: 0.7,
       };
 
       const updateData: UpdateModuleCharacterAttributesInput = {
@@ -421,11 +421,11 @@ describe("Modules Characters Database Integration Tests", () => {
       };
 
       const newEmotions: Emotions = {
-        Neutral: 0.1,
-        Supportive: 0.2,
-        Enthusiastic: 0.9,
-        Concerned: 0.8,
-        Frustrated: 0.7,
+        Pleasure: 0.1,
+        Energy: 0.2,
+        Control: 0.9,
+        Confidence: 0.8,
+        Warmth: 0.7,
       };
 
       const updateData: UpdateModuleCharacterAttributesInput = {
