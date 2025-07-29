@@ -1,36 +1,36 @@
 export type Skills = {
-  EQ: number; // Emotional Intelligence (0-1)
-  Clarity: number; // Conceptual clarity (0-1)
-  Strategy: number; // Strategic framing (0-1)
-  Negotiation: number; // Collaborative negotiation (0-1)
-  Facilitation: number; // Directive facilitation (0-1)
+  EQ: number; // Emotional Intelligence (0-100)
+  Clarity: number; // Conceptual clarity (0-100)
+  Strategy: number; // Strategic framing (0-100)
+  Negotiation: number; // Collaborative negotiation (0-100)
+  Facilitation: number; // Directive facilitation (0-100)
 };
 
 export type Emotions = {
-  Pleasure: number; // Valence: Positive/optimistic vs negative/critical (0-1)
-  Energy: number; // Arousal: Lively/animated vs calm/measured (0-1)
-  Control: number; // Dominance: Assertive/directive vs deferential/yielding (0-1)
-  Confidence: number; // Certainty: Decisive/sure vs tentative/exploratory (0-1)
-  Warmth: number; // Affiliation: Person-focused/friendly vs task-only/detached (0-1)
+  Pleasure: number; // Valence: Positive/optimistic vs negative/critical (0-100)
+  Energy: number; // Arousal: Lively/animated vs calm/measured (0-100)
+  Control: number; // Dominance: Assertive/directive vs deferential/yielding (0-100)
+  Confidence: number; // Certainty: Decisive/sure vs tentative/exploratory (0-100)
+  Warmth: number; // Affiliation: Person-focused/friendly vs task-only/detached (0-100)
 };
 
 export function createDefaultSkills(): Skills {
   return {
-    EQ: 0.2,
-    Clarity: 0.2,
-    Strategy: 0.2,
-    Negotiation: 0.2,
-    Facilitation: 0.2,
+    EQ: 50,
+    Clarity: 50,
+    Strategy: 50,
+    Negotiation: 50,
+    Facilitation: 50,
   };
 }
 
 export function createDefaultEmotions(): Emotions {
   return {
-    Pleasure: 0.5,
-    Energy: 0.5,
-    Control: 0.5,
-    Confidence: 0.5,
-    Warmth: 0.5,
+    Pleasure: 50,
+    Energy: 50,
+    Control: 50,
+    Confidence: 50,
+    Warmth: 50,
   };
 }
 
@@ -48,12 +48,17 @@ export function parseSkillsFromDb(data: unknown): Skills {
     }
   }
   
+  // Convert from 0-1 scale to 0-100 scale if needed (backward compatibility)
+  const convertValue = (value: number): number => {
+    return value <= 1 ? Math.round(value * 100) : value;
+  };
+  
   return {
-    EQ: obj.EQ as number,
-    Clarity: obj.Clarity as number,
-    Strategy: obj.Strategy as number,
-    Negotiation: obj.Negotiation as number,
-    Facilitation: obj.Facilitation as number,
+    EQ: convertValue(obj.EQ as number),
+    Clarity: convertValue(obj.Clarity as number),
+    Strategy: convertValue(obj.Strategy as number),
+    Negotiation: convertValue(obj.Negotiation as number),
+    Facilitation: convertValue(obj.Facilitation as number),
   };
 }
 
@@ -71,11 +76,16 @@ export function parseEmotionsFromDb(data: unknown): Emotions {
     }
   }
   
+  // Convert from 0-1 scale to 0-100 scale if needed (backward compatibility)
+  const convertValue = (value: number): number => {
+    return value <= 1 ? Math.round(value * 100) : value;
+  };
+  
   return {
-    Pleasure: obj.Pleasure as number,
-    Energy: obj.Energy as number,
-    Control: obj.Control as number,
-    Confidence: obj.Confidence as number,
-    Warmth: obj.Warmth as number,
+    Pleasure: convertValue(obj.Pleasure as number),
+    Energy: convertValue(obj.Energy as number),
+    Control: convertValue(obj.Control as number),
+    Confidence: convertValue(obj.Confidence as number),
+    Warmth: convertValue(obj.Warmth as number),
   };
 }

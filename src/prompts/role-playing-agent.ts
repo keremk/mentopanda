@@ -5,33 +5,48 @@ import { Skills, Emotions } from "@/types/character-attributes";
 
 function formatSkillsAndEmotions(skills?: Skills, emotions?: Emotions): string {
   if (!skills && !emotions) return "";
-  
+
   let description = "\n## Character Attributes\n";
-  
+
   if (skills) {
     description += "Your skills are:\n";
     Object.entries(skills).forEach(([skill, value]) => {
       const percentage = Math.round(value * 100);
-      const level = percentage > 75 ? "high" : percentage > 50 ? "moderate" : percentage > 25 ? "low" : "minimal";
+      const level =
+        percentage > 75
+          ? "high"
+          : percentage > 50
+          ? "moderate"
+          : percentage > 25
+          ? "low"
+          : "minimal";
       description += `- ${skill}: ${level} (${percentage}%)\n`;
     });
   }
-  
+
   if (emotions) {
     description += "\nYour emotional state is:\n";
     Object.entries(emotions).forEach(([emotion, value]) => {
       const percentage = Math.round(value * 100);
-      const intensity = percentage > 75 ? "very strong" : percentage > 50 ? "strong" : percentage > 25 ? "moderate" : "mild";
+      const intensity =
+        percentage > 75
+          ? "very strong"
+          : percentage > 50
+          ? "strong"
+          : percentage > 25
+          ? "moderate"
+          : "mild";
       description += `- ${emotion}: ${intensity} (${percentage}%)\n`;
     });
   }
-  
-  description += "\nEmbody these attributes naturally in your responses and behavior.\n";
-  
+
+  description +=
+    "\nEmbody these attributes naturally in your responses and behavior.\n";
+
   return description;
 }
 
-export function createModuleAgent(
+export function createRolePlayingAgent(
   modulePrompt: ModulePrompt,
   skillsOverride?: Skills,
   emotionsOverride?: Emotions
@@ -40,20 +55,22 @@ export function createModuleAgent(
     modulePrompt.characters.length > 0
       ? `Your name is ${modulePrompt.characters[0].name}.`
       : "";
-  
+
   const character = modulePrompt.characters[0];
   const effectiveSkills = skillsOverride || character?.skills;
   const effectiveEmotions = emotionsOverride || character?.emotion;
-  
-  const yourCharacter =
-    character
-      ? `
+
+  const yourCharacter = character
+    ? `
   Your character personality, traits and instructions are described as follows:
   ${character.prompt}.
   `
-      : "";
-  
-  const attributesDescription = formatSkillsAndEmotions(effectiveSkills, effectiveEmotions);
+    : "";
+
+  const attributesDescription = formatSkillsAndEmotions(
+    effectiveSkills,
+    effectiveEmotions
+  );
 
   const instructions = `
 You are a role-playing agent. You will be given a scenario, your character traits and instructions. 
@@ -73,13 +90,15 @@ The scenario you will be acting out is:
 ${modulePrompt.scenario}
 `;
 
-  const voice = modulePrompt.characters.length > 0
-    ? (modulePrompt.characters[0].voice || DEFAULT_VOICE).toLowerCase()
-    : DEFAULT_VOICE.toLowerCase();
+  const voice =
+    modulePrompt.characters.length > 0
+      ? (modulePrompt.characters[0].voice || DEFAULT_VOICE).toLowerCase()
+      : DEFAULT_VOICE.toLowerCase();
 
-  const agentName = modulePrompt.characters.length > 0
-    ? modulePrompt.characters[0].name || "agent"
-    : "agent";
+  const agentName =
+    modulePrompt.characters.length > 0
+      ? modulePrompt.characters[0].name || "agent"
+      : "agent";
 
   return new RealtimeAgent({
     name: agentName,

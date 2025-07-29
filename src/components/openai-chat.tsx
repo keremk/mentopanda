@@ -32,16 +32,14 @@ import { toast } from "@/hooks/use-toast";
 import { TranscriptProvider } from "@/contexts/transcript";
 import { logger } from "@/lib/logger";
 import { SimulationCustomizationProvider } from "@/contexts/simulation-customization-context";
-import {
-  updateTranscriptionUsageAction,
-} from "@/app/actions/usage-actions";
+import { updateTranscriptionUsageAction } from "@/app/actions/usage-actions";
 import { getTrainingNoteAction } from "@/app/actions/training-notes-actions";
 import { MODEL_NAMES } from "@/types/models";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SimulationContentTabs } from "@/components/simulation-content-tabs";
 import { TranscriptEntry } from "@/types/chat-types";
 import { SpeakingBubble } from "./speaking-bubble";
-import { createModuleAgent } from "@/lib/create-module-agent";
+import { createRolePlayingAgent } from "@/prompts/role-playing-agent";
 import { useSimulationCustomization } from "@/contexts/simulation-customization-context";
 import { Skills, Emotions } from "@/types/character-attributes";
 
@@ -91,7 +89,6 @@ type LayoutProps = {
   onSkillsChange: (skills: Skills) => void;
   onEmotionsChange: (emotions: Emotions) => void;
 };
-
 
 export default function OpenAIChat({
   module,
@@ -148,13 +145,13 @@ function DesktopLayout({
                 isActive={chatState.isConversationActive || isConnected}
               />
               <div className="flex items-center gap-2">
-                <SkillsDialog 
+                <SkillsDialog
                   disabled={chatState.isConversationActive || isConnected}
                   mode="simulation"
                   skills={effectiveSkills}
                   onSave={onSkillsChange}
                 />
-                <EmotionsDialog 
+                <EmotionsDialog
                   disabled={chatState.isConversationActive || isConnected}
                   mode="simulation"
                   emotions={effectiveEmotions}
@@ -175,12 +172,16 @@ function DesktopLayout({
             <div className="flex justify-center gap-4">
               <Button
                 size="lg"
-                variant={(chatState.isConversationActive || isConnected) ? "danger" : "brand"}
+                variant={
+                  chatState.isConversationActive || isConnected
+                    ? "danger"
+                    : "brand"
+                }
                 onClick={handleToggleConversation}
                 className="w-48"
                 disabled={isConnecting}
               >
-                {(chatState.isConversationActive || isConnected) ? (
+                {chatState.isConversationActive || isConnected ? (
                   <span className="flex items-center">
                     <PhoneOff className="mr-2 h-4 w-4" />
                     End Conversation
@@ -291,13 +292,13 @@ function MobileLayout({
             isActive={chatState.isConversationActive || isConnected}
           />
           <div className="flex items-center gap-2">
-            <SkillsDialog 
+            <SkillsDialog
               disabled={chatState.isConversationActive || isConnected}
               mode="simulation"
               skills={effectiveSkills}
               onSave={onSkillsChange}
             />
-            <EmotionsDialog 
+            <EmotionsDialog
               disabled={chatState.isConversationActive || isConnected}
               mode="simulation"
               emotions={effectiveEmotions}
@@ -316,12 +317,14 @@ function MobileLayout({
         <div className="flex flex-col items-center justify-center gap-4 w-full">
           <Button
             size="lg"
-            variant={(chatState.isConversationActive || isConnected) ? "danger" : "brand"}
+            variant={
+              chatState.isConversationActive || isConnected ? "danger" : "brand"
+            }
             onClick={handleToggleConversation}
             className="w-full max-w-xs"
             disabled={isConnecting}
           >
-            {(chatState.isConversationActive || isConnected) ? (
+            {chatState.isConversationActive || isConnected ? (
               <span className="flex items-center">
                 <PhoneOff className="mr-2 h-4 w-4" />
                 End Conversation
@@ -391,7 +394,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     showEndDialog: false,
     showNoCreditsDialog: false,
   });
-  
+
   const {
     getEffectiveSkills,
     getEffectiveEmotions,
@@ -426,13 +429,13 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
   const currentCharacter = module.modulePrompt.characters[0];
   const currentSkills = currentCharacter?.skills;
   const currentEmotions = currentCharacter?.emotion;
-  
+
   const effectiveSkills = getEffectiveSkills(currentSkills);
   const effectiveEmotions = getEffectiveEmotions(currentEmotions);
 
   // Create RealtimeAgent from module prompt
   const agent = useMemo(() => {
-    const createdAgent = createModuleAgent(
+    const createdAgent = createRolePlayingAgent(
       module.modulePrompt,
       effectiveSkills,
       effectiveEmotions
@@ -443,7 +446,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
       hasInstructions: !!createdAgent.instructions,
       instructionsLength: createdAgent.instructions?.length,
       hasSkillsOverride: !!effectiveSkills,
-      hasEmotionsOverride: !!effectiveEmotions
+      hasEmotionsOverride: !!effectiveEmotions,
     });
     return createdAgent;
   }, [module.modulePrompt, effectiveSkills, effectiveEmotions]);
@@ -462,7 +465,6 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     };
   }, []);
 
-
   // Fetch training notes for the module
   useEffect(() => {
     const fetchNotes = async () => {
@@ -479,27 +481,19 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
   // Avatar should appear only after connection (historyEntryId) is established
   const showAvatar = Boolean(historyEntryId);
 
-  const {
-    muteMicrophone,
-    unmuteMicrophone,
-    isMuted,
-  } = useMicrophone();
+  const { muteMicrophone, unmuteMicrophone, isMuted } = useMicrophone();
 
-  const { 
-    connect, 
-    disconnect, 
-    sendTextMessage, 
+  const {
+    connect,
+    disconnect,
+    sendTextMessage,
     transcriptionModel,
     isConnected,
     isConnecting,
     error: agentError,
     audioRef: agentAudioRef,
     isSpeaking: agentSpeaking,
-  } = useOpenAIAgentsWithTranscript(
-    agent,
-    currentUser.displayName,
-    agentName
-  );
+  } = useOpenAIAgentsWithTranscript(agent, currentUser.displayName, agentName);
 
   // Use the speaking state from the Voice Agents hook
   useEffect(() => {
@@ -587,10 +581,10 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
 
   const handleToggleConversation = useCallback(async () => {
     logger.debug("🎯 [handleToggleConversation] Button clicked");
-    logger.debug("🎯 [handleToggleConversation] Current state:", { 
+    logger.debug("🎯 [handleToggleConversation] Current state:", {
       isConversationActive: chatState.isConversationActive,
       isConnected,
-      isConnecting 
+      isConnecting,
     });
 
     if (chatState.isConversationActive || isConnected) {
@@ -605,11 +599,13 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
 
       setSessionStartTime(Date.now());
 
-      logger.debug("🎯 [handleToggleConversation] Starting connection (Voice Agents SDK handles microphone internally)");
+      logger.debug(
+        "🎯 [handleToggleConversation] Starting connection (Voice Agents SDK handles microphone internally)"
+      );
       try {
         await connect();
         logger.debug("🎯 [handleToggleConversation] Connection successful");
-        
+
         const newHistoryEntryId = await createHistoryEntryAction(module.id);
         setHistoryEntryId(newHistoryEntryId);
         logger.info(
@@ -619,7 +615,9 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
         setChatState((prev) => ({ ...prev, isConversationActive: true }));
       } catch (error) {
         // Revert UI on failure
-        logger.error(`🎯 [handleToggleConversation] Connection failed: ${error}`);
+        logger.error(
+          `🎯 [handleToggleConversation] Connection failed: ${error}`
+        );
         setSessionStartTime(null);
 
         const errorMessage =
@@ -699,12 +697,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
       isTimeout: false,
       showEndDialog: false,
     }));
-  }, [
-    disconnect,
-    historyEntryId,
-    clearTranscript,
-    logUsageMetrics,
-  ]);
+  }, [disconnect, historyEntryId, clearTranscript, logUsageMetrics]);
 
   const handleEndAndSave = useCallback(async () => {
     try {
@@ -737,13 +730,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
         router.push(`/assessments/${historyEntryId}`);
       }
     }
-  }, [
-    disconnect,
-    saveAndComplete,
-    historyEntryId,
-    router,
-    logUsageMetrics,
-  ]);
+  }, [disconnect, saveAndComplete, historyEntryId, router, logUsageMetrics]);
 
   const handleSendMessage = useCallback(
     (message: string) => {
@@ -765,7 +752,6 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     },
     [setEmotionsOverride]
   );
-
 
   const rolePlayers: RolePlayer[] = useMemo(
     () =>

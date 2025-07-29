@@ -12,10 +12,9 @@ type SkillsEditorProps = {
 
 export function SkillsEditor({ skills, onChange, disabled = false }: SkillsEditorProps) {
   const handleSkillChange = (skillKey: keyof Skills, value: number[]) => {
-    const normalizedValue = value[0] / 100; // Convert from 0-100 to 0-1
     onChange({
       ...skills,
-      [skillKey]: normalizedValue,
+      [skillKey]: value[0], // Work directly with 0-100 values
     });
   };
 
@@ -59,7 +58,7 @@ export function SkillsEditor({ skills, onChange, disabled = false }: SkillsEdito
   return (
     <div className="space-y-5">
       {Object.entries(skillLabels).map(([skillKey, { label, description }]) => {
-        const value = Math.round(skills[skillKey as keyof Skills] * 100); // Convert 0-1 to 0-100
+        const value = skills[skillKey as keyof Skills]; // Already 0-100
         
         return (
           <div key={skillKey} className={`p-4 rounded-lg border transition-all ${getSkillLevelBg(value)}`}>

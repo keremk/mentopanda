@@ -12,10 +12,9 @@ type EmotionsEditorProps = {
 
 export function EmotionsEditor({ emotions, onChange, disabled = false }: EmotionsEditorProps) {
   const handleEmotionChange = (emotionKey: keyof Emotions, value: number[]) => {
-    const normalizedValue = value[0] / 100; // Convert from 0-100 to 0-1
     onChange({
       ...emotions,
-      [emotionKey]: normalizedValue,
+      [emotionKey]: value[0], // Work directly with 0-100 values
     });
   };
 
@@ -112,7 +111,7 @@ export function EmotionsEditor({ emotions, onChange, disabled = false }: Emotion
   return (
     <div className="space-y-5">
       {Object.entries(emotionLabels).map(([emotionKey, { label, description, lowLabel, highLabel }]) => {
-        const value = Math.round(emotions[emotionKey as keyof Emotions] * 100); // Convert 0-1 to 0-100
+        const value = emotions[emotionKey as keyof Emotions]; // Already 0-100
         
         return (
           <div key={emotionKey} className={`p-4 rounded-lg border transition-all ${getEmotionBg(emotionKey, value)}`}>
