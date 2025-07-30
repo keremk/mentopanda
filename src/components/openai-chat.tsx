@@ -21,7 +21,7 @@ import {
 import { useTranscriptSave } from "@/hooks/use-transcript-save";
 import { EndChatDialog } from "@/components/end-chat-dialog";
 import { SkillsDialog } from "@/components/skills-dialog";
-import { EmotionsDialog } from "@/components/emotions-dialog";
+import { TraitsDialog } from "@/components/traits-dialog";
 import { NoCreditsDialog } from "@/components/no-credits-dialog";
 import { useRouter } from "next/navigation";
 import { CountdownBar } from "@/components/countdown-bar";
@@ -41,7 +41,7 @@ import { TranscriptEntry } from "@/types/chat-types";
 import { SpeakingBubble } from "./speaking-bubble";
 import { createRolePlayingAgent } from "@/prompts/role-playing-agent";
 import { useSimulationCustomization } from "@/contexts/simulation-customization-context";
-import { Skills, Emotions } from "@/types/character-attributes";
+import { Skills, Traits } from "@/types/character-attributes";
 
 type OpenAIChatContentProps = {
   module: Module;
@@ -85,9 +85,9 @@ type LayoutProps = {
   isConnected: boolean;
   isConnecting: boolean;
   effectiveSkills: Skills;
-  effectiveEmotions: Emotions;
+  effectiveTraits: Traits;
   onSkillsChange: (skills: Skills) => void;
-  onEmotionsChange: (emotions: Emotions) => void;
+  onTraitsChange: (traits: Traits) => void;
 };
 
 export default function OpenAIChat({
@@ -127,9 +127,9 @@ function DesktopLayout({
   isConnected,
   isConnecting,
   effectiveSkills,
-  effectiveEmotions,
+  effectiveTraits,
   onSkillsChange,
-  onEmotionsChange,
+  onTraitsChange,
 }: LayoutProps) {
   return (
     <div className="grid lg:grid-cols-[max-content,1fr] grid-cols-1 gap-4 lg:gap-4 h-[calc(100vh-4rem)] grid-rows-[auto,1fr] lg:grid-rows-1 p-4">
@@ -151,11 +151,11 @@ function DesktopLayout({
                   skills={effectiveSkills}
                   onSave={onSkillsChange}
                 />
-                <EmotionsDialog
+                <TraitsDialog
                   disabled={chatState.isConversationActive || isConnected}
                   mode="simulation"
-                  emotions={effectiveEmotions}
-                  onSave={onEmotionsChange}
+                  traits={effectiveTraits}
+                  onSave={onTraitsChange}
                 />
               </div>
             </div>
@@ -276,9 +276,9 @@ function MobileLayout({
   isConnected,
   isConnecting,
   effectiveSkills,
-  effectiveEmotions,
+  effectiveTraits,
   onSkillsChange,
-  onEmotionsChange,
+  onTraitsChange,
 }: LayoutProps) {
   return (
     <div className="flex flex-col h-screen p-4">
@@ -298,11 +298,11 @@ function MobileLayout({
               skills={effectiveSkills}
               onSave={onSkillsChange}
             />
-            <EmotionsDialog
+            <TraitsDialog
               disabled={chatState.isConversationActive || isConnected}
               mode="simulation"
-              emotions={effectiveEmotions}
-              onSave={onEmotionsChange}
+              traits={effectiveTraits}
+              onSave={onTraitsChange}
             />
           </div>
         </div>
@@ -397,9 +397,9 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
 
   const {
     getEffectiveSkills,
-    getEffectiveEmotions,
+    getEffectiveTraits,
     setSkillsOverride,
-    setEmotionsOverride,
+    setTraitsOverride,
   } = useSimulationCustomization();
   const [historyEntryId, setHistoryEntryId] = useState<number>();
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
@@ -425,20 +425,20 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     Math.floor(HARD_TIMEOUT_MINUTES / 2) || 1 // Default to half, min 1
   );
 
-  // Get current character skills and emotions for the dialogs
+  // Get current character skills and traits for the dialogs
   const currentCharacter = module.modulePrompt.characters[0];
   const currentSkills = currentCharacter?.skills;
-  const currentEmotions = currentCharacter?.emotion;
+  const currentTraits = currentCharacter?.traits;
 
   const effectiveSkills = getEffectiveSkills(currentSkills);
-  const effectiveEmotions = getEffectiveEmotions(currentEmotions);
+  const effectiveTraits = getEffectiveTraits(currentTraits);
 
   // Create RealtimeAgent from module prompt
   const agent = useMemo(() => {
     const createdAgent = createRolePlayingAgent(
       module.modulePrompt,
       effectiveSkills,
-      effectiveEmotions
+      effectiveTraits
     );
     logger.debug("🤖 Created agent:", {
       name: createdAgent.name,
@@ -446,10 +446,10 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
       hasInstructions: !!createdAgent.instructions,
       instructionsLength: createdAgent.instructions?.length,
       hasSkillsOverride: !!effectiveSkills,
-      hasEmotionsOverride: !!effectiveEmotions,
+      hasTraitsOverride: !!effectiveTraits,
     });
     return createdAgent;
-  }, [module.modulePrompt, effectiveSkills, effectiveEmotions]);
+  }, [module.modulePrompt, effectiveSkills, effectiveTraits]);
 
   const agentName = useMemo(
     () => module.modulePrompt.characters[0]?.name || "agent",
@@ -746,11 +746,11 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     [setSkillsOverride]
   );
 
-  const handleEmotionsChange = useCallback(
-    (emotions: Emotions) => {
-      setEmotionsOverride(emotions);
+  const handleTraitsChange = useCallback(
+    (traits: Traits) => {
+      setTraitsOverride(traits);
     },
-    [setEmotionsOverride]
+    [setTraitsOverride]
   );
 
   const rolePlayers: RolePlayer[] = useMemo(
@@ -790,9 +790,9 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     isConnected,
     isConnecting,
     effectiveSkills,
-    effectiveEmotions,
+    effectiveTraits,
     onSkillsChange: handleSkillsChange,
-    onEmotionsChange: handleEmotionsChange,
+    onTraitsChange: handleTraitsChange,
   };
 
   return (

@@ -1,26 +1,26 @@
 "use client";
 
-import { Emotions } from "@/types/character-attributes";
+import { Traits } from "@/types/character-attributes";
 import { BrandedSlider } from "@/components/ui/branded-slider";
 import { Label } from "@/components/ui/label";
 
-type EmotionsEditorProps = {
-  emotions: Emotions;
-  onChange: (emotions: Emotions) => void;
+type TraitsEditorProps = {
+  traits: Traits;
+  onChange: (traits: Traits) => void;
   disabled?: boolean;
 };
 
-export function EmotionsEditor({ emotions, onChange, disabled = false }: EmotionsEditorProps) {
-  const handleEmotionChange = (emotionKey: keyof Emotions, value: number[]) => {
+export function TraitsEditor({ traits, onChange, disabled = false }: TraitsEditorProps) {
+  const handleTraitChange = (traitKey: keyof Traits, value: number[]) => {
     onChange({
-      ...emotions,
-      [emotionKey]: value[0], // Work directly with 0-100 values
+      ...traits,
+      [traitKey]: value[0], // Work directly with 0-100 values
     });
   };
 
-  const emotionLabels: Record<keyof Emotions, { label: string; description: string; lowLabel: string; highLabel: string }> = {
-    Pleasure: {
-      label: "Pleasure",
+  const traitLabels: Record<keyof Traits, { label: string; description: string; lowLabel: string; highLabel: string }> = {
+    Outlook: {
+      label: "Outlook",
       description: "Valence: Positive/optimistic vs negative/critical",
       lowLabel: "Critical",
       highLabel: "Optimistic"
@@ -51,11 +51,11 @@ export function EmotionsEditor({ emotions, onChange, disabled = false }: Emotion
     },
   };
 
-  const getEmotionColor = (emotionKey: string, value: number) => {
+  const getTraitColor = (traitKey: string, value: number) => {
     if (value < 25) return "text-muted-foreground";
     
-    switch (emotionKey) {
-      case "Pleasure":
+    switch (traitKey) {
+      case "Outlook":
         return "text-emerald-600 dark:text-emerald-400";
       case "Energy":
         return "text-brand";
@@ -70,11 +70,11 @@ export function EmotionsEditor({ emotions, onChange, disabled = false }: Emotion
     }
   };
 
-  const getEmotionBg = (emotionKey: string, value: number) => {
+  const getTraitBg = (traitKey: string, value: number) => {
     if (value < 25) return "bg-secondary/30 border-border/30";
     
-    switch (emotionKey) {
-      case "Pleasure":
+    switch (traitKey) {
+      case "Outlook":
         return "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800";
       case "Energy":
         return "bg-brand/10 border-brand/20";
@@ -89,11 +89,11 @@ export function EmotionsEditor({ emotions, onChange, disabled = false }: Emotion
     }
   };
 
-  const getEmotionSliderColor = (emotionKey: string, value: number): "brand" | "emerald" | "amber" | "red" | "slate" => {
+  const getTraitSliderColor = (traitKey: string, value: number): "brand" | "emerald" | "amber" | "red" | "slate" => {
     if (value < 25) return "slate";
     
-    switch (emotionKey) {
-      case "Pleasure":
+    switch (traitKey) {
+      case "Outlook":
         return "emerald";
       case "Energy":
         return "brand";
@@ -110,16 +110,16 @@ export function EmotionsEditor({ emotions, onChange, disabled = false }: Emotion
 
   return (
     <div className="space-y-5">
-      {Object.entries(emotionLabels).map(([emotionKey, { label, description, lowLabel, highLabel }]) => {
-        const value = emotions[emotionKey as keyof Emotions]; // Already 0-100
+      {Object.entries(traitLabels).map(([traitKey, { label, description, lowLabel, highLabel }]) => {
+        const value = traits[traitKey as keyof Traits]; // Already 0-100
         
         return (
-          <div key={emotionKey} className={`p-4 rounded-lg border transition-all ${getEmotionBg(emotionKey, value)}`}>
+          <div key={traitKey} className={`p-4 rounded-lg border transition-all ${getTraitBg(traitKey, value)}`}>
             <div className="flex justify-between items-center mb-2">
-              <Label htmlFor={emotionKey} className="text-sm font-semibold">
+              <Label htmlFor={traitKey} className="text-sm font-semibold">
                 {label}
               </Label>
-              <span className={`text-sm font-mono font-medium px-2 py-1 rounded-md bg-background/50 ${getEmotionColor(emotionKey, value)}`}>
+              <span className={`text-sm font-mono font-medium px-2 py-1 rounded-md bg-background/50 ${getTraitColor(traitKey, value)}`}>
                 {value}%
               </span>
             </div>
@@ -128,14 +128,14 @@ export function EmotionsEditor({ emotions, onChange, disabled = false }: Emotion
             </p>
             <div className="relative">
               <BrandedSlider
-                id={emotionKey}
+                id={traitKey}
                 value={[value]}
-                onValueChange={(value) => handleEmotionChange(emotionKey as keyof Emotions, value)}
+                onValueChange={(value) => handleTraitChange(traitKey as keyof Traits, value)}
                 max={100}
                 min={0}
                 step={5}
                 disabled={disabled}
-                color={getEmotionSliderColor(emotionKey, value)}
+                color={getTraitSliderColor(traitKey, value)}
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-muted-foreground mt-1">

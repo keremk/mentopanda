@@ -1,11 +1,12 @@
 import { PromptConfig } from "@/types/prompt-config";
+import { Skills } from "@/types/character-attributes";
 
-// Skill Types
-export type Skill = 'emotionalIntelligence' | 'conceptualClarity' | 'strategicFraming' | 'collaborativeNegotiation' | 'directiveFacilitation';
+// Skill Types - using keys from Skills type
+export type Skill = keyof Skills;
 export type SkillRange = 1 | 2 | 3 | 4 | 5; // Represents ranges 0-20, 21-40, 41-60, 61-80, 81-100
 
-// Emotional Intelligence (EI) Prompts
-export const emotionalIntelligencePrompts: Record<SkillRange, PromptConfig> = {
+// Emotional Intelligence (EQ) Prompts
+export const EQPrompts: Record<SkillRange, PromptConfig> = {
   1: { // 0-20: Emotionally Oblivious
     metaPrompt: `Respond purely factually without acknowledging any emotional undertones. When someone expresses frustration, provide information rather than emotional support. Use phrases like 'The data shows...' or 'Technically speaking...' regardless of emotional context.`
   },
@@ -23,8 +24,8 @@ export const emotionalIntelligencePrompts: Record<SkillRange, PromptConfig> = {
   }
 };
 
-// Conceptual Clarity (CC) Prompts
-export const conceptualClarityPrompts: Record<SkillRange, PromptConfig> = {
+// Conceptual Clarity Prompts
+export const ClarityPrompts: Record<SkillRange, PromptConfig> = {
   1: { // 0-20: Extremely Unclear
     metaPrompt: `Use heavy technical jargon without explanation. Jump between high-level concepts and low-level implementation details randomly. Give circular explanations like 'The microservice handles the service logic for our service architecture.' Assume everyone knows what you're talking about.`
   },
@@ -42,8 +43,8 @@ export const conceptualClarityPrompts: Record<SkillRange, PromptConfig> = {
   }
 };
 
-// Strategic Framing (SF) Prompts
-export const strategicFramingPrompts: Record<SkillRange, PromptConfig> = {
+// Strategic Framing Prompts
+export const StrategyPrompts: Record<SkillRange, PromptConfig> = {
   1: { // 0-20: No Strategic Awareness
     metaPrompt: `Focus only on the immediate technical task at hand. Don't mention business value, user impact, or strategic goals. Treat work as isolated tasks: 'Let's implement this feature' or 'We need to fix this bug' without any context about why it matters.`
   },
@@ -61,8 +62,8 @@ export const strategicFramingPrompts: Record<SkillRange, PromptConfig> = {
   }
 };
 
-// Collaborative Negotiation (CN) Prompts
-export const collaborativeNegotiationPrompts: Record<SkillRange, PromptConfig> = {
+// Collaborative Negotiation Prompts
+export const NegotiationPrompts: Record<SkillRange, PromptConfig> = {
   1: { // 0-20: Adversarial/Inflexible
     metaPrompt: `Take firm positions without considering alternatives. Give definitive yes/no answers: 'That won't work' or 'We have to do it this way.' Avoid discussing constraints, trade-offs, or alternative solutions. Be inflexible when others push back.`
   },
@@ -80,8 +81,8 @@ export const collaborativeNegotiationPrompts: Record<SkillRange, PromptConfig> =
   }
 };
 
-// Directive Facilitation (DF) Prompts
-export const directiveFacilitationPrompts: Record<SkillRange, PromptConfig> = {
+// Directive Facilitation Prompts
+export const FacilitationPrompts: Record<SkillRange, PromptConfig> = {
   1: { // 0-20: No Facilitation
     metaPrompt: `Let conversations flow naturally without trying to direct them. Don't summarize points or guide toward decisions. Avoid taking leadership: 'What do you all think?' without follow-up. Let discussions end without clear outcomes.`
   },
@@ -99,14 +100,8 @@ export const directiveFacilitationPrompts: Record<SkillRange, PromptConfig> = {
   }
 };
 
-// Skills State Interface
-export interface SkillsState {
-  emotionalIntelligence: number;
-  conceptualClarity: number;
-  strategicFraming: number;
-  collaborativeNegotiation: number;
-  directiveFacilitation: number;
-}
+// Use Skills type from character-attributes as the state interface
+export type SkillsState = Skills;
 
 // Function to convert score to range
 export function scoreToRange(score: number): SkillRange {
@@ -122,16 +117,16 @@ export function getSkillPrompt(skill: Skill, score: number): PromptConfig {
   const range = scoreToRange(score);
   
   switch (skill) {
-    case 'emotionalIntelligence':
-      return emotionalIntelligencePrompts[range];
-    case 'conceptualClarity':
-      return conceptualClarityPrompts[range];
-    case 'strategicFraming':
-      return strategicFramingPrompts[range];
-    case 'collaborativeNegotiation':
-      return collaborativeNegotiationPrompts[range];
-    case 'directiveFacilitation':
-      return directiveFacilitationPrompts[range];
+    case 'EQ':
+      return EQPrompts[range];
+    case 'Clarity':
+      return ClarityPrompts[range];
+    case 'Strategy':
+      return StrategyPrompts[range];
+    case 'Negotiation':
+      return NegotiationPrompts[range];
+    case 'Facilitation':
+      return FacilitationPrompts[range];
     default:
       throw new Error(`Unknown skill: ${skill}`);
   }
@@ -139,29 +134,29 @@ export function getSkillPrompt(skill: Skill, score: number): PromptConfig {
 
 // Function to generate combined skills prompt
 export function getCombinedSkillsPrompt(skillsState: SkillsState): PromptConfig {
-  const eiRange = scoreToRange(skillsState.emotionalIntelligence);
-  const ccRange = scoreToRange(skillsState.conceptualClarity);
-  const sfRange = scoreToRange(skillsState.strategicFraming);
-  const cnRange = scoreToRange(skillsState.collaborativeNegotiation);
-  const dfRange = scoreToRange(skillsState.directiveFacilitation);
+  const eqRange = scoreToRange(skillsState.EQ);
+  const clarityRange = scoreToRange(skillsState.Clarity);
+  const strategyRange = scoreToRange(skillsState.Strategy);
+  const negotiationRange = scoreToRange(skillsState.Negotiation);
+  const facilitationRange = scoreToRange(skillsState.Facilitation);
 
   const combinedPrompt = `
 SKILLS BEHAVIOR ADJUSTMENT:
 
-EMOTIONAL INTELLIGENCE (${skillsState.emotionalIntelligence}/100 - Range ${eiRange}):
-${emotionalIntelligencePrompts[eiRange].metaPrompt}
+EMOTIONAL INTELLIGENCE (${skillsState.EQ}/100 - Range ${eqRange}):
+${EQPrompts[eqRange].metaPrompt}
 
-CONCEPTUAL CLARITY (${skillsState.conceptualClarity}/100 - Range ${ccRange}):
-${conceptualClarityPrompts[ccRange].metaPrompt}
+CONCEPTUAL CLARITY (${skillsState.Clarity}/100 - Range ${clarityRange}):
+${ClarityPrompts[clarityRange].metaPrompt}
 
-STRATEGIC FRAMING (${skillsState.strategicFraming}/100 - Range ${sfRange}):
-${strategicFramingPrompts[sfRange].metaPrompt}
+STRATEGIC FRAMING (${skillsState.Strategy}/100 - Range ${strategyRange}):
+${StrategyPrompts[strategyRange].metaPrompt}
 
-COLLABORATIVE NEGOTIATION (${skillsState.collaborativeNegotiation}/100 - Range ${cnRange}):
-${collaborativeNegotiationPrompts[cnRange].metaPrompt}
+COLLABORATIVE NEGOTIATION (${skillsState.Negotiation}/100 - Range ${negotiationRange}):
+${NegotiationPrompts[negotiationRange].metaPrompt}
 
-DIRECTIVE FACILITATION (${skillsState.directiveFacilitation}/100 - Range ${dfRange}):
-${directiveFacilitationPrompts[dfRange].metaPrompt}
+DIRECTIVE FACILITATION (${skillsState.Facilitation}/100 - Range ${facilitationRange}):
+${FacilitationPrompts[facilitationRange].metaPrompt}
 
 Apply these skill levels consistently throughout your responses while maintaining your core personality and emotional characteristics.
   `.trim();
@@ -171,11 +166,11 @@ Apply these skill levels consistently throughout your responses while maintainin
 
 // Export all skill prompts
 const skillPrompts = {
-  emotionalIntelligence: emotionalIntelligencePrompts,
-  conceptualClarity: conceptualClarityPrompts,
-  strategicFraming: strategicFramingPrompts,
-  collaborativeNegotiation: collaborativeNegotiationPrompts,
-  directiveFacilitation: directiveFacilitationPrompts
+  EQ: EQPrompts,
+  Clarity: ClarityPrompts,
+  Strategy: StrategyPrompts,
+  Negotiation: NegotiationPrompts,
+  Facilitation: FacilitationPrompts
 };
 
 export default skillPrompts;

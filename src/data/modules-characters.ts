@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
-import { Skills, Emotions, createDefaultSkills, createDefaultEmotions } from "@/types/character-attributes";
+import { Skills, Traits, createDefaultSkills, createDefaultTraits } from "@/types/character-attributes";
 
 export type InsertModuleCharacterInput = {
   moduleId: number;
@@ -8,7 +8,7 @@ export type InsertModuleCharacterInput = {
   ordinal?: number;
   prompt?: string | null;
   skills?: Skills;
-  emotion?: Emotions;
+  traits?: Traits;
 };
 
 export async function insertModuleCharacter(
@@ -21,7 +21,7 @@ export async function insertModuleCharacter(
     ordinal: data.ordinal || 0,
     prompt: data.prompt || null,
     skills: data.skills || createDefaultSkills(),
-    emotion: data.emotion || createDefaultEmotions(),
+    traits: data.traits || createDefaultTraits(),
   });
   if (error) handleError(error);
 }
@@ -36,7 +36,7 @@ export type UpdateModuleCharacterAttributesInput = {
   moduleId: number;
   characterId: number;
   skills?: Skills;
-  emotion?: Emotions;
+  traits?: Traits;
 };
 
 export async function updateModuleCharacterPrompt(
@@ -69,8 +69,8 @@ export async function updateModuleCharacterAttributes(
     updateData.skills = data.skills;
   }
 
-  if (data.emotion !== undefined) {
-    updateData.emotion = data.emotion;
+  if (data.traits !== undefined) {
+    updateData.traits = data.traits;
   }
 
   const { error } = await supabase

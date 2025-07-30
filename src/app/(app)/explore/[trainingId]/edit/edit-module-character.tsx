@@ -23,8 +23,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { SkillsDialog } from "@/components/skills-dialog";
-import { EmotionsDialog } from "@/components/emotions-dialog";
-import { Skills, Emotions } from "@/types/character-attributes";
+import { TraitsDialog } from "@/components/traits-dialog";
+import { Skills, Traits } from "@/types/character-attributes";
 
 export function EditModuleCharacter() {
   const { state, dispatch, getModuleById, createAndAssignCharacterToModule } =
@@ -114,16 +114,16 @@ export function EditModuleCharacter() {
     });
   };
 
-  const handleEmotionsChange = (emotions: Emotions) => {
+  const handleTraitsChange = (traits: Traits) => {
     if (!selectedModule || !selectedModule.modulePrompt.characters[0]) return;
     const characterId = selectedModule.modulePrompt.characters[0].id;
-    logger.debug("Emotions changed to:", emotions);
+    logger.debug("Traits changed to:", traits);
     dispatch({
-      type: "UPDATE_MODULE_CHARACTER_EMOTIONS",
+      type: "UPDATE_MODULE_CHARACTER_TRAITS",
       payload: {
         moduleId: selectedModule.id,
         characterId,
-        emotions,
+        traits: traits,
       },
     });
   };
@@ -270,10 +270,10 @@ export function EditModuleCharacter() {
                         skills={currentCharacter.skills}
                         onSave={handleSkillsChange}
                       />
-                      <EmotionsDialog
+                      <TraitsDialog
                         mode="training-edit"
-                        emotions={currentCharacter.emotion}
-                        onSave={handleEmotionsChange}
+                        traits={currentCharacter.traits}
+                        onSave={handleTraitsChange}
                       />
                     </div>
                   </div>

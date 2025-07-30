@@ -1,55 +1,13 @@
 import { RealtimeAgent } from "@openai/agents/realtime";
 import { ModulePrompt } from "@/data/modules";
 import { DEFAULT_VOICE } from "@/types/models";
-import { Skills, Emotions } from "@/types/character-attributes";
-
-function formatSkillsAndEmotions(skills?: Skills, emotions?: Emotions): string {
-  if (!skills && !emotions) return "";
-
-  let description = "\n## Character Attributes\n";
-
-  if (skills) {
-    description += "Your skills are:\n";
-    Object.entries(skills).forEach(([skill, value]) => {
-      const percentage = Math.round(value * 100);
-      const level =
-        percentage > 75
-          ? "high"
-          : percentage > 50
-          ? "moderate"
-          : percentage > 25
-          ? "low"
-          : "minimal";
-      description += `- ${skill}: ${level} (${percentage}%)\n`;
-    });
-  }
-
-  if (emotions) {
-    description += "\nYour emotional state is:\n";
-    Object.entries(emotions).forEach(([emotion, value]) => {
-      const percentage = Math.round(value * 100);
-      const intensity =
-        percentage > 75
-          ? "very strong"
-          : percentage > 50
-          ? "strong"
-          : percentage > 25
-          ? "moderate"
-          : "mild";
-      description += `- ${emotion}: ${intensity} (${percentage}%)\n`;
-    });
-  }
-
-  description +=
-    "\nEmbody these attributes naturally in your responses and behavior.\n";
-
-  return description;
-}
+import { Skills, Traits } from "@/types/character-attributes";
+import { getCompleteBehaviorPrompt } from "./behavior-selector";
 
 export function createRolePlayingAgent(
   modulePrompt: ModulePrompt,
   skillsOverride?: Skills,
-  emotionsOverride?: Emotions
+  traitsOverride?: Traits
 ): RealtimeAgent {
   const yourName =
     modulePrompt.characters.length > 0
@@ -58,7 +16,7 @@ export function createRolePlayingAgent(
 
   const character = modulePrompt.characters[0];
   const effectiveSkills = skillsOverride || character?.skills;
-  const effectiveEmotions = emotionsOverride || character?.emotion;
+  const effectiveTraits = traitsOverride || character?.traits;
 
   const yourCharacter = character
     ? `
@@ -67,10 +25,16 @@ export function createRolePlayingAgent(
   `
     : "";
 
-  const attributesDescription = formatSkillsAndEmotions(
-    effectiveSkills,
-    effectiveEmotions
-  );
+  // Generate comprehensive behavior prompt using the advanced system
+  let behaviorPrompt = "";
+  if (effectiveSkills && effectiveTraits) {
+    const behaviorState = {
+      skills: effectiveSkills,
+      traits: effectiveTraits
+    };
+    const completeBehaviorPrompt = getCompleteBehaviorPrompt(behaviorState);
+    behaviorPrompt = `\n\n${completeBehaviorPrompt.metaPrompt}`;
+  }
 
   const instructions = `
 You are a role-playing agent. You will be given a scenario, your character traits and instructions. 
@@ -83,8 +47,7 @@ You are a role-playing agent. You will be given a scenario, your character trait
 - Do play your character as faithfully like a very good actor would do.
 ## Character instructions
 ${yourName} 
-${yourCharacter}
-${attributesDescription}
+${yourCharacter}${behaviorPrompt}
 ## Scenario
 The scenario you will be acting out is:
 ${modulePrompt.scenario}

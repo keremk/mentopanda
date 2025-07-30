@@ -3,7 +3,7 @@ import { handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { getCurrentUserInfo, getUserId } from "./user";
 import { getPathFromStorageUrl } from "@/lib/utils";
-import { parseSkillsFromDb, parseEmotionsFromDb } from "@/types/character-attributes";
+import { parseSkillsFromDb, parseTraitsFromDb } from "@/types/character-attributes";
 
 export type TrainingSummary = {
   id: number;
@@ -104,7 +104,7 @@ export async function getTrainingByIdForEdit(
           ordinal,
           prompt,
           skills,
-          emotion,
+          traits,
           characters (
             id,
             name,
@@ -163,7 +163,7 @@ export async function getTrainingByIdForEdit(
           prompt: mc.prompt,
           ordinal: mc.ordinal,
           skills: parseSkillsFromDb(mc.skills),
-          emotion: parseEmotionsFromDb(mc.emotion),
+          traits: parseTraitsFromDb(mc.traits),
         })),
       },
     })),

@@ -6,8 +6,8 @@ export type Skills = {
   Facilitation: number; // Directive facilitation (0-100)
 };
 
-export type Emotions = {
-  Pleasure: number; // Valence: Positive/optimistic vs negative/critical (0-100)
+export type Traits = {
+  Outlook: number; // Valence: Positive/optimistic vs negative/critical (0-100)
   Energy: number; // Arousal: Lively/animated vs calm/measured (0-100)
   Control: number; // Dominance: Assertive/directive vs deferential/yielding (0-100)
   Confidence: number; // Certainty: Decisive/sure vs tentative/exploratory (0-100)
@@ -24,9 +24,9 @@ export function createDefaultSkills(): Skills {
   };
 }
 
-export function createDefaultEmotions(): Emotions {
+export function createDefaultTraits(): Traits {
   return {
-    Pleasure: 50,
+    Outlook: 50,
     Energy: 50,
     Control: 50,
     Confidence: 50,
@@ -62,17 +62,17 @@ export function parseSkillsFromDb(data: unknown): Skills {
   };
 }
 
-// Helper function to validate and parse Emotions from database JSONB
-export function parseEmotionsFromDb(data: unknown): Emotions {
-  if (!data || typeof data !== 'object') return createDefaultEmotions();
+// Helper function to validate and parse Traits from database JSONB
+export function parseTraitsFromDb(data: unknown): Traits {
+  if (!data || typeof data !== 'object') return createDefaultTraits();
   
   const obj = data as Record<string, unknown>;
-  const requiredKeys = ['Pleasure', 'Energy', 'Control', 'Confidence', 'Warmth'];
+  const requiredKeys = ['Outlook', 'Energy', 'Control', 'Confidence', 'Warmth'];
   
   // Check if all required keys exist and are numbers
   for (const key of requiredKeys) {
     if (!(key in obj) || typeof obj[key] !== 'number') {
-      return createDefaultEmotions();
+      return createDefaultTraits();
     }
   }
   
@@ -82,7 +82,7 @@ export function parseEmotionsFromDb(data: unknown): Emotions {
   };
   
   return {
-    Pleasure: convertValue(obj.Pleasure as number),
+    Outlook: convertValue(obj.Outlook as number),
     Energy: convertValue(obj.Energy as number),
     Control: convertValue(obj.Control as number),
     Confidence: convertValue(obj.Confidence as number),

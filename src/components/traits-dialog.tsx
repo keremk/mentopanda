@@ -11,32 +11,32 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Heart } from "lucide-react";
-import { Emotions, createDefaultEmotions } from "@/types/character-attributes";
-import { EmotionsEditor } from "@/components/emotions-editor";
+import { Traits, createDefaultTraits } from "@/types/character-attributes";
+import { TraitsEditor } from "@/components/traits-editor";
 
-type EmotionsDialogProps = {
+type TraitsDialogProps = {
   disabled?: boolean;
-  emotions?: Emotions;
-  onSave?: (emotions: Emotions) => void;
+  traits?: Traits;
+  onSave?: (traits: Traits) => void;
   mode?: "training-edit" | "simulation";
 };
 
-export function EmotionsDialog({ 
+export function TraitsDialog({ 
   disabled = false, 
-  emotions = createDefaultEmotions(),
+  traits = createDefaultTraits(),
   onSave,
   mode = "simulation"
-}: EmotionsDialogProps) {
+}: TraitsDialogProps) {
   const [open, setOpen] = useState(false);
-  const [localEmotions, setLocalEmotions] = useState<Emotions>(emotions);
+  const [localTraits, setLocalTraits] = useState<Traits>(traits);
 
   const handleSave = () => {
-    onSave?.(localEmotions);
+    onSave?.(localTraits);
     setOpen(false);
   };
 
   const handleCancel = () => {
-    setLocalEmotions(emotions); // Reset to original values
+    setLocalTraits(traits); // Reset to original values
     setOpen(false);
   };
 
@@ -45,7 +45,7 @@ export function EmotionsDialog({
       if (!newOpen) {
         handleCancel();
       } else {
-        setLocalEmotions(emotions); // Sync with current emotions when opening
+        setLocalTraits(traits); // Sync with current traits when opening
         setOpen(newOpen);
       }
     }}>
@@ -60,13 +60,13 @@ export function EmotionsDialog({
       <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {mode === "training-edit" ? "Edit Character Emotions" : "Adjust Character Emotions"}
+            {mode === "training-edit" ? "Edit Character Traits" : "Adjust Character Traits"}
           </DialogTitle>
         </DialogHeader>
         <div className="py-4">
-          <EmotionsEditor
-            emotions={localEmotions}
-            onChange={setLocalEmotions}
+          <TraitsEditor
+            traits={localTraits}
+            onChange={setLocalTraits}
             disabled={disabled}
           />
         </div>

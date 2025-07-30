@@ -339,31 +339,31 @@ export type Database = {
         Row: {
           character_id: number
           created_at: string | null
-          emotion: Json | null
           module_id: number
           ordinal: number
           prompt: string | null
           skills: Json | null
+          traits: Json | null
           updated_at: string | null
         }
         Insert: {
           character_id: number
           created_at?: string | null
-          emotion?: Json | null
           module_id: number
           ordinal?: number
           prompt?: string | null
           skills?: Json | null
+          traits?: Json | null
           updated_at?: string | null
         }
         Update: {
           character_id?: number
           created_at?: string | null
-          emotion?: Json | null
           module_id?: number
           ordinal?: number
           prompt?: string | null
           skills?: Json | null
+          traits?: Json | null
           updated_at?: string | null
         }
         Relationships: [

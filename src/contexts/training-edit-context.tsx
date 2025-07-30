@@ -14,7 +14,7 @@ import { Module, ModulePrompt, ModuleCharacter } from "@/data/modules";
 import { CharacterSummary, CharacterDetails } from "@/data/characters";
 import { useDebounce } from "@/hooks/use-debounce";
 import { updateTrainingAction } from "@/app/actions/trainingActions";
-import { createDefaultSkills, createDefaultEmotions } from "@/types/character-attributes";
+import { createDefaultSkills, createDefaultTraits } from "@/types/character-attributes";
 import {
   updateModuleAction,
   createModuleAction,
@@ -31,7 +31,7 @@ import {
 } from "@/app/actions/character-actions";
 import { AI_MODELS } from "@/types/models";
 import { logger } from "@/lib/logger";
-import { Skills, Emotions } from "@/types/character-attributes";
+import { Skills, Traits } from "@/types/character-attributes";
 // --- State Definition ---
 
 type SaveStatus = "idle" | "saving" | "error" | "saved";
@@ -115,7 +115,7 @@ type TrainingEditAction =
         >];
       };
     }
-  // New Actions: For updating character skills and emotions
+  // New Actions: For updating character skills and traits
   | {
       type: "UPDATE_MODULE_CHARACTER_SKILLS";
       payload: {
@@ -125,11 +125,11 @@ type TrainingEditAction =
       };
     }
   | {
-      type: "UPDATE_MODULE_CHARACTER_EMOTIONS";
+      type: "UPDATE_MODULE_CHARACTER_TRAITS";
       payload: {
         moduleId: number;
         characterId: number;
-        emotions: Emotions;
+        traits: Traits;
       };
     }
   // Internal Actions (for saving status)
@@ -386,7 +386,7 @@ function trainingEditReducer(
         prompt: "", // Initialize with an empty prompt
         ordinal: 0, // Only one character per module now
         skills: createDefaultSkills(),
-        emotion: createDefaultEmotions(),
+        traits: createDefaultTraits(),
       };
 
       const updatedModules = [...state.training.modules];
@@ -443,7 +443,7 @@ function trainingEditReducer(
       };
     }
 
-    // New Reducer Cases: UPDATE_MODULE_CHARACTER_SKILLS and UPDATE_MODULE_CHARACTER_EMOTIONS
+    // New Reducer Cases: UPDATE_MODULE_CHARACTER_SKILLS and UPDATE_MODULE_CHARACTER_TRAITS
     case "UPDATE_MODULE_CHARACTER_SKILLS": {
       const { moduleId, characterId, skills } = action.payload;
       const updatedModules = state.training.modules.map((m: Module) => {
@@ -476,14 +476,14 @@ function trainingEditReducer(
       };
     }
 
-    case "UPDATE_MODULE_CHARACTER_EMOTIONS": {
-      const { moduleId, characterId, emotions } = action.payload;
+    case "UPDATE_MODULE_CHARACTER_TRAITS": {
+      const { moduleId, characterId, traits } = action.payload;
       const updatedModules = state.training.modules.map((m: Module) => {
         if (m.id === moduleId) {
           const updatedCharacters = m.modulePrompt.characters.map(
             (c: ModuleCharacter) => {
               if (c.id === characterId) {
-                return { ...c, emotion: emotions };
+                return { ...c, traits: traits };
               }
               return c;
             }
@@ -830,15 +830,15 @@ export function TrainingEditProvider({
           characterPromptChanged = true;
         }
 
-        // Check for character skills and emotions changes
+        // Check for character skills and traits changes
         let characterAttributesChanged = false;
         if (currentCharacter && lastSavedCharacter) {
-          // Deep compare skills and emotions objects
+          // Deep compare skills and traits objects
           const skillsChanged = JSON.stringify(currentCharacter.skills) !== JSON.stringify(lastSavedCharacter.skills);
-          const emotionsChanged = JSON.stringify(currentCharacter.emotion) !== JSON.stringify(lastSavedCharacter.emotion);
-          characterAttributesChanged = skillsChanged || emotionsChanged;
+          const traitsChanged = JSON.stringify(currentCharacter.traits) !== JSON.stringify(lastSavedCharacter.traits);
+          characterAttributesChanged = skillsChanged || traitsChanged;
         } else if (currentCharacter && !lastSavedCharacter) {
-          // New character with skills/emotions
+          // New character with skills/traits
           characterAttributesChanged = true;
         }
 
@@ -911,7 +911,7 @@ export function TrainingEditProvider({
             );
           }
 
-          // If character attributes (skills/emotions) changed
+          // If character attributes (skills/traits) changed
           if (
             characterAttributesChanged &&
             !characterDetailsChanged &&
@@ -925,7 +925,7 @@ export function TrainingEditProvider({
                 moduleId: currentModule.id,
                 characterId: currentCharacter.id,
                 skills: currentCharacter.skills,
-                emotion: currentCharacter.emotion,
+                traits: currentCharacter.traits,
               })
             );
           }

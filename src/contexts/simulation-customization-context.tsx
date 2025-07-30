@@ -1,19 +1,19 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import { Skills, Emotions, createDefaultSkills, createDefaultEmotions } from "@/types/character-attributes";
+import { Skills, Traits, createDefaultSkills, createDefaultTraits } from "@/types/character-attributes";
 
 type SimulationCustomizationState = {
   skillsOverride: Skills | null;
-  emotionsOverride: Emotions | null;
+  traitsOverride: Traits | null;
 };
 
 type SimulationCustomizationContextType = {
   state: SimulationCustomizationState;
   setSkillsOverride: (skills: Skills | null) => void;
-  setEmotionsOverride: (emotions: Emotions | null) => void;
+  setTraitsOverride: (traits: Traits | null) => void;
   getEffectiveSkills: (originalSkills?: Skills) => Skills;
-  getEffectiveEmotions: (originalEmotions?: Emotions) => Emotions;
+  getEffectiveTraits: (originalTraits?: Traits) => Traits;
   hasOverrides: () => boolean;
   clearOverrides: () => void;
 };
@@ -31,33 +31,33 @@ export function SimulationCustomizationProvider({
 }: SimulationCustomizationProviderProps) {
   const [state, setState] = useState<SimulationCustomizationState>({
     skillsOverride: null,
-    emotionsOverride: null,
+    traitsOverride: null,
   });
 
   const setSkillsOverride = (skills: Skills | null) => {
     setState(prev => ({ ...prev, skillsOverride: skills }));
   };
 
-  const setEmotionsOverride = (emotions: Emotions | null) => {
-    setState(prev => ({ ...prev, emotionsOverride: emotions }));
+  const setTraitsOverride = (traits: Traits | null) => {
+    setState(prev => ({ ...prev, traitsOverride: traits }));
   };
 
   const getEffectiveSkills = (originalSkills?: Skills): Skills => {
     return state.skillsOverride || originalSkills || createDefaultSkills();
   };
 
-  const getEffectiveEmotions = (originalEmotions?: Emotions): Emotions => {
-    return state.emotionsOverride || originalEmotions || createDefaultEmotions();
+  const getEffectiveTraits = (originalTraits?: Traits): Traits => {
+    return state.traitsOverride || originalTraits || createDefaultTraits();
   };
 
   const hasOverrides = (): boolean => {
-    return state.skillsOverride !== null || state.emotionsOverride !== null;
+    return state.skillsOverride !== null || state.traitsOverride !== null;
   };
 
   const clearOverrides = () => {
     setState({
       skillsOverride: null,
-      emotionsOverride: null,
+      traitsOverride: null,
     });
   };
 
@@ -66,9 +66,9 @@ export function SimulationCustomizationProvider({
       value={{
         state,
         setSkillsOverride,
-        setEmotionsOverride,
+        setTraitsOverride,
         getEffectiveSkills,
-        getEffectiveEmotions,
+        getEffectiveTraits,
         hasOverrides,
         clearOverrides,
       }}

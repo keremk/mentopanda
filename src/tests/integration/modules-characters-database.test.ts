@@ -12,7 +12,7 @@ import { createModule } from "@/data/modules";
 import { createTraining } from "@/data/trainings";
 import { createCharacter } from "@/data/characters";
 import { Database } from "@/types/supabase";
-import { Skills, Emotions, createDefaultSkills, createDefaultEmotions } from "@/types/character-attributes";
+import { Skills, Traits, createDefaultSkills, createDefaultTraits } from "@/types/character-attributes";
 import {
   setupTestEnvironment,
   cleanupTestEnvironment,
@@ -78,7 +78,7 @@ describe("Modules Characters Database Integration Tests", () => {
   // --- Test Cases ---
 
   describe("insertModuleCharacter", () => {
-    it("should successfully insert a module-character relationship with default skills and emotions", async () => {
+    it("should successfully insert a module-character relationship with default skills and traits", async () => {
       const { createdUsers, createdProjectIds, createdUserIds } =
         await setupTestEnvironment(adminSupabase, [
           { role: "admin", projectName: "ModuleCharacter-Project" },
@@ -104,7 +104,7 @@ describe("Modules Characters Database Integration Tests", () => {
       // Verify the relationship was created with default values
       const { data: moduleCharacters, error } = await user.supabase
         .from("modules_characters")
-        .select("ordinal, prompt, skills, emotion")
+        .select("ordinal, prompt, skills, traits")
         .eq("module_id", moduleInTest.id)
         .eq("character_id", character.id)
         .single();
@@ -114,12 +114,12 @@ describe("Modules Characters Database Integration Tests", () => {
       expect(moduleCharacters!.ordinal).toBe(1);
       expect(moduleCharacters!.prompt).toBe("Test prompt");
       
-      // Check that default skills and emotions were set
+      // Check that default skills and traits were set
       expect(moduleCharacters!.skills).toEqual(createDefaultSkills());
-      expect(moduleCharacters!.emotion).toEqual(createDefaultEmotions());
+      expect(moduleCharacters!.traits).toEqual(createDefaultTraits());
     });
 
-    it("should insert module-character with custom skills and emotions", async () => {
+    it("should insert module-character with custom skills and traits", async () => {
       const { createdUsers, createdProjectIds, createdUserIds } =
         await setupTestEnvironment(adminSupabase, [
           { role: "admin", projectName: "CustomAttributes-Project" },
@@ -138,8 +138,8 @@ describe("Modules Characters Database Integration Tests", () => {
         Facilitation: 0.5,
       };
 
-      const customEmotions: Emotions = {
-        Pleasure: 0.1,
+      const customTraits: Traits = {
+        Outlook: 0.1,
         Energy: 0.9,
         Control: 0.8,
         Confidence: 0.2,
@@ -152,7 +152,7 @@ describe("Modules Characters Database Integration Tests", () => {
         ordinal: 2,
         prompt: "Custom prompt",
         skills: customSkills,
-        emotion: customEmotions,
+        traits: customTraits,
       };
 
       await insertModuleCharacter(user.supabase, insertData);
@@ -160,7 +160,7 @@ describe("Modules Characters Database Integration Tests", () => {
       // Verify the relationship was created with custom values
       const { data: moduleCharacters, error } = await user.supabase
         .from("modules_characters")
-        .select("skills, emotion")
+        .select("skills, traits")
         .eq("module_id", moduleInTest.id)
         .eq("character_id", character.id)
         .single();
@@ -168,7 +168,7 @@ describe("Modules Characters Database Integration Tests", () => {
       expect(error).toBeNull();
       expect(moduleCharacters).toBeTruthy();
       expect(moduleCharacters!.skills).toEqual(customSkills);
-      expect(moduleCharacters!.emotion).toEqual(customEmotions);
+      expect(moduleCharacters!.traits).toEqual(customTraits);
     });
 
     it("should prevent users from adding characters to modules in other projects (RLS)", async () => {
@@ -329,24 +329,24 @@ describe("Modules Characters Database Integration Tests", () => {
 
       await updateModuleCharacterAttributes(user.supabase, updateData);
 
-      // Verify only skills were updated, emotions remain default
+      // Verify only skills were updated, traits remain default
       const { data: moduleCharacters, error } = await user.supabase
         .from("modules_characters")
-        .select("skills, emotion, updated_at")
+        .select("skills, traits, updated_at")
         .eq("module_id", moduleInTest.id)
         .eq("character_id", character.id)
         .single();
 
       expect(error).toBeNull();
       expect(moduleCharacters!.skills).toEqual(newSkills);
-      expect(moduleCharacters!.emotion).toEqual(createDefaultEmotions());
+      expect(moduleCharacters!.traits).toEqual(createDefaultTraits());
       expect(new Date(moduleCharacters!.updated_at!)).toBeInstanceOf(Date);
     });
 
-    it("should successfully update emotions only", async () => {
+    it("should successfully update traits only", async () => {
       const { createdUsers, createdProjectIds, createdUserIds } =
         await setupTestEnvironment(adminSupabase, [
-          { role: "admin", projectName: "UpdateEmotions-Project" },
+          { role: "admin", projectName: "UpdateTraits-Project" },
         ]);
       projectIds = createdProjectIds;
       userIds = createdUserIds;
@@ -362,9 +362,9 @@ describe("Modules Characters Database Integration Tests", () => {
         prompt: "Test prompt",
       });
 
-      // Update only emotions
-      const newEmotions: Emotions = {
-        Pleasure: 0.1,
+      // Update only traits
+      const newTraits: Traits = {
+        Outlook: 0.1,
         Energy: 0.2,
         Control: 0.9,
         Confidence: 0.8,
@@ -374,25 +374,25 @@ describe("Modules Characters Database Integration Tests", () => {
       const updateData: UpdateModuleCharacterAttributesInput = {
         moduleId: moduleInTest.id,
         characterId: character.id,
-        emotion: newEmotions,
+        traits: newTraits,
       };
 
       await updateModuleCharacterAttributes(user.supabase, updateData);
 
-      // Verify only emotions were updated, skills remain default
+      // Verify only traits were updated, skills remain default
       const { data: moduleCharacters, error } = await user.supabase
         .from("modules_characters")
-        .select("skills, emotion, updated_at")
+        .select("skills, traits, updated_at")
         .eq("module_id", moduleInTest.id)
         .eq("character_id", character.id)
         .single();
 
       expect(error).toBeNull();
       expect(moduleCharacters!.skills).toEqual(createDefaultSkills());
-      expect(moduleCharacters!.emotion).toEqual(newEmotions);
+      expect(moduleCharacters!.traits).toEqual(newTraits);
     });
 
-    it("should successfully update both skills and emotions", async () => {
+    it("should successfully update both skills and traits", async () => {
       const { createdUsers, createdProjectIds, createdUserIds } =
         await setupTestEnvironment(adminSupabase, [
           { role: "admin", projectName: "UpdateBoth-Project" },
@@ -411,7 +411,7 @@ describe("Modules Characters Database Integration Tests", () => {
         prompt: "Test prompt",
       });
 
-      // Update both skills and emotions
+      // Update both skills and traits
       const newSkills: Skills = {
         EQ: 0.9,
         Clarity: 0.8,
@@ -420,8 +420,8 @@ describe("Modules Characters Database Integration Tests", () => {
         Facilitation: 0.5,
       };
 
-      const newEmotions: Emotions = {
-        Pleasure: 0.1,
+      const newTraits: Traits = {
+        Outlook: 0.1,
         Energy: 0.2,
         Control: 0.9,
         Confidence: 0.8,
@@ -432,7 +432,7 @@ describe("Modules Characters Database Integration Tests", () => {
         moduleId: moduleInTest.id,
         characterId: character.id,
         skills: newSkills,
-        emotion: newEmotions,
+        traits: newTraits,
       };
 
       await updateModuleCharacterAttributes(user.supabase, updateData);
@@ -440,14 +440,14 @@ describe("Modules Characters Database Integration Tests", () => {
       // Verify both were updated
       const { data: moduleCharacters, error } = await user.supabase
         .from("modules_characters")
-        .select("skills, emotion, updated_at")
+        .select("skills, traits, updated_at")
         .eq("module_id", moduleInTest.id)
         .eq("character_id", character.id)
         .single();
 
       expect(error).toBeNull();
       expect(moduleCharacters!.skills).toEqual(newSkills);
-      expect(moduleCharacters!.emotion).toEqual(newEmotions);
+      expect(moduleCharacters!.traits).toEqual(newTraits);
     });
 
     it("should prevent users from updating attributes in other projects (RLS)", async () => {
