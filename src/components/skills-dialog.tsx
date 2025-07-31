@@ -10,9 +10,11 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BrainIcon } from "lucide-react";
 import { Skills, createDefaultSkills } from "@/types/character-attributes";
 import { SkillsEditor } from "@/components/skills-editor";
+import { getCombinedSkillsPrompt } from "@/prompts/skills-prompts";
 
 type SkillsDialogProps = {
   disabled?: boolean;
@@ -64,11 +66,29 @@ export function SkillsDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="py-4">
-          <SkillsEditor
-            skills={localSkills}
-            onChange={setLocalSkills}
-            disabled={disabled}
-          />
+          <Tabs defaultValue="editor" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="editor">Editor</TabsTrigger>
+              <TabsTrigger value="prompts">Prompts</TabsTrigger>
+            </TabsList>
+            <TabsContent value="editor" className="mt-4 h-[calc(80vh-20rem)] overflow-y-auto">
+              <SkillsEditor
+                skills={localSkills}
+                onChange={setLocalSkills}
+                disabled={disabled}
+              />
+            </TabsContent>
+            <TabsContent value="prompts" className="mt-4 h-[calc(80vh-20rem)] overflow-y-auto rounded-lg border bg-muted/20 p-4">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-2">Generated Skills Prompt</h4>
+                  <div className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {getCombinedSkillsPrompt(localSkills).metaPrompt}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
         <DialogFooter>
           <Button variant="ghost-brand" onClick={handleCancel}>

@@ -310,13 +310,13 @@ export function EditModuleCharacter() {
       {currentCharacter && (
         <div className="flex flex-col gap-y-2">
           <label className="text-sm font-medium text-muted-foreground">
-            Character Prompt
+            Character Background
           </label>
           <AIFocusTextarea
             name="characterPrompt"
             value={currentCharacterPrompt}
             onChange={(e) => handleCharacterPromptChange(e.target.value)}
-            placeholder="Enter the prompt about how this character should behave in this scenario"
+            placeholder="Enter character background and description here, this will be used as a prompt for the AI character in the training scenario."
             rows={10}
             className="min-h-[calc(100vh-38rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
             onKeyDown={handleKeyDown}
