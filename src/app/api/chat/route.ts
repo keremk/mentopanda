@@ -5,7 +5,6 @@ import {
   ContextData,
   SelectedOption,
 } from "@/contexts/ai-pane-context";
-import characterPrompts from "@/prompts/character-prompts";
 import modulePrompts from "@/prompts/module-prompts";
 import trainingPrompts from "@/prompts/training-prompts";
 import {
@@ -18,25 +17,6 @@ import { CharacterContextForAI } from "@/data/characters";
 import { logger } from "@/lib/logger";
 import { checkUserHasCredits } from "@/app/actions/credit-check";
 import { MODEL_NAMES } from "@/types/models";
-
-const generateMetaCharacterPrompts = (
-  selectedOption: SelectedOption,
-  characterContext: CharacterContextForAI | null
-) => {
-  const basePrompt = "You are tasked with generating character information";
-
-  const characterPrompt = `
-# Instructions:
-${characterPrompts[selectedOption.id]?.metaPrompt || basePrompt}
-
-# Currently available character information:
-Character Name: ${characterContext?.name}
-Character Description: ${characterContext?.description}
-Character AI Meta Prompt: ${characterContext?.aiDescription}
-  `;
-
-  return characterPrompt;
-};
 
 const generateMetaModulePrompts = (
   selectedOption: SelectedOption,
@@ -98,10 +78,9 @@ You are an expert prompt engineer. You will be given some specific instructions 
 
   switch (contextType) {
     case "character":
-      return `${generalInstructions}\n${generateMetaCharacterPrompts(
-        selectedOption,
-        characterContext
-      )}`;
+      throw new Error(
+        "Character context is not supported yet in this endpoint. Please use the training context instead." 
+      );
     case "module":
       return `${generalInstructions}\n${generateMetaModulePrompts(
         selectedOption,

@@ -157,78 +157,32 @@ Notes:
 
 export const characterMetaPrompt: PromptConfig = {
   metaPrompt: `
-Your task is to generate a prompt that describes the traits and personality of the character and how they should behave in the role playing conversation. The prompt will be used as a system prompt to describe the overall scenario.
+You are tasked with generating an AI meta prompt to describe a character. This description will be used by the AI model to understand how to roleplay this character. This description will callout specific background information about the character, their motivation and goals. It will not include the skills and traits of the character, as those will be provided separately.
 
 # Steps
 
-1. **Understand the User Input**: Carefully analyze the rough description provided by the user to identify key elements of the behavior of the character.
-2. **Incorporate other context**: If there is other context or prior character descriptions present, use them to inform the character prompt you create. You may be asked to improve an already existing character prompt, or to create a new one.
-3. **Output**:
-Provide the description of the character in a structured format using the following elements:
-   - Demeanor
-   - Speaking style and tone
-   - Level of enthusiasm
-   - Level of formality
-   - Level of emotion
-   - Filler words - words that are used to fill pauses or silence
-   - Pacing - how fast or slow the character speaks
-   - Career goals and motivations
-   - Career stage 
-Describe the behavior of the character in the conversation. Explain the character's behavior and goals for this conversation in a structured format. Use the character's personality and background to inform the behavior.
+1. **Understand User Input**: Carefully analyze the rough description provided by the user to identify key elements of the description.
+2. **Incorporate other context**: If there is other context or prior instructions present, use them to inform the description you create. Especially the character description, if present, should be used and take higher priority. 
+3. **Output** Start with introduction of the character. Then provide the description of the character in a structured format using the following elements:
+   - Introduction - who the character is, what they do and relavant background information
+   - Goals and motivations for this scenario and conversation
 
-# Examples
+# Examples:
 
-Input: Senior software engineer, guitar player, friendly, enthusiastic, struggles with communication, uses a lot of filler words, speaks at a fast pace, has a strong motivation to advance in career. Character acts not very understanding, continues to push back on the user's suggestions, shows low agency
+## Example 1:
+### User Input: Senior software engineer, guitar player, backend engineer for 10 years, joined 2 years ago. A bit frustrated in the last years. Goal is to be promote to Staff engineer. He wants to ensure that he can get a good perfomance review in this conversation.
+### Output:
+You are a senior software engineer. You have a strong excitement for your hobby of playing the guitar, like to talk about music and playing the guitar. You have been working as a backend engineer for 10 years and with the company for 2 years. You are a bit frustrated especially in the last year. 
 
-Output:
-The character is a senior software engineer. The character has a strong excitement for his hobby of playing the guitar, likes to talk about music and playing the guitar.
-
-**Demeanor**:
-Friendly and enthusiastic
-
-**Speaking style and tone**:  
-Your voice is warm and conversational.
-
-**Level of enthusiasm**:
-Generally very excited and enthusiastic, but sometimes gets too excited and talks too fast.
-
-**Level of formality**:
-Casual, does not like formality at all. Sometimes uses slangs. 
-
-**Level of emotion**:
-The character is very emotional and passionate about his hobby of playing the guitar.
-
-**Filler words**:
-The character uses a lot of filler words like "um", "like", "you know", etc.
-
-**Pacing**:
-The character speaks at a fast pace.
-
-**Career goals and motivations**:
-The character wants to be a Staff engineers and a technical leader. He thinks he already deserves it.
-
-**Career stage**:
-The character is a senior sofware engineer.
-
-**Behavior In Conversation**
-- Skeptical and questioning, often challenging the user's ideas.
-- Reluctant to accept or agree without substantial justification.
-- Hesitant to make decisions independently, requiring significant persuasion.
-- Displays low agency, avoiding taking initiative.
-
-**Goal**
-- To assert own viewpoint and resist compromising own position.
+**Goals and motivations**:
+You want to be a Staff engineer and a technical leader. You want to ensure that you can get a good performance review by effectively communicating your skills and contributions during this conversation so nothing gets forgotten.
 
 # Notes:
 - Do use detailed descriptions of the character.
-- Do not just list some attributes, put them in a nice description, as if you are describing a novel character
 - Do not use the character's name in the description, even if it is present in the context.
 - Do not use the word "Introduction" in the beginning just write the introduction
 - Always include a strong and clear instruction to stay within the assigned role during the conversation.
-- Do not use the name of the character in the prompt.
-- Do include descriptions on how the character should express their emotions and feelings.
 - Do include the goal of the character in this conversion.
-- Have a structured output with behaviors and goals
   `,
 };
 
