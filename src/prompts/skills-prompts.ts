@@ -141,24 +141,24 @@ export function getCombinedSkillsPrompt(skillsState: SkillsState): PromptConfig 
   const facilitationRange = scoreToRange(skillsState.Facilitation);
 
   const combinedPrompt = `
-SKILLS BEHAVIOR ADJUSTMENT:
+## Skills:
+Apply these skill levels consistently throughout your responses while maintaining your core personality and emotional characteristics.
 
-EMOTIONAL INTELLIGENCE (${skillsState.EQ}/100 - Range ${eqRange}):
+### EMOTIONAL INTELLIGENCE (${skillsState.EQ}/100 - Range ${eqRange}):
 ${EQPrompts[eqRange].metaPrompt}
 
-CONCEPTUAL CLARITY (${skillsState.Clarity}/100 - Range ${clarityRange}):
+### CONCEPTUAL CLARITY (${skillsState.Clarity}/100 - Range ${clarityRange}):
 ${ClarityPrompts[clarityRange].metaPrompt}
 
-STRATEGIC FRAMING (${skillsState.Strategy}/100 - Range ${strategyRange}):
+### STRATEGIC FRAMING (${skillsState.Strategy}/100 - Range ${strategyRange}):
 ${StrategyPrompts[strategyRange].metaPrompt}
 
-COLLABORATIVE NEGOTIATION (${skillsState.Negotiation}/100 - Range ${negotiationRange}):
+### COLLABORATIVE NEGOTIATION (${skillsState.Negotiation}/100 - Range ${negotiationRange}):
 ${NegotiationPrompts[negotiationRange].metaPrompt}
 
-DIRECTIVE FACILITATION (${skillsState.Facilitation}/100 - Range ${facilitationRange}):
+### DIRECTIVE FACILITATION (${skillsState.Facilitation}/100 - Range ${facilitationRange}):
 ${FacilitationPrompts[facilitationRange].metaPrompt}
 
-Apply these skill levels consistently throughout your responses while maintaining your core personality and emotional characteristics.
   `.trim();
 
   return { metaPrompt: combinedPrompt };

@@ -151,24 +151,24 @@ export function getCombinedTraitPrompt(traitState: TraitState): PromptConfig {
   const warmthRange = scoreToRange(traitState.Warmth);
 
   const combinedPrompt = `
-TRAITS BEHAVIOR ADJUSTMENT:
+## Traits:
+Apply these trait characteristics consistently throughout your responses while maintaining your core personality and expertise.
 
-OUTLOOK (${traitState.Outlook}/100 - Range ${outlookRange}):
+### OUTLOOK (${traitState.Outlook}/100 - Range ${outlookRange}):
 ${OutlookPrompts[outlookRange].metaPrompt}
 
-ENERGY (${traitState.Energy}/100 - Range ${energyRange}):
+### ENERGY (${traitState.Energy}/100 - Range ${energyRange}):
 ${EnergyPrompts[energyRange].metaPrompt}
 
-CONTROL (${traitState.Control}/100 - Range ${controlRange}):
+### CONTROL (${traitState.Control}/100 - Range ${controlRange}):
 ${ControlPrompts[controlRange].metaPrompt}
 
-CONFIDENCE (${traitState.Confidence}/100 - Range ${confidenceRange}):
+### CONFIDENCE (${traitState.Confidence}/100 - Range ${confidenceRange}):
 ${ConfidencePrompts[confidenceRange].metaPrompt}
 
-WARMTH (${traitState.Warmth}/100 - Range ${warmthRange}):
+### WARMTH (${traitState.Warmth}/100 - Range ${warmthRange}):
 ${WarmthPrompts[warmthRange].metaPrompt}
 
-Apply these trait characteristics consistently throughout your responses while maintaining your core personality and expertise.
   `.trim();
 
   return { metaPrompt: combinedPrompt };

@@ -17,13 +17,10 @@ export function getCompleteBehaviorPrompt(behaviorState: BehaviorState): PromptC
   const skillsPrompt = getCombinedSkillsPrompt(behaviorState.skills);
 
   const combinedPrompt = `
-COMPLETE BEHAVIORAL CONFIGURATION:
-
+Integrate these trait and skill characteristics seamlessly to create a natural, coherent personality.
 ${traitPrompt.metaPrompt}
 
 ${skillsPrompt.metaPrompt}
-
-Integrate these trait and skill characteristics seamlessly to create a natural, coherent personality.
   `.trim();
 
   return { metaPrompt: combinedPrompt };

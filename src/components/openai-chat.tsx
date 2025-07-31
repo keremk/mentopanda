@@ -440,7 +440,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
       effectiveSkills,
       effectiveTraits
     );
-    logger.debug("🤖 Created agent:", {
+    logger.info("🤖 Created agent:", {
       name: createdAgent.name,
       voice: createdAgent.voice,
       hasInstructions: !!createdAgent.instructions,
