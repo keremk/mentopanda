@@ -1,8 +1,12 @@
 import { createClient, Session } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import { join } from "path";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 import fs from "fs/promises";
 import { logger } from "@/lib/logger";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 dotenv.config({ path: ".env.local" });
 

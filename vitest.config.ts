@@ -8,7 +8,7 @@ export default defineConfig({
     },
   },
   test: {
-    environment: "jsdom",
+    environment: "node", // Use node environment for real network operations
     setupFiles: ["./src/tests/setup.ts"],
   },
 });

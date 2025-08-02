@@ -23,7 +23,7 @@ export async function getEnrolledTrainings(
     .select(
       `
       training_id,
-      trainings!inner (id, title, tagline, image_url, project_id),
+      trainings!inner (id, title, tagline, image_url, project_id, created_at, updated_at, is_public, fork_count),
       created_at
     `
     )
@@ -50,6 +50,8 @@ Given that trainings is indeed an object and not an array at runtime, we'll need
     createdAt: new Date(enrollment.trainings?.created_at),
     updatedAt: new Date(enrollment.trainings?.updated_at),
     projectId: enrollment.trainings?.project_id,
+    isPublic: enrollment.trainings?.is_public ?? false,
+    forkCount: enrollment.trainings?.fork_count ?? 0,
   }));
   /* eslint-enable @typescript-eslint/no-explicit-any */
 }

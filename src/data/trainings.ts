@@ -1,9 +1,11 @@
 import { ModuleProgress, ModuleSummary, Module, deleteModule } from "./modules";
 import { handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { getCurrentUserInfo, getUserId } from "./user";
+import { getCurrentUserInfo, getUserId, hasPermission } from "./user";
 import { getPathFromStorageUrl } from "@/lib/utils";
 import { parseSkillsFromDb, parseTraitsFromDb } from "@/types/character-attributes";
+import { copyStorageFileWithAdminPrivileges } from "./storage-utils";
+import { logger } from "@/lib/logger";
 
 export type TrainingSummary = {
   id: number;
@@ -13,6 +15,8 @@ export type TrainingSummary = {
   projectId: number;
   createdAt: Date;
   updatedAt: Date;
+  isPublic: boolean;
+  forkCount: number;
 };
 
 export type Training = TrainingSummary & {
@@ -85,6 +89,8 @@ export async function getTrainingById(
     previewUrl: training.preview_url,
     createdAt: new Date(training.created_at),
     updatedAt: new Date(training.updated_at),
+    isPublic: training.is_public,
+    forkCount: training.fork_count,
     modules: training.modules,
   };
 }
@@ -140,6 +146,8 @@ export async function getTrainingByIdForEdit(
     previewUrl: training.preview_url,
     createdAt: new Date(training.created_at),
     updatedAt: new Date(training.updated_at),
+    isPublic: training.is_public,
+    forkCount: training.fork_count,
     modules: training.modules.map((module: any) => ({
       id: module.id,
       title: module.title,
@@ -227,6 +235,8 @@ export async function getTrainingWithProgress(
     projectId: training.project_id,
     createdAt: new Date(training.created_at),
     updatedAt: new Date(training.updated_at),
+    isPublic: training.is_public,
+    forkCount: training.fork_count,
     modules: training.modules.map((module: any) => {
       const history =
         module.history?.filter((h: any) => h.completed_at !== null) || [];
@@ -271,6 +281,8 @@ export async function getTrainingsWithEnrollment(
       project_id,
       created_at,
       updated_at,
+      is_public,
+      fork_count,
       enrollments!left (
         id,
         user_id
@@ -292,6 +304,8 @@ export async function getTrainingsWithEnrollment(
       projectId: training.project_id,
       createdAt: new Date(training.created_at),
       updatedAt: new Date(training.updated_at),
+      isPublic: training.is_public,
+      forkCount: training.fork_count,
       isEnrolled:
         training.enrollments?.some(
           (e: { user_id: string }) => e.user_id === userId
@@ -342,6 +356,8 @@ export async function updateTraining(
     previewUrl: data[0].preview_url,
     createdAt: new Date(data[0].created_at),
     updatedAt: new Date(data[0].updated_at),
+    isPublic: data[0].is_public,
+    forkCount: data[0].fork_count,
     createdBy: data[0].created_by,
     modules: data[0].modules,
   };
@@ -376,6 +392,8 @@ export async function createTraining(
     previewUrl: data.preview_url,
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at),
+    isPublic: data.is_public,
+    forkCount: data.fork_count,
     createdBy: data.created_by,
     modules: [],
   };
@@ -489,6 +507,287 @@ export async function deleteTraining(
       );
     }
   });
+}
+
+// Toggle public status of a training
+export async function toggleTrainingPublicStatus(
+  supabase: SupabaseClient,
+  trainingId: number,
+  isPublic: boolean
+): Promise<TrainingSummary> {
+  const { data, error } = await supabase
+    .from("trainings")
+    .update({
+      is_public: isPublic,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", trainingId)
+    .select()
+    .single();
+
+  if (error) handleError(error);
+  if (!data) throw new Error("Failed to update training public status");
+
+  return {
+    id: data.id,
+    title: data.title,
+    tagline: data.tagline,
+    imageUrl: data.image_url,
+    projectId: data.project_id,
+    createdAt: new Date(data.created_at),
+    updatedAt: new Date(data.updated_at),
+    isPublic: data.is_public,
+    forkCount: data.fork_count,
+  };
+}
+
+// Get public trainings (for unauthenticated and authenticated users)
+export async function getPublicTrainings(
+  supabase: SupabaseClient,
+  limit: number = 20,
+  offset: number = 0
+): Promise<TrainingWithEnrollment[]> {
+  const query = supabase
+    .from("trainings")
+    .select(`
+      id,
+      title,
+      tagline,
+      image_url,
+      project_id,
+      created_at,
+      updated_at,
+      is_public,
+      fork_count,
+      created_by,
+      profiles!trainings_created_by_fkey (
+        id
+      )
+    `)
+    .eq("is_public", true)
+    .order("fork_count", { ascending: false })
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  const { data: trainings, error } = await query;
+
+  if (error) handleError(error);
+
+  return (
+    trainings?.map((training) => ({
+      id: training.id,
+      title: training.title,
+      tagline: training.tagline,
+      imageUrl: training.image_url,
+      projectId: training.project_id,
+      createdAt: new Date(training.created_at),
+      updatedAt: new Date(training.updated_at),
+      isPublic: training.is_public,
+      forkCount: training.fork_count,
+      isEnrolled: false, // Public view - no enrollment check
+    })) ?? []
+  );
+}
+
+// Copy a public training to user's project using the deep copy function
+export async function copyPublicTrainingToProject(
+  supabase: SupabaseClient,
+  sourceTrainingId: number
+): Promise<{ trainingId: number; characterMapping: Record<string, number>; moduleMapping: Record<string, number> }> {
+  const user = await getCurrentUserInfo(supabase);
+
+  // Check if user has training.manage permission on their current project
+  const canManageTrainings = await hasPermission({
+    supabase,
+    permission: "training.manage",
+    user,
+  });
+
+  if (!canManageTrainings) {
+    throw new Error("Insufficient permissions to copy trainings to this project");
+  }
+
+  // First check if the training is public and accessible
+  const { data: sourceTraining, error: checkError } = await supabase
+    .from("trainings")
+    .select("is_public")
+    .eq("id", sourceTrainingId)
+    .single();
+
+  if (checkError) {
+    if (checkError.code === "PGRST116") {
+      throw new Error("Training not found or access denied");
+    }
+    handleError(checkError);
+  }
+
+  if (!sourceTraining?.is_public) {
+    throw new Error("Can only copy public trainings");
+  }
+
+  // Call the database deep copy function
+  const { data: result, error } = await supabase.rpc("deep_copy_training", {
+    source_training_id: sourceTrainingId,
+    target_project_id: user.currentProject.id,
+    target_user_id: user.id,
+  });
+
+  if (error) handleError(error);
+  if (!result) throw new Error("Deep copy function returned no result");
+
+  const trainingId = result.training_id;
+  const characterMapping = result.character_mapping || {};
+  const moduleMapping = result.module_mapping || {};
+
+  // Now implement storage copying for training images and character avatars
+  logger.debug(
+    `[copyPublicTrainingToProject] Copying storage assets for training ${sourceTrainingId} -> ${trainingId}`
+  );
+
+  // First, get the source training data with image URLs
+  const { data: sourceData, error: sourceError } = await supabase
+    .from("trainings")
+    .select(`
+      id,
+      image_url
+    `)
+    .eq("id", sourceTrainingId)
+    .single();
+
+  // Get characters that were copied using the character mapping from deep_copy_training
+  // This avoids RLS issues since we already have the mapping
+  logger.debug(`[copyPublicTrainingToProject] Using character mapping from deep copy:`, characterMapping);
+  
+  let charactersData = null;
+  let charactersError = null;
+
+  if (Object.keys(characterMapping).length > 0) {
+    // Get source characters using the original character IDs from the mapping
+    const sourceCharacterIds = Object.keys(characterMapping).map(id => parseInt(id));
+    logger.debug(`[copyPublicTrainingToProject] Looking for source characters:`, sourceCharacterIds);
+    
+    const { data: chars, error: charsError } = await supabase
+      .from("characters")
+      .select(`
+        id,
+        avatar_url
+      `)
+      .in("id", sourceCharacterIds);
+    
+    logger.debug(`[copyPublicTrainingToProject] Found source characters: ${chars}, Error: ${charsError}`);
+    charactersData = chars;
+    charactersError = charsError;
+  } else {
+    logger.debug(`[copyPublicTrainingToProject] No characters to copy (empty character mapping)`);
+  }
+
+  if (sourceError) {
+    logger.error("[copyPublicTrainingToProject] Failed to fetch source training data for storage copying:", sourceError);
+    // Don't throw - storage copying is not critical, return the successful database copy
+  } else if (charactersError) {
+    logger.error("[copyPublicTrainingToProject] Failed to fetch source characters data for storage copying:", charactersError);
+    // Don't throw - storage copying is not critical, return the successful database copy  
+  } else if (sourceData) {
+    logger.debug(`[copyPublicTrainingToProject] Source data retrieved:`, sourceData);
+    logger.debug(`[copyPublicTrainingToProject] Characters data retrieved:`, charactersData);
+    const storageUpdatePromises: Promise<void>[] = [];
+
+    // Copy training cover image
+    if (sourceData.image_url) {
+      logger.debug(`[copyPublicTrainingToProject] Copying training image: ${sourceData.image_url}`);
+      const copyPromise = copyStorageFileWithAdminPrivileges(
+        sourceData.image_url,
+        "trainings",
+        `trainings/${trainingId}/cover.jpg`
+      ).then(async (newUrl) => {
+        logger.debug(`[copyPublicTrainingToProject] Training image copy result: ${newUrl}`);
+        if (newUrl && newUrl !== sourceData.image_url) {
+          const { data, error } = await supabase
+            .from("trainings")
+            .update({ image_url: newUrl })
+            .eq("id", trainingId)
+            .select();
+          
+          if (error) {
+            logger.error(`[copyPublicTrainingToProject] Failed to update training ${trainingId} image URL:`, error);
+          } else {
+            logger.debug(`[copyPublicTrainingToProject] Successfully updated training ${trainingId} with new image URL: ${newUrl}`, data);
+          }
+        } else {
+          logger.warn(`[copyPublicTrainingToProject] Training image copy failed - keeping original URL: ${sourceData.image_url}`);
+        }
+      });
+      storageUpdatePromises.push(copyPromise);
+    } else {
+      logger.debug(`[copyPublicTrainingToProject] No training image to copy`);
+    }
+
+    // Copy character avatars using the character mapping
+    const sourceCharacters = charactersData || [];
+    logger.debug(`[copyPublicTrainingToProject] Found ${sourceCharacters.length} source characters`);
+    
+    for (const sourceChar of sourceCharacters) {
+      const newCharacterId = characterMapping[sourceChar.id.toString()];
+      logger.debug(`[copyPublicTrainingToProject] Processing character ${sourceChar.id} -> ${newCharacterId}, avatar: ${sourceChar?.avatar_url}`);
+      
+      if (sourceChar?.avatar_url && newCharacterId) {
+        logger.debug(`[copyPublicTrainingToProject] Copying character avatar: ${sourceChar.avatar_url} -> character-avatars/${newCharacterId}/avatar.jpg`);
+        const copyPromise = copyStorageFileWithAdminPrivileges(
+          sourceChar.avatar_url,
+          "avatars",
+          `character-avatars/${newCharacterId}/avatar.jpg`
+        ).then(async (newUrl) => {
+          logger.debug(`[copyPublicTrainingToProject] Character avatar copy result for ${newCharacterId}: ${newUrl}`);
+          if (newUrl && newUrl !== sourceChar.avatar_url) {
+            // First check if the character exists and get its project_id
+            const { data: charCheck } = await supabase
+              .from("characters")
+              .select("id, project_id, avatar_url")
+              .eq("id", newCharacterId)
+              .single();
+            
+            logger.debug(`[copyPublicTrainingToProject] Character ${newCharacterId} check:`, charCheck);
+            
+            const { data, error } = await supabase
+              .from("characters")
+              .update({ avatar_url: newUrl })
+              .eq("id", newCharacterId)
+              .select();
+            
+            if (error) {
+              logger.error(`[copyPublicTrainingToProject] Failed to update character ${newCharacterId} avatar URL:`, error);
+            } else if (!data || data.length === 0) {
+              logger.error(`[copyPublicTrainingToProject] Update returned 0 rows for character ${newCharacterId} - possible RLS issue`);
+            } else {
+              logger.debug(`[copyPublicTrainingToProject] Successfully updated character ${newCharacterId} with new avatar URL: ${newUrl}`, data);
+            }
+          } else {
+            logger.warn(`[copyPublicTrainingToProject] Character avatar copy failed for ${newCharacterId} - keeping original URL: ${sourceChar.avatar_url}`);
+          }
+        });
+        storageUpdatePromises.push(copyPromise);
+      } else {
+        logger.debug(`[copyPublicTrainingToProject] Skipping character ${sourceChar.id} - no avatar or no mapping`);
+      }
+    }
+
+    // Wait for all storage operations to complete
+    const results = await Promise.allSettled(storageUpdatePromises);
+    
+    // Log any failures but don't throw
+    const failures = results.filter(result => result.status === "rejected");
+    if (failures.length > 0) {
+      logger.error(`[copyPublicTrainingToProject] ${failures.length} storage copy operations failed during training copy`);
+    } else {
+      logger.debug("[copyPublicTrainingToProject] All storage assets copied successfully");
+    }
+  }
+
+  return {
+    trainingId,
+    characterMapping,
+    moduleMapping,
+  };
 }
 
 // Function to find or create Side Quests training and return its ID

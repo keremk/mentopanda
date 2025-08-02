@@ -2,7 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { handleError } from "./utils";
 import { getUserId, UserRole } from "./user";
 import { logger } from "@/lib/logger";
-import { getPathFromStorageUrl } from "@/lib/utils";
+import { copyStorageFile } from "./storage-utils";
 
 export type ProjectSummary = {
   id: number;
@@ -66,60 +66,6 @@ export async function getProjects(
   }));
 }
 
-// Add this new function for copying storage files during deep copy
-async function copyStorageFile(
-  supabase: SupabaseClient,
-  sourceUrl: string | null,
-  sourceBucket: string,
-  targetPath: string
-): Promise<string | null> {
-  if (!sourceUrl) return null;
-
-  try {
-    // Extract the source path from the URL
-    const sourcePath = getPathFromStorageUrl(sourceUrl);
-    if (!sourcePath) {
-      logger.warn(`Could not extract path from URL: ${sourceUrl}`);
-      return sourceUrl; // Return original URL if we can't parse it
-    }
-
-    // Download the file from source
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from(sourceBucket)
-      .download(sourcePath);
-
-    if (downloadError) {
-      logger.error(`Failed to download file ${sourcePath}:`, downloadError);
-      return sourceUrl; // Return original URL on error
-    }
-
-    // Upload to new path
-    const { error: uploadError } = await supabase.storage
-      .from(sourceBucket)
-      .upload(targetPath, fileData, {
-        upsert: true,
-        contentType: fileData.type,
-      });
-
-    if (uploadError) {
-      logger.error(`Failed to upload file to ${targetPath}:`, uploadError);
-      return sourceUrl; // Return original URL on error
-    }
-
-    // Generate the new public URL
-    const { data: publicUrlData } = supabase.storage
-      .from(sourceBucket)
-      .getPublicUrl(targetPath);
-
-    logger.debug(
-      `Successfully copied storage file: ${sourcePath} -> ${targetPath}`
-    );
-    return publicUrlData.publicUrl;
-  } catch (error) {
-    logger.error(`Unexpected error copying storage file:`, error);
-    return sourceUrl; // Return original URL on error
-  }
-}
 
 export async function copyPublicTrainings(
   supabase: SupabaseClient,

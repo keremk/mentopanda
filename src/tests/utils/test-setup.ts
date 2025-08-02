@@ -45,6 +45,54 @@ export type CreatedUser = {
   pricingPlan: SubscriptionTier;
 };
 
+// Track storage files created during tests
+export class TestStorageTracker {
+  private static createdFiles: Array<{bucket: string, path: string}> = [];
+  
+  static trackFile(bucket: string, path: string) {
+    this.createdFiles.push({ bucket, path });
+  }
+  
+  static async cleanupTrackedFiles(adminSupabase: SupabaseClient<Database>) {
+    if (this.createdFiles.length === 0) return;
+    
+    console.log(`Cleaning up ${this.createdFiles.length} tracked test files`);
+    
+    // Group by bucket for efficient cleanup
+    const bucketGroups: Record<string, string[]> = {};
+    for (const file of this.createdFiles) {
+      if (!bucketGroups[file.bucket]) {
+        bucketGroups[file.bucket] = [];
+      }
+      bucketGroups[file.bucket].push(file.path);
+    }
+    
+    // Clean up each bucket
+    for (const [bucket, paths] of Object.entries(bucketGroups)) {
+      try {
+        const { error } = await adminSupabase.storage
+          .from(bucket)
+          .remove(paths);
+          
+        if (error) {
+          console.warn(`Failed to remove ${paths.length} files from ${bucket}:`, error);
+        } else {
+          console.log(`Successfully cleaned up ${paths.length} files from ${bucket}`);
+        }
+      } catch (error) {
+        console.warn(`Error cleaning up ${bucket}:`, error);
+      }
+    }
+    
+    // Clear the tracked files
+    this.createdFiles = [];
+  }
+  
+  static clearTrackedFiles() {
+    this.createdFiles = [];
+  }
+}
+
 /**
  * Creates a flexible test environment with multiple projects and users.
  *
@@ -160,11 +208,15 @@ export async function setupTestEnvironment(
  * @param projectIds - An array of project IDs to delete.
  * @param userIds - An array of user IDs to delete.
  */
+
 export async function cleanupTestEnvironment(
   adminSupabase: SupabaseClient<Database>,
   projectIds: number[],
   userIds: string[]
 ) {
+  // ALWAYS clean up tracked storage files that this test created
+  await TestStorageTracker.cleanupTrackedFiles(adminSupabase);
+
   // Delete projects, which will cascade to related tables
   if (projectIds.length > 0) {
     const { error } = await adminSupabase

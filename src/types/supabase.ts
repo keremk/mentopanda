@@ -43,6 +43,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: number
+          is_used_in_public_training: boolean
           name: string
           project_id: number
           updated_at: string | null
@@ -56,6 +57,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: number
+          is_used_in_public_training?: boolean
           name: string
           project_id: number
           updated_at?: string | null
@@ -69,6 +71,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: number
+          is_used_in_public_training?: boolean
           name?: string
           project_id?: number
           updated_at?: string | null
@@ -560,8 +563,10 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           description: string | null
+          fork_count: number
           id: number
           image_url: string | null
+          is_public: boolean
           preview_url: string | null
           project_id: number
           tagline: string | null
@@ -572,8 +577,10 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          fork_count?: number
           id?: number
           image_url?: string | null
+          is_public?: boolean
           preview_url?: string | null
           project_id: number
           tagline?: string | null
@@ -584,8 +591,10 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           description?: string | null
+          fork_count?: number
           id?: number
           image_url?: string | null
+          is_public?: boolean
           preview_url?: string | null
           project_id?: number
           tagline?: string | null
@@ -740,6 +749,14 @@ export type Database = {
           target_user_id: string
         }
         Returns: undefined
+      }
+      deep_copy_training: {
+        Args: {
+          source_training_id: number
+          target_project_id: number
+          target_user_id: string
+        }
+        Returns: Json
       }
       each: {
         Args: {
