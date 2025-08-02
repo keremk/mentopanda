@@ -718,6 +718,7 @@ async function createTrainingData(
               tagline: training.tagline,
               description: training.description,
               image_url: null, // We'll update this after uploading
+              is_public: training.is_public,
               created_by: session.user.id,
               project_id: projectId,
               preview_url: null, // We'll update this after uploading

@@ -347,7 +347,7 @@
       "tagline": "Master the art of conducting meaningful performance evaluations",
       "description": "This comprehensive course guides engineering managers through the process of conducting effective performance reviews. Participants will learn how to prepare for reviews, set appropriate goals, provide constructive feedback, and create actionable development plans. The training emphasizes the importance of ongoing feedback and how to align individual performance with organizational objectives.",
       "image_url": "/course-images/perf-review.jpg",
-      "is_public": true,
+      "is_public": false,
       "organization_id": 2,
       "preview_url": null,
       "modules": [
@@ -392,7 +392,7 @@
       "tagline": "Navigate challenging discussions with confidence and empathy",
       "description": "This course equips engineering managers with the skills to handle difficult conversations professionally and empathetically. Participants will learn techniques for addressing underperformance, resolving conflicts, and delivering unwelcome news. The training focuses on maintaining a positive team dynamic while tackling tough issues, and provides strategies for turning challenging situations into opportunities for growth and improvement.",
       "image_url": "/course-images/hard-conversations.jpg",
-      "is_public": true,
+      "is_public": false,
       "organization_id": 2,
       "preview_url": null,
       "modules": [
@@ -437,7 +437,7 @@
       "tagline": "Guide your team members towards their professional goals",
       "description": "This training course teaches engineering managers how to conduct meaningful career conversations with their team members. Participants will learn how to help employees identify their career aspirations, assess their current skills, and create development plans. The course covers topics such as mentoring, identifying growth opportunities within the organization, and aligning individual career goals with company objectives.",
       "image_url": "/course-images/careers.jpg",
-      "is_public": true,
+      "is_public": false,
       "organization_id": 2,
       "preview_url": null,
       "modules": [
