@@ -10,7 +10,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EnrollmentButton } from "@/components/enrollment-button";
+import { AddPublicTraining } from "@/components/add-public-training";
 import { useTheme } from "next-themes";
+
 interface TrainingCardProps {
   id: number;
   title: string;
@@ -18,6 +20,8 @@ interface TrainingCardProps {
   imageUrl?: string;
   isEnrolled: boolean;
   priority?: boolean;
+  isPublic?: boolean;
+  isEnrollable?: boolean;
 }
 
 export function TrainingCard({
@@ -27,6 +31,7 @@ export function TrainingCard({
   imageUrl,
   isEnrolled,
   priority = false,
+  isEnrollable = true,
 }: TrainingCardProps) {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
@@ -64,11 +69,19 @@ export function TrainingCard({
 
       {/* Separate footer for enrollment button */}
       <CardFooter className="p-4 pt-0 flex justify-end mt-auto">
-        <EnrollmentButton
-          trainingId={id}
-          className="w-auto"
-          isEnrolled={isEnrolled}
-        />
+        {isEnrollable ? (
+          <EnrollmentButton
+            trainingId={id}
+            className="w-auto"
+            isEnrolled={isEnrolled}
+          />
+        ) : (
+          <AddPublicTraining
+            trainingId={id}
+            trainingTitle={title}
+            className="w-auto"
+          />
+        )}
       </CardFooter>
     </Card>
   );
