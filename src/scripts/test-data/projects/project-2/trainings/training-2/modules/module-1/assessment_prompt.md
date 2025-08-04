@@ -1,0 +1,1 @@
+Design an agenda for a 30-minute sprint planning meeting that needs to cover sprint goals, task assignment, and risk assessment.

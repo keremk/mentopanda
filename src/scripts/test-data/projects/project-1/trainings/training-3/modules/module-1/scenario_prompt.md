@@ -1,0 +1,1 @@
+You are preparing for a performance review with a technically strong senior engineer who struggles with mentoring.

@@ -106,6 +106,68 @@ async function uploadImageForEntity(
   }
 }
 
+// Function to read markdown files using convention-based paths
+async function readMarkdownFile(
+  projectSlug: string,
+  trainingSlug: string,
+  moduleSlug?: string,
+  characterSlug?: string,
+  fileName?: string
+): Promise<string> {
+  let filePath: string;
+  
+  if (moduleSlug && characterSlug && fileName) {
+    // Character prompt file
+    filePath = join(
+      __dirname,
+      "test-data",
+      "projects",
+      projectSlug,
+      "trainings",
+      trainingSlug,
+      "modules",
+      moduleSlug,
+      "characters",
+      characterSlug,
+      fileName
+    );
+  } else if (moduleSlug && fileName) {
+    // Module file (instructions, prompts)
+    filePath = join(
+      __dirname,
+      "test-data",
+      "projects",
+      projectSlug,
+      "trainings",
+      trainingSlug,
+      "modules",
+      moduleSlug,
+      fileName
+    );
+  } else if (fileName) {
+    // Training file (description)
+    filePath = join(
+      __dirname,
+      "test-data",
+      "projects",
+      projectSlug,
+      "trainings",
+      trainingSlug,
+      fileName
+    );
+  } else {
+    throw new Error("Invalid parameters for readMarkdownFile");
+  }
+
+  try {
+    const content = await fs.readFile(filePath, "utf-8");
+    return content.trim();
+  } catch (error) {
+    logger.warn(`Failed to read markdown file ${filePath}:`, error);
+    return ""; // Return empty string as fallback
+  }
+}
+
 const assessment_text = `
 ## Introduction  
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
@@ -377,29 +439,28 @@ type TestProjectMember = {
 
 type TestModule = {
   title: string;
-  instructions: string;
+  slug: string;
   ordinal: number;
   ai_model: string;
-  scenario_prompt: string;
-  assessment_prompt: string;
-  moderator_prompt: string;
   video_url?: string;
   audio_url?: string;
   characters: TestCharacterInfo[];
 };
 
 type TestCharacterInfo = {
-  character_name: string;
-  prompt: string;
+  name: string;
+  slug: string;
+  avatar_url: string;
+  ai_model: string;
+  voice?: string;
 };
 
 type TestTraining = {
   title: string;
+  slug: string;
   tagline: string;
-  description: string;
   image_url: string;
   is_public: boolean;
-  organization_id: number;
   preview_url?: string;
   modules: TestModule[];
 };
@@ -407,36 +468,22 @@ type TestTraining = {
 type TestCharacter = {
   id?: number;
   name: string;
-  ai_description: string;
-  description: string;
   avatar_url: string;
-  organization_id: number;
-  is_public: boolean;
+  project_id: number;
   voice?: string;
   ai_model: string;
-};
-
-type ModuleCharacter = {
-  module_id: number;
-  character_id: number;
-  ordinal: number;
-  prompt: string;
 };
 
 type TestData = {
   users: TestUser[];
   projects: TestProject[];
-  trainings: TestTraining[];
-  characters: TestCharacter[];
-  modules_characters: ModuleCharacter[];
-  members: TestProjectMember[][];
 };
 
 type TestProject = {
   name: string;
+  slug: string;
   members: TestProjectMember[];
-  trainings: string[];
-  characters: string[];
+  trainings: TestTraining[];
 };
 
 async function createTestUsers(testData: TestData) {
@@ -574,31 +621,37 @@ async function createTestProjects(testData: TestData, users: TestUser[]) {
     const project = testData.projects[index];
     await setupProjectMembers(users, project.members, projectId, newSession);
 
-    const inputCharacters = project.characters
-      .map((characterName) => {
-        const character = testData.characters.find(
-          (c) => c.name === characterName
-        );
-        return character;
-      })
-      .filter((c): c is TestCharacter => c !== undefined);
+    // Create characters for this project based on the training modules
+    const allCharacters: TestCharacter[] = [];
+    const characterMap = new Map<string, TestCharacter>();
+
+    // Extract all unique characters from training modules
+    for (const training of project.trainings) {
+      for (const trainingModule of training.modules) {
+        for (const character of trainingModule.characters) {
+          if (!characterMap.has(character.name)) {
+            const testCharacter: TestCharacter = {
+              name: character.name,
+              avatar_url: character.avatar_url,
+              project_id: projectId,
+              voice: character.voice,
+              ai_model: character.ai_model,
+            };
+            characterMap.set(character.name, testCharacter);
+            allCharacters.push(testCharacter);
+          }
+        }
+      }
+    }
 
     const characters = await createCharactersData(
       projectId,
-      inputCharacters,
-      newSession
+      allCharacters,
+      newSession,
     );
     if (!characters) throw new Error("No characters created");
 
-    const inputTrainings = project.trainings
-      .map((trainingName) => {
-        const training = testData.trainings.find(
-          (t) => t.title === trainingName
-        );
-        return training;
-      })
-      .filter((t): t is TestTraining => t !== undefined);
-    await createTrainingData(projectId, inputTrainings, characters, newSession);
+    await createTrainingData(projectId, project.trainings, characters, newSession, project.slug);
 
     // await createHistoryData(newSession);
     logger.info(`Created project: ${projectId}`);
@@ -699,7 +752,8 @@ async function createTrainingData(
   projectId: number,
   projectTrainings: TestTraining[],
   characters: TestCharacter[],
-  session: Session
+  session: Session,
+  projectSlug: string
 ) {
   const characterNameToId = new Map(
     characters.map((character) => [character.name, character.id])
@@ -707,6 +761,15 @@ async function createTrainingData(
 
   for (const training of projectTrainings) {
     try {
+      // Read description from markdown file
+      const description = await readMarkdownFile(
+        projectSlug,
+        training.slug,
+        undefined,
+        undefined,
+        "description.md"
+      );
+
       // Create training first without images
       const { data: trainingData, error: trainingError } = await supabase.auth
         .setSession(session)
@@ -716,7 +779,7 @@ async function createTrainingData(
             .insert({
               title: training.title,
               tagline: training.tagline,
-              description: training.description,
+              description: description,
               image_url: null, // We'll update this after uploading
               is_public: training.is_public,
               created_by: session.user.id,
@@ -775,6 +838,36 @@ async function createTrainingData(
 
       // Create modules for this training
       for (const moduleItem of training.modules) {
+        // Read module content from markdown files
+        const instructions = await readMarkdownFile(
+          projectSlug,
+          training.slug,
+          moduleItem.slug,
+          undefined,
+          "instructions.md"
+        );
+        const scenario_prompt = await readMarkdownFile(
+          projectSlug,
+          training.slug,
+          moduleItem.slug,
+          undefined,
+          "scenario_prompt.md"
+        );
+        const assessment_prompt = await readMarkdownFile(
+          projectSlug,
+          training.slug,
+          moduleItem.slug,
+          undefined,
+          "assessment_prompt.md"
+        );
+        const moderator_prompt = await readMarkdownFile(
+          projectSlug,
+          training.slug,
+          moduleItem.slug,
+          undefined,
+          "moderator_prompt.md"
+        );
+
         const { data: moduleData, error: moduleError } = await supabase.auth
           .setSession(session)
           .then(() =>
@@ -783,12 +876,12 @@ async function createTrainingData(
               .insert({
                 training_id: trainingData.id,
                 title: moduleItem.title,
-                instructions: moduleItem.instructions,
+                instructions: instructions,
                 ordinal: moduleItem.ordinal,
                 ai_model: moduleItem.ai_model,
-                scenario_prompt: moduleItem.scenario_prompt,
-                assessment_prompt: moduleItem.assessment_prompt,
-                moderator_prompt: moduleItem.moderator_prompt,
+                scenario_prompt: scenario_prompt,
+                assessment_prompt: assessment_prompt,
+                moderator_prompt: moderator_prompt,
                 video_url: moduleItem.video_url,
                 audio_url: moduleItem.audio_url,
               })
@@ -801,6 +894,15 @@ async function createTrainingData(
 
         // Create modules_characters associations
         for (const moduleChar of moduleItem.characters) {
+          // Read character prompt from markdown file
+          const characterPrompt = await readMarkdownFile(
+            projectSlug,
+            training.slug,
+            moduleItem.slug,
+            moduleChar.slug,
+            "prompt.md"
+          );
+
           const { error: moduleCharError } = await supabase.auth
             .setSession(session)
             .then(() =>
@@ -808,11 +910,9 @@ async function createTrainingData(
                 .from("modules_characters")
                 .insert({
                   module_id: moduleData.id,
-                  character_id: characterNameToId.get(
-                    moduleChar.character_name
-                  ),
+                  character_id: characterNameToId.get(moduleChar.name),
                   ordinal: 1,
-                  prompt: moduleChar.prompt,
+                  prompt: characterPrompt,
                 })
                 .select()
                 .single()
@@ -820,8 +920,36 @@ async function createTrainingData(
 
           if (moduleCharError) throw moduleCharError;
           logger.info(
-            `Created module-character association for module ${moduleData.id} and character ${moduleChar.character_name}`
+            `Created module-character association for module ${moduleData.id} and character ${moduleChar.name}`
           );
+        }
+      }
+
+      // If training is public, mark all associated characters as used in public training
+      if (training.is_public) {
+        const characterIds = Array.from(
+          new Set(
+            training.modules.flatMap(module => 
+              module.characters.map(char => characterNameToId.get(char.name))
+            ).filter(id => id !== undefined)
+          )
+        );
+
+        if (characterIds.length > 0) {
+          const { error: updateCharError } = await supabase.auth
+            .setSession(session)
+            .then(() =>
+              supabase
+                .from("characters")
+                .update({ is_used_in_public_training: true })
+                .in("id", characterIds)
+            );
+
+          if (updateCharError) {
+            logger.error(`Failed to update character flags for public training ${training.title}:`, updateCharError);
+          } else {
+            logger.info(`Updated ${characterIds.length} characters as used in public training: ${training.title}`);
+          }
         }
       }
 
@@ -837,7 +965,7 @@ async function createTrainingData(
 async function createCharactersData(
   projectId: number,
   projectCharacters: TestCharacter[],
-  session: Session
+  session: Session,
 ): Promise<TestCharacter[]> {
   const characters: TestCharacter[] = [];
 
@@ -852,8 +980,6 @@ async function createCharactersData(
             .from("characters")
             .insert({
               name: character.name,
-              ai_description: character.ai_description,
-              description: character.description,
               avatar_url: null, // We'll update this after uploading
               project_id: projectId,
               created_by: session.user.id,
@@ -907,7 +1033,7 @@ async function createCharactersData(
 
 async function loadTestData(filePath?: string): Promise<TestData> {
   try {
-    const defaultPath = join(__dirname, "test-data.json");
+    const defaultPath = join(__dirname, "test-data", "test-data.json");
     const targetPath = filePath || defaultPath;
 
     const fileContent = await fs.readFile(targetPath, "utf-8");
@@ -944,7 +1070,7 @@ if (process.argv.includes("--help")) {
 Usage: ts-node import-data.ts [path-to-test-data.json]
 
 If no path is provided, the script will use the default test data file at:
-${join(__dirname, "test-data.json")}
+${join(__dirname, "test-data", "test-data.json")}
   `);
   process.exit(0);
 }

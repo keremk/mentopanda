@@ -95,17 +95,6 @@
       "characters": ["Sara", "John", "Laura", "Stephen"]
     },
     {
-      "name": "Private Project 3",
-      "members": [
-        {
-          "email": "user1@example.com",
-          "role": "member"
-        }
-      ],
-      "trainings": ["Career Conversations"],
-      "characters": ["Rob", "Michael", "Mara"]
-    },
-    {
       "name": "Private Project 4",
       "members": [],
       "trainings": [],

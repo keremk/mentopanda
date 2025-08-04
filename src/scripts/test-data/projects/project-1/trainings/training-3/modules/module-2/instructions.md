@@ -1,0 +1,1 @@
+Practice creating specific, measurable, achievable, relevant, and time-bound goals.

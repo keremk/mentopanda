@@ -1,0 +1,606 @@
+{
+  "users": [
+    {
+      "email": "super@example.com",
+      "password": "Test123!",
+      "display_name": "Anna - Super",
+      "avatar_url": "/avatars/anna.jpg"
+    },
+    {
+      "email": "user2@example.com",
+      "password": "Test123!",
+      "display_name": "Taylor",
+      "avatar_url": "/avatars/taylor.jpg"
+    },
+    {
+      "email": "user3@example.com",
+      "password": "Test123!",
+      "display_name": "Janet",
+      "avatar_url": "/avatars/janet.jpg"
+    },
+    {
+      "email": "user4@example.com",
+      "password": "Test123!",
+      "display_name": "Laura",
+      "avatar_url": "/avatars/laura.jpg"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Public Project",
+      "slug": "project-1",
+      "members": [],
+      "trainings": [
+        {
+          "title": "Mastering Constructive Feedback",
+          "slug": "training-1",
+          "tagline": "Learn how to give and receive feedback effectively",
+          "image_url": "/course-images/feedback.jpg",
+          "is_public": true,
+          "preview_url": "https://www.youtube.com/watch?v=gEB3ckYeZF4",
+          "modules": [
+            {
+              "title": "Understanding Feedback Fundamentals",
+              "slug": "module-1",
+              "ordinal": 1,
+              "ai_model": "openai",
+              "video_url": "https://example.com/feedback-fundamentals",
+              "audio_url": "https://example.com/feedback-fundamentals-audio",
+              "characters": [
+                {
+                  "name": "Janet",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/janet.jpg",
+                  "ai_model": "openai",
+                  "voice": "Ballad"
+                }
+              ]
+            },
+            {
+              "title": "Handling Defensive Responses",
+              "slug": "module-2",
+              "ordinal": 2,
+              "ai_model": "openai",
+              "video_url": "https://example.com/defensive-responses",
+              "audio_url": "https://example.com/defensive-responses-audio",
+              "characters": [
+                {
+                  "name": "Taylor",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/taylor.jpg",
+                  "ai_model": "openai",
+                  "voice": "Ash"
+                }
+              ]
+            },
+            {
+              "title": "Positive Reinforcement",
+              "slug": "module-3",
+              "ordinal": 3,
+              "ai_model": "openai",
+              "video_url": "https://example.com/positive-reinforcement",
+              "audio_url": "https://example.com/positive-reinforcement-audio",
+              "characters": [
+                {
+                  "name": "Anna",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/anna.jpg",
+                  "ai_model": "openai",
+                  "voice": "Verse"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Effective Team Meetings",
+          "slug": "training-2",
+          "tagline": "Optimize your team meetings for productivity and engagement",
+          "image_url": "/course-images/meetings.jpg",
+          "is_public": true,
+          "preview_url": null,
+          "modules": [
+            {
+              "title": "Meeting Structure and Agenda Setting",
+              "slug": "module-1",
+              "ordinal": 1,
+              "ai_model": "openai",
+              "video_url": "https://example.com/meeting-structure",
+              "audio_url": "https://example.com/meeting-structure-audio",
+              "characters": [
+                {
+                  "name": "Brendon",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/brendon.jpg",
+                  "ai_model": "openai",
+                  "voice": "Echo"
+                }
+              ]
+            },
+            {
+              "title": "Remote Meeting Facilitation",
+              "slug": "module-2",
+              "ordinal": 2,
+              "ai_model": "openai",
+              "video_url": "https://example.com/remote-facilitation",
+              "audio_url": "https://example.com/remote-facilitation-audio",
+              "characters": [
+                {
+                  "name": "Lana",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/lana.png",
+                  "ai_model": "openai",
+                  "voice": "Echo"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Effective Performance Reviews",
+          "slug": "training-3",
+          "tagline": "Master the art of conducting meaningful performance evaluations",
+          "image_url": "/course-images/perf-review.jpg",
+          "is_public": false,
+          "preview_url": null,
+          "modules": [
+            {
+              "title": "Preparing for Reviews",
+              "slug": "module-1",
+              "ordinal": 1,
+              "ai_model": "openai",
+              "video_url": "https://example.com/review-prep",
+              "audio_url": "https://example.com/review-prep-audio",
+              "characters": [
+                {
+                  "name": "Sara",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/sara.png",
+                  "ai_model": "openai",
+                  "voice": "Echo"
+                }
+              ]
+            },
+            {
+              "title": "Setting SMART Goals",
+              "slug": "module-2",
+              "ordinal": 2,
+              "ai_model": "openai",
+              "video_url": "https://example.com/smart-goals",
+              "audio_url": "https://example.com/smart-goals-audio",
+              "characters": [
+                {
+                  "name": "John",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/john.png",
+                  "ai_model": "openai",
+                  "voice": "Coral"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Hard Conversations",
+          "slug": "training-4",
+          "tagline": "Navigate challenging discussions with confidence and empathy",
+          "image_url": "/course-images/hard-conversations.jpg",
+          "is_public": true,
+          "preview_url": null,
+          "modules": [
+            {
+              "title": "Addressing Underperformance",
+              "slug": "module-1",
+              "ordinal": 1,
+              "ai_model": "openai",
+              "video_url": "https://example.com/underperformance",
+              "audio_url": "https://example.com/underperformance-audio",
+              "characters": [
+                {
+                  "name": "Laura",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/laura.jpg",
+                  "ai_model": "openai",
+                  "voice": "Coral"
+                }
+              ]
+            },
+            {
+              "title": "Managing Conflicts",
+              "slug": "module-2",
+              "ordinal": 2,
+              "ai_model": "openai",
+              "video_url": "https://example.com/conflict-management",
+              "audio_url": "https://example.com/conflict-management-audio",
+              "characters": [
+                {
+                  "name": "Stephen",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/stephen.png",
+                  "ai_model": "openai",
+                  "voice": "Echo"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Career Conversations",
+          "slug": "training-5",
+          "tagline": "Guide your team members towards their professional goals",
+          "image_url": "/course-images/careers.jpg",
+          "is_public": false,
+          "preview_url": null,
+          "modules": [
+            {
+              "title": "Career Path Exploration",
+              "slug": "module-1",
+              "ordinal": 1,
+              "ai_model": "openai",
+              "video_url": "https://example.com/career-exploration",
+              "audio_url": "https://example.com/career-exploration-audio",
+              "characters": [
+                {
+                  "name": "Rob",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/rob.png",
+                  "ai_model": "openai",
+                  "voice": "Coral"
+                }
+              ]
+            },
+            {
+              "title": "Skill Gap Analysis",
+              "slug": "module-2",
+              "ordinal": 2,
+              "ai_model": "openai",
+              "video_url": "https://example.com/skill-gap",
+              "audio_url": "https://example.com/skill-gap-audio",
+              "characters": [
+                {
+                  "name": "Michael",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/michael.png",
+                  "ai_model": "openai",
+                  "voice": "Echo"
+                }
+              ]
+            },
+            {
+              "title": "Growth Opportunities",
+              "slug": "module-3",
+              "ordinal": 3,
+              "ai_model": "openai",
+              "video_url": "https://example.com/growth-opportunities",
+              "audio_url": "https://example.com/growth-opportunities-audio",
+              "characters": [
+                {
+                  "name": "Mara",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/mara.png",
+                  "ai_model": "openai",
+                  "voice": "Echo"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Private Project 2",
+      "slug": "project-2",
+      "members": [
+        {
+          "email": "user3@example.com",
+          "role": "manager"
+        },
+        {
+          "email": "user4@example.com",
+          "role": "member"
+        }
+      ],
+      "trainings": [
+        {
+          "title": "Mastering Constructive Feedback",
+          "slug": "training-1",
+          "tagline": "Learn how to give and receive feedback effectively",
+          "image_url": "/course-images/feedback.jpg",
+          "is_public": false,
+          "preview_url": "https://www.youtube.com/watch?v=gEB3ckYeZF4",
+          "modules": [
+            {
+              "title": "Understanding Feedback Fundamentals",
+              "slug": "module-1",
+              "ordinal": 1,
+              "ai_model": "openai",
+              "video_url": "https://example.com/feedback-fundamentals",
+              "audio_url": "https://example.com/feedback-fundamentals-audio",
+              "characters": [
+                {
+                  "name": "Janet",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/janet.jpg",
+                  "ai_model": "openai",
+                  "voice": "Ballad"
+                }
+              ]
+            },
+            {
+              "title": "Handling Defensive Responses",
+              "slug": "module-2",
+              "ordinal": 2,
+              "ai_model": "openai",
+              "video_url": "https://example.com/defensive-responses",
+              "audio_url": "https://example.com/defensive-responses-audio",
+              "characters": [
+                {
+                  "name": "Taylor",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/taylor.jpg",
+                  "ai_model": "openai",
+                  "voice": "Ash"
+                }
+              ]
+            },
+            {
+              "title": "Positive Reinforcement",
+              "slug": "module-3",
+              "ordinal": 3,
+              "ai_model": "openai",
+              "video_url": "https://example.com/positive-reinforcement",
+              "audio_url": "https://example.com/positive-reinforcement-audio",
+              "characters": [
+                {
+                  "name": "Anna",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/anna.jpg",
+                  "ai_model": "openai",
+                  "voice": "Verse"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Effective Team Meetings",
+          "slug": "training-2",
+          "tagline": "Optimize your team meetings for productivity and engagement",
+          "image_url": "/course-images/meetings.jpg",
+          "is_public": false,
+          "preview_url": null,
+          "modules": [
+            {
+              "title": "Meeting Structure and Agenda Setting",
+              "slug": "module-1",
+              "ordinal": 1,
+              "ai_model": "openai",
+              "video_url": "https://example.com/meeting-structure",
+              "audio_url": "https://example.com/meeting-structure-audio",
+              "characters": [
+                {
+                  "name": "Brendon",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/brendon.jpg",
+                  "ai_model": "openai",
+                  "voice": "Echo"
+                }
+              ]
+            },
+            {
+              "title": "Remote Meeting Facilitation",
+              "slug": "module-2",
+              "ordinal": 2,
+              "ai_model": "openai",
+              "video_url": "https://example.com/remote-facilitation",
+              "audio_url": "https://example.com/remote-facilitation-audio",
+              "characters": [
+                {
+                  "name": "Lana",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/lana.png",
+                  "ai_model": "openai",
+                  "voice": "Echo"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Managing Remote Teams",
+          "slug": "training-3",
+          "tagline": "Lead distributed engineering teams effectively",
+          "image_url": "/course-images/remote-meeting.png",
+          "is_public": true,
+          "preview_url": null,
+          "modules": [
+            {
+              "title": "Building Team Cohesion Across Time Zones",
+              "slug": "module-1",
+              "ordinal": 1,
+              "ai_model": "openai",
+              "video_url": "https://example.com/remote-cohesion",
+              "audio_url": "https://example.com/remote-cohesion-audio",
+              "characters": [
+                {
+                  "name": "Sam",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/sam.png",
+                  "ai_model": "openai",
+                  "voice": "Coral"
+                }
+              ]
+            },
+            {
+              "title": "Asynchronous Communication Mastery",
+              "slug": "module-2",
+              "ordinal": 2,
+              "ai_model": "openai",
+              "video_url": "https://example.com/async-communication",
+              "audio_url": "https://example.com/async-communication-audio",
+              "characters": [
+                {
+                  "name": "Alex",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/alex.png",
+                  "ai_model": "openai",
+                  "voice": "Echo"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Private Project 3",
+      "slug": "project-3",
+      "members": [
+        {
+          "email": "user4@example.com",
+          "role": "admin"
+        }
+      ],
+      "trainings": [
+        {
+          "title": "Technical Leadership Skills",
+          "slug": "training-1",
+          "tagline": "Bridge technical expertise with people management",
+          "image_url": "/course-images/tech-leadership.png",
+          "is_public": false,
+          "preview_url": null,
+          "modules": [
+            {
+              "title": "Balancing Technical and People Decisions",
+              "slug": "module-1",
+              "ordinal": 1,
+              "ai_model": "openai",
+              "video_url": "https://example.com/tech-people-balance",
+              "audio_url": "https://example.com/tech-people-balance-audio",
+              "characters": [
+                {
+                  "name": "Chris",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/chris.png",
+                  "ai_model": "openai",
+                  "voice": "Ash"
+                }
+              ]
+            },
+            {
+              "title": "Technical Mentoring and Code Review Leadership",
+              "slug": "module-2",
+              "ordinal": 2,
+              "ai_model": "openai",
+              "video_url": "https://example.com/tech-mentoring",
+              "audio_url": "https://example.com/tech-mentoring-audio",
+              "characters": [
+                {
+                  "name": "Jordan",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/jordan.png",
+                  "ai_model": "openai",
+                  "voice": "Verse"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Cross-functional Collaboration",
+          "slug": "training-2",
+          "tagline": "Work effectively across engineering, product, and design",
+          "image_url": "/course-images/cross-functional.png",
+          "is_public": false,
+          "preview_url": null,
+          "modules": [
+            {
+              "title": "Communicating with Non-technical Stakeholders",
+              "slug": "module-1",
+              "ordinal": 1,
+              "ai_model": "openai",
+              "video_url": "https://example.com/non-tech-communication",
+              "audio_url": "https://example.com/non-tech-communication-audio",
+              "characters": [
+                {
+                  "name": "Casey",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/casey.png",
+                  "ai_model": "openai",
+                  "voice": "Ballad"
+                }
+              ]
+            },
+            {
+              "title": "Resolving Cross-departmental Conflicts",
+              "slug": "module-2",
+              "ordinal": 2,
+              "ai_model": "openai",
+              "video_url": "https://example.com/cross-dept-conflicts",
+              "audio_url": "https://example.com/cross-dept-conflicts-audio",
+              "characters": [
+                {
+                  "name": "Riley",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/riley.png",
+                  "ai_model": "openai",
+                  "voice": "Coral"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Hard Conversations",
+          "slug": "training-3",
+          "tagline": "Navigate challenging discussions with confidence and empathy",
+          "image_url": "/course-images/hard-conversations.jpg",
+          "is_public": false,
+          "preview_url": null,
+          "modules": [
+            {
+              "title": "Addressing Underperformance",
+              "slug": "module-1",
+              "ordinal": 1,
+              "ai_model": "openai",
+              "video_url": "https://example.com/underperformance",
+              "audio_url": "https://example.com/underperformance-audio",
+              "characters": [
+                {
+                  "name": "Laura",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/laura.jpg",
+                  "ai_model": "openai",
+                  "voice": "Coral"
+                }
+              ]
+            },
+            {
+              "title": "Managing Conflicts",
+              "slug": "module-2",
+              "ordinal": 2,
+              "ai_model": "openai",
+              "video_url": "https://example.com/conflict-management",
+              "audio_url": "https://example.com/conflict-management-audio",
+              "characters": [
+                {
+                  "name": "Stephen",
+                  "slug": "character-1",
+                  "avatar_url": "/avatars/stephen.png",
+                  "ai_model": "openai",
+                  "voice": "Echo"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Private Project 4",
+      "slug": "project-4",
+      "members": [],
+      "trainings": []
+    }
+  ]
+}
