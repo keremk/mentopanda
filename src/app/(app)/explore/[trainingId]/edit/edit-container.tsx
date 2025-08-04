@@ -35,6 +35,7 @@ import { CharacterSummary } from "@/data/characters";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
+
 // --- Prop Types ---
 // Ensure this type definition is correct and includes the necessary props
 type EditContainerProps = {
@@ -84,23 +85,9 @@ function EditContainerContent() {
 
   const handleSaveAndExit = async () => {
     if (isSaving) return;
-    try {
-      const saveSuccessful = await saveNow();
-      if (saveSuccessful) {
-        router.push(`/explore/${training.id}`);
-      } else {
-        logger.error("Save failed before exiting.");
-        toast({
-          title: "Error saving training",
-          description: "Please try again.",
-        });
-      }
-    } catch (error) {
-      logger.error("Error during save and exit:", error);
-      toast({
-        title: "Error saving training",
-        description: "Please try again.",
-      });
+    const saveSuccessful = await saveNow();
+    if (saveSuccessful) {
+      router.push(`/explore/${training.id}`);
     }
   };
 

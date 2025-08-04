@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTrainingByIdForEditAction } from "@/app/actions/trainingActions";
+import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 import { Pencil, ArrowLeft } from "lucide-react";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { ThemedImage } from "@/components/themed-image";
@@ -38,11 +39,18 @@ export default async function TrainingDetailsPage(props: {
   params: Promise<{ trainingId: number }>;
 }) {
   const params = await props.params;
-  const training = await getTrainingByIdForEditAction(params.trainingId);
+  const [training, user] = await Promise.all([
+    getTrainingByIdForEditAction(params.trainingId),
+    getCurrentUserActionCached(),
+  ]);
 
   if (!training) {
     notFound();
   }
+
+  // Check if user can edit: needs training.manage permission AND training must be in user's current project
+  const canManage = user.permissions.includes("training.manage") && 
+    training.projectId === user.currentProject.id;
 
   const isCurrentlyEnrolled = await isEnrolledAction(training.id);
 
@@ -85,15 +93,17 @@ export default async function TrainingDetailsPage(props: {
               Back
             </Link>
           </Button>
-          <Button asChild variant="ghost-brand" className="hidden md:flex">
-            <Link
-              href={`/explore/${training.id}/edit`}
-              className="flex items-center"
-            >
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </Link>
-          </Button>
+{canManage && (
+            <Button asChild variant="ghost-brand" className="hidden md:flex">
+              <Link
+                href={`/explore/${training.id}/edit`}
+                className="flex items-center"
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 

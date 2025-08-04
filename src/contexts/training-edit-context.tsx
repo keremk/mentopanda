@@ -32,6 +32,7 @@ import {
 import { AI_MODELS } from "@/types/models";
 import { logger } from "@/lib/logger";
 import { Skills, Traits } from "@/types/character-attributes";
+import { toast } from "@/hooks/use-toast";
 // --- State Definition ---
 
 type SaveStatus = "idle" | "saving" | "error" | "saved";
@@ -972,6 +973,11 @@ export function TrainingEditProvider({
       });
     } catch (error) {
       logger.error(`Auto-save failed: ${error}`);
+      toast({
+        title: "Save Error",
+        description: "An error occurred while saving your changes.",
+        variant: "destructive",
+      });
       dispatch({ type: "SAVE_ERROR" });
     } finally {
       savePromiseRef.current = null;
