@@ -564,9 +564,11 @@ export type Database = {
           created_by: string | null
           description: string | null
           fork_count: number
+          forked_at: string | null
           id: number
           image_url: string | null
           is_public: boolean
+          origin_id: number | null
           preview_url: string | null
           project_id: number
           tagline: string | null
@@ -578,9 +580,11 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           fork_count?: number
+          forked_at?: string | null
           id?: number
           image_url?: string | null
           is_public?: boolean
+          origin_id?: number | null
           preview_url?: string | null
           project_id: number
           tagline?: string | null
@@ -592,9 +596,11 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           fork_count?: number
+          forked_at?: string | null
           id?: number
           image_url?: string | null
           is_public?: boolean
+          origin_id?: number | null
           preview_url?: string | null
           project_id?: number
           tagline?: string | null
@@ -607,6 +613,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trainings_origin_id_fkey"
+            columns: ["origin_id"]
+            isOneToOne: false
+            referencedRelation: "trainings"
             referencedColumns: ["id"]
           },
           {

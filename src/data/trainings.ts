@@ -17,6 +17,8 @@ export type TrainingSummary = {
   updatedAt: Date;
   isPublic: boolean;
   forkCount: number;
+  originId: number | null;
+  forkedAt: Date | null;
 };
 
 export type Training = TrainingSummary & {
@@ -91,6 +93,8 @@ export async function getTrainingById(
     updatedAt: new Date(training.updated_at),
     isPublic: training.is_public,
     forkCount: training.fork_count,
+    originId: training.origin_id,
+    forkedAt: training.forked_at ? new Date(training.forked_at) : null,
     modules: training.modules,
   };
 }
@@ -148,6 +152,8 @@ export async function getTrainingByIdForEdit(
     updatedAt: new Date(training.updated_at),
     isPublic: training.is_public,
     forkCount: training.fork_count,
+    originId: training.origin_id,
+    forkedAt: training.forked_at ? new Date(training.forked_at) : null,
     modules: training.modules.map((module: any) => ({
       id: module.id,
       title: module.title,
@@ -237,6 +243,8 @@ export async function getTrainingWithProgress(
     updatedAt: new Date(training.updated_at),
     isPublic: training.is_public,
     forkCount: training.fork_count,
+    originId: training.origin_id,
+    forkedAt: training.forked_at ? new Date(training.forked_at) : null,
     modules: training.modules.map((module: any) => {
       const history =
         module.history?.filter((h: any) => h.completed_at !== null) || [];
@@ -283,6 +291,8 @@ export async function getTrainingsWithEnrollment(
       updated_at,
       is_public,
       fork_count,
+      origin_id,
+      forked_at,
       enrollments!left (
         id,
         user_id
@@ -306,6 +316,8 @@ export async function getTrainingsWithEnrollment(
       updatedAt: new Date(training.updated_at),
       isPublic: training.is_public,
       forkCount: training.fork_count,
+      originId: training.origin_id,
+      forkedAt: training.forked_at ? new Date(training.forked_at) : null,
       isEnrolled:
         training.enrollments?.some(
           (e: { user_id: string }) => e.user_id === userId
@@ -358,6 +370,8 @@ export async function updateTraining(
     updatedAt: new Date(data[0].updated_at),
     isPublic: data[0].is_public,
     forkCount: data[0].fork_count,
+    originId: data[0].origin_id,
+    forkedAt: data[0].forked_at ? new Date(data[0].forked_at) : null,
     createdBy: data[0].created_by,
     modules: data[0].modules,
   };
@@ -394,6 +408,8 @@ export async function createTraining(
     updatedAt: new Date(data.updated_at),
     isPublic: data.is_public,
     forkCount: data.fork_count,
+    originId: data.origin_id,
+    forkedAt: data.forked_at ? new Date(data.forked_at) : null,
     createdBy: data.created_by,
     modules: [],
   };
@@ -538,6 +554,8 @@ export async function toggleTrainingPublicStatus(
     updatedAt: new Date(data.updated_at),
     isPublic: data.is_public,
     forkCount: data.fork_count,
+    originId: data.origin_id,
+    forkedAt: data.forked_at ? new Date(data.forked_at) : null,
   };
 }
 
@@ -559,6 +577,8 @@ export async function getPublicTrainings(
       updated_at,
       is_public,
       fork_count,
+      origin_id,
+      forked_at,
       created_by,
       profiles!trainings_created_by_fkey (
         id
@@ -584,6 +604,8 @@ export async function getPublicTrainings(
       updatedAt: new Date(training.updated_at),
       isPublic: training.is_public,
       forkCount: training.fork_count,
+      originId: training.origin_id,
+      forkedAt: training.forked_at ? new Date(training.forked_at) : null,
       isEnrolled: false, // Public view - no enrollment check
     })) ?? []
   );

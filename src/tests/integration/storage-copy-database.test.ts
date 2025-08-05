@@ -410,7 +410,7 @@ describe("Storage Copy Database Integration Tests", () => {
           .eq("id", character.id);
 
         // Create module and link character
-        const module = await createModule(admin.supabase, sourceTraining.id, {
+        const moduleRecord = await createModule(admin.supabase, sourceTraining.id, {
           title: "Module with Character",
           ordinal: 0,
           instructions: null,
@@ -427,7 +427,7 @@ describe("Storage Copy Database Integration Tests", () => {
         await admin.supabase
           .from("modules_characters")
           .insert({
-            module_id: module.id,
+            module_id: moduleRecord.id,
             character_id: character.id,
             ordinal: 0,
           });
@@ -448,6 +448,9 @@ describe("Storage Copy Database Integration Tests", () => {
         expect(copiedTraining!.title).toBe("Training with Real Assets");
         expect(copiedTraining!.projectId).toBe(copier.projectId);
         expect(copiedTraining!.isPublic).toBe(false); // Copied training should be private
+        expect(copiedTraining!.originId).toBe(sourceTraining.id);
+        expect(copiedTraining!.forkedAt).toBeDefined();
+        expect(copiedTraining!.forkedAt).toBeInstanceOf(Date);
 
         // Note: Storage operations may timeout in test environment
         // This is expected behavior - the functionality handles storage failures gracefully
@@ -533,7 +536,7 @@ describe("Storage Copy Database Integration Tests", () => {
       });
 
       // Create module and link character
-      const module = await createModule(admin.supabase, sourceTraining.id, {
+      const moduleRecord = await createModule(admin.supabase, sourceTraining.id, {
         title: "Module",
         ordinal: 0,
         instructions: null,
@@ -550,7 +553,7 @@ describe("Storage Copy Database Integration Tests", () => {
       await admin.supabase
         .from("modules_characters")
         .insert({
-          module_id: module.id,
+          module_id: moduleRecord.id,
           character_id: character.id,
           ordinal: 0,
         });
@@ -567,6 +570,8 @@ describe("Storage Copy Database Integration Tests", () => {
       expect(copiedTraining).toBeDefined();
       expect(copiedTraining!.title).toBe("Training without Assets");
       expect(copiedTraining!.projectId).toBe(copier.projectId);
+      expect(copiedTraining!.originId).toBe(sourceTraining.id);
+      expect(copiedTraining!.forkedAt).toBeDefined();
     });
 
     it("should handle partial storage copy failures gracefully", async () => {
@@ -605,6 +610,8 @@ describe("Storage Copy Database Integration Tests", () => {
       const copiedTraining = await getTrainingById(copier.supabase, trainingId);
       expect(copiedTraining).toBeDefined();
       expect(copiedTraining!.title).toBe("Training with Bad Assets");
+      expect(copiedTraining!.originId).toBe(sourceTraining.id);
+      expect(copiedTraining!.forkedAt).toBeDefined();
       
       // Image URL should remain the same (original) since copy failed
       expect(copiedTraining!.imageUrl).toBe(badImageUrl);

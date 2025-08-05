@@ -98,6 +98,8 @@ describe("Public Trainings Database Integration Tests", () => {
 
       expect(training.isPublic).toBe(false);
       expect(training.forkCount).toBe(0);
+      expect(training.originId).toBe(null);
+      expect(training.forkedAt).toBe(null);
 
       // Make training public
       const publicTraining = await toggleTrainingPublicStatus(
@@ -108,6 +110,8 @@ describe("Public Trainings Database Integration Tests", () => {
 
       expect(publicTraining.isPublic).toBe(true);
       expect(publicTraining.forkCount).toBe(0);
+      expect(publicTraining.originId).toBe(null);
+      expect(publicTraining.forkedAt).toBe(null);
 
       // Make training private again
       const privateTraining = await toggleTrainingPublicStatus(
@@ -117,6 +121,8 @@ describe("Public Trainings Database Integration Tests", () => {
       );
 
       expect(privateTraining.isPublic).toBe(false);
+      expect(privateTraining.originId).toBe(null);
+      expect(privateTraining.forkedAt).toBe(null);
     });
 
     it("should prevent non-owners from changing training public status", async () => {
@@ -164,7 +170,7 @@ describe("Public Trainings Database Integration Tests", () => {
         voice: "test-voice",
       });
 
-      const module = await createModule(admin.supabase, training.id, {
+      const moduleRecord = await createModule(admin.supabase, training.id, {
         title: "Test Module",
         ordinal: 0,
         instructions: null,
@@ -182,7 +188,7 @@ describe("Public Trainings Database Integration Tests", () => {
       await admin.supabase
         .from("modules_characters")
         .insert({
-          module_id: module.id,
+          module_id: moduleRecord.id,
           character_id: character.id,
           ordinal: 0,
         });
@@ -345,7 +351,7 @@ describe("Public Trainings Database Integration Tests", () => {
         voice: "test-voice",
       });
 
-      const module = await createModule(admin.supabase, sourceTraining.id, {
+      const moduleRecord = await createModule(admin.supabase, sourceTraining.id, {
         title: "Source Module",
         ordinal: 0,
         instructions: null,
@@ -362,7 +368,7 @@ describe("Public Trainings Database Integration Tests", () => {
       await admin.supabase
         .from("modules_characters")
         .insert({
-          module_id: module.id,
+          module_id: moduleRecord.id,
           character_id: character.id,
           ordinal: 0,
         });
@@ -385,10 +391,16 @@ describe("Public Trainings Database Integration Tests", () => {
       expect(copiedTraining!.isPublic).toBe(false);
       expect(copiedTraining!.forkCount).toBe(0);
       expect(copiedTraining!.projectId).toBe(copier.projectId);
+      expect(copiedTraining!.originId).toBe(sourceTraining.id);
+      expect(copiedTraining!.forkedAt).toBeDefined();
+      expect(copiedTraining!.forkedAt).toBeInstanceOf(Date);
+      expect(Date.now() - copiedTraining!.forkedAt!.getTime()).toBeLessThan(5000); // Within 5 seconds
 
-      // Verify source training fork count increased
+      // Verify source training fork count increased but origin fields remain null
       const updatedSource = await getTrainingById(admin.supabase, sourceTraining.id);
       expect(updatedSource!.forkCount).toBe(1);
+      expect(updatedSource!.originId).toBe(null);
+      expect(updatedSource!.forkedAt).toBe(null);
     });
 
     it("should prevent copying private trainings", async () => {
@@ -509,6 +521,89 @@ describe("Public Trainings Database Integration Tests", () => {
       expect(Object.keys(characterMapping)).toHaveLength(2);
       expect(Object.keys(moduleMapping)).toHaveLength(2);
     });
+
+    it("should handle fork chains (fork of fork) correctly", async () => {
+      const { createdUsers, createdProjectIds, createdUserIds } = 
+        await setupTestEnvironment(adminSupabase, [
+          { role: "admin", projectName: "Test-Project-Original" },
+          { role: "admin", projectName: "Test-Project-FirstFork" },
+          { role: "admin", projectName: "Test-Project-SecondFork" }
+        ]);
+
+      projectIds = createdProjectIds;
+      userIds = createdUserIds;
+
+      const originalCreator = createdUsers[0]!;
+      const firstForker = createdUsers[1]!;
+      const secondForker = createdUsers[2]!;
+
+      // Create original training
+      const originalTraining = await createTraining(originalCreator.supabase, {
+        title: "Original Training"
+      });
+
+      const character = await createCharacter(originalCreator.supabase, {
+        name: "Original Character",
+        voice: "original-voice",
+      });
+
+      const moduleRecord = await createModule(originalCreator.supabase, originalTraining.id, {
+        title: "Original Module",
+        ordinal: 0,
+        instructions: null,
+        modulePrompt: {
+          scenario: "",
+          assessment: "",
+          moderator: null,
+          prepCoach: null,
+          aiModel: "openai",
+          characters: [],
+        },
+      });
+
+      await originalCreator.supabase
+        .from("modules_characters")
+        .insert({
+          module_id: moduleRecord.id,
+          character_id: character.id,
+          ordinal: 0,
+        });
+
+      // Make original training public
+      await toggleTrainingPublicStatus(originalCreator.supabase, originalTraining.id, true);
+
+      // First fork
+      const { trainingId: firstForkId } = 
+        await copyPublicTrainingToProject(firstForker.supabase, originalTraining.id);
+
+      const firstFork = await getTrainingById(firstForker.supabase, firstForkId);
+      expect(firstFork!.originId).toBe(originalTraining.id);
+      expect(firstFork!.forkedAt).toBeDefined();
+
+      // Make first fork public for second fork
+      await toggleTrainingPublicStatus(firstForker.supabase, firstForkId, true);
+
+      // Second fork (fork of the fork)
+      const { trainingId: secondForkId } = 
+        await copyPublicTrainingToProject(secondForker.supabase, firstForkId);
+
+      const secondFork = await getTrainingById(secondForker.supabase, secondForkId);
+      expect(secondFork!.originId).toBe(firstForkId); // Points to immediate parent, not root
+      expect(secondFork!.forkedAt).toBeDefined();
+      expect(secondFork!.forkedAt!.getTime()).toBeGreaterThan(firstFork!.forkedAt!.getTime());
+
+      // Verify fork counts
+      const updatedOriginal = await getTrainingById(originalCreator.supabase, originalTraining.id);
+      const updatedFirstFork = await getTrainingById(firstForker.supabase, firstForkId);
+      
+      expect(updatedOriginal!.forkCount).toBe(1); // Only first fork counts
+      expect(updatedFirstFork!.forkCount).toBe(1); // Only second fork counts
+      expect(secondFork!.forkCount).toBe(0); // No forks yet
+
+      // Verify original training remains unchanged
+      expect(updatedOriginal!.originId).toBe(null);
+      expect(updatedOriginal!.forkedAt).toBe(null);
+    });
   });
 
   describe("RLS Policy Enforcement", () => {
@@ -528,7 +623,7 @@ describe("Public Trainings Database Integration Tests", () => {
         title: "Public Training"
       });
 
-      const module = await createModule(admin.supabase, training.id, {
+      const moduleRecord = await createModule(admin.supabase, training.id, {
         title: "Public Module",
         ordinal: 0,
         instructions: null,
@@ -551,7 +646,7 @@ describe("Public Trainings Database Integration Tests", () => {
         .eq("training_id", training.id);
 
       expect(ownerModules).toHaveLength(1);
-      expect(ownerModules![0].id).toBe(module.id);
+      expect(ownerModules![0].id).toBe(moduleRecord.id);
 
       // Test that the public training can be seen by others
       const publicTrainings = await getPublicTrainings(anonSupabase);
@@ -579,7 +674,7 @@ describe("Public Trainings Database Integration Tests", () => {
         voice: "test-voice",
       });
 
-      const module = await createModule(admin.supabase, training.id, {
+      const moduleRecord = await createModule(admin.supabase, training.id, {
         title: "Module",
         ordinal: 0,
         instructions: null,
@@ -596,7 +691,7 @@ describe("Public Trainings Database Integration Tests", () => {
       await admin.supabase
         .from("modules_characters")
         .insert({
-          module_id: module.id,
+          module_id: moduleRecord.id,
           character_id: character.id,
           ordinal: 0,
         });

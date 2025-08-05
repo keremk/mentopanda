@@ -52,6 +52,8 @@ Given that trainings is indeed an object and not an array at runtime, we'll need
     projectId: enrollment.trainings?.project_id,
     isPublic: enrollment.trainings?.is_public ?? false,
     forkCount: enrollment.trainings?.fork_count ?? 0,
+    originId: enrollment.trainings?.origin_id ?? null,
+    forkedAt: enrollment.trainings?.forked_at ? new Date(enrollment.trainings.forked_at) : null,
   }));
   /* eslint-enable @typescript-eslint/no-explicit-any */
 }
