@@ -308,6 +308,8 @@
           "image_url": "/course-images/feedback.jpg",
           "is_public": false,
           "preview_url": "https://www.youtube.com/watch?v=gEB3ckYeZF4",
+          "origin_training_slug": "training-1",
+          "origin_project_slug": "project-1",
           "modules": [
             {
               "title": "Understanding Feedback Fundamentals",
@@ -369,6 +371,8 @@
           "image_url": "/course-images/meetings.jpg",
           "is_public": false,
           "preview_url": null,
+          "origin_training_slug": "training-2",
+          "origin_project_slug": "project-1",
           "modules": [
             {
               "title": "Meeting Structure and Agenda Setting",
@@ -557,6 +561,8 @@
           "image_url": "/course-images/hard-conversations.jpg",
           "is_public": false,
           "preview_url": null,
+          "origin_training_slug": "training-4",
+          "origin_project_slug": "project-1",
           "modules": [
             {
               "title": "Addressing Underperformance",

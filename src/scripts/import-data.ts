@@ -242,7 +242,7 @@ async function generateRandomHistoryEntries(
   session: Session,
   projectId: number
 ) {
-  // First, get modules that belong to trainings in this project
+  // First, get modules with training creation dates
   const { data: projectModules, error: moduleError } = await supabase.auth
     .setSession(session)
     .then(() =>
@@ -252,8 +252,10 @@ async function generateRandomHistoryEntries(
           `
         id,
         training_id,
+        created_at,
         trainings!inner(
-          project_id
+          project_id,
+          created_at
         )
       `
         )
@@ -270,21 +272,45 @@ async function generateRandomHistoryEntries(
     return [];
   }
 
-  const moduleIds = projectModules.map((m) => m.id);
-  logger.info(`Found ${moduleIds.length} modules for project ${projectId}`);
+  // Find the earliest training creation date as the starting point for history
+  let earliestTrainingDate = new Date();
+  const moduleInfoMap = new Map();
+  const availableModuleIds: number[] = [];
+  
+  for (const moduleRecord of projectModules) {
+    // Handle the trainings relation properly - it's an array in the type but object at runtime
+    const training = Array.isArray(moduleRecord.trainings) ? moduleRecord.trainings[0] : moduleRecord.trainings;
+    const trainingCreatedAt = new Date(training.created_at);
+    const moduleCreatedAt = new Date(moduleRecord.created_at);
+    
+    // History can only start after both training and module were created
+    const validStartDate = new Date(Math.max(trainingCreatedAt.getTime(), moduleCreatedAt.getTime()));
+    moduleInfoMap.set(moduleRecord.id, validStartDate);
+    availableModuleIds.push(moduleRecord.id);
+    
+    if (trainingCreatedAt < earliestTrainingDate) {
+      earliestTrainingDate = trainingCreatedAt;
+    }
+  }
 
+  logger.info(`Found ${projectModules.length} modules for project ${projectId}, earliest training: ${earliestTrainingDate.toISOString()}`);
+
+  // Start history generation from earliest training date + 1 day
+  const historyStartDate = new Date(earliestTrainingDate.getTime() + (24 * 60 * 60 * 1000));
+  const currentDate = new Date();
+  
+  // Ensure we have some recent activity within the last 3 months for the heatmap
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-
+  
   const entries = [];
   let totalEntries = 0;
-  const maxEntries = 25;
+  const maxEntries = 30; // Increased to ensure good distribution including recent entries
 
-  // Create array of dates from three months ago to now
+  // Create array of dates from history start date to now
   const dates = [];
-  const currentDate = new Date();
   for (
-    let d = new Date(threeMonthsAgo);
+    let d = new Date(historyStartDate);
     d <= currentDate;
     d.setDate(d.getDate() + 1)
   ) {
@@ -293,14 +319,24 @@ async function generateRandomHistoryEntries(
 
   // Iterate through dates chronologically
   for (const d of dates) {
-    // Randomly decide if this day will have entries (30% chance)
-    if (Math.random() < 0.3 && totalEntries < maxEntries) {
+    // Higher probability for recent dates (within 3 months) to ensure heatmap has data
+    const isRecentDate = d >= threeMonthsAgo;
+    const probability = isRecentDate ? 0.5 : 0.2; // 50% chance for recent, 20% for older
+    
+    if (Math.random() < probability && totalEntries < maxEntries) {
       // Generate 1-3 entries for this day
       const numEntries = Math.floor(Math.random() * 3) + 1;
 
       for (let i = 0; i < numEntries && totalEntries < maxEntries; i++) {
-        const moduleId =
-          moduleIds[Math.floor(Math.random() * moduleIds.length)];
+        // Only select modules that were available on this date
+        const validModules = availableModuleIds.filter(moduleId => {
+          const moduleValidDate = moduleInfoMap.get(moduleId);
+          return moduleValidDate && d >= moduleValidDate;
+        });
+        
+        if (validModules.length === 0) continue; // Skip if no modules available yet
+        
+        const moduleId = validModules[Math.floor(Math.random() * validModules.length)];
 
         const startedAt = new Date(d);
         // Add random hours/minutes to spread entries throughout the day
@@ -463,6 +499,8 @@ type TestTraining = {
   is_public: boolean;
   preview_url?: string;
   modules: TestModule[];
+  origin_training_slug?: string;
+  origin_project_slug?: string;
 };
 
 type TestCharacter = {
@@ -565,6 +603,9 @@ async function createTestUsers(testData: TestData) {
 
   return users;
 }
+
+// Global map to store created training info for origin lookup across projects
+const globalCreatedTrainings = new Map<string, { id: number, createdAt: Date }>();
 
 async function createTestProjects(testData: TestData, users: TestUser[]) {
   let index = 0;
@@ -755,6 +796,20 @@ async function createTrainingData(
   session: Session,
   projectSlug: string
 ) {
+  // Base time: 4 months ago for realistic historical data with some recent activity
+  const baseTime = new Date(Date.now() - (120 * 24 * 60 * 60 * 1000));
+  
+  // Helper function to generate random time offset
+  const randomDays = (min: number, max: number) => 
+    Math.floor(Math.random() * (max - min + 1)) + min;
+  
+  // Helper function to create realistic timestamps
+  const getProjectCreationTime = () => new Date(baseTime.getTime() + (randomDays(0, 7) * 24 * 60 * 60 * 1000));
+  const getTrainingCreationTime = (projectTime: Date) => new Date(projectTime.getTime() + (randomDays(1, 14) * 24 * 60 * 60 * 1000));
+  const getForkTime = (originalTime: Date) => new Date(originalTime.getTime() + (randomDays(7, 60) * 24 * 60 * 60 * 1000));
+  
+  // Use global map for training lookup across projects
+  
   const characterNameToId = new Map(
     characters.map((character) => [character.name, character.id])
   );
@@ -770,7 +825,33 @@ async function createTrainingData(
         "description.md"
       );
 
-      // Create training first without images
+      // Determine creation time and origin tracking
+      let createdAt: Date;
+      let originId: number | null = null;
+      let forkedAt: Date | null = null;
+      
+      if (training.origin_training_slug && training.origin_project_slug) {
+        // This is a copy - look up original training
+        const originalKey = `${training.origin_project_slug}-${training.origin_training_slug}`;
+        const originalTraining = globalCreatedTrainings.get(originalKey);
+        
+        if (originalTraining) {
+          originId = originalTraining.id;
+          createdAt = getForkTime(originalTraining.createdAt);
+          forkedAt = createdAt; // Fork happened when copy was created
+        } else {
+          // Fallback if original not found
+          const projectTime = getProjectCreationTime();
+          createdAt = getTrainingCreationTime(projectTime);
+          logger.warn(`Original training not found for ${training.title}, using default timing`);
+        }
+      } else {
+        // This is an original training
+        const projectTime = getProjectCreationTime();
+        createdAt = getTrainingCreationTime(projectTime);
+      }
+
+      // Create training with historical timestamps and origin tracking
       const { data: trainingData, error: trainingError } = await supabase.auth
         .setSession(session)
         .then(() =>
@@ -785,6 +866,10 @@ async function createTrainingData(
               created_by: session.user.id,
               project_id: projectId,
               preview_url: null, // We'll update this after uploading
+              created_at: createdAt.toISOString(),
+              updated_at: createdAt.toISOString(),
+              origin_id: originId,
+              forked_at: forkedAt?.toISOString() || null,
             })
             .select()
             .single()
@@ -792,6 +877,13 @@ async function createTrainingData(
 
       if (trainingError) throw trainingError;
       if (!trainingData) throw new Error("No training data returned");
+
+      // Store training info for origin lookup by other projects
+      const trainingKey = `${projectSlug}-${training.slug}`;
+      globalCreatedTrainings.set(trainingKey, {
+        id: trainingData.id,
+        createdAt: createdAt
+      });
 
       // Now upload training images if they are local paths and update the training
       let imageUrl = training.image_url;
@@ -868,6 +960,9 @@ async function createTrainingData(
           "moderator_prompt.md"
         );
 
+        // Module created 0-3 days after training
+        const moduleCreatedAt = new Date(createdAt.getTime() + (randomDays(0, 3) * 24 * 60 * 60 * 1000));
+
         const { data: moduleData, error: moduleError } = await supabase.auth
           .setSession(session)
           .then(() =>
@@ -884,6 +979,8 @@ async function createTrainingData(
                 moderator_prompt: moderator_prompt,
                 video_url: moduleItem.video_url,
                 audio_url: moduleItem.audio_url,
+                created_at: moduleCreatedAt.toISOString(),
+                updated_at: moduleCreatedAt.toISOString(),
               })
               .select()
               .single()
