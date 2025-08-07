@@ -20,12 +20,14 @@ interface AddPublicTrainingProps {
   trainingId: number;
   trainingTitle?: string;
   className?: string;
+  isForked?: boolean;
 }
 
 export function AddPublicTraining({
   trainingId,
   trainingTitle,
   className,
+  isForked = false,
 }: AddPublicTrainingProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -70,16 +72,20 @@ export function AddPublicTraining({
         className={className}
       >
         <Plus className="mr-2 h-4 w-4" />
-        Add to Project
+        {isForked ? "Add Again" : "Add to Project"}
       </Button>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Training to Project</DialogTitle>
+            <DialogTitle>
+              {isForked ? "Re-add Training to Project" : "Add Training to Project"}
+            </DialogTitle>
             <DialogDescription>
-              Do you want to copy &ldquo;{trainingTitle || "this training"}&rdquo; to your project? 
-              This will create a copy that you can customize and manage.
+              {isForked 
+                ? `This training has been previously added to your project. Re-adding "${trainingTitle || "this training"}" will create a fresh copy with any recent updates.`
+                : `Do you want to copy "${trainingTitle || "this training"}" to your project? This will create a copy that you can customize and manage.`
+              }
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-row justify-end gap-2">

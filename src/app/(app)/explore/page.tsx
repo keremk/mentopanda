@@ -78,6 +78,7 @@ export default async function ExplorePage() {
                   priority={index < 6}
                   isPublic={true}
                   isEnrollable={false}
+                  isForked={training.isForked}
                 />
               ))}
             </div>

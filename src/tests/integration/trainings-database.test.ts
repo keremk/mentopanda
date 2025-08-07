@@ -606,6 +606,178 @@ describe("Public Trainings Database Integration Tests", () => {
     });
   });
 
+  describe("Fork Status Detection", () => {
+    it("should correctly detect forked status for authenticated users in public trainings", async () => {
+      const { createdUsers, createdProjectIds, createdUserIds } = 
+        await setupTestEnvironment(adminSupabase, [
+          { role: "admin", projectName: "Test-Project-Creator" },
+          { role: "admin", projectName: "Test-Project-Forker" },
+          { role: "admin", projectName: "Test-Project-Other" }
+        ]);
+
+      projectIds = createdProjectIds;
+      userIds = createdUserIds;
+
+      const creator = createdUsers[0]!;
+      const forker = createdUsers[1]!;
+      const otherUser = createdUsers[2]!;
+
+      // Creator creates and publishes multiple trainings
+      const training1 = await createTraining(creator.supabase, {
+        title: "Public Training 1"
+      });
+      const training2 = await createTraining(creator.supabase, {
+        title: "Public Training 2"
+      });
+      const training3 = await createTraining(creator.supabase, {
+        title: "Public Training 3"
+      });
+
+      await toggleTrainingPublicStatus(creator.supabase, training1.id, true);
+      await toggleTrainingPublicStatus(creator.supabase, training2.id, true);
+      await toggleTrainingPublicStatus(creator.supabase, training3.id, true);
+
+      // Initially, forker should see no trainings as forked
+      const initialPublicTrainings = await getPublicTrainings(forker.supabase);
+      expect(initialPublicTrainings).toHaveLength(3);
+      expect(initialPublicTrainings.every(t => t.isForked === false)).toBe(true);
+
+      // Forker forks training1 and training2
+      await copyPublicTrainingToProject(forker.supabase, training1.id);
+      await copyPublicTrainingToProject(forker.supabase, training2.id);
+
+      // Forker should now see training1 and training2 as forked, training3 as not forked
+      const publicTrainingsAfterFork = await getPublicTrainings(forker.supabase);
+      expect(publicTrainingsAfterFork).toHaveLength(3);
+      
+      const forkedTraining1 = publicTrainingsAfterFork.find(t => t.id === training1.id);
+      const forkedTraining2 = publicTrainingsAfterFork.find(t => t.id === training2.id);
+      const unforkedTraining3 = publicTrainingsAfterFork.find(t => t.id === training3.id);
+
+      expect(forkedTraining1?.isForked).toBe(true);
+      expect(forkedTraining2?.isForked).toBe(true);
+      expect(unforkedTraining3?.isForked).toBe(false);
+
+      // Other user should see all trainings as not forked (since they haven't forked any)
+      const otherUserPublicTrainings = await getPublicTrainings(otherUser.supabase);
+      expect(otherUserPublicTrainings).toHaveLength(3);
+      expect(otherUserPublicTrainings.every(t => t.isForked === false)).toBe(true);
+
+      // Creator should see all trainings as not forked (they are the original creator)
+      const creatorPublicTrainings = await getPublicTrainings(creator.supabase);
+      expect(creatorPublicTrainings).toHaveLength(3);
+      expect(creatorPublicTrainings.every(t => t.isForked === false)).toBe(true);
+    });
+
+    it("should return isForked false for anonymous users", async () => {
+      const { createdUsers, createdProjectIds, createdUserIds } = 
+        await setupTestEnvironment(adminSupabase, [
+          { role: "admin", projectName: "Test-Project-Creator" }
+        ]);
+
+      projectIds = createdProjectIds;
+      userIds = createdUserIds;
+
+      const creator = createdUsers[0]!;
+
+      // Create and publish training
+      const training = await createTraining(creator.supabase, {
+        title: "Public Training for Anonymous"
+      });
+
+      await toggleTrainingPublicStatus(creator.supabase, training.id, true);
+
+      // Anonymous user should see training with isForked: false
+      const anonPublicTrainings = await getPublicTrainings(anonSupabase);
+      expect(anonPublicTrainings).toHaveLength(1);
+      expect(anonPublicTrainings[0].id).toBe(training.id);
+      expect(anonPublicTrainings[0].isForked).toBe(false);
+    });
+
+    it("should handle multiple forks of same training correctly", async () => {
+      const { createdUsers, createdProjectIds, createdUserIds } = 
+        await setupTestEnvironment(adminSupabase, [
+          { role: "admin", projectName: "Test-Project-Creator" },
+          { role: "admin", projectName: "Test-Project-Forker" }
+        ]);
+
+      projectIds = createdProjectIds;
+      userIds = createdUserIds;
+
+      const creator = createdUsers[0]!;
+      const forker = createdUsers[1]!;
+
+      // Create and publish training
+      const training = await createTraining(creator.supabase, {
+        title: "Training to Fork Multiple Times"
+      });
+
+      await toggleTrainingPublicStatus(creator.supabase, training.id, true);
+
+      // Fork the training multiple times (re-adding for updates)
+      await copyPublicTrainingToProject(forker.supabase, training.id);
+      await copyPublicTrainingToProject(forker.supabase, training.id);
+
+      // Should still show as forked (not false positive from multiple forks)
+      const publicTrainings = await getPublicTrainings(forker.supabase);
+      expect(publicTrainings).toHaveLength(1);
+      expect(publicTrainings[0].isForked).toBe(true);
+    });
+
+    it("should handle fork chains correctly in fork status detection", async () => {
+      const { createdUsers, createdProjectIds, createdUserIds } = 
+        await setupTestEnvironment(adminSupabase, [
+          { role: "admin", projectName: "Test-Project-Original" },
+          { role: "admin", projectName: "Test-Project-FirstForker" },
+          { role: "admin", projectName: "Test-Project-SecondForker" }
+        ]);
+
+      projectIds = createdProjectIds;
+      userIds = createdUserIds;
+
+      const originalCreator = createdUsers[0]!;
+      const firstForker = createdUsers[1]!;
+      const secondForker = createdUsers[2]!;
+
+      // Create original training
+      const originalTraining = await createTraining(originalCreator.supabase, {
+        title: "Original for Fork Chain"
+      });
+
+      await toggleTrainingPublicStatus(originalCreator.supabase, originalTraining.id, true);
+
+      // First user forks original
+      const { trainingId: firstForkId } = 
+        await copyPublicTrainingToProject(firstForker.supabase, originalTraining.id);
+
+      // Make first fork public
+      await toggleTrainingPublicStatus(firstForker.supabase, firstForkId, true);
+
+      // Second user forks the first fork
+      await copyPublicTrainingToProject(secondForker.supabase, firstForkId);
+
+      // Check fork status for all users
+      const originalCreatorView = await getPublicTrainings(originalCreator.supabase);
+      const firstForkerView = await getPublicTrainings(firstForker.supabase);
+      const secondForkerView = await getPublicTrainings(secondForker.supabase);
+
+      // Original creator should see their own training as not forked
+      const originalInCreatorView = originalCreatorView.find(t => t.id === originalTraining.id);
+      expect(originalInCreatorView?.isForked).toBe(false);
+
+      // First forker should see original as forked (they forked it)
+      const originalInFirstForkerView = firstForkerView.find(t => t.id === originalTraining.id);
+      expect(originalInFirstForkerView?.isForked).toBe(true);
+
+      // Second forker should see first fork as forked (they forked it) but original as not forked
+      const originalInSecondForkerView = secondForkerView.find(t => t.id === originalTraining.id);
+      const firstForkInSecondForkerView = secondForkerView.find(t => t.id === firstForkId);
+      
+      expect(originalInSecondForkerView?.isForked).toBe(false);
+      expect(firstForkInSecondForkerView?.isForked).toBe(true);
+    });
+  });
+
   describe("RLS Policy Enforcement", () => {
     it("should enforce RLS for modules of public trainings", async () => {
       const { createdUsers, createdProjectIds, createdUserIds } = 

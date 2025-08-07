@@ -36,6 +36,7 @@ export type TrainingWithProgress = TrainingSummary & {
 
 export type TrainingWithEnrollment = TrainingSummary & {
   isEnrolled: boolean;
+  isForked?: boolean;
 };
 
 export type TrainingEdit = TrainingSummary & {
@@ -564,40 +565,95 @@ export async function getPublicTrainings(
   supabase: SupabaseClient,
   limit: number = 20,
   offset: number = 0
-): Promise<TrainingWithEnrollment[]> {
-  const query = supabase
-    .from("trainings")
-    .select(`
-      id,
-      title,
-      tagline,
-      image_url,
-      project_id,
-      created_at,
-      updated_at,
-      is_public,
-      fork_count,
-      origin_id,
-      forked_at,
-      created_by,
-      profiles!trainings_created_by_fkey (
-        id
-      )
-    `)
-    .eq("is_public", true)
-    .order("fork_count", { ascending: false })
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+): Promise<(Training & { isForked: boolean })[]> {
+  // Get current user info to check for forks in their project
+  let currentUserProjectId: number | null = null;
+  try {
+    const currentUser = await getCurrentUserInfo(supabase);
+    currentUserProjectId = currentUser.currentProject.id;
+  } catch {
+    // User not authenticated or no project - return simple query without fork check
+    const { data: trainings, error } = await supabase
+      .from("trainings")
+      .select(`
+        id,
+        title,
+        tagline,
+        description,
+        image_url,
+        project_id,
+        created_at,
+        updated_at,
+        is_public,
+        fork_count,
+        origin_id,
+        forked_at,
+        created_by,
+        preview_url
+      `)
+      .eq("is_public", true)
+      .order("fork_count", { ascending: false })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
-  const { data: trainings, error } = await query;
+    if (error) handleError(error);
+
+    return (
+      trainings?.map((training) => ({
+        id: training.id,
+        title: training.title,
+        tagline: training.tagline,
+        description: training.description,
+        imageUrl: training.image_url,
+        projectId: training.project_id,
+        createdAt: new Date(training.created_at),
+        updatedAt: new Date(training.updated_at),
+        isPublic: training.is_public,
+        forkCount: training.fork_count,
+        originId: training.origin_id,
+        forkedAt: training.forked_at ? new Date(training.forked_at) : null,
+        createdBy: training.created_by,
+        previewUrl: training.preview_url,
+        modules: [],
+        isForked: false,
+      })) ?? []
+    );
+  }
+
+  // For authenticated users with a project, use efficient RPC function
+  const { data: trainings, error } = await supabase.rpc(
+    'get_public_trainings_with_fork_status',
+    {
+      user_project_id: currentUserProjectId,
+      limit_count: limit,
+      offset_count: offset
+    }
+  );
 
   if (error) handleError(error);
 
   return (
-    trainings?.map((training) => ({
+    trainings?.map((training: {
+      id: number;
+      title: string;
+      tagline: string;
+      description: string;
+      image_url: string;
+      project_id: number;
+      created_at: string;
+      updated_at: string;
+      is_public: boolean;
+      fork_count: number;
+      origin_id: number | null;
+      forked_at: string | null;
+      created_by: string | null;
+      preview_url: string | null;
+      is_forked: boolean;
+    }) => ({
       id: training.id,
       title: training.title,
       tagline: training.tagline,
+      description: training.description,
       imageUrl: training.image_url,
       projectId: training.project_id,
       createdAt: new Date(training.created_at),
@@ -606,7 +662,10 @@ export async function getPublicTrainings(
       forkCount: training.fork_count,
       originId: training.origin_id,
       forkedAt: training.forked_at ? new Date(training.forked_at) : null,
-      isEnrolled: false, // Public view - no enrollment check
+      createdBy: training.created_by,
+      previewUrl: training.preview_url,
+      modules: [],
+      isForked: training.is_forked,
     })) ?? []
   );
 }
