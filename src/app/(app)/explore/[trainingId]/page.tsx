@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTrainingByIdForEditAction } from "@/app/actions/trainingActions";
-import { getCurrentUserActionCached } from "@/app/actions/user-actions";
+import { getTrainingByIdForEditAction, isTrainingForkedToUserProjectAction } from "@/app/actions/trainingActions";
+import { getCurrentUserOrNullActionCached } from "@/app/actions/user-actions";
 import { Pencil, ArrowLeft } from "lucide-react";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { ThemedImage } from "@/components/themed-image";
@@ -42,21 +42,30 @@ export default async function TrainingDetailsPage(props: {
   const params = await props.params;
   const [training, user] = await Promise.all([
     getTrainingByIdForEditAction(params.trainingId),
-    getCurrentUserActionCached(),
+    getCurrentUserOrNullActionCached(),
   ]);
 
   if (!training) {
     notFound();
   }
 
-  // Check if user can edit: needs training.manage permission AND training must be in user's current project
-  const canManage = user.permissions.includes("training.manage") && 
-    training.projectId === user.currentProject.id;
+  // Determine the training scenario and what data we need
+  let canManage = false;
+  let isCurrentlyEnrolled = false;
+  let isForked = false;
+  let showLoginButton = false;
 
-  // Check if training is public but not in user's project (requires copying first)
-  const isPublicNotInUserProject = training.isPublic && training.projectId !== user.currentProject.id;
-
-  const isCurrentlyEnrolled = await isEnrolledAction(training.id);
+  if (!user) {
+    // Case 3: Anonymous user viewing public training
+    showLoginButton = training.isPublic;
+  } else if (training.isPublic && training.projectId !== user.currentProject.id) {
+    // Case 1: Authenticated user viewing public training not in their project
+    isForked = await isTrainingForkedToUserProjectAction(training.id);
+  } else {
+    // Case 2: Authenticated user viewing training in their project
+    canManage = user.permissions.includes("training.manage");
+    isCurrentlyEnrolled = await isEnrolledAction(training.id);
+  }
 
   const displayModules = training.modules || [];
 
@@ -128,12 +137,19 @@ export default async function TrainingDetailsPage(props: {
                 />
               </div>
               <div className="mt-4 space-y-2">
-                {isPublicNotInUserProject ? (
+                {showLoginButton ? (
+                  <Button asChild variant="brand" className="w-full">
+                    <Link href="/login">
+                      Join MentoPanda
+                    </Link>
+                  </Button>
+                ) : user && training.isPublic && training.projectId !== user.currentProject.id ? (
                   <AddPublicTraining
                     trainingId={training.id}
                     trainingTitle={training.title}
                     variant="brand"
                     className="w-full"
+                    isForked={isForked}
                   />
                 ) : (
                   <TrainingActionsRow

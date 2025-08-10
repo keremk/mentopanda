@@ -14,6 +14,7 @@ import {
   toggleTrainingPublicStatus,
   getPublicTrainings,
   copyPublicTrainingToProject,
+  isTrainingForkedToUserProject,
 } from "@/data/trainings";
 import { redirect } from "next/navigation";
 
@@ -105,4 +106,9 @@ export async function copyPublicTrainingToProjectAction(
     moduleMapping,
     success: true 
   };
+}
+
+export async function isTrainingForkedToUserProjectAction(trainingId: number) {
+  const supabase = await createClient();
+  return await isTrainingForkedToUserProject(supabase, trainingId);
 }

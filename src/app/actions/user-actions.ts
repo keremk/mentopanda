@@ -48,6 +48,16 @@ export const getCurrentUserActionCached = cache(async () => {
   return await getCurrentUserInfo(supabase);
 });
 
+export const getCurrentUserOrNullActionCached = cache(async () => {
+  try {
+    const supabase = await createClient();
+    return await getCurrentUserInfo(supabase);
+  } catch {
+    // User is not authenticated - return null for anonymous users
+    return null;
+  }
+});
+
 export async function updateProfileAction(data: { displayName: string }) {
   try {
     // Validate input

@@ -871,6 +871,33 @@ export async function copyPublicTrainingToProject(
   };
 }
 
+// Check if a specific training has been forked to user's project
+export async function isTrainingForkedToUserProject(
+  supabase: SupabaseClient,
+  trainingId: number
+): Promise<boolean> {
+  try {
+    const { currentProject } = await getCurrentUserInfo(supabase);
+    
+    const { data, error } = await supabase
+      .from("trainings")
+      .select("id")
+      .eq("origin_id", trainingId)
+      .eq("project_id", currentProject.id)
+      .limit(1);
+    
+    if (error) {
+      logger.error("Error checking if training is forked:", error);
+      return false;
+    }
+    
+    return data && data.length > 0;
+  } catch (error) {
+    logger.error("Error in isTrainingForkedToUserProject:", error);
+    return false;
+  }
+}
+
 // Function to find or create Side Quests training and return its ID
 export async function findOrCreateSideQuestsTraining(
   supabase: SupabaseClient
