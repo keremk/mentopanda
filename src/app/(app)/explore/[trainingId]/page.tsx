@@ -11,6 +11,7 @@ import type { CharacterDetails } from "@/data/characters";
 import { AI_MODELS } from "@/types/models";
 import { isEnrolledAction } from "@/app/actions/enrollment-actions";
 import { TrainingActionsRow } from "@/components/training-actions-row";
+import { AddPublicTraining } from "@/components/add-public-training";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -51,6 +52,9 @@ export default async function TrainingDetailsPage(props: {
   // Check if user can edit: needs training.manage permission AND training must be in user's current project
   const canManage = user.permissions.includes("training.manage") && 
     training.projectId === user.currentProject.id;
+
+  // Check if training is public but not in user's project (requires copying first)
+  const isPublicNotInUserProject = training.isPublic && training.projectId !== user.currentProject.id;
 
   const isCurrentlyEnrolled = await isEnrolledAction(training.id);
 
@@ -124,13 +128,22 @@ export default async function TrainingDetailsPage(props: {
                 />
               </div>
               <div className="mt-4 space-y-2">
-                <TrainingActionsRow
-                  trainingId={training.id}
-                  initialIsEnrolled={isCurrentlyEnrolled}
-                  enrollmentButtonVariant="brand"
-                  enrollmentButtonClassName="w-full"
-                  trainButtonClassName="w-full"
-                />
+                {isPublicNotInUserProject ? (
+                  <AddPublicTraining
+                    trainingId={training.id}
+                    trainingTitle={training.title}
+                    variant="brand"
+                    className="w-full"
+                  />
+                ) : (
+                  <TrainingActionsRow
+                    trainingId={training.id}
+                    initialIsEnrolled={isCurrentlyEnrolled}
+                    enrollmentButtonVariant="brand"
+                    enrollmentButtonClassName="w-full"
+                    trainButtonClassName="w-full"
+                  />
+                )}
               </div>
             </div>
             <h1 className="text-3xl font-bold mb-1">{training.title}</h1>

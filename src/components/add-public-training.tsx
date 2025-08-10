@@ -21,6 +21,7 @@ interface AddPublicTrainingProps {
   trainingTitle?: string;
   className?: string;
   isForked?: boolean;
+  variant?: "ghost-brand" | "brand";
 }
 
 export function AddPublicTraining({
@@ -28,6 +29,7 @@ export function AddPublicTraining({
   trainingTitle,
   className,
   isForked = false,
+  variant = "ghost-brand",
 }: AddPublicTrainingProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +52,7 @@ export function AddPublicTraining({
           description: `${trainingTitle || "Training"} has been added to your project.`,
         });
         setIsDialogOpen(false);
-        router.refresh();
+        router.push(`/explore/${result.trainingId}`);
       }
     } catch (error) {
       logger.error("Failed to copy public training:", error);
@@ -67,7 +69,7 @@ export function AddPublicTraining({
   return (
     <>
       <Button
-        variant="ghost-brand"
+        variant={variant}
         onClick={handleClick}
         className={className}
       >
