@@ -102,7 +102,7 @@ export default async function TrainingDetailsPage(props: {
               Back
             </Link>
           </Button>
-{canManage && (
+          {canManage && (
             <Button asChild variant="ghost-brand" className="hidden md:flex">
               <Link
                 href={`/explore/${training.id}/edit`}
@@ -133,7 +133,8 @@ export default async function TrainingDetailsPage(props: {
                 />
               </div>
               <div className="mt-4 space-y-2">
-                {training.isPublic ? (
+                {training.isPublic &&
+                training.projectId !== user.currentProject.id ? (
                   <AddPublicTraining
                     trainingId={training.id}
                     trainingTitle={training.title}

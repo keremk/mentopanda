@@ -35,13 +35,13 @@ export default async function ExplorePage() {
             <TabsList className="grid w-auto grid-cols-2 bg-secondary/30 p-1 rounded-lg border border-border/30">
               <TabsTrigger
                 value="my-trainings"
-                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-brand data-[state=active]:font-bold"
               >
                 My Trainings
               </TabsTrigger>
               <TabsTrigger
                 value="public-trainings"
-                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-brand data-[state=active]:font-bold"
               >
                 Public Trainings
               </TabsTrigger>
