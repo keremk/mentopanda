@@ -59,6 +59,10 @@ type TrainingEditAction =
         value: UpdateTrainingInput[keyof UpdateTrainingInput];
       };
     }
+  | {
+      type: "UPDATE_TRAINING_PUBLIC_STATUS";
+      payload: { isPublic: boolean };
+    }
   // Module List Actions
   | { type: "ADD_MODULE_SUCCESS"; payload: { module: Module } }
   | { type: "DELETE_MODULE"; payload: { moduleId: number } }
@@ -160,6 +164,17 @@ function trainingEditReducer(
         training: {
           ...state.training,
           [field]: value,
+        },
+        ...baseStateUpdate,
+      };
+    }
+    case "UPDATE_TRAINING_PUBLIC_STATUS": {
+      const { isPublic } = action.payload;
+      return {
+        ...state,
+        training: {
+          ...state.training,
+          isPublic,
         },
         ...baseStateUpdate,
       };

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditTrainingForm } from "./edit-training-form";
 import { EditModules } from "./edit-modules";
-import { deleteTrainingAction } from "@/app/actions/trainingActions";
+import { deleteTrainingAction, toggleTrainingPublicStatusAction } from "@/app/actions/trainingActions";
 import { Loader2, Sparkles } from "lucide-react";
 import { AIPane } from "@/components/aipane";
 import { AIPaneProvider, ContextType } from "@/contexts/ai-pane-context";
@@ -35,6 +35,7 @@ import { CharacterSummary } from "@/data/characters";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
+import { PublishToggleButton } from "@/components/publish-toggle-button";
 
 // --- Prop Types ---
 // Ensure this type definition is correct and includes the necessary props
@@ -88,6 +89,29 @@ function EditContainerContent() {
     const saveSuccessful = await saveNow();
     if (saveSuccessful) {
       router.push(`/explore/${training.id}`);
+    }
+  };
+
+  const handleTogglePublicStatus = async (newStatus: boolean) => {
+    try {
+      await toggleTrainingPublicStatusAction(training.id, newStatus);
+      dispatch({
+        type: "UPDATE_TRAINING_PUBLIC_STATUS",
+        payload: { isPublic: newStatus },
+      });
+      toast({
+        title: newStatus ? "Training made public" : "Training made private",
+        description: newStatus 
+          ? "Your training is now visible in the public library."
+          : "Your training is no longer public.",
+      });
+    } catch (error) {
+      logger.error("Error toggling training public status:", error);
+      toast({
+        title: "Error updating training",
+        description: "Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -267,6 +291,13 @@ function EditContainerContent() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          {/* Publish Toggle Button */}
+          <PublishToggleButton
+            isPublic={training.isPublic}
+            forkCount={training.forkCount}
+            onToggle={handleTogglePublicStatus}
+            disabled={isSaving}
+          />
           {/* Quick Test Button (only show in modules tab and when a module is selected) */}
           {activeTab === "modules" && selectedModuleId && (
             <Button

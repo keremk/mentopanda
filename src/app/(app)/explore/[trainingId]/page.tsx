@@ -133,7 +133,7 @@ export default async function TrainingDetailsPage(props: {
                 />
               </div>
               <div className="mt-4 space-y-2">
-                {training.isPublic && training.projectId !== user.currentProject.id ? (
+                {training.isPublic ? (
                   <AddPublicTraining
                     trainingId={training.id}
                     trainingTitle={training.title}
