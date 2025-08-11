@@ -24,6 +24,7 @@ interface TrainingCardProps {
   isPublic?: boolean;
   isEnrollable?: boolean;
   isForked?: boolean;
+  basePath?: string;
 }
 
 export function TrainingCard({
@@ -35,13 +36,14 @@ export function TrainingCard({
   priority = false,
   isEnrollable = true,
   isForked = false,
+  basePath = "/explore",
 }: TrainingCardProps) {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const fallbackImage = resolvedTheme === "dark" ? "/placeholder-training-dark.svg?height=200&width=300" : "/placeholder-training.svg?height=200&width=300";
 
   const navigateToDetails = () => {
-    router.push(`/explore/${id}`);
+    router.push(`${basePath}/${id}`);
   };
 
   return (

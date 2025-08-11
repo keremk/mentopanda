@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Define public routes that don't require authentication
-  const publicRoutes = ["/login", "/auth", "/about", "/forgot-password"];
+  const publicRoutes = ["/login", "/auth", "/about", "/forgot-password", "/trainings"];
   // Exact match for homepage
   const isHomePage = pathname === "/";
   // Check if path matches any public routes

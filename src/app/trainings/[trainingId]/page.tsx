@@ -1,21 +1,17 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTrainingByIdForEditAction, isTrainingForkedToUserProjectAction } from "@/app/actions/trainingActions";
-import { getCurrentUserActionCached } from "@/app/actions/user-actions";
-import { Pencil, ArrowLeft } from "lucide-react";
+import { getTrainingByIdForEditAction } from "@/app/actions/trainingActions";
+import { ArrowLeft } from "lucide-react";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { ThemedImage } from "@/components/themed-image";
 import { CharacterDetailsView } from "@/components/character-details";
 import type { CharacterDetails } from "@/data/characters";
 import { AI_MODELS } from "@/types/models";
-import { isEnrolledAction } from "@/app/actions/enrollment-actions";
-import { TrainingActionsRow } from "@/components/training-actions-row";
-import { AddPublicTraining } from "@/components/add-public-training";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Training",
+  title: "Training Details",
 };
 
 function YouTubeEmbed({ url }: { url: string }) {
@@ -36,31 +32,14 @@ function YouTubeEmbed({ url }: { url: string }) {
   );
 }
 
-export default async function TrainingDetailsPage(props: {
+export default async function PublicTrainingDetailsPage(props: {
   params: Promise<{ trainingId: number }>;
 }) {
   const params = await props.params;
-  const [training, user] = await Promise.all([
-    getTrainingByIdForEditAction(params.trainingId),
-    getCurrentUserActionCached(),
-  ]);
+  const training = await getTrainingByIdForEditAction(params.trainingId);
 
-  if (!training) {
+  if (!training || !training.isPublic) {
     notFound();
-  }
-
-  // Determine the training scenario and what data we need
-  let canManage = false;
-  let isCurrentlyEnrolled = false;
-  let isForked = false;
-
-  if (training.isPublic && training.projectId !== user.currentProject.id) {
-    // Case 1: Authenticated user viewing public training not in their project
-    isForked = await isTrainingForkedToUserProjectAction(training.id);
-  } else {
-    // Case 2: Authenticated user viewing training in their project
-    canManage = user.permissions.includes("training.manage");
-    isCurrentlyEnrolled = await isEnrolledAction(training.id);
   }
 
   const displayModules = training.modules || [];
@@ -93,27 +72,14 @@ export default async function TrainingDetailsPage(props: {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-2">
+    <div className="container mx-auto px-4 py-8">
       <div className="absolute top-0 right-0 p-4 z-10">
-        <div className="flex gap-2">
-          <Button asChild variant="ghost-brand">
-            <Link href="/explore" className="flex items-center">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Link>
-          </Button>
-{canManage && (
-            <Button asChild variant="ghost-brand" className="hidden md:flex">
-              <Link
-                href={`/explore/${training.id}/edit`}
-                className="flex items-center"
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </Link>
-            </Button>
-          )}
-        </div>
+        <Button asChild variant="ghost-brand">
+          <Link href="/trainings" className="flex items-center">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Trainings
+          </Link>
+        </Button>
       </div>
 
       <div className="mx-6">
@@ -133,23 +99,11 @@ export default async function TrainingDetailsPage(props: {
                 />
               </div>
               <div className="mt-4 space-y-2">
-                {training.isPublic && training.projectId !== user.currentProject.id ? (
-                  <AddPublicTraining
-                    trainingId={training.id}
-                    trainingTitle={training.title}
-                    variant="brand"
-                    className="w-full"
-                    isForked={isForked}
-                  />
-                ) : (
-                  <TrainingActionsRow
-                    trainingId={training.id}
-                    initialIsEnrolled={isCurrentlyEnrolled}
-                    enrollmentButtonVariant="brand"
-                    enrollmentButtonClassName="w-full"
-                    trainButtonClassName="w-full"
-                  />
-                )}
+                <Button asChild variant="brand" className="w-full">
+                  <Link href="/login?mode=signup">
+                    Join MentoPanda
+                  </Link>
+                </Button>
               </div>
             </div>
             <h1 className="text-3xl font-bold mb-1">{training.title}</h1>
