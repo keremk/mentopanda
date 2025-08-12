@@ -2,7 +2,7 @@ import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
-import { CheckCircle2, User, FolderKanban, Package } from "lucide-react";
+import { CheckCircle2, User, FolderKanban } from "lucide-react";
 import type { OnboardingData } from "../onboarding-flow";
 
 type SummaryProps = {
@@ -66,18 +66,6 @@ export function Summary({ data }: SummaryProps) {
               <p className="text-base">{data.projectName}</p>
             </div>
 
-            {/* Starter Content Section */}
-            <div className="px-6 py-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Package className="h-4 w-4 text-brand" />
-                <h4 className="font-medium text-brand">Starter Content</h4>
-              </div>
-              <p className="text-base">
-                {data.copyStarterContent
-                  ? "Including starter trainings"
-                  : "Starting with a clean project"}
-              </p>
-            </div>
           </div>
         </div>
 

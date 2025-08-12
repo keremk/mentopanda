@@ -1,7 +1,6 @@
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 import { useEffect } from "react";
 import type { OnboardingData } from "../onboarding-flow";
@@ -9,15 +8,29 @@ import type { OnboardingData } from "../onboarding-flow";
 type ProjectSetupProps = {
   data: OnboardingData;
   updateData: (data: Partial<OnboardingData>) => void;
+  hasManuallyEditedProjectName: boolean;
+  setHasManuallyEditedProjectName: (value: boolean) => void;
 };
 
-export function ProjectSetup({ data, updateData }: ProjectSetupProps) {
-  // Set default project name based on display name when component mounts or display name changes
+export function ProjectSetup({ 
+  data, 
+  updateData, 
+  hasManuallyEditedProjectName, 
+  setHasManuallyEditedProjectName 
+}: ProjectSetupProps) {
+  
+  // Set default project name as actual value when component mounts or displayName changes
+  // but only if user hasn't manually edited the project name
   useEffect(() => {
-    if (data.displayName && !data.projectName) {
-      updateData({ projectName: `${data.displayName}'s Project` });
+    if (!hasManuallyEditedProjectName) {
+      const defaultName = data.displayName 
+        ? `${data.displayName}'s Project` 
+        : "My First Project";
+      if (data.projectName !== defaultName) {
+        updateData({ projectName: defaultName });
+      }
     }
-  }, [data.displayName, data.projectName, updateData]);
+  }, [data.displayName, hasManuallyEditedProjectName, data.projectName, updateData]);
 
   return (
     <>
@@ -50,7 +63,10 @@ export function ProjectSetup({ data, updateData }: ProjectSetupProps) {
           <Input
             id="projectName"
             value={data.projectName}
-            onChange={(e) => updateData({ projectName: e.target.value })}
+            onChange={(e) => {
+              setHasManuallyEditedProjectName(true);
+              updateData({ projectName: e.target.value });
+            }}
             placeholder={
               data.displayName
                 ? `${data.displayName}'s Project`
@@ -60,36 +76,6 @@ export function ProjectSetup({ data, updateData }: ProjectSetupProps) {
           />
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center space-x-3">
-            <Switch
-              id="copyStarter"
-              checked={data.copyStarterContent}
-              onCheckedChange={(checked) =>
-                updateData({ copyStarterContent: checked })
-              }
-              className="data-[state=checked]:bg-brand data-[state=checked]:border-brand"
-            />
-            <Label htmlFor="copyStarter" className="text-sm font-medium">
-              Include starter trainings (recommended)
-            </Label>
-          </div>
-          <div className="bg-brand/5 border border-brand/20 p-4 rounded-lg">
-            <div className="text-sm text-muted-foreground ml-7">
-              <p className="mb-2">
-                Our starter pack includes pre-built training sessions and
-                characters that will help you:
-              </p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Have some initial content to work with</li>
-                <li>Get familiar with best practices</li>
-              </ul>
-              <p className="mt-2">
-                You can always modify or remove these later.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </>
   );

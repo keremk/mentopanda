@@ -55,7 +55,7 @@ export function Welcome() {
             <li className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-brand flex-shrink-0" />
               <span className="text-sm">
-                Set up your first project with pre-built training sessions
+                Set up your first project
               </span>
             </li>
           </ul>

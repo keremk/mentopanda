@@ -41,9 +41,10 @@ type OnboardingFlowProps = {
 export function OnboardingFlow({ user }: OnboardingFlowProps) {
   const [currentStep, setCurrentStep] = useState<Step>("Welcome");
   const [status, setStatus] = useState<string | null>(null);
+  const [hasManuallyEditedProjectName, setHasManuallyEditedProjectName] = useState(false);
   const [data, setData] = useState<OnboardingData>({
     projectName: "",
-    copyStarterContent: true,
+    copyStarterContent: false,
     displayName: user.displayName || "",
     avatarUrl: user.avatarUrl || "",
   });
@@ -124,7 +125,12 @@ export function OnboardingFlow({ user }: OnboardingFlowProps) {
             <ProfileSetup user={user} data={data} updateData={updateData} />
           )}
           {currentStep === "Project Setup" && (
-            <ProjectSetup data={data} updateData={updateData} />
+            <ProjectSetup 
+              data={data} 
+              updateData={updateData} 
+              hasManuallyEditedProjectName={hasManuallyEditedProjectName}
+              setHasManuallyEditedProjectName={setHasManuallyEditedProjectName}
+            />
           )}
           {currentStep === "Summary" && <Summary data={data} />}
           {currentStep === "Progress" && <Progress status={status} />}
