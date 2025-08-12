@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/card";
 import { EnrollmentButton } from "@/components/enrollment-button";
 import { AddPublicTraining } from "@/components/add-public-training";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "next-themes";
-import { Check } from "lucide-react";
+import { Check, Users } from "lucide-react";
 
 interface TrainingCardProps {
   id: number;
@@ -25,6 +27,11 @@ interface TrainingCardProps {
   isEnrollable?: boolean;
   isForked?: boolean;
   basePath?: string;
+  creatorInfo?: {
+    avatarUrl: string | null;
+    displayName: string | null;
+  };
+  forkCount?: number;
 }
 
 export function TrainingCard({
@@ -37,6 +44,8 @@ export function TrainingCard({
   isEnrollable = true,
   isForked = false,
   basePath = "/explore",
+  creatorInfo,
+  forkCount = 0,
 }: TrainingCardProps) {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
@@ -47,7 +56,8 @@ export function TrainingCard({
   };
 
   return (
-    <Card className="w-full min-h-[400px] flex flex-col hover:shadow-md hover:border-primary/50 transition-all duration-200">
+    <TooltipProvider>
+      <Card className="w-full min-h-[400px] flex flex-col hover:shadow-md hover:border-primary/50 transition-all duration-200">
       {/* Clickable area for navigation */}
       <div className="flex-grow cursor-pointer" onClick={navigateToDetails}>
         <CardHeader className="p-0 relative h-[200px] p0 space-y-0">
@@ -80,22 +90,69 @@ export function TrainingCard({
       </div>
 
       {/* Separate footer for enrollment button */}
-      <CardFooter className="p-4 pt-0 flex justify-end mt-auto">
-        {isEnrollable ? (
-          <EnrollmentButton
-            trainingId={id}
-            className="w-auto"
-            isEnrolled={isEnrolled}
-          />
-        ) : (
-          <AddPublicTraining
-            trainingId={id}
-            trainingTitle={title}
-            className="w-auto"
-            isForked={isForked}
-          />
-        )}
+      <CardFooter className="p-4 pt-0 flex justify-between items-center mt-auto">
+        <div className="flex-shrink-0">
+          {creatorInfo && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Avatar className="h-8 w-8 border-2 border-background shadow-md cursor-pointer">
+                  <AvatarImage 
+                    src={creatorInfo.avatarUrl || ""} 
+                    alt={`${creatorInfo.displayName || 'Creator'} avatar`} 
+                  />
+                  <AvatarFallback className="bg-muted text-muted-foreground text-xs font-semibold">
+                    {creatorInfo.displayName 
+                      ? creatorInfo.displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                      : '?'}
+                  </AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs p-3 bg-gradient-to-br from-background/95 to-background/90 border-2 backdrop-blur-sm shadow-xl">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600"></div>
+                    <div className="font-semibold text-sm text-foreground">
+                      {creatorInfo.displayName || 'Anonymous Creator'}
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground/80 border-l-2 border-muted/30 pl-2">
+                    Training Creator
+                  </div>
+                  {forkCount > 0 && (
+                    <div className="flex items-center justify-between p-2 bg-muted/20 rounded-md border border-muted/30">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 bg-blue-500/10 rounded-full">
+                          <Users className="h-3 w-3 text-blue-600" />
+                        </div>
+                        <span className="text-xs font-medium text-foreground">
+                          {forkCount} Fork{forkCount !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+        <div className="flex-shrink-0">
+          {isEnrollable ? (
+            <EnrollmentButton
+              trainingId={id}
+              className="w-auto"
+              isEnrolled={isEnrolled}
+            />
+          ) : (
+            <AddPublicTraining
+              trainingId={id}
+              trainingTitle={title}
+              className="w-auto"
+              isForked={isForked}
+            />
+          )}
+        </div>
       </CardFooter>
     </Card>
+    </TooltipProvider>
   );
 }

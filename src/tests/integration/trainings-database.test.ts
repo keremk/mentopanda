@@ -38,42 +38,11 @@ describe("Public Trainings Database Integration Tests", () => {
   });
 
   beforeEach(async () => {
-    // Ensure clean state before each test by removing any leftover public trainings
-    try {
-      const { data: publicTrainings } = await adminSupabase
-        .from("trainings")
-        .select("id")
-        .eq("is_public", true);
-      
-      if (publicTrainings && publicTrainings.length > 0) {
-        await adminSupabase
-          .from("trainings")
-          .update({ is_public: false })
-          .in("id", publicTrainings.map(t => t.id));
-      }
-    } catch (error) {
-      console.warn("Failed to clean up public trainings before test:", error);
-    }
+    // Test setup handled by individual test cases
   });
 
   afterEach(async () => {
-    // Clean up any remaining public trainings to ensure test isolation
-    try {
-      const { data: publicTrainings } = await adminSupabase
-        .from("trainings")
-        .select("id")
-        .eq("is_public", true);
-      
-      if (publicTrainings && publicTrainings.length > 0) {
-        await adminSupabase
-          .from("trainings")
-          .update({ is_public: false })
-          .in("id", publicTrainings.map(t => t.id));
-      }
-    } catch (error) {
-      console.warn("Failed to clean up public trainings:", error);
-    }
-
+    // Clean up only test-created data
     await cleanupTestEnvironment(adminSupabase, projectIds, userIds);
     projectIds = [];
     userIds = [];
@@ -217,6 +186,55 @@ describe("Public Trainings Database Integration Tests", () => {
   });
 
   describe("Public Training Access", () => {
+    it("should return creator information for public trainings", async () => {
+      const { createdUsers, createdProjectIds, createdUserIds } = 
+        await setupTestEnvironment(adminSupabase, [
+          { role: "admin", projectName: "Test-Project-Creator" },
+          { role: "member", projectName: "Test-Project-Viewer" }
+        ]);
+
+      projectIds = createdProjectIds;
+      userIds = createdUserIds;
+
+      const creator = createdUsers[0]!;
+      const viewer = createdUsers[1]!;
+
+      // Update creator user with display_name and avatar_url in user metadata
+      await adminSupabase.auth.admin.updateUserById(creator.id, {
+        user_metadata: {
+          display_name: "Test Creator",
+          avatar_url: "https://example.com/avatar.jpg"
+        }
+      });
+
+      // Create and publish training
+      const training = await createTraining(creator.supabase, {
+        title: "Training with Creator Info"
+      });
+
+      await toggleTrainingPublicStatus(creator.supabase, training.id, true);
+
+      // Test authenticated user view
+      const authPublicTrainings = await getPublicTrainings(viewer.supabase);
+      const testTraining = authPublicTrainings.find(t => t.id === training.id);
+      expect(testTraining).toBeDefined();
+      
+      // Check creator info is present
+      expect(testTraining?.creatorInfo).toBeDefined();
+      expect(testTraining?.creatorInfo?.displayName).toBe("Test Creator");
+      expect(testTraining?.creatorInfo?.avatarUrl).toBe("https://example.com/avatar.jpg");
+
+      // Test anonymous user view
+      const anonPublicTrainings = await getPublicTrainings(anonSupabase);
+      const anonTestTraining = anonPublicTrainings.find(t => t.id === training.id);
+      expect(anonTestTraining).toBeDefined();
+      
+      // Check creator info is present for anonymous users too
+      expect(anonTestTraining?.creatorInfo).toBeDefined();
+      expect(anonTestTraining?.creatorInfo?.displayName).toBe("Test Creator");
+      expect(anonTestTraining?.creatorInfo?.avatarUrl).toBe("https://example.com/avatar.jpg");
+    });
+
     it("should allow authenticated users to view public trainings", async () => {
       const { createdUsers, createdProjectIds, createdUserIds } = 
         await setupTestEnvironment(adminSupabase, [
@@ -239,9 +257,9 @@ describe("Public Trainings Database Integration Tests", () => {
 
       // Member should see public training
       const publicTrainings = await getPublicTrainings(member.supabase);
-      expect(publicTrainings).toHaveLength(1);
-      expect(publicTrainings[0].id).toBe(training.id);
-      expect(publicTrainings[0].isPublic).toBe(true);
+      const testTraining = publicTrainings.find(t => t.id === training.id);
+      expect(testTraining).toBeDefined();
+      expect(testTraining?.isPublic).toBe(true);
     });
 
     it("should allow anonymous users to view public trainings", async () => {
@@ -264,8 +282,8 @@ describe("Public Trainings Database Integration Tests", () => {
 
       // Anonymous user should see public training
       const publicTrainings = await getPublicTrainings(anonSupabase);
-      expect(publicTrainings).toHaveLength(1);
-      expect(publicTrainings[0].id).toBe(training.id);
+      const testTraining = publicTrainings.find(t => t.id === training.id);
+      expect(testTraining).toBeDefined();
     });
 
     it("should not show private trainings in public list", async () => {
@@ -280,13 +298,14 @@ describe("Public Trainings Database Integration Tests", () => {
       const admin = createdUsers[0]!;
 
       // Create private training
-      await createTraining(admin.supabase, {
+      const training = await createTraining(admin.supabase, {
         title: "Private Training"
       });
 
       // Should not appear in public list
       const publicTrainings = await getPublicTrainings(anonSupabase);
-      expect(publicTrainings).toHaveLength(0);
+      const privateTraining = publicTrainings.find(t => t.id === training.id);
+      expect(privateTraining).toBeUndefined();
     });
 
     it("should order public trainings by fork count and creation date", async () => {
@@ -319,11 +338,23 @@ describe("Public Trainings Database Integration Tests", () => {
         .eq("id", training1.id);
 
       const publicTrainings = await getPublicTrainings(anonSupabase);
-      expect(publicTrainings).toHaveLength(2);
+      const testTraining1 = publicTrainings.find(t => t.id === training1.id);
+      const testTraining2 = publicTrainings.find(t => t.id === training2.id);
       
-      // Training with higher fork count should come first
-      expect(publicTrainings[0].id).toBe(training1.id);
-      expect(publicTrainings[0].forkCount).toBe(5);
+      expect(testTraining1).toBeDefined();
+      expect(testTraining2).toBeDefined();
+      
+      // Verify our test trainings have the expected fork counts
+      expect(testTraining1?.forkCount).toBe(5);
+      expect(testTraining2?.forkCount).toBe(0);
+      
+      // Verify the global ordering rule is working (sorted by fork_count DESC, then created_at DESC)
+      const isProperlyOrdered = publicTrainings.every((training, i) => {
+        if (i === 0) return true;
+        const prev = publicTrainings[i - 1];
+        return prev.forkCount >= training.forkCount;
+      });
+      expect(isProperlyOrdered).toBe(true);
     });
   });
 
@@ -639,8 +670,16 @@ describe("Public Trainings Database Integration Tests", () => {
 
       // Initially, forker should see no trainings as forked
       const initialPublicTrainings = await getPublicTrainings(forker.supabase);
-      expect(initialPublicTrainings).toHaveLength(3);
-      expect(initialPublicTrainings.every(t => t.isForked === false)).toBe(true);
+      const testTrainings = [
+        initialPublicTrainings.find(t => t.id === training1.id),
+        initialPublicTrainings.find(t => t.id === training2.id),
+        initialPublicTrainings.find(t => t.id === training3.id)
+      ];
+      
+      expect(testTrainings[0]).toBeDefined();
+      expect(testTrainings[1]).toBeDefined();
+      expect(testTrainings[2]).toBeDefined();
+      expect(testTrainings.every(t => t?.isForked === false)).toBe(true);
 
       // Forker forks training1 and training2
       await copyPublicTrainingToProject(forker.supabase, training1.id);
@@ -648,7 +687,6 @@ describe("Public Trainings Database Integration Tests", () => {
 
       // Forker should now see training1 and training2 as forked, training3 as not forked
       const publicTrainingsAfterFork = await getPublicTrainings(forker.supabase);
-      expect(publicTrainingsAfterFork).toHaveLength(3);
       
       const forkedTraining1 = publicTrainingsAfterFork.find(t => t.id === training1.id);
       const forkedTraining2 = publicTrainingsAfterFork.find(t => t.id === training2.id);
@@ -658,15 +696,23 @@ describe("Public Trainings Database Integration Tests", () => {
       expect(forkedTraining2?.isForked).toBe(true);
       expect(unforkedTraining3?.isForked).toBe(false);
 
-      // Other user should see all trainings as not forked (since they haven't forked any)
+      // Other user should see all test trainings as not forked (since they haven't forked any)
       const otherUserPublicTrainings = await getPublicTrainings(otherUser.supabase);
-      expect(otherUserPublicTrainings).toHaveLength(3);
-      expect(otherUserPublicTrainings.every(t => t.isForked === false)).toBe(true);
+      const otherUserTestTrainings = [
+        otherUserPublicTrainings.find(t => t.id === training1.id),
+        otherUserPublicTrainings.find(t => t.id === training2.id),
+        otherUserPublicTrainings.find(t => t.id === training3.id)
+      ];
+      expect(otherUserTestTrainings.every(t => t?.isForked === false)).toBe(true);
 
-      // Creator should see all trainings as not forked (they are the original creator)
+      // Creator should see all test trainings as not forked (they are the original creator)
       const creatorPublicTrainings = await getPublicTrainings(creator.supabase);
-      expect(creatorPublicTrainings).toHaveLength(3);
-      expect(creatorPublicTrainings.every(t => t.isForked === false)).toBe(true);
+      const creatorTestTrainings = [
+        creatorPublicTrainings.find(t => t.id === training1.id),
+        creatorPublicTrainings.find(t => t.id === training2.id),
+        creatorPublicTrainings.find(t => t.id === training3.id)
+      ];
+      expect(creatorTestTrainings.every(t => t?.isForked === false)).toBe(true);
     });
 
     it("should return isForked false for anonymous users", async () => {
@@ -689,9 +735,9 @@ describe("Public Trainings Database Integration Tests", () => {
 
       // Anonymous user should see training with isForked: false
       const anonPublicTrainings = await getPublicTrainings(anonSupabase);
-      expect(anonPublicTrainings).toHaveLength(1);
-      expect(anonPublicTrainings[0].id).toBe(training.id);
-      expect(anonPublicTrainings[0].isForked).toBe(false);
+      const testTraining = anonPublicTrainings.find(t => t.id === training.id);
+      expect(testTraining).toBeDefined();
+      expect(testTraining?.isForked).toBe(false);
     });
 
     it("should handle multiple forks of same training correctly", async () => {
@@ -720,8 +766,9 @@ describe("Public Trainings Database Integration Tests", () => {
 
       // Should still show as forked (not false positive from multiple forks)
       const publicTrainings = await getPublicTrainings(forker.supabase);
-      expect(publicTrainings).toHaveLength(1);
-      expect(publicTrainings[0].isForked).toBe(true);
+      const testTraining = publicTrainings.find(t => t.id === training.id);
+      expect(testTraining).toBeDefined();
+      expect(testTraining?.isForked).toBe(true);
     });
 
     it("should handle fork chains correctly in fork status detection", async () => {

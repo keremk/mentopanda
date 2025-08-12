@@ -1,7 +1,7 @@
 import { ModuleProgress, ModuleSummary, Module, deleteModule } from "./modules";
 import { handleError } from "./utils";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { getCurrentUserInfo, getUserId, hasPermission } from "./user";
+import { getCurrentUserInfo, getCurrentUserInfoOrNull, getUserId, hasPermission } from "./user";
 import { getPathFromStorageUrl } from "@/lib/utils";
 import { parseSkillsFromDb, parseTraitsFromDb } from "@/types/character-attributes";
 import { copyStorageFileWithAdminPrivileges } from "./storage-utils";
@@ -37,6 +37,14 @@ export type TrainingWithProgress = TrainingSummary & {
 export type TrainingWithEnrollment = TrainingSummary & {
   isEnrolled: boolean;
   isForked?: boolean;
+};
+
+export type PublicTraining = Training & {
+  isForked: boolean;
+  creatorInfo?: {
+    avatarUrl: string | null;
+    displayName: string | null;
+  };
 };
 
 export type TrainingEdit = TrainingSummary & {
@@ -565,64 +573,14 @@ export async function getPublicTrainings(
   supabase: SupabaseClient,
   limit: number = 20,
   offset: number = 0
-): Promise<(Training & { isForked: boolean })[]> {
+): Promise<PublicTraining[]> {
   // Get current user info to check for forks in their project
-  let currentUserProjectId: number | null = null;
-  try {
-    const currentUser = await getCurrentUserInfo(supabase);
-    currentUserProjectId = currentUser.currentProject.id;
-  } catch {
-    // User not authenticated or no project - return simple query without fork check
-    const { data: trainings, error } = await supabase
-      .from("trainings")
-      .select(`
-        id,
-        title,
-        tagline,
-        description,
-        image_url,
-        project_id,
-        created_at,
-        updated_at,
-        is_public,
-        fork_count,
-        origin_id,
-        forked_at,
-        created_by,
-        preview_url
-      `)
-      .eq("is_public", true)
-      .order("fork_count", { ascending: false })
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+  const currentUser = await getCurrentUserInfoOrNull(supabase);
+  const currentUserProjectId = currentUser?.currentProject?.id || null;
 
-    if (error) handleError(error);
-
-    return (
-      trainings?.map((training) => ({
-        id: training.id,
-        title: training.title,
-        tagline: training.tagline,
-        description: training.description,
-        imageUrl: training.image_url,
-        projectId: training.project_id,
-        createdAt: new Date(training.created_at),
-        updatedAt: new Date(training.updated_at),
-        isPublic: training.is_public,
-        forkCount: training.fork_count,
-        originId: training.origin_id,
-        forkedAt: training.forked_at ? new Date(training.forked_at) : null,
-        createdBy: training.created_by,
-        previewUrl: training.preview_url,
-        modules: [],
-        isForked: false,
-      })) ?? []
-    );
-  }
-
-  // For authenticated users with a project, use efficient RPC function
+  // Use unified RPC function that handles both anonymous and authenticated users
   const { data: trainings, error } = await supabase.rpc(
-    'get_public_trainings_with_fork_status',
+    'get_public_trainings',
     {
       user_project_id: currentUserProjectId,
       limit_count: limit,
@@ -648,6 +606,8 @@ export async function getPublicTrainings(
       forked_at: string | null;
       created_by: string | null;
       preview_url: string | null;
+      creator_avatar_url: string | null;
+      creator_display_name: string | null;
       is_forked: boolean;
     }) => ({
       id: training.id,
@@ -666,6 +626,10 @@ export async function getPublicTrainings(
       previewUrl: training.preview_url,
       modules: [],
       isForked: training.is_forked,
+      creatorInfo: training.creator_avatar_url || training.creator_display_name ? {
+        avatarUrl: training.creator_avatar_url,
+        displayName: training.creator_display_name,
+      } : undefined,
     })) ?? []
   );
 }

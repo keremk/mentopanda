@@ -194,6 +194,17 @@ export async function checkOnboardingStatus(
   }
 }
 
+export async function getCurrentUserInfoOrNull(
+  supabase: SupabaseClient
+): Promise<User | null> {
+  try {
+    return await getCurrentUserInfo(supabase);
+  } catch {
+    // User not authenticated or no project
+    return null;
+  }
+}
+
 export async function hasPermission({
   supabase,
   permission,

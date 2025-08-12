@@ -33,6 +33,8 @@ export default async function PublicTrainingsPage() {
               isEnrollable={false}
               isForked={training.isForked}
               basePath="/trainings"
+              creatorInfo={training.creatorInfo} // Assuming creatorInfo is part of the training object
+              forkCount={training.forkCount}
             />
           ))}
         </div>

@@ -79,6 +79,8 @@ export default async function ExplorePage() {
                   isPublic={true}
                   isEnrollable={false}
                   isForked={training.isForked}
+                  creatorInfo={training.creatorInfo}
+                  forkCount={training.forkCount}
                 />
               ))}
             </div>
