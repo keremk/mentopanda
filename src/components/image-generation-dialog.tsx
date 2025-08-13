@@ -28,8 +28,6 @@ import Image from "next/image";
 import { toast } from "@/hooks/use-toast";
 import { useSupabaseUpload } from "@/hooks/use-supabase-upload";
 import type { FileWithPreview } from "@/hooks/use-supabase-upload";
-import { cn } from "@/lib/utils";
-import { useApiKey } from "@/hooks/use-api-key";
 import { logger } from "@/lib/logger";
 import { NoCreditsDialog } from "@/components/no-credits-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -91,33 +89,22 @@ export function ImageGenerationDialog({
     ENABLE_USE_CURRENT ? !!currentImageUrl : false
   );
   const [prompt, setPrompt] = useState("");
-  const [lastUsedStyle, setLastUsedStyle] = useState<string | null>(null);
-  const [lastUsedPrompt, setLastUsedPrompt] = useState<string | null>(null);
   const [generatedImageData, setGeneratedImageData] = useState<string | null>(
     null
   );
+  const [imageObjectUrl, setImageObjectUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showNoCreditsDialog, setShowNoCreditsDialog] = useState(false);
-  const [intermediateImageData, setIntermediateImageData] = useState<
-    string | null
-  >(null);
-  const [streamStatus, setStreamStatus] = useState<string>("");
-  const [currentStep, setCurrentStep] = useState<number>(0);
-  const [totalSteps, setTotalSteps] = useState<number>(2);
-  const [currentResponseId, setCurrentResponseId] = useState<string | null>(
-    null
-  );
   const supabase = useMemo(() => createClient(), []);
   const [isGenerating, setIsGenerating] = useState(false);
   const hasHandledUploadSuccess = useRef(false);
-  const { apiKey } = useApiKey();
   const isMobile = useIsMobile();
 
   // Parse aspect ratio string for the component prop
   const numericAspectRatio = useMemo(() => {
-    if (aspectRatio === "landscape") return 16 / 9;
+    if (aspectRatio === "landscape") return 4 / 3;  // Updated to match Replicate 4:3
     if (aspectRatio === "square") return 1;
-    return 16 / 9; // Default fallback if needed
+    return 4 / 3; // Default fallback if needed
   }, [aspectRatio]);
 
   const imageContainerClasses = useMemo(() => {
@@ -199,33 +186,27 @@ export function ImageGenerationDialog({
     uploadHook.setErrors,
   ]);
 
-  // Reset hasHandledUploadSuccess flag when isOpen becomes false
+  // Reset hasHandledUploadSuccess flag when isOpen becomes false and cleanup object URL
   useEffect(() => {
     if (!isOpen) {
       hasHandledUploadSuccess.current = false;
+      // Clean up object URL when dialog closes
+      if (imageObjectUrl) {
+        URL.revokeObjectURL(imageObjectUrl);
+        setImageObjectUrl(null);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, imageObjectUrl]);
 
-  // Function for editing existing images using streaming API
-  const editImage = useCallback(async () => {
-    const requestBody: Record<string, unknown> = {
+  // Simple function for generating images using Replicate API
+  const generateImageWithReplicate = useCallback(async () => {
+    const requestBody = {
       prompt: prompt.trim(),
       style: selectedStyle,
       aspectRatio,
-      apiKey,
     };
 
-    // Add multi-turn editing support when editing a generated image
-    if (currentResponseId) {
-      requestBody.previousResponseId = currentResponseId;
-    }
-    // Add existing image URL for first-time editing of stored images
-    else if (currentImageUrl && bucketName) {
-      requestBody.existingImageUrl = currentImageUrl;
-      requestBody.bucketName = bucketName;
-    }
-
-    const response = await fetch("/api/image", {
+    const response = await fetch("/api/replicate/image", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -234,178 +215,16 @@ export function ImageGenerationDialog({
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error("No reader available");
-    }
-
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
-
-      for (const line of lines) {
-        if (line.startsWith("data: ")) {
-          try {
-            const data = JSON.parse(line.slice(6));
-
-            // Log event type and metadata without base64 data
-            const logData = { ...data };
-            if (logData.imageData) {
-              logData.imageData = `[base64 data: ${logData.imageData.length} chars]`;
-            }
-            logger.debug(
-              `🔍 DEBUG: Received streaming event: ${data.type}`,
-              logData
-            );
-
-            switch (data.type) {
-              case "status":
-                logger.debug("📊 STATUS event:", {
-                  type: data.type,
-                  message: data.message,
-                  step: data.step,
-                  totalSteps: data.totalSteps,
-                });
-                setStreamStatus(data.message);
-                setCurrentStep(data.step);
-                setTotalSteps(data.totalSteps);
-                break;
-
-              case "intermediate":
-                logger.debug("🖼️ INTERMEDIATE event:", {
-                  type: data.type,
-                  message: data.message,
-                  step: data.step,
-                  imageDataLength: data.imageData?.length,
-                });
-                setIntermediateImageData(data.imageData);
-                setStreamStatus(data.message);
-                setCurrentStep(data.step);
-                break;
-
-              case "final":
-                logger.debug("✅ FINAL event received in dialog!");
-                logger.debug("✅ Image data length:", data.imageData?.length);
-                logger.debug("✅ About to call setGeneratedImageData");
-                setGeneratedImageData(data.imageData);
-                logger.debug(
-                  "✅ Called setGeneratedImageData - button should be enabled now"
-                );
-                setStreamStatus(data.message);
-                setCurrentStep(data.step);
-                // Store response ID for potential multi-turn editing
-                if (data.responseId) {
-                  setCurrentResponseId(data.responseId);
-                  logger.debug(
-                    "✅ Stored response ID for editing:",
-                    data.responseId
-                  );
-                }
-                // Auto-switch to "Use Current" mode after any generation (only if feature enabled)
-                if (ENABLE_USE_CURRENT && !useCurrentImage) {
-                  setUseCurrentImage(true);
-                  logger.debug("✅ Auto-switched to Use Current mode");
-                }
-                logger.info(
-                  `Image generation completed in ${data.elapsedTime?.toFixed(2)}s`
-                );
-                // Store last used values and clear prompt for next iteration
-                setLastUsedStyle(selectedStyle);
-                setLastUsedPrompt(prompt.trim());
-                setPrompt("");
-                break;
-
-              case "error":
-                logger.debug("❌ ERROR event:", {
-                  type: data.type,
-                  error: data.error,
-                });
-                logger.error("Streaming image generation error:", data.error);
-
-                // Check if it's a credit error
-                if (
-                  data.error &&
-                  (data.error.includes("No credits available") ||
-                    data.error.includes("402"))
-                ) {
-                  logger.info(
-                    "Credit error detected in streaming image generation, showing NoCreditsDialog"
-                  );
-                  setShowNoCreditsDialog(true);
-                }
-
-                setError(data.error);
-                break;
-
-              default:
-                logger.debug(`❓ UNKNOWN event type: ${data.type}`, logData);
-                break;
-            }
-          } catch (parseError) {
-            logger.error("Error parsing streaming data:", parseError);
-          }
-        }
-      }
-    }
-  }, [
-    prompt,
-    selectedStyle,
-    aspectRatio,
-    apiKey,
-    currentResponseId,
-    currentImageUrl,
-    bucketName,
-    useCurrentImage,
-  ]);
-
-  // Function for generating new images using background API
-  const generateImage = useCallback(async () => {
-    const requestBody: Record<string, unknown> = {
-      prompt: prompt.trim(),
-      style: selectedStyle,
-      aspectRatio,
-      apiKey,
-    };
-
-    // Add previous response ID for multi-turn iteration (not editing existing images)
-    if (currentResponseId) {
-      requestBody.previousResponseId = currentResponseId;
-      logger.debug(
-        "Using previous response ID for multi-turn iteration:",
-        currentResponseId
-      );
-    }
-
-    // Call the background API endpoint to initiate generation
-    const initiateResponse = await fetch("/api/image/background", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!initiateResponse.ok) {
-      const errorData = await initiateResponse.json().catch(() => ({}));
+      const errorData = await response.json().catch(() => ({}));
 
       // Check for credit-related errors
       if (
-        initiateResponse.status === 402 ||
+        response.status === 402 ||
         errorData.error?.includes("No credits available") ||
         errorData.error?.includes("402")
       ) {
         logger.info(
-          "Credit error detected in background image generation, showing NoCreditsDialog"
+          "Credit error detected in Replicate image generation, showing NoCreditsDialog"
         );
         setShowNoCreditsDialog(true);
         setError("No credits available");
@@ -413,128 +232,33 @@ export function ImageGenerationDialog({
       }
 
       throw new Error(
-        errorData.error || `HTTP error! status: ${initiateResponse.status}`
+        errorData.error || `HTTP error! status: ${response.status}`
       );
     }
 
-    const initiateData = await initiateResponse.json();
-    const responseId = initiateData.responseId;
+    const responseData = await response.json();
 
-    logger.debug("🚀 Background generation initiated:", {
-      responseId,
-      status: initiateData.status,
-      isIteration: !!currentResponseId,
-    });
+    if (responseData.success && responseData.imageData) {
+      logger.debug("✅ Replicate generation completed!");
+      logger.debug("✅ Image data length:", responseData.imageData?.length);
 
-    setStreamStatus(
-      currentResponseId
-        ? "Starting image iteration..."
-        : "Starting image generation..."
-    );
+      setGeneratedImageData(responseData.imageData);
+      
+      // Create object URL for better performance and to avoid source map warnings
+      const imageBlob = base64ToBlob(responseData.imageData);
+      const objectUrl = URL.createObjectURL(imageBlob);
+      setImageObjectUrl(objectUrl);
 
-    // Start polling for status with configurable interval (default 5 seconds)
-    const pollInterval = 5000; // 5 seconds
-    let pollCount = 0;
-    const maxPolls = 36; // 3 minutes maximum (36 * 5 seconds)
-
-    const pollForStatus = async (): Promise<void> => {
-      pollCount++;
-
-      if (pollCount > maxPolls) {
-        setError("Image generation timed out. Please try again.");
-        return;
-      }
-
-      try {
-        const statusResponse = await fetch("/api/image/background/status", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            responseId,
-            aspectRatio,
-            apiKey,
-          }),
-        });
-
-        if (!statusResponse.ok) {
-          const errorData = await statusResponse.json().catch(() => ({}));
-          throw new Error(
-            errorData.error || `Status check failed: ${statusResponse.status}`
-          );
-        }
-
-        const statusData = await statusResponse.json();
-
-        logger.debug("📊 Status poll result:", {
-          pollCount,
-          status: statusData.status,
-          hasImageData: !!statusData.imageData,
-        });
-
-        if (
-          statusData.status === "queued" ||
-          statusData.status === "in_progress"
-        ) {
-          // Update status message and continue polling (no step indicators for background generation)
-          setStreamStatus(
-            statusData.message ||
-              (currentResponseId
-                ? "Image iteration in progress..."
-                : "Image generation in progress...")
-          );
-
-          // Schedule next poll
-          setTimeout(pollForStatus, pollInterval);
-        } else if (statusData.status === "completed" && statusData.imageData) {
-          // Generation completed successfully
-          logger.debug("✅ Background generation completed!");
-          logger.debug("✅ Image data length:", statusData.imageData?.length);
-
-          setGeneratedImageData(statusData.imageData);
-          setStreamStatus(statusData.message || "Image generation complete");
-
-          // Store response ID for potential multi-turn editing
-          if (statusData.responseId) {
-            setCurrentResponseId(statusData.responseId);
-            logger.debug(
-              "✅ Stored response ID for editing:",
-              statusData.responseId
-            );
-          }
-
-          // Auto-switch to "Use Current" mode after any generation (only if feature enabled)
-          if (ENABLE_USE_CURRENT && !useCurrentImage) {
-            setUseCurrentImage(true);
-            logger.debug("✅ Auto-switched to Use Current mode");
-          }
-
-          logger.info(
-            `Background image ${currentResponseId ? "iteration" : "generation"} completed after ${pollCount} polls`
-          );
-
-          // Store last used values and clear prompt for next iteration
-          setLastUsedStyle(selectedStyle);
-          setLastUsedPrompt(prompt.trim());
-          setPrompt("");
-        } else {
-          // Generation failed or other terminal state
-          const errorMsg =
-            statusData.error ||
-            `Generation failed with status: ${statusData.status}`;
-          logger.error("❌ Background generation failed:", errorMsg);
-          setError(errorMsg);
-        }
-      } catch (pollError) {
-        logger.error("Error during status polling:", pollError);
-        setError("Failed to check generation status. Please try again.");
-      }
-    };
-
-    // Start polling
-    setTimeout(pollForStatus, pollInterval);
-  }, [prompt, selectedStyle, aspectRatio, apiKey, useCurrentImage, totalSteps]);
+      logger.info(
+        `Replicate image generation completed in ${responseData.elapsedTime?.toFixed(
+          2
+        )} seconds`
+      );
+      // Keep prompt for easy modification/regeneration
+    } else {
+      throw new Error("Invalid response from image generation service");
+    }
+  }, [prompt, selectedStyle, aspectRatio]);
 
   const handleGenerateClick = useCallback(async () => {
     if (!contextId || typeof contextId !== "string" || contextId.length === 0) {
@@ -545,33 +269,23 @@ export function ImageGenerationDialog({
     setIsGenerating(true);
     setError(null);
     setGeneratedImageData(null);
-    setIntermediateImageData(null);
-    setStreamStatus("");
-    setCurrentStep(0);
-    setTotalSteps(2);
+    
+    // Clean up previous object URL
+    if (imageObjectUrl) {
+      URL.revokeObjectURL(imageObjectUrl);
+      setImageObjectUrl(null);
+    }
 
     try {
-      if (useCurrentImage) {
-        // Use streaming API for image editing
-        logger.debug("🎨 Using streaming API for image editing");
-        await editImage();
-      } else {
-        // Use background API for new image generation
-        logger.debug("🆕 Using background API for new image generation");
-        await generateImage();
-      }
+      // Always use Replicate API for new image generation
+      await generateImageWithReplicate();
     } catch (err) {
       logger.error("Image generation error:", err);
       setError("An unexpected error occurred trying to generate the image.");
     } finally {
-      // Note: We don't set isGenerating to false for background generation
-      // since polling continues, but we do for streaming
-      if (useCurrentImage) {
-        setIsGenerating(false);
-      }
+      setIsGenerating(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contextId, contextType, useCurrentImage, editImage, generateImage]);
+  }, [contextId, contextType, generateImageWithReplicate, imageObjectUrl]);
 
   // Success handling effect for the internal upload hook
   useEffect(() => {
@@ -606,10 +320,6 @@ export function ImageGenerationDialog({
               }
             }
 
-            logger.debug(
-              "Completion Effect: Getting public URL for path:",
-              filePath
-            );
             const { data } = supabase.storage
               .from(bucketName)
               .getPublicUrl(decodeURIComponent(filePath));
@@ -664,14 +374,6 @@ export function ImageGenerationDialog({
     }
   }, [uploadHook.errors]);
 
-  // Reset isGenerating when polling completes (either success or error)
-  useEffect(() => {
-    if (isGenerating && (generatedImageData || error)) {
-      setIsGenerating(false);
-      setStreamStatus("");
-    }
-  }, [isGenerating, generatedImageData, error]);
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
@@ -690,35 +392,15 @@ export function ImageGenerationDialog({
   // Define isLoading state before return
   const isLoading = isGenerating || uploadHook.loading;
 
-  // Check if user has made changes for iteration
-  const hasStyleChanged = currentResponseId && selectedStyle !== lastUsedStyle;
-  const hasPromptChanged =
-    currentResponseId && prompt.trim() !== (lastUsedPrompt || "");
-  const hasChangesForIteration = hasStyleChanged || hasPromptChanged;
-
-  // Determine if a prompt is absolutely required
-  // For first generation: prompt required
-  // For iteration: changes in style or prompt required
-  const isPromptRequired = !currentResponseId && prompt.trim().length === 0;
+  // Determine if a prompt is required (always required for new generation)
+  const isPromptRequired = prompt.trim().length === 0;
 
   // Determine if the generate button should be disabled
-  const isGenerateDisabled =
-    isLoading ||
-    (currentResponseId ? !hasChangesForIteration : isPromptRequired) ||
-    hasCreditError;
-
-  // Debug button state
-  logger.debug("🔍 BUTTON DEBUG:", {
-    generatedImageData: !!generatedImageData,
-    generatedImageDataLength: generatedImageData?.length,
-    isLoading,
-    hasCreditError,
-    buttonDisabled: !generatedImageData || isLoading || hasCreditError,
-  });
+  const isGenerateDisabled = isLoading || isPromptRequired || hasCreditError;
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
         <DialogContent className="grid grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90vh]">
           <DialogHeader className="p-6 pb-4">
             <DialogTitle>{title}</DialogTitle>
@@ -733,77 +415,26 @@ export function ImageGenerationDialog({
                 ratio={numericAspectRatio}
                 className="bg-muted rounded-lg relative overflow-hidden"
               >
-                {/* Determine primary image source based on state and "Use Current" toggle */}
-                {(() => {
-                  let imageUrl: string | null = null;
-                  let imageAlt = "";
+                {/* Show generated image if available and no error */}
+                {imageObjectUrl && !(error && !isGenerating) && (
+                  <div className="image-inner w-full h-full relative">
+                    <Image
+                      src={imageObjectUrl}
+                      alt="Generated image preview"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover transition-opacity duration-300"
+                    />
+                  </div>
+                )}
 
-                  // During generation, show intermediate images regardless of toggle
-                  if (isGenerating && intermediateImageData) {
-                    imageUrl = `data:image/png;base64,${intermediateImageData}`;
-                    imageAlt = "Intermediate image preview";
-                  }
-                  // If "Use Current" feature is disabled, always show generated image when available
-                  else if (!ENABLE_USE_CURRENT && generatedImageData) {
-                    imageUrl = `data:image/png;base64,${generatedImageData}`;
-                    imageAlt = "Generated image preview";
-                  }
-                  // If "Use Current" is true, show the current image (generated or existing)
-                  else if (useCurrentImage) {
-                    if (generatedImageData) {
-                      imageUrl = `data:image/png;base64,${generatedImageData}`;
-                      imageAlt = "Generated image preview";
-                    } else if (currentImageUrl) {
-                      imageUrl = currentImageUrl;
-                      imageAlt = "Current image";
-                    }
-                  }
-                  // If "Use Current" is false, show blank (no image) to indicate new generation
-
-                  return (
-                    <>
-                      {/* Render the image if available AND no error occurred AFTER generation */}
-                      {imageUrl && !(error && !isGenerating) && (
-                        <div className="image-inner w-full h-full">
-                          <Image
-                            src={imageUrl}
-                            alt={imageAlt}
-                            fill
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            className={cn(
-                              "object-cover transition-opacity duration-300",
-                              isGenerating &&
-                                !generatedImageData &&
-                                "opacity-70" // Dim intermediate images
-                            )}
-                            priority={
-                              !isGenerating &&
-                              useCurrentImage &&
-                              !generatedImageData &&
-                              !intermediateImageData &&
-                              !!currentImageUrl &&
-                              imageUrl === currentImageUrl
-                            }
-                          />
-                          {/* Show step indicator overlay for intermediate images */}
-                          {intermediateImageData && !generatedImageData && (
-                            <div className="absolute top-2 left-2 z-10 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                              Step {currentStep} of {totalSteps}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Render Placeholder only if no image source AND no error occurred AFTER generation */}
-                      {!imageUrl && !(error && !isGenerating) && (
-                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                          <ImageIcon className="h-12 w-12 mb-2" />
-                          <span>Image will appear here</span>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
+                {/* Show placeholder when no image and no error */}
+                {!imageObjectUrl && !(error && !isGenerating) && (
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                    <ImageIcon className="h-12 w-12 mb-2" />
+                    <span>Image will appear here</span>
+                  </div>
+                )}
 
                 {/* Render Error State (if error occurred AFTER generation) */}
                 {error && !isGenerating && (
@@ -821,14 +452,7 @@ export function ImageGenerationDialog({
                 {isGenerating && (
                   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md">
                     <Loader2 className="h-8 w-8 animate-spin text-white mb-2" />
-                    <span className="text-white">
-                      {streamStatus || "Generating..."}
-                    </span>
-                    {currentStep > 0 && totalSteps > 0 && (
-                      <div className="text-white/80 text-sm mt-1">
-                        Step {currentStep} of {totalSteps}
-                      </div>
-                    )}
+                    <span className="text-white">Generating...</span>
                   </div>
                 )}
               </AspectRatio>
@@ -842,7 +466,7 @@ export function ImageGenerationDialog({
                   </Label>
                   <Select
                     value={selectedStyle}
-                    onValueChange={(value) => setSelectedStyle(value as string)}
+                    onValueChange={(value: string) => setSelectedStyle(value)}
                     disabled={isLoading || hasCreditError}
                   >
                     <SelectTrigger
@@ -900,9 +524,7 @@ export function ImageGenerationDialog({
                     placeholder={
                       hasCreditError
                         ? "No credits available - purchase credits to continue..."
-                        : isPromptRequired
-                          ? "Describe the image you want..."
-                          : "Prompt is optional but recommended. Describe changes or a new image..."
+                        : "Describe the image you want..."
                     }
                     className="flex-1 min-h-[80px] max-h-[120px] resize-none border-0 bg-transparent p-3 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-0 focus-visible:ring-offset-0"
                     onKeyDown={handleKeyDown}
@@ -928,13 +550,7 @@ export function ImageGenerationDialog({
               onClick={handleGenerateClick}
               disabled={isGenerateDisabled}
             >
-              {hasCreditError
-                ? "No Credits"
-                : useCurrentImage
-                  ? "Edit"
-                  : currentResponseId
-                    ? "Iterate"
-                    : "Generate"}
+              {hasCreditError ? "No Credits" : "Generate"}
             </Button>
             <Button
               variant="brand"
