@@ -56,6 +56,13 @@ function getTranscriptionPricing(): number {
   return pricingData.whisper.transcription_per_minute;
 }
 
+// Get Replicate image pricing (per image)
+function getReplicateImagePricing(modelName: string): number {
+  return (
+    pricingData.replicate_image_generation as Record<string, { per_image: number }>
+  )[modelName]?.per_image || 0;
+}
+
 // Get image token pricing (per 1M tokens)
 function getImageTokenPricing(
   modelName: string
@@ -199,4 +206,14 @@ export function calculateTranscriptionCreditCost(
   const costUSD = params.sessionLengthMinutes * costPerMinute;
 
   return calculateCreditsFromUSD(costUSD);
+}
+
+export function calculateReplicateImageCreditCost(
+  modelName: string,
+  imageCount: number
+): number {
+  const costPerImage = getReplicateImagePricing(modelName);
+  const totalCostUSD = imageCount * costPerImage;
+
+  return calculateCreditsFromUSD(totalCostUSD);
 }

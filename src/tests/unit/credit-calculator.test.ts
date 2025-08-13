@@ -4,6 +4,7 @@ import {
   calculateImageCreditCost,
   calculateConversationCreditCost,
   calculateTranscriptionCreditCost,
+  calculateReplicateImageCreditCost,
 } from "@/lib/usage/credit-calculator";
 import type {
   TokenUsage,
@@ -187,6 +188,48 @@ describe("Credit Calculator", () => {
       const credits = calculateTranscriptionCreditCost(params);
 
       expect(credits).toBe(0);
+    });
+  });
+
+  describe("calculateReplicateImageCreditCost", () => {
+    it("should calculate replicate image credits correctly", () => {
+      // Test with google/imagen-4-fast model (pricing: $0.02 per image)
+      // Calculation: $0.02 * 1.5 margin / $0.05 per credit = 0.6 credits
+      const result = calculateReplicateImageCreditCost("google/imagen-4-fast", 1);
+      expect(result).toBeCloseTo(0.6, 2);
+    });
+
+    it("should handle multiple images correctly", () => {
+      // Test with 5 images
+      // Calculation: $0.02 * 5 images * 1.5 margin / $0.05 per credit = 3.0 credits
+      const result = calculateReplicateImageCreditCost("google/imagen-4-fast", 5);
+      expect(result).toBeCloseTo(3.0, 2);
+    });
+
+    it("should handle zero images", () => {
+      const result = calculateReplicateImageCreditCost("google/imagen-4-fast", 0);
+      expect(result).toBe(0);
+    });
+
+    it("should handle unknown replicate models gracefully", () => {
+      // Unknown model should return 0 credits
+      const result = calculateReplicateImageCreditCost("unknown-model", 1);
+      expect(result).toBe(0);
+    });
+
+    it("should handle decimal image counts", () => {
+      // Test with fractional images (edge case)
+      const result = calculateReplicateImageCreditCost("google/imagen-4-fast", 0.5);
+      expect(result).toBeCloseTo(0.3, 2); // 0.5 * 0.6
+    });
+
+    it("should calculate credits with proper margin and conversion", () => {
+      // Verify the full calculation chain:
+      // Cost per image: $0.02
+      // With 1.5x margin: $0.03
+      // At $0.05 per credit: 0.6 credits per image
+      const result = calculateReplicateImageCreditCost("google/imagen-4-fast", 10);
+      expect(result).toBeCloseTo(6.0, 2); // 10 * 0.6
     });
   });
 });

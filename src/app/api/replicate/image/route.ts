@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { checkUserHasCredits } from "@/app/actions/credit-check";
+import { updateReplicateImageUsageAction } from "@/app/actions/usage-actions";
 import {
   IMAGE_CONFIG,
   type ImageAspectRatio,
@@ -42,6 +43,34 @@ function constructPrompt(prompt: string, style?: string): string {
   }
 
   return promptSegments.join(". ");
+}
+
+// Track Replicate image usage
+async function trackReplicateImageUsage(
+  modelName: string,
+  elapsedTimeInSeconds: number,
+  imageCount: number = 1
+) {
+  try {
+    // Fixed cost per image for Replicate - $0.02 per image
+    const costPerImage = 0.02;
+
+    logger.debug("📊 Tracking Replicate image usage:", {
+      modelName,
+      imageCount,
+      costPerImage,
+      elapsedTimeInSeconds,
+    });
+
+    await updateReplicateImageUsageAction({
+      modelName,
+      imageCount,
+      costPerImage,
+      elapsedTimeSeconds: elapsedTimeInSeconds,
+    });
+  } catch (error) {
+    logger.error("Failed to track Replicate image usage:", error);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -149,6 +178,9 @@ export async function POST(request: NextRequest) {
     const imageBase64 = Buffer.from(imageBuffer).toString("base64");
 
     logger.info(`Replicate image generation completed in ${elapsedTimeInSeconds.toFixed(2)}s`);
+
+    // Track usage for billing
+    await trackReplicateImageUsage("google/imagen-4-fast", elapsedTimeInSeconds, 1);
 
     // Return the image data in the same format as the OpenAI endpoint
     return Response.json({

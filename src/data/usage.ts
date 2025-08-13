@@ -9,6 +9,7 @@ import {
   calculateImageCreditCost,
   calculateConversationCreditCost,
   calculateTranscriptionCreditCost,
+  calculateReplicateImageCreditCost,
 } from "@/lib/usage/credit-calculator";
 import {
   deductCreditsWithPriority,
@@ -171,11 +172,36 @@ type TranscriptionModelUsage = BaseModelUsage & {
   agentChars: number;
 };
 
+// Replicate image usage - extends ImageModelUsage for compatibility
+type ReplicateImageModelUsage = BaseModelUsage & {
+  promptTokens: {
+    text: {
+      cached: number;
+      notCached: number;
+    };
+    image: {
+      cached: number;
+      notCached: number;
+    };
+  };
+  outputTokens: number;
+  totalTokens: number;
+  meanTimeElapsed: number; // Average elapsed time across all generations
+  maxTimeElapsed: number; // Maximum elapsed time for any single generation
+  quality: string; // Will be "replicate" for replicate images
+  size: string; // Will be "replicate" for replicate images
+  // Replicate-specific fields
+  imageCount: number;
+  costPerImage: number;
+  totalCost: number;
+};
+
 // Category types that map model names to their usage
 export type AssessmentUsage = Record<string, AssessmentModelUsage>;
 export type PromptHelperUsage = Record<string, PromptHelperModelUsage>;
 // Image usage now maps model -> quality-size compound key -> usage data
-export type ImageUsage = Record<string, Record<string, ImageModelUsage>>;
+// For Replicate, we'll use "replicate-replicate" as the key
+export type ImageUsage = Record<string, Record<string, ImageModelUsage | ReplicateImageModelUsage>>;
 export type ConversationUsage = Record<string, ConversationModelUsage>;
 export type TranscriptionUsage = Record<string, TranscriptionModelUsage>;
 
@@ -284,6 +310,13 @@ export type TranscriptionUpdate = {
   totalSessionLength?: number;
   userChars?: number;
   agentChars?: number;
+};
+
+export type ReplicateImageUpdate = {
+  modelName: string;
+  imageCount?: number; // Usually 1 per call
+  costPerImage?: number; // Fixed cost per image
+  elapsedTimeSeconds?: number;
 };
 
 // Get current usage period for the authenticated user
@@ -771,6 +804,105 @@ export async function updateTranscriptionUsage(
   });
 }
 
+// Update Replicate image usage
+export async function updateReplicateImageUsage(
+  supabase: SupabaseClient,
+  update: ReplicateImageUpdate
+): Promise<Usage> {
+  const current = await getCurrentUsage(supabase);
+  const currentImages = current?.images || {};
+
+  // Get existing model usage or create empty object
+  const modelUsage = currentImages[update.modelName] || {};
+  const replicateKey = "replicate-replicate"; // Special key for Replicate images
+
+  // Get existing usage for this Replicate model
+  const existing = modelUsage[replicateKey] as ReplicateImageModelUsage | undefined || {
+    promptTokens: {
+      text: { cached: 0, notCached: 0 },
+      image: { cached: 0, notCached: 0 },
+    },
+    outputTokens: 0,
+    totalTokens: 0,
+    requestCount: 0,
+    lastUpdated: new Date().toISOString(),
+    meanTimeElapsed: 0,
+    maxTimeElapsed: 0,
+    quality: "replicate",
+    size: "replicate",
+    imageCount: 0,
+    costPerImage: update.costPerImage || 0,
+    totalCost: 0,
+  };
+
+  const newImageCount = update.imageCount || 1;
+  const newElapsedTime = update.elapsedTimeSeconds || 0;
+  const newRequestCount = existing.requestCount + 1;
+  const costPerImage = update.costPerImage || existing.costPerImage;
+  
+  const newMeanTimeElapsed =
+    newElapsedTime > 0
+      ? (existing.meanTimeElapsed * existing.requestCount + newElapsedTime) /
+        newRequestCount
+      : existing.meanTimeElapsed;
+  const newMaxTimeElapsed = Math.max(existing.maxTimeElapsed, newElapsedTime);
+
+  const updatedImages: ImageUsage = {
+    ...currentImages,
+    [update.modelName]: {
+      ...modelUsage,
+      [replicateKey]: {
+        promptTokens: {
+          text: { cached: 0, notCached: 0 },
+          image: { cached: 0, notCached: 0 },
+        },
+        outputTokens: 0,
+        totalTokens: 0,
+        requestCount: newRequestCount,
+        lastUpdated: new Date().toISOString(),
+        meanTimeElapsed: newMeanTimeElapsed,
+        maxTimeElapsed: newMaxTimeElapsed,
+        quality: "replicate",
+        size: "replicate",
+        imageCount: existing.imageCount + newImageCount,
+        costPerImage: costPerImage,
+        totalCost: existing.totalCost + (newImageCount * costPerImage),
+      } as ReplicateImageModelUsage,
+    },
+  };
+
+  // Calculate credit cost and deduct credits
+  const creditCost = calculateReplicateImageCreditCost(
+    update.modelName,
+    newImageCount
+  );
+
+  if (!current) {
+    throw new Error("No current usage record found");
+  }
+
+  const deductionResult = deductCreditsWithPriority(
+    current.subscriptionCredits,
+    current.usedSubscriptionCredits,
+    current.purchasedCredits,
+    current.usedPurchasedCredits,
+    creditCost
+  );
+
+  logger.info(
+    `[CREDITS] Replicate Image (${update.modelName}): ${creditCost.toFixed(3)} credits for ${newImageCount} image(s) (${deductionResult.deductedFromSubscription.toFixed(3)} subscription + ${deductionResult.deductedFromPurchased.toFixed(3)} purchased)`
+  );
+
+  return updateUsageRecord(supabase, {
+    images: updatedImages,
+    used_subscription_credits:
+      current.usedSubscriptionCredits +
+      deductionResult.deductedFromSubscription,
+    used_purchased_credits:
+      current.usedPurchasedCredits + deductionResult.deductedFromPurchased,
+  });
+}
+
 // Get usage history for a user
 export async function getUserUsageHistory(
   supabase: SupabaseClient,
@@ -890,12 +1022,15 @@ export function getTotalImageUsageForModel(
     totalRequests += usage.requestCount;
     totalElapsedTime += usage.meanTimeElapsed * usage.requestCount; // Total elapsed time
 
-    combinations.push({
-      key,
-      quality: usage.quality,
-      size: usage.size,
-      usage,
-    });
+    // Only include regular ImageModelUsage (not Replicate) in this function
+    if (usage.quality !== "replicate") {
+      combinations.push({
+        key,
+        quality: usage.quality as ImageQuality,
+        size: usage.size as ImageSize,
+        usage: usage as ImageModelUsage,
+      });
+    }
   });
 
   return {

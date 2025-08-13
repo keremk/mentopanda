@@ -396,5 +396,11 @@
     },
     { "model": "davinci-002", "input": 2.0, "output": 2.0 },
     { "model": "babbage-002", "input": 0.4, "output": 0.4 }
-  ]
+  ],
+
+  "replicate_image_generation": {
+    "google/imagen-4-fast": {
+      "per_image": 0.02
+    }
+  }
 }
