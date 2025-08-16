@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { PostHogProvider } from "./posthog";
 import { Banner } from "./banner";
+import { RootProvider } from 'fumadocs-ui/provider';
 
 // Import memory monitoring in development
 if (process.env.NODE_ENV === "development") {
@@ -40,6 +41,11 @@ export default function RootLayout({
           "min-h-screen bg-background font-sans antialiased",
           fontSans.variable
         )}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+        }}
       >
         <PostHogProvider>
           <ThemeProvider
@@ -48,8 +54,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
-            <Banner />
+            <RootProvider>
+              {children}
+              <Banner />
+            </RootProvider>
           </ThemeProvider>
           <Toaster />
         </PostHogProvider>

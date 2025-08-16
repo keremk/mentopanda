@@ -1,3 +1,5 @@
+import { createMDX } from 'fumadocs-mdx/next';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -74,6 +76,13 @@ const nextConfig = {
       },
     ];
   },
+  turbopack: {
+    resolveAlias: {
+      'next-mdx-import-source-file': './src/mdx-components.tsx'
+    }
+  }
 };
 
-export default nextConfig;
+const withMDX = createMDX();
+
+export default withMDX(nextConfig);
