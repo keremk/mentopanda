@@ -21,6 +21,8 @@ export default async function ExplorePage() {
     hasTrainingManagePermission ? getPublicTrainingsAction() : Promise.resolve([]),
   ]);
 
+  const defaultTab = trainings.length === 0 ? "public-trainings" : "my-trainings";
+
   return (
     <div className="py-2">
       {hasTrainingManagePermission && (
@@ -30,7 +32,7 @@ export default async function ExplorePage() {
       )}
 
 {hasTrainingManagePermission ? (
-        <Tabs defaultValue="my-trainings" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <div className="flex justify-center mb-6">
             <TabsList className="grid w-auto grid-cols-2 bg-secondary/30 p-1 rounded-lg border border-border/30">
               <TabsTrigger
