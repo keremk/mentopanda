@@ -59,7 +59,7 @@ export function TrainingCard({
     <TooltipProvider>
       <Card className="w-full min-h-[400px] flex flex-col hover:shadow-md hover:border-primary/50 transition-all duration-200">
       {/* Clickable area for navigation */}
-      <div className="flex-grow cursor-pointer" onClick={navigateToDetails}>
+      <div className="grow cursor-pointer" onClick={navigateToDetails}>
         <CardHeader className="p-0 relative h-[200px] p0 space-y-0">
           <Image
             src={imageUrl || fallbackImage}
@@ -91,7 +91,7 @@ export function TrainingCard({
 
       {/* Separate footer for enrollment button */}
       <CardFooter className="p-4 pt-0 flex justify-between items-center mt-auto">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           {creatorInfo && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -107,10 +107,10 @@ export function TrainingCard({
                   </AvatarFallback>
                 </Avatar>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs p-3 bg-gradient-to-br from-background/95 to-background/90 border-2 backdrop-blur-sm shadow-xl">
+              <TooltipContent side="top" className="max-w-xs p-3 bg-linear-to-br from-background/95 to-background/90 border-2 backdrop-blur-xs shadow-xl">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600"></div>
+                    <div className="w-2 h-2 rounded-full bg-linear-to-r from-blue-500 to-purple-600"></div>
                     <div className="font-semibold text-sm text-foreground">
                       {creatorInfo.displayName || 'Anonymous Creator'}
                     </div>
@@ -135,7 +135,7 @@ export function TrainingCard({
             </Tooltip>
           )}
         </div>
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           {isEnrollable ? (
             <EnrollmentButton
               trainingId={id}

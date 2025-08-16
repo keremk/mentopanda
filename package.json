@@ -93,6 +93,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
+    "@tailwindcss/postcss": "^4.1.12",
     "@testing-library/react": "^16.3.0",
     "@types/node": "^22.17.1",
     "@types/pg": "^8.15.5",
@@ -103,7 +104,7 @@
     "eslint-config-next": "15.4.6",
     "jsdom": "^26.1.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^4.1.12",
     "tsx": "^4.20.4",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.39.1",

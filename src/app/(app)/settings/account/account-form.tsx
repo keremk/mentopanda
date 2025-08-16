@@ -208,7 +208,7 @@ export function AccountForm({ user, usage }: AccountFormProps) {
   return (
     <div className="space-y-6 max-w-2xl px-2 py-6">
       <div className="flex justify-center">
-        <div className="w-48 flex-shrink-0 flex flex-col items-center px-4">
+        <div className="w-48 shrink-0 flex flex-col items-center px-4">
           <ImageEdit
             initialImageUrl={avatarUrl}
             bucketName="avatars"
@@ -240,7 +240,7 @@ export function AccountForm({ user, usage }: AccountFormProps) {
               name="displayName"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="flex-1 bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
+              className="flex-1 bg-secondary/30 rounded-2xl border-border/30 shadow-xs text-base"
             />
             <Button
               type="button"
@@ -264,7 +264,7 @@ export function AccountForm({ user, usage }: AccountFormProps) {
               type="email"
               defaultValue={user.email ?? "No email found"}
               disabled
-              className="flex-1 bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
+              className="flex-1 bg-secondary/30 rounded-2xl border-border/30 shadow-xs text-base"
             />
             <Dialog
               open={isPasswordDialogOpen}
@@ -359,7 +359,7 @@ export function AccountForm({ user, usage }: AccountFormProps) {
                   </div>
                   {passwordUpdateError && !passwordFieldErrors && (
                     <div className="mt-2 flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-2 rounded-md">
-                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <AlertCircle className="h-4 w-4 shrink-0" />
                       <span>{passwordUpdateError}</span>
                     </div>
                   )}
@@ -384,7 +384,7 @@ export function AccountForm({ user, usage }: AccountFormProps) {
             <Input
               value={user.currentProject?.name || "No project selected"}
               disabled
-              className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
+              className="bg-secondary/30 rounded-2xl border-border/30 shadow-xs text-base"
             />
             <Button
               type="button"
@@ -408,7 +408,7 @@ export function AccountForm({ user, usage }: AccountFormProps) {
             <Input
               value={formatPricingPlan(user.pricingPlan)}
               disabled
-              className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm text-base"
+              className="bg-secondary/30 rounded-2xl border-border/30 shadow-xs text-base"
             />
             <TooltipProvider delayDuration={100}>
               <Tooltip>
@@ -435,7 +435,7 @@ export function AccountForm({ user, usage }: AccountFormProps) {
         <div className="flex flex-col gap-y-2">
           <Label className="text-muted-foreground">Credit Usage</Label>
           <div className="grid grid-cols-[1fr_auto] gap-x-4 items-center">
-            <div className="bg-secondary/30 rounded-2xl border-border/30 shadow-sm p-4 space-y-3">
+            <div className="bg-secondary/30 rounded-2xl border-border/30 shadow-xs p-4 space-y-3">
               {usage ? (
                 (() => {
                   const totalUsed = calculateTotalUsedCredits(usage);

@@ -102,7 +102,7 @@ export function InvitationNotifications({ invitations }: InvitationNotifications
           {invitations.map((invitation) => (
             <div
               key={invitation.id}
-              className="flex items-center justify-between bg-background rounded-lg p-4 shadow-sm"
+              className="flex items-center justify-between bg-background rounded-lg p-4 shadow-xs"
             >
               <div className="flex-1">
                 <p className="text-sm">

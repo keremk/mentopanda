@@ -70,7 +70,7 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
           className="object-cover"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-background/50 to-background/90" />
+        <div className="absolute inset-0 bg-linear-to-t from-transparent via-background/50 to-background/90" />
       </div>
 
       <CardHeader className="relative pt-6">
@@ -113,7 +113,7 @@ export function ProfileSetup({ user, data, updateData }: ProfileSetupProps) {
                 value={data.displayName}
                 onChange={handleDisplayNameChange}
                 placeholder="Enter your name"
-                className="bg-secondary/30 rounded-lg border-border/30 shadow-sm focus:border-brand focus:ring-brand/20"
+                className="bg-secondary/30 rounded-lg border-border/30 shadow-xs focus:border-brand focus:ring-brand/20"
               />
               <p className="text-sm text-muted-foreground">
                 This is how you&apos;ll appear to others in the platform

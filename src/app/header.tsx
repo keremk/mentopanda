@@ -59,7 +59,7 @@ export function Header() {
         <NavigationMenuLink asChild>
           <a
             className={cn(
-              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer",
+              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-hidden transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer",
               className
             )}
             onClick={onClick}
@@ -117,9 +117,9 @@ export function Header() {
   );
 
   return (
-    <header className="fixed top-0 w-full bg-background/80 backdrop-blur-sm z-50 border-b">
+    <header className="fixed top-0 w-full bg-background/80 backdrop-blur-xs z-50 border-b">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
+        <Link href="/" className="flex items-center space-x-2 shrink-0">
           <Image
             src="/panda-light.svg"
             alt="MentoPanda Logo"
@@ -179,7 +179,7 @@ export function Header() {
                 <NavigationMenuLink asChild>
                   <Link
                     href="/trainings"
-                    className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50"
+                    className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-hidden disabled:pointer-events-none disabled:opacity-50"
                   >
                     Trainings
                   </Link>
@@ -187,7 +187,7 @@ export function Header() {
               </NavigationMenuItem>
               <NavigationMenuItem>
                 <NavigationMenuLink
-                  className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
+                  className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-hidden disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
                   onClick={() => scrollToSection("pricing")}
                 >
                   Pricing
@@ -197,7 +197,7 @@ export function Header() {
                 <NavigationMenuLink asChild>
                   <Link
                     href="/docs"
-                    className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50"
+                    className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-hidden disabled:pointer-events-none disabled:opacity-50"
                   >
                     Docs
                   </Link>
@@ -207,7 +207,7 @@ export function Header() {
                 <NavigationMenuLink asChild>
                   <Link
                     href="/blog"
-                    className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50"
+                    className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-hidden disabled:pointer-events-none disabled:opacity-50"
                   >
                     Blog
                   </Link>

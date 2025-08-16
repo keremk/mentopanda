@@ -14,7 +14,7 @@ import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 
 function SidebarSkeleton() {
   return (
-    <div className="flex h-full w-[14rem] flex-col bg-sidebar p-2 gap-2">
+    <div className="flex h-full w-56 flex-col bg-sidebar p-2 gap-2">
       <Skeleton className="h-12 w-full" />
       <Skeleton className="flex-1 w-full" />
       <Skeleton className="h-12 w-full" />

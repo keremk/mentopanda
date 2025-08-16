@@ -65,7 +65,7 @@ I can help you enhance the glow effect for the image container in dark mode to m
 
 .image-container-enhanced::after {
   content: "";
-  @apply absolute inset-0 rounded-2xl p-[1px] overflow-hidden;
+  @apply absolute inset-0 rounded-2xl p-px overflow-hidden;
   background: linear-gradient(to right, rgba(20, 184, 166, 0.4), rgba(59, 130, 246, 0.4));
   z-index: 0;
 }

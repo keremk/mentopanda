@@ -114,7 +114,7 @@ export function ModuleList({
               key={module.id}
               className={`flex items-center justify-center gap-3 rounded-lg py-3 cursor-pointer transition-all duration-200 ${
                 module.id === selectedModuleId
-                  ? "bg-secondary/90 shadow-sm border border-border/30"
+                  ? "bg-secondary/90 shadow-xs border border-border/30"
                   : "hover:bg-secondary/50 border border-transparent"
               }`}
               onClick={() => onSelectModule(module.id)}

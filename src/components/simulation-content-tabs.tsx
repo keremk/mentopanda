@@ -80,7 +80,7 @@ function MobileContentTabs({
   transcriptEntries,
 }: SimulationContentTabsProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="fixed bottom-0 left-0 right-0 p-4 border-t bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
       <div className="flex justify-around gap-4">
         <Sheet>
           <SheetTrigger asChild>

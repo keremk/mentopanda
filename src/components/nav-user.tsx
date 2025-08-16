@@ -75,7 +75,7 @@ export function NavUser({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatarUrl} alt={user.name} />
@@ -90,7 +90,7 @@ export function NavUser({
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             side={isMobile ? "bottom" : isCollapsed ? "right" : "top"}
             align={isCollapsed ? "end" : "start"}
             sideOffset={isCollapsed ? 4 : 8}
@@ -136,7 +136,7 @@ export function NavUser({
                   {getCurrentThemeLabel()}
                 </div>
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="ml-1 flex h-4 w-4 items-center justify-center rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                  <DropdownMenuTrigger className="ml-1 flex h-4 w-4 items-center justify-center rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2">
                     <ChevronRight className="h-4 w-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent

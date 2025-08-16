@@ -66,7 +66,7 @@ export default function InviteEmail({
       >
         <Body className="bg-white font-sans">
           <Container className="mx-auto py-8 px-4 max-w-lg">
-            <Section className="bg-white rounded-lg border border-gray-200 p-8 shadow-sm text-center">
+            <Section className="bg-white rounded-lg border border-gray-200 p-8 shadow-xs text-center">
               <Img
                 src="https://www.mentopanda.com/panda-light.png"
                 width="80"

@@ -113,7 +113,7 @@ export function CountdownBar({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 bg-background border border-brand/20 rounded-md px-3 py-1 shadow-sm w-fit h-10",
+        "flex items-center gap-2 bg-background border border-brand/20 rounded-md px-3 py-1 shadow-xs w-fit h-10",
         className
       )}
     >

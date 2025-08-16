@@ -242,7 +242,7 @@ export function SpeakingBubble({
 
   return (
     <div className="relative w-80 h-80 flex items-center justify-center">
-      <div className="relative w-72 h-72 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 shadow-2xl overflow-hidden">
+      <div className="relative w-72 h-72 rounded-full bg-linear-to-br from-blue-400 via-purple-500 to-pink-500 shadow-2xl overflow-hidden">
         <div className="absolute inset-0 rounded-full overflow-hidden">
           <div
             className="absolute inset-0 opacity-60"
@@ -311,7 +311,7 @@ export function SpeakingBubble({
             );
           })}
           <div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/40 backdrop-blur-sm"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/40 backdrop-blur-xs"
             style={{
               width: `${20 + audioLevel * 40}px`,
               height: `${20 + audioLevel * 40}px`,
@@ -340,7 +340,7 @@ export function SpeakingBubble({
         </div>
       </div>
       <div
-        className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 opacity-20 blur-xl -z-10"
+        className="absolute inset-0 rounded-full bg-linear-to-r from-blue-400 via-purple-500 to-pink-500 opacity-20 blur-xl -z-10"
         style={{
           transform: `scale(${1.1 + audioLevel * 0.2})`,
         }}

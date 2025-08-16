@@ -25,7 +25,7 @@ const markdownComponents: Components = {
     </h4>
   ),
   p: ({ children }) => (
-    <p className="leading-7 [&:not(:first-child)]:mt-6">{children}</p>
+    <p className="leading-7 not-first:mt-6">{children}</p>
   ),
   ul: ({ children }) => (
     <ul className="my-6 ml-6 list-disc [&>li]:mt-2">{children}</ul>

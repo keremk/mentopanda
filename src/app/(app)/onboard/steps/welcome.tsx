@@ -14,7 +14,7 @@ export function Welcome() {
           className="object-cover"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-background/50 to-background/90" />
+        <div className="absolute inset-0 bg-linear-to-t from-transparent via-background/50 to-background/90" />
       </div>
 
       <CardHeader className="relative pt-6">
@@ -41,19 +41,19 @@ export function Welcome() {
 
           <ul className="space-y-2 ml-2">
             <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-brand flex-shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-brand shrink-0" />
               <span className="text-sm">
                 Set up your profile with a name and avatar
               </span>
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-brand flex-shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-brand shrink-0" />
               <span className="text-sm">
                 Set up your basic project information
               </span>
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-brand flex-shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-brand shrink-0" />
               <span className="text-sm">
                 Set up your first project
               </span>

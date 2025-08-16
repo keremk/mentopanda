@@ -132,7 +132,7 @@ function DesktopLayout({
   onTraitsChange,
 }: LayoutProps) {
   return (
-    <div className="grid lg:grid-cols-[max-content,1fr] grid-cols-1 gap-4 lg:gap-4 h-[calc(100vh-4rem)] grid-rows-[auto,1fr] lg:grid-rows-1 p-4">
+    <div className="grid lg:grid-cols-[max-content_1fr] grid-cols-1 gap-4 lg:gap-4 h-[calc(100vh-4rem)] grid-rows-[auto_1fr] lg:grid-rows-1 p-4">
       <div className="mx-auto lg:mx-0">
         <Card className="w-[448px] max-w-full">
           <CardHeader className="pb-0">
@@ -282,7 +282,7 @@ function MobileLayout({
 }: LayoutProps) {
   return (
     <div className="flex flex-col h-screen p-4">
-      <div className="flex-grow flex flex-col items-center space-y-4">
+      <div className="grow flex flex-col items-center space-y-4">
         <div className="flex items-center justify-between w-full">
           <CountdownBar
             initialMinutes={sessionDurationMinutes}

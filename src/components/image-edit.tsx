@@ -190,7 +190,7 @@ export function ImageEdit({
           <AspectRatio
             ratio={numericAspectRatio}
             className={cn(
-              "bg-muted rounded-lg overflow-hidden border border-border/20 shadow-sm"
+              "bg-muted rounded-lg overflow-hidden border border-border/20 shadow-xs"
               // Removed rounded-full logic here, handled by Avatar
             )}
           >
@@ -211,7 +211,7 @@ export function ImageEdit({
           </AspectRatio>
         ) : (
           // Circular Shape using Avatar
-          <Avatar className="h-full w-full border border-border/20 shadow-sm">
+          <Avatar className="h-full w-full border border-border/20 shadow-xs">
             <AvatarImage
               src={currentImageUrl ?? undefined} // Pass undefined if null
               alt="Editable image"

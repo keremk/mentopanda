@@ -15,7 +15,7 @@ export default async function TeamLayout({
   const canManageMembers = user.permissions.includes("project.member.manage");
 
   return (
-    <div className="flex flex-col h-[calc(100vh-theme(spacing.16))]">
+    <div className="flex flex-col h-[calc(100vh-(--spacing(16)))]">
       <div className="flex h-full overflow-hidden border-t">
         <div className="h-full">
           <MemberList

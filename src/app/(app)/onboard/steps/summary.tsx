@@ -21,7 +21,7 @@ export function Summary({ data }: SummaryProps) {
           className="object-cover"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-background/50 to-background/90" />
+        <div className="absolute inset-0 bg-linear-to-t from-transparent via-background/50 to-background/90" />
       </div>
 
       <CardHeader className="relative pt-6">
@@ -32,12 +32,12 @@ export function Summary({ data }: SummaryProps) {
       </CardHeader>
 
       <div className="px-6 pb-8">
-        <div className="bg-card/30 rounded-xl border border-border/40 shadow-sm overflow-hidden">
+        <div className="bg-card/30 rounded-xl border border-border/40 shadow-xs overflow-hidden">
           <div className="divide-y divide-border/40">
             {/* Profile Section */}
             <div className="px-6 py-4 flex items-center gap-4">
-              <div className="flex-shrink-0">
-                <Avatar className="h-14 w-14 border-2 border-brand/20 shadow-sm">
+              <div className="shrink-0">
+                <Avatar className="h-14 w-14 border-2 border-brand/20 shadow-xs">
                   <AvatarImage src={data.avatarUrl} alt={data.displayName} />
                   <AvatarFallback className="bg-brand/10 text-brand">
                     {getInitials(data.displayName)}
@@ -70,7 +70,7 @@ export function Summary({ data }: SummaryProps) {
         </div>
 
         <div className="mt-6 bg-brand/10 rounded-lg p-4 flex items-center gap-3 border border-brand/30">
-          <CheckCircle2 className="h-5 w-5 text-brand flex-shrink-0" />
+          <CheckCircle2 className="h-5 w-5 text-brand shrink-0" />
           <p className="text-sm">
             Click{" "}
             <span className="font-medium text-brand">

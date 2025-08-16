@@ -25,7 +25,7 @@ export function MemberRoleSelector({
 
   return (
     <div className="flex items-center gap-4">
-      <div className="flex-grow">
+      <div className="grow">
         <label className="text-sm font-medium leading-none mb-2 block">
           Project Membership Level
         </label>

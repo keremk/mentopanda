@@ -265,12 +265,12 @@ function EditContainerContent() {
                 variant="ghost-danger"
                 disabled={isSaving}
                 size="default"
-                className="h-9 shadow-sm hover:shadow-md transition-all"
+                className="h-9 shadow-xs hover:shadow-md transition-all"
               >
                 Delete
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="border-border/50 bg-background/95 backdrop-blur-sm">
+            <AlertDialogContent className="border-border/50 bg-background/95 backdrop-blur-xs">
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -279,12 +279,12 @@ function EditContainerContent() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="border-border/50 bg-secondary/30 hover:bg-secondary/50 shadow-sm">
+                <AlertDialogCancel className="border-border/50 bg-secondary/30 hover:bg-secondary/50 shadow-xs">
                   Cancel
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleDeleteTraining}
-                  className="bg-danger text-danger-foreground hover:bg-danger/90 shadow-sm"
+                  className="bg-danger text-danger-foreground hover:bg-danger/90 shadow-xs"
                 >
                   Delete
                 </AlertDialogAction>
@@ -358,13 +358,13 @@ function EditContainerContent() {
               <TabsList className="grid w-full grid-cols-2 bg-secondary/30 p-1 rounded-lg border border-border/30">
                 <TabsTrigger
                   value="details"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-xs"
                 >
                   Training Details
                 </TabsTrigger>
                 <TabsTrigger
                   value="modules"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-xs"
                 >
                   Modules
                 </TabsTrigger>
@@ -384,7 +384,7 @@ function EditContainerContent() {
           {/* AI Pane */}
           <div
             className={cn(
-              "transition-all duration-300 overflow-hidden flex-shrink-0",
+              "transition-all duration-300 overflow-hidden shrink-0",
               isAIPaneOpen ? "w-[435px]" : "w-0"
             )}
           >

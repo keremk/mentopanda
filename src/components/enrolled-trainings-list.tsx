@@ -36,7 +36,7 @@ export function EnrolledTrainingsList({
                     : ""
                 }`}
             >
-              <div className="relative w-12 h-12 flex-shrink-0">
+              <div className="relative w-12 h-12 shrink-0">
                 <Image
                   src={training.imageUrl || fallbackImage}
                   alt={training.title}

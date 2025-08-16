@@ -42,7 +42,7 @@ export function ChatTextEntry({
         onKeyDown={handleKeyDown}
         placeholder="Type your message..."
         className={cn(
-          "h-10 py-2 min-h-[2.5rem] max-h-[5rem] resize-none",
+          "h-10 py-2 min-h-10 max-h-20 resize-none",
           "focus:ring-1 focus:ring-offset-0",
           isEnabled ? "" : "opacity-50 cursor-not-allowed"
         )}

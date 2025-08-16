@@ -43,7 +43,7 @@ export default async function TeamMemberPage(props: {
               <AvatarImage src={member.avatar_url} alt={member.name} />
               <AvatarFallback className="text-xl">{initials}</AvatarFallback>
             </Avatar>
-            <div className="flex-grow space-y-6">
+            <div className="grow space-y-6">
               <div>
                 <h3 className="text-xl font-semibold">{member.name}</h3>
                 <p className="text-sm text-muted-foreground mt-1">

@@ -105,7 +105,7 @@ export function EditModuleForm({
           value={module.title}
           onChange={handleModuleFieldChange}
           placeholder="Enter module title"
-          className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50 max-w-2xl"
+          className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-xs placeholder:text-muted-foreground/50 max-w-2xl"
           onKeyDown={handleModuleKeyDown}
         />
       </div>
@@ -121,31 +121,31 @@ export function EditModuleForm({
               <TabsList className="grid w-full grid-cols-5 bg-secondary/50 p-1 rounded-2xl">
                 <TabsTrigger
                   value="instructions"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-xs rounded-2xl focus:ring-brand focus:ring-2"
                 >
                   User Instructions
                 </TabsTrigger>
                 <TabsTrigger
                   value="scenario"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-xs rounded-2xl focus:ring-brand focus:ring-2"
                 >
                   Scenario
                 </TabsTrigger>
                 <TabsTrigger
                   value="character"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-xs rounded-2xl focus:ring-brand focus:ring-2"
                 >
                   Character
                 </TabsTrigger>
                 <TabsTrigger
                   value="assessment"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-xs rounded-2xl focus:ring-brand focus:ring-2"
                 >
                   Assessment
                 </TabsTrigger>
                 <TabsTrigger
                   value="prepCoach"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-2xl focus:ring-brand focus:ring-2"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-xs rounded-2xl focus:ring-brand focus:ring-2"
                 >
                   Prep Coach
                 </TabsTrigger>
@@ -156,7 +156,7 @@ export function EditModuleForm({
                   name="instructions"
                   value={module.instructions || ""}
                   onChange={handleModuleFieldChange}
-                  className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
+                  className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-xs text-base placeholder:text-muted-foreground/50 transition-all duration-300"
                   placeholder="Enter module instructions visible to the user, use markdown for formatting"
                   onKeyDown={handleModuleKeyDown}
                 />
@@ -169,7 +169,7 @@ export function EditModuleForm({
                   onChange={(e) => handleModulePromptFieldChange(e, "scenario")}
                   rows={12}
                   placeholder="Enter the prompt for the AI to set up the overall scenario"
-                  className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
+                  className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-xs text-base placeholder:text-muted-foreground/50 transition-all duration-300"
                   onKeyDown={handleModuleKeyDown}
                 />
               </TabsContent>
@@ -183,7 +183,7 @@ export function EditModuleForm({
                   }
                   rows={12}
                   placeholder="Enter the prompt for the AI to assess the user's performance"
-                  className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
+                  className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-xs text-base placeholder:text-muted-foreground/50 transition-all duration-300"
                   onKeyDown={handleModuleKeyDown}
                 />
               </TabsContent>
@@ -197,7 +197,7 @@ export function EditModuleForm({
                   }
                   rows={12}
                   placeholder="Enter the prompt for the AI to coach the user before the session"
-                  className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
+                  className="min-h-[calc(100vh-23rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-xs text-base placeholder:text-muted-foreground/50 transition-all duration-300"
                   onKeyDown={handleModuleKeyDown}
                 />
               </TabsContent>

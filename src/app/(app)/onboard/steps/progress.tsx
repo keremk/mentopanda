@@ -18,7 +18,7 @@ export function Progress({ status }: ProgressProps) {
           priority
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-background/50 to-background/90" />
+        <div className="absolute inset-0 bg-linear-to-t from-transparent via-background/50 to-background/90" />
       </div>
 
       <CardHeader className="relative pt-6">

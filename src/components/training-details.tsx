@@ -49,7 +49,7 @@ export function TrainingDetails({ training }: TrainingDetailsProps) {
       {/* Mobile-first responsive layout */}
       <div className="flex flex-col space-y-6 md:flex-row md:items-start md:space-x-6 md:space-y-0">
         {/* Image and buttons section */}
-        <div className="flex flex-col space-y-4 md:flex-shrink-0">
+        <div className="flex flex-col space-y-4 md:shrink-0">
           <div className="w-full max-w-xs mx-auto md:mx-0 md:w-40">
             <Image
               src={training.imageUrl || fallbackImage}

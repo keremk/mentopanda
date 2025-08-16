@@ -49,7 +49,7 @@ export function PublishToggleButton({
           variant="ghost-brand"
           disabled={disabled || isLoading}
           size="default"
-          className="h-9 shadow-sm hover:shadow-md transition-all"
+          className="h-9 shadow-xs hover:shadow-md transition-all"
         >
           {isLoading ? (
             <>
@@ -64,7 +64,7 @@ export function PublishToggleButton({
           )}
         </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent className="border-border/50 bg-background/95 backdrop-blur-sm">
+      <AlertDialogContent className="border-border/50 bg-background/95 backdrop-blur-xs">
         <AlertDialogHeader>
           <AlertDialogTitle>
             {isPublic ? "Make Training Private?" : "Make Training Public?"}
@@ -88,15 +88,15 @@ export function PublishToggleButton({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="border-border/50 bg-secondary/30 hover:bg-secondary/50 shadow-sm">
+          <AlertDialogCancel className="border-border/50 bg-secondary/30 hover:bg-secondary/50 shadow-xs">
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleToggle}
             className={
               isPublic
-                ? "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm"
-                : "bg-brand text-brand-foreground hover:bg-brand-hover shadow-sm"
+                ? "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-xs"
+                : "bg-brand text-brand-foreground hover:bg-brand-hover shadow-xs"
             }
           >
             {isPublic ? "Make Private" : "Make Public"}

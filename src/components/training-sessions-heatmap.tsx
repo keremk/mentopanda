@@ -43,10 +43,10 @@ export async function TrainingSessionsHeatmap({
 
   return (
     <Card className="w-full h-full flex flex-col">
-      <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
+      <CardHeader className="shrink-0 flex flex-row items-center justify-between">
         <CardTitle className="text-brand">Training Heatmap</CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow p-4">
+      <CardContent className="grow p-4">
         <div className="flex justify-center">
           <div className="flex flex-col">
             <div className="flex">
@@ -69,7 +69,7 @@ export async function TrainingSessionsHeatmap({
                             key={`${weekIndex}-${dayIndex}`}
                             className={`w-4 h-4 ${getColor(
                               count
-                            )} rounded-sm transition-all duration-200 hover:scale-110 hover:shadow-sm`}
+                            )} rounded-sm transition-all duration-200 hover:scale-110 hover:shadow-xs`}
                             title={`${format(
                               day,
                               "MMM d, yyyy"

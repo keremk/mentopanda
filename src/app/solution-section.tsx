@@ -39,7 +39,7 @@ export function SolutionSection() {
         <div className="grid md:grid-cols-3 gap-12">
           {/* Engineering Managers */}
           <div className="text-center p-6 rounded-xl hover:bg-muted/50 transition-colors">
-            <div className="w-16 h-16 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <div className="w-16 h-16 bg-linear-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xs">
               <LayoutDashboard className="w-8 h-8 text-teal-600 dark:text-teal-400" />
             </div>
             <h3 className="text-xl font-semibold mb-4">Engineering Managers</h3>
@@ -69,7 +69,7 @@ export function SolutionSection() {
 
           {/* Product Managers & Designers */}
           <div className="text-center p-6 rounded-xl hover:bg-muted/50 transition-colors">
-            <div className="w-16 h-16 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <div className="w-16 h-16 bg-linear-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xs">
               <UserCheck className="w-8 h-8 text-teal-600 dark:text-teal-400" />
             </div>
             <h3 className="text-xl font-semibold mb-4">
@@ -95,7 +95,7 @@ export function SolutionSection() {
 
           {/* People Teams */}
           <div className="text-center p-6 rounded-xl hover:bg-muted/50 transition-colors">
-            <div className="w-16 h-16 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <div className="w-16 h-16 bg-linear-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xs">
               <Users className="w-8 h-8 text-teal-600 dark:text-teal-400" />
             </div>
             <h3 className="text-xl font-semibold mb-4">People Teams</h3>

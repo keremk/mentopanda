@@ -44,7 +44,7 @@ const BrandedSlider = React.forwardRef<
         <SliderPrimitive.Range className={cn("absolute h-full", rangeClasses[color])} />
       </SliderPrimitive.Track>
       <SliderPrimitive.Thumb className={cn(
-        "block h-5 w-5 rounded-full border-2 ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        "block h-5 w-5 rounded-full border-2 ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
         thumbClasses[color]
       )} />
     </SliderPrimitive.Root>

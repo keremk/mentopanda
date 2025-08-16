@@ -18,7 +18,7 @@ export function HeroSection() {
           </span>
         </h1>
 
-        <div className="w-full max-w-4xl relative aspect-[17/11] image-container-enhanced group">
+        <div className="w-full max-w-4xl relative aspect-17/11 image-container-enhanced group">
           <div className="image-inner">
             <ThemedImage
               lightSrc={lightImageUrl}

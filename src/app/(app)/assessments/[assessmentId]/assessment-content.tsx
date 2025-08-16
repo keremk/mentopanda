@@ -151,7 +151,7 @@ export default function AssessmentContent({
       <>
         <div className="my-4 rounded-md border border-danger bg-card p-4 text-sm shadow-md">
           <div className="flex items-start space-x-3">
-            <div className="mt-0.5 flex-shrink-0">
+            <div className="mt-0.5 shrink-0">
               <AlertTriangle
                 className="h-5 w-5 text-danger"
                 aria-hidden="true"
@@ -182,7 +182,7 @@ export default function AssessmentContent({
     return (
       <div className="my-4 rounded-md border border-danger bg-card p-4 text-sm shadow-md">
         <div className="flex items-start space-x-3">
-          <div className="mt-0.5 flex-shrink-0">
+          <div className="mt-0.5 shrink-0">
             <AlertTriangle className="h-5 w-5 text-danger" aria-hidden="true" />
           </div>
           <div>
@@ -217,7 +217,7 @@ export default function AssessmentContent({
         </div>
 
         {isAssessmentCreated && !error && (
-          <div className="mt-6 flex flex-col items-start gap-4 rounded-lg border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 flex flex-col items-start gap-4 rounded-lg border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               Rate this assessment:
             </p>

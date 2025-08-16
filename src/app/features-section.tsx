@@ -271,7 +271,7 @@ export function FeaturesSection() {
           {/* Mobile Layout */}
           <div className="md:hidden">
             {/* Image section - shown on top for mobile */}
-            <div className="relative w-full aspect-[17/11] max-w-4xl mx-auto image-container-enhanced mb-8">
+            <div className="relative w-full aspect-17/11 max-w-4xl mx-auto image-container-enhanced mb-8">
               <div className="image-inner">
                 {features.map((feature, index) => (
                   <ThemedImage
@@ -318,7 +318,7 @@ export function FeaturesSection() {
                   >
                     <div className="text-center px-2">
                       <div className="relative">
-                        <div className="w-12 h-12 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="w-12 h-12 bg-linear-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                           {feature.icon}
                         </div>
                         <ProgressBar
@@ -349,7 +349,7 @@ export function FeaturesSection() {
                   onMouseEnter={() => handleFeatureHover(index)}
                 >
                   <div className="relative">
-                    <div className="w-12 h-12 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-12 h-12 bg-linear-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                       {feature.icon}
                     </div>
                     <ProgressBar
@@ -365,7 +365,7 @@ export function FeaturesSection() {
               ))}
             </div>
 
-            <div className="relative w-full aspect-[17/11] max-w-4xl mx-auto image-container-enhanced">
+            <div className="relative w-full aspect-17/11 max-w-4xl mx-auto image-container-enhanced">
               <div className="image-inner">
                 {features.map((feature, index) => (
                   <ThemedImage

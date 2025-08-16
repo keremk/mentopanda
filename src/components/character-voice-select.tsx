@@ -162,7 +162,7 @@ export function CharacterVoiceSelect({
       {isOpen && (
         <Portal.Root>
           <div
-            className="voice-dropdown fixed z-50 min-w-[8rem] overflow-hidden border bg-popover text-popover-foreground shadow-md outline-none animate-in rounded-2xl ring-2 ring-brand"
+            className="voice-dropdown fixed z-50 min-w-32 overflow-hidden border bg-popover text-popover-foreground shadow-md outline-hidden animate-in rounded-2xl ring-2 ring-brand"
             style={{
               top: `${position.top + 4}px`,
               left: `${position.left}px`,
@@ -185,7 +185,7 @@ export function CharacterVoiceSelect({
                   <div className="absolute left-2 w-4 flex items-center justify-center">
                     {voice.name === value && <CheckIcon className="h-4 w-4" />}
                   </div>
-                  <span className="flex-grow truncate">{voice.name}</span>
+                  <span className="grow truncate">{voice.name}</span>
                   {voice.sampleUrl && (
                     <Button
                       size="sm"

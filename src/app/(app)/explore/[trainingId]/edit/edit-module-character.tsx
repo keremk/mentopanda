@@ -168,7 +168,7 @@ export function EditModuleCharacter() {
 
   if (!currentCharacter) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 border border-border/50 rounded-lg bg-secondary/10 shadow-sm space-y-4">
+      <div className="flex flex-col items-center justify-center h-full p-8 border border-border/50 rounded-lg bg-secondary/10 shadow-xs space-y-4">
         <p className="text-muted-foreground text-center">
           This module doesn&apos;t have a character yet.
         </p>
@@ -223,11 +223,11 @@ export function EditModuleCharacter() {
 
   return (
     <div className="space-y-6">
-      <div className="border border-border/50 rounded-lg p-5 bg-secondary/10 shadow-sm">
+      <div className="border border-border/50 rounded-lg p-5 bg-secondary/10 shadow-xs">
         <div className="flex gap-8 items-start">
           {currentCharacter ? (
             <>
-              <div className="w-32 flex-shrink-0">
+              <div className="w-32 shrink-0">
                 <ImageEdit
                   initialImageUrl={currentCharacter.avatarUrl || null}
                   bucketName="avatars"
@@ -256,7 +256,7 @@ export function EditModuleCharacter() {
                       placeholder="Character Name"
                       value={currentCharacter.name}
                       onChange={(e) => handleNameChange(e.target.value)}
-                      className="bg-secondary/30 rounded-lg border-border/30 shadow-sm text-sm h-9"
+                      className="bg-secondary/30 rounded-lg border-border/30 shadow-xs text-sm h-9"
                     />
                   </div>
 
@@ -318,7 +318,7 @@ export function EditModuleCharacter() {
             onChange={(e) => handleCharacterPromptChange(e.target.value)}
             placeholder="Enter character background and description here, this will be used as a prompt for the AI character in the training scenario."
             rows={10}
-            className="min-h-[calc(100vh-38rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50 transition-all duration-300"
+            className="min-h-[calc(100vh-38rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-xs text-base placeholder:text-muted-foreground/50 transition-all duration-300"
             onKeyDown={handleKeyDown}
           />
         </div>

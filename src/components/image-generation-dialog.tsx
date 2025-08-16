@@ -111,10 +111,10 @@ export function ImageGenerationDialog({
     const baseClasses = "w-full mx-auto";
     if (aspectRatio === "landscape") {
       // Wider for landscape images to give them more presence
-      return `${baseClasses} max-w-[20rem] sm:max-w-[22rem] md:max-w-[24rem] lg:max-w-[32rem] xl:max-w-[40rem]`;
+      return `${baseClasses} max-w-[20rem] sm:max-w-88 md:max-w-[24rem] lg:max-w-lg xl:max-w-160`;
     }
     // Use user's preferred, more constrained sizes for square images
-    return `${baseClasses} max-w-[13rem] sm:max-w-[14rem] md:max-w-[16rem] lg:max-w-[19rem]`;
+    return `${baseClasses} max-w-52 sm:max-w-56 md:max-w-[16rem] lg:max-w-76`;
   }, [aspectRatio]);
 
   // Determine bucket and path based on contextType

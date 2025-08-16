@@ -9,7 +9,7 @@ import {
 
 export function TrainingHistoryTableSkeleton() {
   return (
-    <div className="flex-grow overflow-auto">
+    <div className="grow overflow-auto">
       <Table>
         <TableHeader>
           <TableRow>

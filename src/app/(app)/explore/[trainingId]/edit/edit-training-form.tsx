@@ -64,7 +64,7 @@ export function EditTrainingForm() {
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="w-full max-w-[32rem] mx-auto">
+        <div className="w-full max-w-lg mx-auto">
           <ImageEdit
             initialImageUrl={training.imageUrl}
             aspectRatio="landscape"
@@ -91,7 +91,7 @@ export function EditTrainingForm() {
               value={training.title}
               onChange={(e) => handleFieldChange("title", e.target.value)}
               placeholder="Enter training title"
-              className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50"
+              className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-xs placeholder:text-muted-foreground/50"
             />
           </div>
 
@@ -104,7 +104,7 @@ export function EditTrainingForm() {
               value={training.tagline || ""}
               onChange={(e) => handleFieldChange("tagline", e.target.value)}
               placeholder="Enter catchy, short tagline"
-              className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50"
+              className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-xs placeholder:text-muted-foreground/50"
             />
           </div>
 
@@ -117,13 +117,13 @@ export function EditTrainingForm() {
               value={training.previewUrl || ""}
               onChange={(e) => handleFieldChange("previewUrl", e.target.value)}
               placeholder="Enter video link, e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-              className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm placeholder:text-muted-foreground/50"
+              className="text-base bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-xs placeholder:text-muted-foreground/50"
             />
           </div>
         </div>
       </div>
 
-      <div className="mb-8 flex flex-col flex-grow">
+      <div className="mb-8 flex flex-col grow">
         <label className="text-sm font-medium text-muted-foreground mb-2">
           Description
         </label>
@@ -131,7 +131,7 @@ export function EditTrainingForm() {
           name="description"
           value={training.description || ""}
           onChange={(e) => handleFieldChange("description", e.target.value)}
-          className="min-h-[calc(100vh-36rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-sm text-base placeholder:text-muted-foreground/50"
+          className="min-h-[calc(100vh-36rem)] bg-secondary/30 resize-none rounded-2xl border-border/30 shadow-xs text-base placeholder:text-muted-foreground/50"
           placeholder="Enter training description, use markdown for formatting"
         />
       </div>

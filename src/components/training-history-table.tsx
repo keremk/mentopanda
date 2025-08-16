@@ -43,7 +43,7 @@ export function TrainingHistoryTable({ forUserId }: { forUserId?: string }) {
 
   return (
     <>
-      <div className="flex-grow overflow-auto">
+      <div className="grow overflow-auto">
         <Table>
           <TableHeader>
             <TableRow>

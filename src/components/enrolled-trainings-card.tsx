@@ -34,7 +34,7 @@ export function EnrolledTrainingsCard({
 
   return (
     <Card className="w-full h-[310px] flex flex-col">
-      <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between">
+      <CardHeader className="shrink-0 flex flex-row items-center justify-between">
         <CardTitle className="text-brand">Enrolled Trainings</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto p-0 mx-3">

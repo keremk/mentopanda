@@ -13,7 +13,7 @@ export function ProblemSection() {
         <div className="grid md:grid-cols-3 gap-8">
           {/* Problem 1 */}
           <div className="text-center p-6 rounded-xl hover:bg-muted/50 transition-colors">
-            <div className="w-16 h-16 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <div className="w-16 h-16 bg-linear-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xs">
               <AlarmClock className="w-8 h-8 text-teal-600 dark:text-teal-400" />
             </div>
             <h3 className="text-xl font-semibold mb-4">Not Enough Practice</h3>
@@ -36,7 +36,7 @@ export function ProblemSection() {
 
           {/* Problem 2 */}
           <div className="text-center p-6 rounded-xl hover:bg-muted/50 transition-colors">
-            <div className="w-16 h-16 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <div className="w-16 h-16 bg-linear-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xs">
               <MessageSquareWarning className="w-8 h-8 text-teal-600 dark:text-teal-400" />
             </div>
             <h3 className="text-xl font-semibold mb-4">
@@ -61,7 +61,7 @@ export function ProblemSection() {
 
           {/* Problem 3 */}
           <div className="text-center p-6 rounded-xl hover:bg-muted/50 transition-colors">
-            <div className="w-16 h-16 bg-gradient-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <div className="w-16 h-16 bg-linear-to-br from-teal-500/20 to-blue-500/20 dark:from-teal-500/10 dark:to-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xs">
               <Puzzle className="w-8 h-8 text-teal-600 dark:text-teal-400" />
             </div>
             <h3 className="text-xl font-semibold mb-4">

@@ -168,7 +168,7 @@ export default async function TrainingDetailsPage(props: {
             {displayModules.length > 0 && (
               <section>
                 <h2 className="text-2xl font-semibold mb-4">Modules</h2>
-                <div className="bg-card border rounded-lg p-6 shadow">
+                <div className="bg-card border rounded-lg p-6 shadow-sm">
                   <ul className="space-y-3 list-disc list-inside pl-2">
                     {displayModules.map((module) => (
                       <li key={module.id} className="text-card-foreground">
