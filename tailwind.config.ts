@@ -110,10 +110,10 @@ const config = {
       },
     },
   },
-  plugins: [
-    require("tailwindcss-animate"),
-    require("tailwindcss-question-mark"),
-  ],
+  // plugins: [
+  //   require("tailwindcss-animate"),
+  //   require("tailwindcss-question-mark"),
+  // ],
 } satisfies Config;
 
 export default config;
