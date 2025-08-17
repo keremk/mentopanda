@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/shadcn.css';
 @import 'fumadocs-ui/css/preset.css';
 
 @custom-variant dark (&:is(.dark *));
@@ -179,6 +179,13 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
+    /* Fumadocs color overrides to match app sidebar */
+    --color-fd-background: hsl(var(--sidebar-background));
+    --color-fd-card: hsl(var(--sidebar-background));
+    --color-fd-secondary: hsl(var(--sidebar-accent));
+    --color-fd-muted: hsl(var(--sidebar-accent));
+    --color-fd-popover: hsl(var(--sidebar-background));
+
     --lk-va-bar-width: 72px;
     --lk-control-bar-height: unset;
   }
@@ -230,6 +237,13 @@
     --sidebar-accent-foreground: 213 31% 91%;
     --sidebar-border: 224 71% 4%;
     --sidebar-ring: 221 83% 53%;
+
+    /* Fumadocs color overrides to match app sidebar in dark mode */
+    --color-fd-background: hsl(var(--sidebar-background));
+    --color-fd-card: hsl(var(--sidebar-background));
+    --color-fd-secondary: hsl(var(--sidebar-accent));
+    --color-fd-muted: hsl(var(--sidebar-accent));
+    --color-fd-popover: hsl(var(--sidebar-background));
   }
 }
 
