@@ -1,9 +1,12 @@
 ---
 title: Getting Started
 description: Learn how to use MentoPanda to improve your communication and people management skills with AI-powered training.
+icon: HomeIcon
 ---
 
-# Welcome to MentoPanda 
+import { HomeIcon, BookOpen, NotebookText, Users, NotebookPen, Bot } from "lucide-react";
+
+# Welcome to MentoPanda
 
 MentoPanda is an AI-powered platform designed to help you develop better communication and people management skills through role-playing scenarios. You can use the publicly available trainings, trainings prepared by your organization in private projects or create your own trainings in your own projects.
 
@@ -15,31 +18,47 @@ There are other alternatives that many companies try to provide through coaching
 
 ## What MentoPanda provides
 
-MentoPanda is a comprehensive platform for role playing communication skills. There are a growing number of readily created scenarios which you can pick and practice. If you are within an organization who has implemented MentoPanda, then you will have tailored scenarios for your role and organization. Of you can always create your own trainings with the help of MentoPanda's AI enabled training helpers either through simply conversing with it or using the built-in editor for creating more advanced trainings. 
+MentoPanda is a comprehensive platform for role playing communication skills.
 
-If you are a manager, MentoPanda gives you the ability to create your own training projects and invite your team members to it. You can follow their progress and use that as a tool to provide further feedback in improving their skills.
-
-If you are an HR manager, MentoPanda allows you to implement a solution across your organization for continuous training. You can create multiple projects for multiple needs (e.g. Engineering Manager Training, General Leadership Training etc.) and invite the relevant people into those projects and track their progress.
-
-If you are a corporate training consultant, you can use MentoPanda to supplement your training programs with continous role playing opportunities both during and post training.
+<Tabs
+  items={["Personal", "Manager", "HR Manager", "Corporate Trainer"]}
+  defaultIndex={0}
+>
+  <Tab value="Personal" selected={true}>
+    If you are trying to improve your own communication skills, MentoPanda
+    allows you to pick from public trainings, create your own impromptu
+    trainings or create detailed well crafted trainings. You can practice
+    continuously, before a certain important event (e.g. having a difficult
+    conversation, asking for a promotion, preparing for an interview){" "}
+  </Tab>
+  <Tab value="Manager">
+    If you are a manager, MentoPanda gives you the ability to create your own
+    training projects and invite your team members to it. You can follow their
+    progress and use that as a tool to provide further feedback in improving
+    their skills.
+  </Tab>
+  <Tab value="HR Manager">
+    If you are an HR manager, MentoPanda allows you to implement a solution
+    across your organization for continuous training. You can create multiple
+    projects for multiple needs (e.g. Engineering Manager Training, General
+    Leadership Training etc.) and invite the relevant people into those projects
+    and track their progress.
+  </Tab>
+  <Tab value="Corporate Trainer">
+    If you are a corporate training consultant, you can use MentoPanda to
+    supplement your training programs with continous role playing opportunities
+    both during and post training.
+  </Tab>
+</Tabs>
 
 ## Main Features
 
-- AI-powered conversation simulations, with immediate feedback
-- A growing public training catalog to choose trainings from
-- Ability to create impromptu trainings by conversing with MentoPanda (your AI coach)
-- Ability to prepare planning notes by conversing with MentoPanda
-- Ability to track your improvement and training habits 
-- Ability to create new training scenarios and characters
-- Ability to publish your trainings publicly for a wider audience and help grow the expert catalog
-- Ability to change AI character skills and traits for a wide coverage of different encounters
-- Ability to create multiple training projects, invite team members and follow their progress
-
-<Callout type='warn'>
-Hello World
-</Callout>
-
-<Accordions type="single">
-  <Accordion title="My Title">My Content</Accordion>
-</Accordions>
+<Cards>
+  <Card href="/docs/training-catalogs" title="Training Catalogs" description="Explore the training catalogs available in MentoPanda, including public and private trainings." icon={<BookOpen />}/>
+  <Card href="/docs/create-trainings" title="Creating Trainings" description="Learn how to create, edit and publish trainings." icon={<NotebookPen />}/>
+  <Card href="/docs/role-playing" title="Role Playing Conversations" description="Learn AI-powered conversation simulations" icon={<Bot />}/>
+  <Card href="/docs/impromptu" title="Impromptu Trainings - Sidequests" description="Learn how to create side quest trainings by conversing to MentoPanda." icon={<HomeIcon />} />
+  <Card href="/docs/planning-notes" title="Planning Notes" description="Learn how to prepare for the training." icon={<NotebookText />} />
+  <Card href="/docs/projects" title="Projects" description="Learn how to create projects, invite team members and track progress" icon={<Users />} />
+</Cards>
 
