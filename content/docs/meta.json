@@ -1,6 +1,6 @@
 {
   "title": "Display Name",
   "icon": "MyIcon",
-  "pages": ["index", "training-catalogs", "create-trainings", "role-playing", "sidequests", "planning-notes", "projects"],
+  "pages": ["index", "projects", "training-catalogs", "create-trainings", "role-playing", "sidequests", "planning-notes", "team"],
   "defaultOpen": true
 }

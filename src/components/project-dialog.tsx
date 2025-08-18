@@ -103,8 +103,8 @@ export function ProjectDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>
+        <DialogHeader className="border-b border-border">
+          <DialogTitle className="text-brand">
             {view === "list" ? "Select Project" : "Create New Project"}
           </DialogTitle>
           <DialogDescription>

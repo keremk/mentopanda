@@ -34,30 +34,31 @@ export function ProjectList({
               className={`flex items-center justify-between p-3 rounded-lg border transition-colors cursor-pointer
                 ${
                   project.id === selectedProjectId
-                    ? "bg-accent border-accent-foreground/50"
-                    : "hover:bg-accent/50"
+                    ? "bg-brand/10 border-brand/50"
+                    : "hover:bg-brand/5 hover:border-brand/20"
                 }
-                ${project.id === currentProjectId ? "border-primary/50" : ""}`}
+                ${project.id === currentProjectId ? "border-brand/50 ring-1 ring-brand/20" : ""}`}
               onClick={() => onProjectSelect(project.id)}
             >
               <span className="font-medium">{project.name}</span>
               {project.id === currentProjectId && (
-                <span className="text-sm text-muted-foreground">Current</span>
+                <span className="text-sm text-brand font-medium">Current</span>
               )}
             </div>
           ))}
         </div>
       </div>
 
-      <DialogFooter className="pt-4 border-t">
-        <Button type="button" variant="outline" onClick={onCancel}>
+      <DialogFooter className="pt-4 border-t border-brand/20">
+        <Button type="button" variant="ghost-brand" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="button" variant="outline" onClick={onCreateNew}>
+        <Button type="button" variant="ghost-brand" onClick={onCreateNew}>
           Create New
         </Button>
         <Button
           type="button"
+          variant="brand"
           onClick={onConfirm}
           disabled={!selectedProjectId || isLoading}
         >

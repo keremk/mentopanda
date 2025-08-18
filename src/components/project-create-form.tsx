@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 
 type CreateProjectFormProps = {
@@ -22,7 +21,7 @@ export function ProjectCreateForm({
   isLoading,
 }: CreateProjectFormProps) {
   const [projectName, setProjectName] = useState("");
-  const [copyStarterContent, setCopyStarterContent] = useState(true);
+  const [copyStarterContent, setCopyStarterContent] = useState(false);
 
   return (
     <div className="flex flex-col flex-1">
@@ -38,7 +37,7 @@ export function ProjectCreateForm({
           />
         </div>
 
-        <div className="flex items-center space-x-2">
+        {/* <div className="flex items-center space-x-2">
           <Checkbox
             id="copyContent"
             checked={copyStarterContent}
@@ -49,15 +48,16 @@ export function ProjectCreateForm({
           <Label htmlFor="copyContent">
             Copy starter content to new project
           </Label>
-        </div>
+        </div> */}
       </div>
 
       <DialogFooter className="pt-4 border-t">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="ghost-brand" onClick={onCancel}>
           Cancel
         </Button>
         <Button
           type="button"
+          variant="brand"
           disabled={!projectName || isLoading}
           onClick={() => onSubmit({ projectName, copyStarterContent })}
         >

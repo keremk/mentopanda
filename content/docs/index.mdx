@@ -8,29 +8,19 @@ import { HomeIcon, BookOpen, NotebookText, Users, NotebookPen, MessageSquare, Za
 
 # Welcome to MentoPanda
 
-<div className="text-center mb-8">
-  <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">MentoPanda is an <span className="bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent font-semibold">AI-powered platform</span> that helps you develop better communication and people management skills through role-playing scenarios.</p>
-  
-  <div className="grid md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-    <div className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 p-4 rounded-lg border border-teal-200 dark:border-teal-700">
-      <div className="text-2xl mb-2">🌍</div>
-      <h3 className="font-semibold text-teal-900 dark:text-teal-100 mb-1">Public Trainings</h3>
-      <p className="text-sm text-teal-700 dark:text-teal-300">Use publicly available trainings</p>
-    </div>
-    
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
-      <div className="text-2xl mb-2">🏢</div>
-      <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Private Projects</h3>
-      <p className="text-sm text-blue-700 dark:text-blue-300">Access trainings prepared by your organization</p>
-    </div>
-    
-    <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
-      <div className="text-2xl mb-2">🎨</div>
-      <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-1">Custom Trainings</h3>
-      <p className="text-sm text-purple-700 dark:text-purple-300">Create your own personalized trainings</p>
-    </div>
-  </div>
-</div>
+MentoPanda is an **AI-powered platform** that helps you develop better communication and people management skills through role-playing scenarios.
+
+<FeatureCards>
+  <Card icon="🌍" title="Public Trainings">
+    Use publicly available trainings
+  </Card>
+  <Card icon="🏢" title="Private Projects">
+    Access trainings prepared by your organization
+  </Card>
+  <Card icon="🎨" title="Custom Trainings">
+    Create your own personalized trainings
+  </Card>
+</FeatureCards>
 
 ## 🎯 Why MentoPanda
 
@@ -38,102 +28,83 @@ Communication skills are something we often learn on the fly as we encounter dif
 
 ### ✨ Key Benefits
 
-<div className="bg-gradient-to-r from-teal-50 to-blue-50 dark:from-teal-900/10 dark:to-blue-900/10 p-6 rounded-xl border border-teal-200 dark:border-teal-800 mt-4">
-  <div className="grid gap-3 mb-4">
-    <div className="flex items-center gap-2 text-teal-800 dark:text-teal-200">
-      <span className="text-green-500">🛡️</span>
-      <span><strong>Safe Practice Environment:</strong> Role-play as many times as you want without judgment</span>
-    </div>
-    <div className="flex items-center gap-2 text-teal-800 dark:text-teal-200">
-      <span className="text-green-500">⚡</span>
-      <span><strong>Instant AI Feedback:</strong> Get honest, immediate analysis after each interaction</span>
-    </div>
-    <div className="flex items-center gap-2 text-teal-800 dark:text-teal-200">
-      <span className="text-green-500">🔒</span>
-      <span><strong>Complete Privacy:</strong> Practice sensitive conversations in a confidential setting</span>
-    </div>
-    <div className="flex items-center gap-2 text-teal-800 dark:text-teal-200">
-      <span className="text-green-500">🎲</span>
-      <span><strong>Unlimited Scenarios:</strong> Simulate different situations and character types</span>
-    </div>
-    <div className="flex items-center gap-2 text-teal-800 dark:text-teal-200">
-      <span className="text-green-500">📈</span>
-      <span><strong>Continuous Improvement:</strong> Learn from mistakes without real-world consequences</span>
-    </div>
-  </div>
-</div>
+<Callout title="Why Choose MentoPanda" type="success">
+- 🛡️ **Safe Practice Environment**: Role-play as many times as you want without judgment
+- ⚡ **Instant AI Feedback**: Get honest, immediate analysis after each interaction  
+- 🔒 **Complete Privacy**: Practice sensitive conversations in a confidential setting
+- 🎲 **Unlimited Scenarios**: Simulate different situations and character types
+- 📈 **Continuous Improvement**: Learn from mistakes without real-world consequences
+</Callout>
 
 ### 🚀 How It's Different
 
-<div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 p-6 rounded-xl border border-amber-200 dark:border-amber-800 mt-4">
-  <p className="text-amber-900 dark:text-amber-100 mb-4">Traditional training approaches like workshops and coaching sessions are great for theory, but they fall short on practice opportunities:</p>
-  
-  <div className="grid gap-3 mb-4">
-    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
-      <span className="text-red-500">⏱️</span>
-      <span>Limited role-play time during workshops</span>
-    </div>
-    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
-      <span className="text-red-500">🎯</span>
-      <span>Feedback depends on instructor availability and other participants' abilities</span>
-    </div>
-    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
-      <span className="text-red-500">🎲</span>
-      <span>Often only one or two groups get detailed feedback</span>
-    </div>
-    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
-      <span className="text-red-500">⚡</span>
-      <span>Practice scenarios are brief and infrequent</span>
-    </div>
-  </div>
-  
-  <div className="bg-gradient-to-r from-teal-100 to-blue-100 dark:from-teal-800/30 dark:to-blue-800/30 p-4 rounded-lg border border-teal-300 dark:border-teal-700">
-    <div className="flex items-center gap-2">
-      <span className="text-xl">🎉</span>
-      <strong className="text-teal-900 dark:text-teal-100">MentoPanda solves these limitations</strong>
-    </div>
-    <p className="mt-2 text-teal-800 dark:text-teal-200">Get unlimited practice with expert AI feedback every time!</p>
-  </div>
-</div>
+<Callout type="warn">
+Traditional training approaches like workshops and coaching sessions are great for theory, but they fall short on practice opportunities:
+
+- ⏱️ Limited role-play time during workshops
+- 🎯 Feedback depends on instructor availability and other participants' abilities  
+- 🎲 Often only one or two groups get detailed feedback
+- ⚡ Practice scenarios are brief and infrequent
+</Callout>
+
+<Callout type="info">
+🎉 **MentoPanda solves these limitations**
+
+Get unlimited practice with expert AI feedback every time!
+</Callout>
 
 ## 🎭 What MentoPanda provides
 
-<div className="text-center mb-2">
-  <p className="text-lg text-gray-700 dark:text-gray-300">MentoPanda is a comprehensive platform for role playing communication skills.</p>
-</div>
-
-<div className="bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-900/30 dark:to-slate-900/30 p-6 rounded-xl border border-gray-200 dark:border-gray-800">
+MentoPanda is a comprehensive platform for role playing communication skills.
   <Tabs
     items={["Personal", "Manager", "HR Manager", "Corporate Trainer"]}
     defaultIndex={0}
   >
-    <Tab value="Personal"><div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-5 rounded-lg border border-blue-200 dark:border-blue-700 mt-4"><div className="flex items-center gap-2 mb-3"><span className="text-xl">🎯</span><h4 className="font-semibold text-blue-900 dark:text-blue-100">Individual Growth</h4></div><div className="text-blue-800 dark:text-blue-200 leading-relaxed">If you are trying to improve your own communication skills, MentoPanda allows you to pick from public trainings, create your own impromptu trainings or create detailed well crafted trainings. You can practice continuously, before a certain important event (e.g. having a difficult conversation, asking for a promotion, preparing for an interview).</div></div></Tab>
-    <Tab value="Manager"><div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-5 rounded-lg border border-green-200 dark:border-green-700 mt-4"><div className="flex items-center gap-2 mb-3"><span className="text-xl">🚀</span><h4 className="font-semibold text-green-900 dark:text-green-100">Team Development</h4></div><div className="text-green-800 dark:text-green-200 leading-relaxed">If you are a manager, MentoPanda gives you the ability to create your own training projects and invite your team members to it. You can follow their progress and use that as a tool to provide further feedback in improving their skills.</div></div></Tab>
-    <Tab value="HR Manager"><div className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 p-5 rounded-lg border border-purple-200 dark:border-purple-700 mt-4"><div className="flex items-center gap-2 mb-3"><span className="text-xl">🌐</span><h4 className="font-semibold text-purple-900 dark:text-purple-100">Organization-wide Training</h4></div><div className="text-purple-800 dark:text-purple-200 leading-relaxed">If you are an HR manager, MentoPanda allows you to implement a solution across your organization for continuous training. You can create multiple projects for multiple needs (e.g. Engineering Manager Training, General Leadership Training etc.) and invite the relevant people into those projects and track their progress.</div></div></Tab>
-    <Tab value="Corporate Trainer"><div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 p-5 rounded-lg border border-orange-200 dark:border-orange-700 mt-4"><div className="flex items-center gap-2 mb-3"><span className="text-xl">📈</span><h4 className="font-semibold text-orange-900 dark:text-orange-100">Enhanced Training Programs</h4></div><div className="text-orange-800 dark:text-orange-200 leading-relaxed">If you are a corporate training consultant, you can use MentoPanda to supplement your training programs with continuous role playing opportunities both during and post training.</div></div></Tab>
+    <Tab value="Personal">
+      ### 🎯 Individual Growth
+      
+      If you are trying to improve your own communication skills, MentoPanda allows you to pick from public trainings, create your own impromptu trainings or create detailed well crafted trainings. You can practice continuously, before a certain important event (e.g. having a difficult conversation, asking for a promotion, preparing for an interview).
+    </Tab>
+    <Tab value="Manager">
+      ### 🚀 Team Development
+      
+      If you are a manager, MentoPanda gives you the ability to create your own training projects and invite your team members to it. You can follow their progress and use that as a tool to provide further feedback in improving their skills.
+    </Tab>
+    <Tab value="HR Manager">
+      ### 🌐 Organization-wide Training
+      
+      If you are an HR manager, MentoPanda allows you to implement a solution across your organization for continuous training. You can create multiple projects for multiple needs (e.g. Engineering Manager Training, General Leadership Training etc.) and invite the relevant people into those projects and track their progress.
+    </Tab>
+    <Tab value="Corporate Trainer">
+      ### 📈 Enhanced Training Programs
+      
+      If you are a corporate training consultant, you can use MentoPanda to supplement your training programs with continuous role playing opportunities both during and post training.
+    </Tab>
   </Tabs>
-</div>
 
 ## 🌟 Main Features
 
-<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-  <div className="group">
-    <Card href="/docs/training-catalogs" title="📚 Training Catalogs" description="Explore the training catalogs, including public and private trainings." className="h-full transition-all duration-200 hover:shadow-lg hover:shadow-blue-100 dark:hover:shadow-blue-900/20 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/10 dark:to-cyan-900/10"/>
-  </div>
-  <div className="group">
-    <Card href="/docs/create-trainings" title="✍️ Creating Trainings" description="Learn how to create, edit and publish trainings." className="h-full transition-all duration-200 hover:shadow-lg hover:shadow-green-100 dark:hover:shadow-green-900/20 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10"/>
-  </div>
-  <div className="group">
-    <Card href="/docs/role-playing" title="💬 Role Playing Conversations" description="Learn AI-powered conversation simulations" className="h-full transition-all duration-200 hover:shadow-lg hover:shadow-purple-100 dark:hover:shadow-purple-900/20 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/10 dark:to-violet-900/10"/>
-  </div>
-  <div className="group">
-    <Card href="/docs/impromptu" title="⚡ Sidequests" description="Learn how to create side quest trainings by conversing to MentoPanda." className="h-full transition-all duration-200 hover:shadow-lg hover:shadow-yellow-100 dark:hover:shadow-yellow-900/20 border-yellow-200 dark:border-yellow-800 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/10 dark:to-amber-900/10"/>
-  </div>
-  <div className="group">
-    <Card href="/docs/planning-notes" title="📝 Planning Notes" description="Learn how to prepare for the training." className="h-full transition-all duration-200 hover:shadow-lg hover:shadow-teal-100 dark:hover:shadow-teal-900/20 border-teal-200 dark:border-teal-800 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/10 dark:to-cyan-900/10"/>
-  </div>
-  <div className="group">
-    <Card href="/docs/projects" title="👥 Projects" description="Learn how to create projects, invite team members and track progress"  className="h-full transition-all duration-200 hover:shadow-lg hover:shadow-indigo-100 dark:hover:shadow-indigo-900/20 border-indigo-200 dark:border-indigo-800 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/10 dark:to-blue-900/10"/>
-  </div>
-</div>
+<Cards>
+  <Card href="/docs/projects" title="🗂️ Projects">
+    Learn what projects are and how to create projects.
+  </Card>
+  <Card href="/docs/training-catalogs" title="📚 Training Catalogs">
+    Explore the training catalogs, including public and private trainings.
+  </Card>
+  <Card href="/docs/create-trainings" title="✍️ Creating Trainings">
+    Learn how to create, edit and publish trainings.
+  </Card>
+  <Card href="/docs/role-playing" title="💬 Role Playing Conversations">
+    Learn AI-powered conversation simulations
+  </Card>
+  <Card href="/docs/impromptu" title="⚡ Sidequests">
+    Learn how to create side quest trainings by conversing to MentoPanda.
+  </Card>
+  <Card href="/docs/planning-notes" title="📝 Planning Notes">
+    Learn how to prepare for the training.
+  </Card>
+  <Card href="/docs/team" title="👥 Team Management">
+    Learn how to add members to your projects and manage their roles and track their progress.
+  </Card>
+</Cards>
 

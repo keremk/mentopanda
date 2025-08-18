@@ -123,7 +123,7 @@ export function EditModuleForm({
                   value="instructions"
                   className="data-[state=active]:bg-background data-[state=active]:shadow-xs rounded-2xl focus:ring-brand focus:ring-2"
                 >
-                  User Instructions
+                  Instructions
                 </TabsTrigger>
                 <TabsTrigger
                   value="scenario"

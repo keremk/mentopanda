@@ -403,6 +403,11 @@
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
   }
+
+  /* Custom FeatureCards layout for docs */
+  .feature-cards {
+    @apply grid md:grid-cols-3 gap-4 max-w-4xl mx-auto mb-8;
+  }
 }
 
 @layer base {

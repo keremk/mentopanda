@@ -3,3 +3,172 @@ title: ✍️ Create/Edit Trainings
 description: Learn how to create and edit trainings.
 ---
 
+In MentoPanda, you can create and edit trainings that are in your own projects or in the projects you are a manager or admin of. By default, trainings are only visible to you and the members of the project it is created in.
+
+# Training Structure
+
+Trainings are structured in a way, where you can have multiple training modules within them. So you can think of a training as a collection of modules that can be used in role playing conversations.
+
+## Training Description
+
+Each training has the following components:
+
+<FeatureTable
+  features={{
+    title: {
+      name: "Title",
+      description: "The name of the training",
+    },
+    tagline: {
+      name: "Tagline",
+      description: "A catchy phrase that describes the training",
+    },
+    description: {
+      name: "Description",
+      description: "A detailed description of what the training is about",
+    },
+    trainingImage: {
+      name: "Training Image",
+      description:
+        "An image you can upload or generate with AI that represents the training",
+    },
+    previewVideo: {
+      name: "Preview Video",
+      description:
+        "An optional video that gives an overview of the training. Currently, you need to create the video (if you wish) outside of this platform, upload to your Youtube account and then paste the link here",
+    },
+  }}
+/>
+
+## Training Modules
+
+Each training can have multiple modules. Each module has the following basic components:
+
+<FeatureTable
+  features={{
+    title: {
+      name: "Title",
+      description: "The name of the module",
+    },
+    instructions: {
+      name: "Instructions",
+      description:
+        "A set of instructions that guide the user on how to use the module",
+    },
+  }}
+/>
+
+### Module AI Configuration
+
+Each module is configured with prompts for the AI to use in role playing conversations. The prompts are structured as follows:
+
+<FeatureTable
+  features={{
+    scenario: {
+      name: "Scenario",
+      description:
+        "The scenario that the AI will use in the role playing conversation",
+    },
+    character: {
+      name: "Character",
+      description:
+        "The character that the AI will play in the role playing conversation",
+    },
+    assessment: {
+      name: "Assessment",
+      description:
+        "The assessment criteria that the AI will use to evaluate the user's performance in the role playing conversation",
+    },
+    prepCoach: {
+      name: "Prep Coach",
+      description:
+        "The AI prompt (instructions) that will be used to coach the user before the role playing conversation starts",
+    },
+  }}
+/>
+
+# Create a Training
+
+## Creating Training Description
+To create a training, you need to be in a project where you have the necessary permissions (manager or admin). You can create a training by following these steps:
+
+<Steps>
+<Step>
+Select the "Trainings" section in the side panel.
+</Step>
+<Step>
+Select the "Create Training" button at the top right corner of the trainings page.
+</Step>
+<Step>
+Fill in the training details, including title, tagline, description.
+![Empty Training](https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/docs/empty-training.png)
+For each field, you can either type in the text or use the AI to generate it for you by using the selected section in the right side panel. In the side panel, you can give some approximate text, and the AI will generate a proper text for you.
+</Step>
+<Step>
+Upload or generate a training image. You can use the AI to generate an image by clicking on the "Generate" button next to the image field. Once you are happy with the image, click on the "Use This Image" button to upload it.
+![Generate Training Image](https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/docs/generate-training-image.png)
+<Callout type="warning">
+The image generation will use some of your credits, so make sure you have enough credits before generating the image.
+</Callout>
+</Step>
+</Steps>
+
+Now your training is created, but remember it is just a collection of modules, so you need to add modules to it.
+
+## Creating Modules
+To create a module, follow these steps:
+
+<Steps>
+<Step>
+First switch to the "Modules" tab in the training page. And click on the "Add" button to add a new module. When you see the dialog, enter the title of the module and click on the "Create" button.
+![Add Module](https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/docs/add-module.png)
+</Step>
+<Step>
+Once the module is created, you will see the module details page. Here you can fill in the module instructions and AI configuration.
+![Editing Scenario](https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/docs/editing-scenario.png)
+You can use the AI side panel to generate the prompts and other details as shown in the screenshot above. Once you are happy with the AI suggestions, click "Apply" to apply the changes to the module.
+<Callout type="info">
+We highly recommend using the AI to generate the prompts especially, as it knows how to generate the best performing prompts for the AI to use in role playing conversations. You can also edit the prompts manually if you want to customize them further.
+</Callout>
+</Step>
+<Step>
+Each module will utilize a character in the role playing conversations. The character tab allows you to create a character for the scenario. You hit "Create New Character" button to create a new character. This will pop up a dialog to provide a name for the character.
+![Create Character](https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/docs/create-character.png)
+You can select a voice that you like from the dropdown. This will be used in the role playing conversations to simulate the character's voice.
+</Step>
+<Step>
+You can again use the AI to generate the character background. Again this will be used as a prompt to the AI to simulate the character in the role playing conversations.
+![Character Background](https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/docs/character-background.png)
+</Step>
+<Step>
+You can also use the character attributes buttons to pop up a dialog to modify the skills and traits of the character. This will be used in the role playing conversations to simulate the character's behavior.
+The first button allows you to modify the skills of the character. You can dial back and forth the skills. You can also switch to the prompts tab to see how the prompts are generated based on those skills.
+![Character Skills](https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/docs/character-skills.png)
+The second button allows you to modify the traits of the character. You can also dial back and forth the traits. You can also switch to the prompts tab to see how the prompts are generated based on those traits.
+![Character Traits](https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/docs/character-traits.png)
+</Step>
+<Step>
+Once the conversation is over, the AI will provide an assessment of your performance based on the assessment criteria you provided in the Assessment tab of the module. 
+<Callout type="info">
+Again it is highly recommended to use the AI to generate the assessment criteria based on your free form specs, as it knows how to generate the best performing assessment criteria for the AI to use in role playing conversations.
+</Callout>
+</Step>
+<Step>
+Finally you can also use the prep coach tab to provide the necessary prompts to the AI to help you prepate for the role playing conversation. This will be used by the AI to coach you before the role playing conversation starts.
+<Callout type="info">
+Again it is highly recommended to use the AI to generate the prep coach prompts based on your free form specs, as it knows how to generate the best performing prep coach prompts for the AI to use in role playing conversations.
+</Callout>
+</Step>
+</Steps>
+
+## Testing the Module 
+Once you have created the module, you can test it by clicking on the "Test" button at the top right corner of the module details page. This will start a test role playing conversation with the AI using the module you created. You can interact with the AI and see how it responds based on the prompts and configuration you provided.
+
+## Making the Training Public
+Once you are happy with the training and the modules, you can make the training public by clicking on the "Make Public" button at the top right corner of the training page. This will make the training visible to everyone in MentoPanda. 
+
+You can later on decide to make the training private again by clicking on the "Make Private" button. This will remove the training from the public training catalog and make it private to you and the members of your project.
+
+<Callout type="warning">
+When you make a training public, it will be visible to everyone in MentoPanda. So make sure you are happy with the training and the modules before making it public. Your user avatar and display name will also be visible to everyone who browse the public trainings including search engines.
+</Callout>
