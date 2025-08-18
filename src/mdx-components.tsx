@@ -1,5 +1,5 @@
-import defaultMdxComponents from 'fumadocs-ui/mdx';
-import type { MDXComponents } from 'mdx/types';
+import defaultMdxComponents from "fumadocs-ui/mdx";
+import type { MDXComponents } from "mdx/types";
 import { Accordion, Accordions } from "fumadocs-ui/components/accordion";
 import { ImageZoom } from "fumadocs-ui/components/image-zoom";
 import { Steps, Step } from "fumadocs-ui/components/steps";
@@ -18,7 +18,9 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Steps,
     Step,
     // Override or extend default MDX components
-    img: (props) => <ImageZoom {...(props as any)} />,
+    img: (props: React.ComponentProps<"img">) => (
+      <ImageZoom {...(props)} />
+    ),
     // Add any additional components you want to use in MDX here
     ...components, // Allow overriding or extending with custom components
   };

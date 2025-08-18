@@ -178,7 +178,6 @@ export function ImageGenerationDialog({
         description: errorMsg,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     generatedImageData,
     uploadHook.setFiles,

@@ -14,6 +14,7 @@ import {
   type TranscriptionUpdate,
   type PromptHelperUpdate,
   type ReplicateImageUpdate,
+  type ImageUsage,
 } from "@/data/usage";
 import {
   SUBSCRIPTION_TIER_CREDITS,
@@ -24,6 +25,17 @@ import {
   setupTestEnvironment,
   cleanupTestEnvironment,
 } from "@/tests/utils/test-setup";
+
+// Type alias to extract the replicate image usage type
+type ReplicateImageModelUsage = NonNullable<ImageUsage[string][string]> & {
+  imageCount: number;
+  costPerImage: number;
+  totalCost: number;
+  meanTimeElapsed: number;
+  maxTimeElapsed: number;
+  quality: string;
+  size: string;
+};
 
 // Integration tests against real Supabase database
 describe("Usage Database Integration Tests", () => {
@@ -323,7 +335,7 @@ describe("Usage Database Integration Tests", () => {
       expect(replicateUsage).toBeDefined();
       expect(replicateUsage?.requestCount).toBe(1);
       // Type assertion to access Replicate-specific fields
-      const replicateData = replicateUsage as any;
+      const replicateData = replicateUsage as ReplicateImageModelUsage;
       expect(replicateData.imageCount).toBe(1);
       expect(replicateData.costPerImage).toBe(0.02);
       expect(replicateData.totalCost).toBe(0.02);
@@ -364,7 +376,7 @@ describe("Usage Database Integration Tests", () => {
       });
 
       const replicateKey = "replicate-replicate";
-      const replicateUsage = secondResult.images["google/imagen-4-fast"]?.[replicateKey] as any;
+      const replicateUsage = secondResult.images["google/imagen-4-fast"]?.[replicateKey] as ReplicateImageModelUsage;
       
       expect(replicateUsage.requestCount).toBe(2);
       expect(replicateUsage.imageCount).toBe(3); // 1 + 2
@@ -418,7 +430,7 @@ describe("Usage Database Integration Tests", () => {
       
       // Verify they don't interfere with each other
       const regularUsage = result.images["gpt-image-1"]?.[regularKey];
-      const replicateUsage = result.images["gpt-image-1"]?.[replicateKey] as any;
+      const replicateUsage = result.images["gpt-image-1"]?.[replicateKey] as ReplicateImageModelUsage;
       
       expect(regularUsage?.requestCount).toBe(1);
       expect(replicateUsage?.requestCount).toBe(1);

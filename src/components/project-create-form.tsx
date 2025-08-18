@@ -21,7 +21,7 @@ export function ProjectCreateForm({
   isLoading,
 }: CreateProjectFormProps) {
   const [projectName, setProjectName] = useState("");
-  const [copyStarterContent, setCopyStarterContent] = useState(false);
+  const [copyStarterContent] = useState(false);
 
   return (
     <div className="flex flex-col flex-1">

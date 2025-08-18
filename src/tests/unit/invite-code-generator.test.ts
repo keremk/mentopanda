@@ -32,7 +32,7 @@ describe("Invite Code Generator", () => {
       const code = generateInviteCode(8);
 
       // 8 + 1 checksum = 9 chars, should have dashes: ABCD-EFGH-J
-      expect(code).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z\*~\$=U]$/);
+      expect(code).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z*~$=U]$/);
     });
 
     it("should generate different codes on multiple calls", () => {
@@ -234,11 +234,11 @@ describe("Invite Code Generator", () => {
 
     it("should generate codes with correct format pattern", () => {
       const patterns = [
-        { length: 6, pattern: /^[0-9A-Z]{4}-[0-9A-Z\*~\$=U]{3}$/ }, // 6+1=7: ABCD-EFG
-        { length: 8, pattern: /^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z\*~\$=U]$/ }, // 8+1=9: ABCD-EFGH-J
+        { length: 6, pattern: /^[0-9A-Z]{4}-[0-9A-Z*~$=U]{3}$/ }, // 6+1=7: ABCD-EFG
+        { length: 8, pattern: /^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z*~$=U]$/ }, // 8+1=9: ABCD-EFGH-J
         {
           length: 12,
-          pattern: /^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z\*~\$=U]$/,
+          pattern: /^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z*~$=U]$/,
         }, // 12+1=13: ABCD-EFGH-IJKL-M
       ];
 
