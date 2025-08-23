@@ -63,14 +63,11 @@ export function PrepCoach({ moduleId, prepCoachPrompt }: PrepCoachProps) {
 
   return (
     <>
-      <MentorAgent agentFactory={agentFactory} />
-
-      {/* Session End Options */}
-      <div className="mt-6 flex justify-center">
-        <Button onClick={handleEndSession} variant="brand" className="px-8">
-          End Session & Continue
-        </Button>
-      </div>
+      <MentorAgent 
+        agentFactory={agentFactory} 
+        endButtonText="End Session & Continue"
+        onEndClick={handleEndSession}
+      />
 
       {/* End Session Dialog */}
       <Dialog open={showEndDialog} onOpenChange={setShowEndDialog}>

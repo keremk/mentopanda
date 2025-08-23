@@ -14,9 +14,11 @@ const AVATAR_URL =
 
 export type MentorAgentProps = {
   agentFactory: () => Promise<RealtimeAgent>;
+  endButtonText?: string;
+  onEndClick?: () => void;
 };
 
-export function MentorAgent({ agentFactory }: MentorAgentProps) {
+export function MentorAgent({ agentFactory, endButtonText = "End Conversation", onEndClick }: MentorAgentProps) {
   const [agent, setAgent] = useState<RealtimeAgent | null>(null);
   const [isLoadingAgent, setIsLoadingAgent] = useState(true);
   const [agentError, setAgentError] = useState<string | null>(null);
@@ -73,6 +75,9 @@ export function MentorAgent({ agentFactory }: MentorAgentProps) {
   const handleDisconnect = () => {
     disconnect();
     setShowAvatar(false);
+    if (onEndClick) {
+      onEndClick();
+    }
   };
 
   // Ensure cleanup when component unmounts
@@ -144,7 +149,7 @@ export function MentorAgent({ agentFactory }: MentorAgentProps) {
 
             {isConnected && (
               <Button onClick={handleDisconnect} variant="ghost-brand">
-                End Conversation
+                {endButtonText}
               </Button>
             )}
           </div>

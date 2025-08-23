@@ -52,8 +52,8 @@ export default async function PrepPage(props: Props) {
                 Back
               </Link>
             </Button>
-            <Button asChild variant="brand" className="hidden md:flex">
-              <Link href={`/simulation/${currentModule.id}`}>Continue</Link>
+            <Button asChild variant="ghost-brand" className="hidden md:flex">
+              <Link href={`/simulation/${currentModule.id}`}>Skip</Link>
             </Button>
           </div>
         </div>
