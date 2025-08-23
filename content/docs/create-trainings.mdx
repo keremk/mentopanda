@@ -13,78 +13,41 @@ Trainings are structured in a way, where you can have multiple training modules 
 
 Each training has the following components:
 
-<FeatureTable
-  features={{
-    title: {
-      name: "Title",
-      description: "The name of the training",
-    },
-    tagline: {
-      name: "Tagline",
-      description: "A catchy phrase that describes the training",
-    },
-    description: {
-      name: "Description",
-      description: "A detailed description of what the training is about",
-    },
-    trainingImage: {
-      name: "Training Image",
-      description:
-        "An image you can upload or generate with AI that represents the training",
-    },
-    previewVideo: {
-      name: "Preview Video",
-      description:
-        "An optional video that gives an overview of the training. Currently, you need to create the video (if you wish) outside of this platform, upload to your Youtube account and then paste the link here",
-    },
-  }}
+<Table
+  columns={["Feature", "Description"]}
+  rows={[
+    ["Title", "The name of the training"],
+    ["Tagline", "A catchy phrase that describes the training"],
+    ["Description", "A detailed description of what the training is about"],
+    ["Training Image", "An image you can upload or generate with AI that represents the training"],
+    ["Preview Video", "An optional video that gives an overview of the training. Currently, you need to create the video (if you wish) outside of this platform, upload to your Youtube account and then paste the link here"]
+  ]}
 />
 
 ## Training Modules
 
 Each training can have multiple modules. Each module has the following basic components:
 
-<FeatureTable
-  features={{
-    title: {
-      name: "Title",
-      description: "The name of the module",
-    },
-    instructions: {
-      name: "Instructions",
-      description:
-        "A set of instructions that guide the user on how to use the module",
-    },
-  }}
+<Table
+  columns={["Feature", "Description"]}
+  rows={[
+    ["Title", "The name of the module"],
+    ["Instructions", "A set of instructions that guide the user on how to use the module"]
+  ]}
 />
 
 ### Module AI Configuration
 
 Each module is configured with prompts for the AI to use in role playing conversations. The prompts are structured as follows:
 
-<FeatureTable
-  features={{
-    scenario: {
-      name: "Scenario",
-      description:
-        "The scenario that the AI will use in the role playing conversation",
-    },
-    character: {
-      name: "Character",
-      description:
-        "The character that the AI will play in the role playing conversation",
-    },
-    assessment: {
-      name: "Assessment",
-      description:
-        "The assessment criteria that the AI will use to evaluate the user's performance in the role playing conversation",
-    },
-    prepCoach: {
-      name: "Prep Coach",
-      description:
-        "The AI prompt (instructions) that will be used to coach the user before the role playing conversation starts",
-    },
-  }}
+<Table
+  columns={["Feature", "Description"]}
+  rows={[
+    ["Scenario", "The scenario that the AI will use in the role playing conversation"],
+    ["Character", "The character that the AI will play in the role playing conversation"],
+    ["Assessment", "The assessment criteria that the AI will use to evaluate the user's performance in the role playing conversation"],
+    ["Prep Coach", "The AI prompt (instructions) that will be used to coach the user before the role playing conversation starts"]
+  ]}
 />
 
 # Create a Training

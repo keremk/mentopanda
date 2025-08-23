@@ -5,7 +5,7 @@ import { ImageZoom } from "fumadocs-ui/components/image-zoom";
 import { Steps, Step } from "fumadocs-ui/components/steps";
 import * as TabsComponents from "fumadocs-ui/components/tabs";
 import { FeatureCards } from "@/components/docs/FeatureCards";
-import { FeatureTable } from "@/components/docs/FeatureTable";
+import { Table } from "@/components/docs/Table";
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
@@ -14,7 +14,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Accordion,
     Accordions,
     FeatureCards,
-    FeatureTable,
+    Table,
     Steps,
     Step,
     // Override or extend default MDX components

@@ -6,6 +6,7 @@ description: Explore the projects available in MentoPanda, including public and 
 When a user first joins MentoPanda, the onboarding process will guide them through creating their first project. This project will be set as the default project for the user. After the onboarding, users can create additional projects as needed.
 
 ## Project Selection
+
 You will see your current project in the pop-up menu when you click on your avatar icon at the bottom lefts corner of the screen. See below for an example of the pop-up menu, where the project name "Bar Project" is shown:
 
 ![Current Project](https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/docs/current-project.png)
@@ -19,17 +20,35 @@ When you click the "Select" button next to the project name, a pop-up will appea
 ![Project Dialog](https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/docs/project-dialog.png)
 
 ## Creating a New Project
+
 When you click the "Create New" button, a dialog will appear where you can enter the name of your new project. After entering the name, click the "Create" button to create the project or cancel the dialog by clicking the "Cancel" button.
 
 ![Create Project](https://bansnvpaqqmnoildskpz.supabase.co/storage/v1/object/public/docs/create-project.png)
 
 ## Project Roles
+
 Each project has a set of roles that determine what actions users can perform within the project. The roles are as follows:
 
 <Callout type="info">
-When you create a new project, you are by default the admin of that project. You can invite other users to your project and assign them different roles (e.g. manager, member) as needed.
+  When you create a new project, you are by default the admin of that project.
+  You can invite other users to your project and assign them different roles
+  (e.g. manager, member) as needed.
 </Callout>
 
-- **Admin**: Full access to the project, can manage members, create trainings, and view all project data.
-- **Manager**: Can create trainings, manage members, and view project data, but cannot delete the project or change its settings.
-- **Member**: Can view trainings and participate in role playing conversations, but cannot create trainings or manage members.
+<Table
+  columns={["Role", "Description"]}
+  rows={[
+    [
+      "admin",
+      "Full access to the project, can manage members, create trainings, and view all project data.",
+    ],
+    [
+      "manager",
+      "Can create trainings, manage members, and view project data, but cannot delete the project or change its settings.",
+    ],
+    [
+      "member",
+      "Can view trainings and participate in role playing conversations, but cannot create trainings or manage members.",
+    ],
+  ]}
+/>
