@@ -18,7 +18,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     Steps,
     Step,
     // Override or extend default MDX components
-    img: (props: React.ComponentProps<"img">) => (
+    img: (props) => (
       <ImageZoom {...(props)} />
     ),
     // Add any additional components you want to use in MDX here
