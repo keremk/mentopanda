@@ -74,7 +74,8 @@ export type Usage = {
 export function useOpenAIAgentsWithTranscript(
   agent: RealtimeAgent,
   userName: string,
-  agentName: string
+  agentName: string,
+  saveFinalTranscript?: (finalHistory: unknown[]) => Promise<void>
 ): UseOpenAIAgentsWithTranscriptReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -234,6 +235,22 @@ export function useOpenAIAgentsWithTranscript(
 
     if (sessionRef.current) {
       logUsageMetrics();
+      
+      // Capture final history from OpenAI before closing session
+      if (saveFinalTranscript) {
+        try {
+          const finalHistory = sessionRef.current.history || [];
+          logger.debug("🔚 Capturing final session history for clean save:", {
+            historyLength: finalHistory.length
+          });
+          saveFinalTranscript(finalHistory).catch((err) => {
+            logger.error("Failed to save final transcript:", err);
+          });
+        } catch (err) {
+          logger.error("Error capturing final history:", err);
+        }
+      }
+      
       try {
         // Clean up audio element
         if (audioRef.current) {
@@ -260,7 +277,7 @@ export function useOpenAIAgentsWithTranscript(
     currentTranscriptEntryRef.current = null;
 
     logger.info("RealtimeSession disconnected and cleaned up");
-  }, [logUsageMetrics]);
+  }, [logUsageMetrics, saveFinalTranscript]);
 
   const connect = useCallback(async () => {
     logger.debug("🔗 [connect] Starting connection process");

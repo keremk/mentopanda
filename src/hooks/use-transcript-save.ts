@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { updateHistoryEntryAction } from "@/app/actions/history-actions";
 import { TranscriptEntry } from "@/types/chat-types";
+import { convertHistoryToTranscript, formatTranscriptToText } from "@/utils/transcript-utils";
 
 type UseTranscriptSaveProps = {
   historyEntryId?: number;
@@ -91,8 +92,31 @@ export function useTranscriptSave({
     // Run cleanup only when component unmounts or saveTranscript changes
   }, [saveTranscript, historyEntryId]);
 
+  // Save final transcript from OpenAI session history
+  const saveFinalTranscript = useCallback(
+    async (finalHistory: unknown[]) => {
+      if (!historyEntryId) return;
+
+      // Convert OpenAI's session history to clean transcript entries
+      const cleanTranscript = convertHistoryToTranscript(finalHistory);
+      const formattedTranscript = formatTranscriptToText(cleanTranscript);
+
+      // Always save the final, clean version (overwriting any intermediate saves)
+      await updateHistoryEntryAction({
+        id: historyEntryId,
+        transcript: cleanTranscript,
+        transcriptText: formattedTranscript,
+        completedAt: new Date(),
+      });
+
+      lastSavedTranscriptRef.current = JSON.stringify(cleanTranscript);
+    },
+    [historyEntryId]
+  );
+
   return {
     saveTranscript,
     saveAndComplete: useCallback(() => saveTranscript(true), [saveTranscript]),
+    saveFinalTranscript,
   };
 }

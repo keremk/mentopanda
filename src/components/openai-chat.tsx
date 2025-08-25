@@ -406,7 +406,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
   const [isAgentSpeaking, setIsAgentSpeaking] = useState(false);
   const [notes, setNotes] = useState<string | null>(null);
   const { transcriptEntries, clearTranscript } = useTranscript();
-  const { saveAndComplete } = useTranscriptSave({
+  const { saveAndComplete, saveFinalTranscript } = useTranscriptSave({
     historyEntryId,
     transcriptBuffer: transcriptEntries,
     saveInterval: 20000,
@@ -493,7 +493,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     error: agentError,
     audioRef: agentAudioRef,
     isSpeaking: agentSpeaking,
-  } = useOpenAIAgentsWithTranscript(agent, currentUser.displayName, agentName);
+  } = useOpenAIAgentsWithTranscript(agent, currentUser.displayName, agentName, saveFinalTranscript);
 
   // Use the speaking state from the Voice Agents hook
   useEffect(() => {
