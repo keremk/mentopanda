@@ -3,7 +3,7 @@
 import { useCompletion } from "@ai-sdk/react";
 import { useEffect, useState, useCallback } from "react";
 import { updateHistoryEntryAction } from "@/app/actions/history-actions";
-import { MemoizedMarkdown } from "@/components/memoized-markdown";
+import { Response } from "@/components/ai-elements/response";
 import { NoCreditsDialog } from "@/components/no-credits-dialog";
 import { useRouter } from "next/navigation";
 import { useApiKey } from "@/hooks/use-api-key";
@@ -210,9 +210,13 @@ export default function AssessmentContent({
       <div className="space-y-4">
         <div className="prose dark:prose-invert max-w-none">
           {isAssessmentCreated && currentAssessmentText ? (
-            <MemoizedMarkdown content={currentAssessmentText} />
+            <Response parseIncompleteMarkdown={true}>
+              {currentAssessmentText}
+            </Response>
           ) : (
-            <MemoizedMarkdown content={streamedContent} />
+            <Response parseIncompleteMarkdown={true}>
+              {streamedContent}
+            </Response>
           )}
         </div>
 
