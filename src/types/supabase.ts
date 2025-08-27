@@ -421,6 +421,80 @@ export type Database = {
           },
         ]
       }
+      progress_modules: {
+        Row: {
+          assessment_text: string | null
+          created_at: string | null
+          id: number
+          module_id: number
+          progress_overall_id: number
+          updated_at: string | null
+        }
+        Insert: {
+          assessment_text?: string | null
+          created_at?: string | null
+          id?: number
+          module_id: number
+          progress_overall_id: number
+          updated_at?: string | null
+        }
+        Update: {
+          assessment_text?: string | null
+          created_at?: string | null
+          id?: number
+          module_id?: number
+          progress_overall_id?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_modules_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "progress_modules_progress_overall_id_fkey"
+            columns: ["progress_overall_id"]
+            isOneToOne: false
+            referencedRelation: "progress_overall"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      progress_overall: {
+        Row: {
+          assessment_text: string | null
+          created_at: string | null
+          id: number
+          profile_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          assessment_text?: string | null
+          created_at?: string | null
+          id?: number
+          profile_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          assessment_text?: string | null
+          created_at?: string | null
+          id?: number
+          profile_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_overall_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           created_at: string | null
@@ -813,6 +887,32 @@ export type Database = {
           p_project_id: number
         }
         Returns: Json
+      }
+      get_public_trainings: {
+        Args: {
+          user_project_id?: number
+          limit_count?: number
+          offset_count?: number
+        }
+        Returns: {
+          id: number
+          title: string
+          tagline: string
+          description: string
+          image_url: string
+          project_id: number
+          created_at: string
+          updated_at: string
+          is_public: boolean
+          fork_count: number
+          origin_id: number
+          forked_at: string
+          created_by: string
+          preview_url: string
+          creator_avatar_url: string
+          creator_display_name: string
+          is_forked: boolean
+        }[]
       }
       get_user_emails_by_ids: {
         Args: {
