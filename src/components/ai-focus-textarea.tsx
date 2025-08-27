@@ -1,119 +1,111 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import { Textarea, TextareaProps } from "@/components/ui/textarea";
+import { useRef, useEffect } from "react";
+import { TextareaProps } from "@/components/ui/textarea";
 import { useAIPane } from "@/contexts/ai-pane-context";
-import { MemoizedMarkdown } from "@/components/memoized-markdown";
+import { useTheme } from "next-themes";
+
+// Import OverType from the installed package
+// @ts-expect-error - OverType doesn't have TypeScript definitions
+import OverType from "overtype";
 
 export function AIFocusTextarea({
   name,
   value,
   onChange,
-  ...props
+  placeholder,
+  className,
+  onFocus,
+  onBlur,
 }: TextareaProps) {
   const { setFocusedField } = useAIPane();
-  const [hasFocus, setHasFocus] = useState(false);
-  const [shouldFocus, setShouldFocus] = useState(false);
-  const [measuredHeight, setMeasuredHeight] = useState<string | undefined>(
-    undefined
-  );
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const measureRef = useRef<HTMLTextAreaElement>(null);
+  const { resolvedTheme } = useTheme();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const editorInstanceRef = useRef<unknown>(null);
+  
+  // Store latest prop values in refs so event handlers can access them
+  const propsRef = useRef({ name, onChange, onFocus, onBlur, setFocusedField });
+  propsRef.current = { name, onChange, onFocus, onBlur, setFocusedField };
 
-  // Measure height on value/className change
+  // Initialize/recreate OverType editor when theme changes
   useEffect(() => {
-    if (measureRef.current) {
-      setMeasuredHeight(`${measureRef.current.offsetHeight}px`);
-    }
-  }, [value, props.className]);
+    if (!containerRef.current || !resolvedTheme) return;
 
-  const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-    setHasFocus(true);
-    if (name) {
-      setFocusedField({ fieldType: name });
+    // Destroy existing instance if it exists
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (editorInstanceRef.current && (editorInstanceRef.current as any)?.destroy) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (editorInstanceRef.current as any).destroy();
     }
-    props.onFocus?.(e);
-  };
 
-  const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-    // Measure the height before hiding
-    if (textareaRef.current) {
-      setMeasuredHeight(`${textareaRef.current.offsetHeight}px`);
-    }
-    setHasFocus(false);
-    setFocusedField(undefined);
-    props.onBlur?.(e);
-  };
+    // Use next-themes resolved theme
+    const overtypeTheme = resolvedTheme === 'dark' ? 'cave' : 'solar';
+    
+    const [instance] = OverType.init(containerRef.current, {
+      value: typeof value === "string" ? value : "",
+      theme: overtypeTheme,
+      toolbar: false,
+      placeholder: placeholder || "Enter text here...",
+      autoResize: false,
+      minHeight: '200px',
+      maxHeight: null, // Allow unlimited height
+      onChange: (newValue: string) => {
+        const props = propsRef.current;
+        if (props.onChange) {
+          const syntheticEvent = {
+            target: { name: props.name, value: newValue },
+            currentTarget: { name: props.name, value: newValue }
+          } as React.ChangeEvent<HTMLTextAreaElement>;
+          props.onChange(syntheticEvent);
+        }
+      },
+      onFocus: () => {
+        const props = propsRef.current;
+        if (props.name) {
+          props.setFocusedField({ fieldType: props.name });
+        }
+        if (props.onFocus) {
+          const syntheticEvent = {} as React.FocusEvent<HTMLTextAreaElement>;
+          props.onFocus(syntheticEvent);
+        }
+      },
+      onBlur: () => {
+        const props = propsRef.current;
+        props.setFocusedField(undefined);
+        if (props.onBlur) {
+          const syntheticEvent = {} as React.FocusEvent<HTMLTextAreaElement>;
+          props.onBlur(syntheticEvent);
+        }
+      },
+    });
+    
+    editorInstanceRef.current = instance;
 
+    return () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (editorInstanceRef.current && (editorInstanceRef.current as any)?.destroy) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (editorInstanceRef.current as any).destroy();
+      }
+    };
+  }, [resolvedTheme]); // Recreate when theme changes
+
+  // Handle value updates without destroying instance
   useEffect(() => {
-    if (hasFocus && shouldFocus && textareaRef.current) {
-      textareaRef.current.focus();
-      setShouldFocus(false);
+    if (editorInstanceRef.current && value !== undefined) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const currentValue = (editorInstanceRef.current as any)?.getValue();
+      if (currentValue !== value) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (editorInstanceRef.current as any)?.setValue(typeof value === "string" ? value : "");
+      }
     }
-  }, [hasFocus, shouldFocus]);
+  }, [value]);
 
-  // Always render a hidden textarea for measurement
-  const hiddenTextarea = (
-    <textarea
-      ref={measureRef}
-      value={value}
-      readOnly
-      tabIndex={-1}
-      aria-hidden="true"
-      style={{
-        visibility: "hidden",
-        position: "absolute",
-        left: 0,
-        top: 0,
-        height: "auto",
-        pointerEvents: "none",
-        zIndex: -1,
-        width: "100%",
-        // Match all relevant classes
-      }}
-      className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground ${props.className || ""}`}
-      rows={props.rows}
-    />
-  );
-
-  if (hasFocus) {
-    return (
-      <>
-        <Textarea
-          ref={textareaRef}
-          name={name}
-          value={value}
-          onChange={onChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          {...props}
-          className={`${props.className || ""} ring-1 ring-brand/30 transition-all duration-200`}
-        />
-        {hiddenTextarea}
-      </>
-    );
-  }
-
-  // Not focused, show rendered markdown (fallback to empty string if value undefined)
   return (
-    <>
-      <div
-        onClick={() => {
-          setHasFocus(true);
-          setShouldFocus(true);
-        }}
-        tabIndex={0}
-        style={{
-          cursor: "pointer",
-          height: measuredHeight,
-          minHeight: measuredHeight,
-          maxHeight: measuredHeight,
-        }}
-        className={`w-full rounded-xxl border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground overflow-auto ${props.className || ""}`}
-      >
-        <MemoizedMarkdown content={typeof value === "string" ? value : ""} />
-      </div>
-      {hiddenTextarea}
-    </>
+    <div 
+      ref={containerRef}
+      className={`ai-focus-overtype w-full h-full rounded-md border border-input bg-background text-sm placeholder:text-muted-foreground focus-within:ring-1 focus-within:ring-brand/30 transition-all duration-200 ${className || ""}`}
+    />
   );
 }

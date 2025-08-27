@@ -408,6 +408,19 @@
   .feature-cards {
     @apply grid md:grid-cols-3 gap-4 max-w-4xl mx-auto mb-8;
   }
+
+  /* OverType editor basic styling - let OverType handle syntax highlighting */
+  .ai-focus-overtype {
+    font-family: var(--font-sans);
+    height: 100%;
+  }
+
+  /* Ensure OverType internal elements fill container height */
+  .ai-focus-overtype > div,
+  .ai-focus-overtype textarea {
+    height: 100% !important;
+    min-height: inherit !important;
+  }
 }
 
 @layer base {
