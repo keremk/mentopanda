@@ -1,6 +1,6 @@
 "use server";
 
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { createClient as createAdminClient } from "@supabase/supabase-js"; // For admin client
 import { logger } from "@/lib/logger";
 

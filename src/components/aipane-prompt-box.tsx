@@ -31,9 +31,9 @@ export type AIAssistOption = {
 export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
   const {
     input,
-    handleInputChange,
+    setInput,
     handleSubmit,
-    isLoading,
+    status,
     contextType,
     focusedField,
     selectedOption,
@@ -106,7 +106,8 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (isLoading || (!input.trim() && !isContextIncluded) || hasCreditError)
+    const isLoading = status === "streaming";
+    if (isLoading || (!input?.trim() && !isContextIncluded) || hasCreditError)
       return;
 
     // Submit with the selected option
@@ -130,7 +131,8 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
     // Pressing Enter alone will now insert a newline by default
   };
 
-  const isAskEnabled = (isContextIncluded || !!input.trim()) && !hasCreditError;
+  const isLoading = status === "streaming" || status === "submitted";
+  const isAskEnabled = (isContextIncluded || !!input?.trim()) && !hasCreditError;
 
   return (
     <TooltipProvider>
@@ -162,7 +164,7 @@ export function AIPanePromptBox({ className = "" }: AIPanePromptBoxProps) {
           <div className="rounded-2xl bg-secondary/30 border border-border/30 overflow-hidden flex flex-col group focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
             <Textarea
               value={input}
-              onChange={handleInputChange}
+              onChange={(e) => setInput(e.target.value)}
               placeholder={
                 hasCreditError
                   ? "No credits available - purchase credits to continue..."

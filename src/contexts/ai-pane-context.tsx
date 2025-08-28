@@ -8,9 +8,11 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useChat, Message, CreateMessage } from "@ai-sdk/react";
+import { useChat, UIMessage } from "@ai-sdk/react";
 import { useApiKey } from "@/hooks/use-api-key";
 import { logger } from "@/lib/logger";
+import { DefaultChatTransport, ChatStatus } from "ai";
+
 
 export type ContextType = "module" | "character" | "training";
 
@@ -33,23 +35,17 @@ export type FocusedField = {
   fieldType: string;
 };
 
-type InputHandler = (
-  e:
-    | React.ChangeEvent<HTMLTextAreaElement>
-    | React.ChangeEvent<HTMLInputElement>
-) => void;
-
 type SubmitHandler = (
   e: React.FormEvent<HTMLFormElement>,
   additionalData?: Record<string, unknown>
 ) => void;
 
 type AIPaneContextType = {
-  messages: Message[];
+  messages: UIMessage[];
   input: string;
-  handleInputChange: InputHandler;
+  setInput: (value: string) => void;
   handleSubmit: SubmitHandler;
-  isLoading: boolean;
+  status: ChatStatus;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   contextType?: ContextType;
   contextData?: ContextData;
@@ -85,23 +81,22 @@ export function AIPaneProvider({
   focusedField: externalFocusedField,
 }: AIPaneProviderProps) {
   const { apiKey } = useApiKey();
+  const [input, setInput] = useState("");
   const {
     messages,
-    input,
-    handleInputChange,
-    handleSubmit: chatHandleSubmit,
-    append,
-    isLoading,
+    sendMessage,
+    status,
     setMessages,
-    setInput,
     error,
   } = useChat({
-    api: "/api/chat",
-    body: {
-      contextType,
-      contextData,
-      apiKey,
-    },
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      body: {
+        contextType,
+        contextData,
+        apiKey
+      }
+    }),
     onError: (error) => {
       logger.error("AI Pane chat error:", error);
 
@@ -133,27 +128,25 @@ export function AIPaneProvider({
 
   // Custom submit handler that can include additional data
   const handleSubmit: SubmitHandler = (e, additionalData = {}) => {
-    // If input is empty, but context is included, use append to send a whitespace message
-    if (input.trim() === "") {
-      if (e && typeof e.preventDefault === "function") e.preventDefault();
-      append({ role: "user", content: " " } as CreateMessage, {
+    e.preventDefault();
+    
+    const messageContent = input.trim() || " ";
+    
+    sendMessage(
+      { text: messageContent },
+      {
         body: {
           ...additionalData,
           contextType,
           contextData,
           selectedOption,
+          apiKey,
         },
-      });
-      return;
-    }
-    chatHandleSubmit(e, {
-      body: {
-        ...additionalData,
-        contextType,
-        contextData,
-        selectedOption,
-      },
-    });
+      }
+    );
+    
+    // Clear input after sending
+    setInput("");
   };
 
   // Auto-scroll to bottom when messages change
@@ -180,9 +173,9 @@ export function AIPaneProvider({
   const value: AIPaneContextType = {
     messages,
     input,
-    handleInputChange,
+    setInput,
     handleSubmit,
-    isLoading,
+    status,
     messagesEndRef,
     contextType,
     contextData,

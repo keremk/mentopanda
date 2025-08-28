@@ -5,6 +5,15 @@ import { useAIPane } from "../contexts/ai-pane-context";
 import { Button } from "@/components/ui/button";
 import { Check, Copy } from "lucide-react";
 import { logger } from "@/lib/logger";
+import { UIMessage } from "@ai-sdk/react";
+
+// Helper function to extract text content from UIMessage parts
+const getMessageText = (message: UIMessage): string => {
+  return message.parts
+    ?.filter(part => part.type === 'text')
+    ?.map(part => part.text)
+    ?.join('') || '';
+};
 
 export function AIPaneResponses() {
   const { messages, messagesEndRef, applyGeneratedContent, selectedOption } =
@@ -89,14 +98,16 @@ export function AIPaneResponses() {
             <div className="text-xs text-muted-foreground mb-1">
               {message.role === "user" ? "You" : "AI Assistant"}
             </div>
-            <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+            <div className="text-sm whitespace-pre-wrap">
+              {getMessageText(message)}
+            </div>
 
             {message.role === "assistant" && (
               <div className="mt-3 flex gap-2 justify-end">
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => handleCopyContent(message.id, message.content)}
+                  onClick={() => handleCopyContent(message.id, getMessageText(message))}
                   className="h-7 px-2 text-xs"
                 >
                   {isCopied ? (
@@ -112,7 +123,7 @@ export function AIPaneResponses() {
                     size="sm"
                     variant={isApplied ? "brand" : "ghost-brand"}
                     onClick={() =>
-                      handleApplyContent(message.id, message.content)
+                      handleApplyContent(message.id, getMessageText(message))
                     }
                     className="h-7 px-2 text-xs"
                     disabled={isApplied}

@@ -3,6 +3,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { getModuleByIdAction2 } from "@/app/actions/moduleActions";
 import { getHistoryEntryAction } from "@/app/actions/history-actions";
 import { updateAssessmentUsageAction } from "@/app/actions/usage-actions";
+import { trackUsage } from "@/lib/usage/usage-mapper";
 import { logger } from "@/lib/logger";
 import { checkUserHasCredits } from "@/app/actions/credit-check";
 import { MODEL_NAMES } from "@/types/models";
@@ -64,7 +65,6 @@ export async function POST(req: Request) {
 
   const openai = createOpenAI({
     apiKey: finalApiKey,
-    compatibility: "strict", // Enable strict compatibility mode for proper token counting in streams
   });
 
   const systemPrompt = `
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
   logger.info(`System prompt:`, systemPrompt);
 
   const result = streamText({
-    model: openai(MODEL_NAMES.OPENAI_GPT4O),
+    model: openai.chat(MODEL_NAMES.OPENAI_GPT4O),
     system: systemPrompt,
     prompt: `Transcript:\n
      ${historyEntry.transcriptText}
@@ -87,55 +87,31 @@ export async function POST(req: Request) {
     onError: (error) => {
       logger.error(`Stream error: ${error}`);
     },
-    onFinish: async ({ usage, finishReason, text, providerMetadata }) => {
-      // Log usage data when available
-      if (usage) {
-        logger.info(`Usage:`, usage.totalTokens);
-        logger.info(`Prompt tokens:`, usage.promptTokens);
-        logger.info(`Completion tokens:`, usage.completionTokens);
-
-        // Log cached token information if available
-        const cachedPromptTokens =
-          typeof providerMetadata?.openai?.cachedPromptTokens === "number"
-            ? providerMetadata.openai.cachedPromptTokens
-            : 0;
-        const notCachedPromptTokens = Math.max(
-          0,
-          (usage.promptTokens || 0) - cachedPromptTokens
-        );
-        logger.info(`Cached prompt tokens:`, cachedPromptTokens);
-        logger.info(`Non-cached prompt tokens:`, notCachedPromptTokens);
-
-        // Track usage in database
-        try {
-          await updateAssessmentUsageAction({
-            modelName: MODEL_NAMES.OPENAI_GPT4O,
-            promptTokens: {
-              text: {
-                cached: cachedPromptTokens,
-                notCached: notCachedPromptTokens,
-              },
-            },
-            outputTokens: usage.completionTokens || 0,
-            totalTokens: usage.totalTokens || 0,
-          });
-          logger.info(`Usage tracked successfully for assessment`);
-        } catch (error) {
-          logger.error(`Failed to track usage: ${error}`);
-          // Don't fail the request if usage tracking fails
-        }
-      } else {
-        logger.warn(
-          "Usage is null in onFinish callback - this indicates an issue"
-        );
-      }
-      logger.info(`Finish reason:`, finishReason);
-      logger.info(`Text length:`, text.length);
-    },
   });
 
-  return result.toDataStreamResponse({
-    getErrorMessage: (error: unknown) => {
+  return result.toUIMessageStreamResponse({
+    messageMetadata: async ({ part }) => {
+      // Handle usage tracking when generation is finished
+      if (part.type === "finish") {
+        logger.info(`Finish reason:`, part.finishReason);
+
+        // Track usage and wait for it to complete
+        if (part.totalUsage) {
+          await trackUsage(
+            MODEL_NAMES.OPENAI_GPT4O,
+            part.totalUsage,
+            updateAssessmentUsageAction,
+            "assessment"
+          );
+        } else {
+          logger.warn("Total usage is null - this indicates an issue");
+        }
+      }
+
+      // Don't return any metadata to the client
+      return undefined;
+    },
+    onError: (error: unknown) => {
       logger.error(`Stream error: ${error}`);
       return `${error}`;
     },

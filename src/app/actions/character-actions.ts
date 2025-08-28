@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getCharacters } from "@/data/characters";
 import { getCharacterDetails } from "@/data/characters";
 import { updateCharacter, type UpdateCharacterInput } from "@/data/characters";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { createCharacter, type CreateCharacterInput } from "@/data/characters";
 import { deleteCharacter } from "@/data/characters";
 import { cache } from "react";

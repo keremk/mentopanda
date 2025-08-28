@@ -4,11 +4,11 @@ import { useAIPane } from "@/contexts/ai-pane-context";
 import { cn } from "@/lib/utils";
 
 export function AIPaneStatusIndicator() {
-  const { isLoading, error, messages } = useAIPane();
+  const { status, error, messages } = useAIPane();
 
   // Show loading only when a request is active AND the last message was from the user
   const showLoading =
-    isLoading &&
+    status === "streaming" &&
     messages.length > 0 &&
     messages[messages.length - 1].role === "user";
   const showError = error !== undefined;

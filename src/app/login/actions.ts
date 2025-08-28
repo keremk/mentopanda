@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/utils/supabase/server";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { logger } from "@/lib/logger";
 const credentialsSchema = z.object({
   email: z.string().email(),

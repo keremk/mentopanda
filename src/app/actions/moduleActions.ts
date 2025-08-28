@@ -17,6 +17,7 @@ import {
 import { findOrCreateSideQuestsTraining } from "@/data/trainings";
 import { createClient } from "@/utils/supabase/server";
 import { AI_MODELS, MODEL_NAMES, VOICES } from "@/types/models";
+import { trackUsage, trackAggregatedUsage } from "@/lib/usage/usage-mapper";
 import { updatePromptHelperUsageAction } from "@/app/actions/usage-actions";
 import { logger } from "@/lib/logger";
 import modulePrompts from "@/prompts/module-prompts";
@@ -32,80 +33,6 @@ const DEFAULT_ONBOARDING_RECOMMENDATION = {
   moduleDescription:
     "A simple introduction to communication skills training to get you started on your learning journey.",
 };
-
-// Helper function to calculate and track token usage from multiple generation results
-async function calculateAndTrackUsage(
-  results: Array<{
-    usage?: {
-      promptTokens?: number;
-      completionTokens?: number;
-      totalTokens?: number;
-    };
-    providerMetadata?: {
-      openai?: {
-        cachedPromptTokens?:
-          | number
-          | string
-          | boolean
-          | Record<string, unknown>;
-      };
-    };
-  }>,
-  operationName: string
-): Promise<void> {
-  // Calculate total usage across all results
-  const totalUsage = {
-    promptTokens: results.reduce(
-      (sum, result) => sum + (result.usage?.promptTokens || 0),
-      0
-    ),
-    completionTokens: results.reduce(
-      (sum, result) => sum + (result.usage?.completionTokens || 0),
-      0
-    ),
-    totalTokens: results.reduce(
-      (sum, result) => sum + (result.usage?.totalTokens || 0),
-      0
-    ),
-  };
-
-  // Calculate cached tokens from all results
-  const totalCachedTokens = results.reduce((sum, result) => {
-    const cachedTokens =
-      typeof result.providerMetadata?.openai?.cachedPromptTokens === "number"
-        ? result.providerMetadata.openai.cachedPromptTokens
-        : 0;
-    return sum + cachedTokens;
-  }, 0);
-
-  const totalNotCachedTokens = Math.max(
-    0,
-    totalUsage.promptTokens - totalCachedTokens
-  );
-
-  // Track usage in database
-  try {
-    await updatePromptHelperUsageAction({
-      modelName: MODEL_NAMES.OPENAI_GPT4O,
-      promptTokens: {
-        text: {
-          cached: totalCachedTokens,
-          notCached: totalNotCachedTokens,
-        },
-      },
-      outputTokens: totalUsage.completionTokens,
-      totalTokens: totalUsage.totalTokens,
-    });
-    logger.info(`Usage tracked successfully for ${operationName}`);
-  } catch (error) {
-    logger.error(`Failed to track ${operationName} usage: ${error}`);
-    // Don't fail the request if usage tracking fails
-  }
-
-  logger.info(
-    `${operationName} completed successfully. Total tokens used: ${totalUsage.totalTokens}`
-  );
-}
 
 export async function updateModuleAction(module: UpdateModuleInput) {
   const supabase = await createClient();
@@ -257,7 +184,6 @@ export async function generateModulePrompts(
   // Create a configured OpenAI client instance
   const openai = createOpenAI({
     apiKey,
-    compatibility: "strict", // Enable strict compatibility mode for proper token counting
   });
 
   // Prepare the prompts for each generation
@@ -294,9 +220,16 @@ export async function generateModulePrompts(
       temperature: 0.3,
     });
 
-    // Track usage for all three generations
-    await calculateAndTrackUsage(
-      [scenarioResult, characterResult, assessmentResult, prepCoachResult],
+    // Track aggregated usage for all generations with a single database call
+    await trackAggregatedUsage(
+      MODEL_NAMES.OPENAI_GPT4O,
+      [
+        scenarioResult.totalUsage,
+        characterResult.totalUsage,
+        assessmentResult.totalUsage,
+        prepCoachResult.totalUsage,
+      ],
+      updatePromptHelperUsageAction,
       "module prompts generation"
     );
 
@@ -333,7 +266,6 @@ export async function generateModuleFieldsFromScenario(
   // Create a configured OpenAI client instance
   const openai = createOpenAI({
     apiKey,
-    compatibility: "strict", // Enable strict compatibility mode for proper token counting
   });
 
   // Prepare the prompts for each generation
@@ -355,9 +287,11 @@ export async function generateModuleFieldsFromScenario(
       }),
     ]);
 
-    // Track usage for both generations
-    await calculateAndTrackUsage(
-      [titleResult, instructionsResult],
+    // Track aggregated usage for both generations with a single database call
+    await trackAggregatedUsage(
+      MODEL_NAMES.OPENAI_GPT4O,
+      [titleResult.totalUsage, instructionsResult.totalUsage],
+      updatePromptHelperUsageAction,
       "module fields generation from scenario"
     );
 
@@ -397,7 +331,6 @@ export async function generatePrepCoachAction(
   // Create a configured OpenAI client instance
   const openai = createOpenAI({
     apiKey,
-    compatibility: "strict", // Enable strict compatibility mode for proper token counting
   });
 
   // Generate the prepCoach prompt
@@ -410,8 +343,15 @@ export async function generatePrepCoachAction(
       temperature: 0.3,
     });
 
-    // Track usage
-    await calculateAndTrackUsage([prepCoachResult], "prep coach generation");
+    // Track usage using the returned totalUsage data
+    if (prepCoachResult.totalUsage) {
+      await trackUsage(
+        MODEL_NAMES.OPENAI_GPT4O,
+        prepCoachResult.totalUsage,
+        updatePromptHelperUsageAction,
+        "prep coach generation"
+      );
+    }
 
     // Update the module with the generated prepCoach
     const supabase = await createClient();

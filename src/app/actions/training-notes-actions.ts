@@ -13,7 +13,7 @@ import {
   type CreateTrainingNoteInput,
   type UpdateTrainingNoteInput,
 } from "@/data/training-notes";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { logger } from "@/lib/logger";
 import { checkUserHasCredits } from "./credit-check";
 
@@ -182,7 +182,6 @@ export async function generateNotesFromDraftAction(
 
     const openai = createOpenAI({
       apiKey,
-      compatibility: "strict",
     });
 
     const prompt = `You are an expert note-taking assistant. Please organize and refine the following draft training notes into well-structured, clear, and actionable notes. 

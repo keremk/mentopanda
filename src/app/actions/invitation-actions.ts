@@ -10,7 +10,7 @@ import {
 } from "@/data/invitations";
 import { User, UserRole } from "@/data/user";
 import { createClient } from "@/utils/supabase/server";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { Resend } from "resend";
 import InviteEmail from "@/emails/invite-email";
 import React from "react";

@@ -12,7 +12,7 @@ import {
   type ValidateInviteCodeResult,
 } from "@/data/invite-codes";
 import { createClient } from "@/utils/supabase/server";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { logger } from "@/lib/logger";
 import { cookies } from "next/headers";
 

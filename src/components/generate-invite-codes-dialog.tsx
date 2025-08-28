@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createInviteCodesAction } from "@/app/actions/invite-code-actions";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { PlusIcon, CopyIcon } from "lucide-react";
 import { type InviteCode } from "@/data/invite-codes";
 import { logger } from "@/lib/logger";

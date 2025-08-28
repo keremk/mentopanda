@@ -9,7 +9,7 @@ import {
   checkOnboardingStatus,
   OnboardingStatus,
 } from "@/data/user";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { cache } from "react";
 import { logger } from "@/lib/logger";
 

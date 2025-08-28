@@ -1,6 +1,6 @@
 import Replicate from "replicate";
 import { NextRequest } from "next/server";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { logger } from "@/lib/logger";
 import { checkUserHasCredits } from "@/app/actions/credit-check";
 import { updateReplicateImageUsageAction } from "@/app/actions/usage-actions";

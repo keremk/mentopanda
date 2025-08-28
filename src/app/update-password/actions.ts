@@ -2,7 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { logger } from "@/lib/logger";
 
 // Schema for password validation

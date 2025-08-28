@@ -2,7 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { logger } from "@/lib/logger";
 const ForgotPasswordSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),

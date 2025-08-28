@@ -1,4 +1,8 @@
-import { type CoreMessage, streamText } from "ai";
+import {
+  type UIMessage,
+  streamText,
+  convertToModelMessages,
+} from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import {
   ContextType,
@@ -11,6 +15,7 @@ import {
   getAIContextDataForCharacterAction,
   getAIContextDataForTrainingAction,
 } from "@/app/actions/aicontext-actions";
+import { trackUsage } from "@/lib/usage/usage-mapper";
 import { updatePromptHelperUsageAction } from "@/app/actions/usage-actions";
 import { TrainingContextData } from "@/data/ai-context";
 import { CharacterContextForAI } from "@/data/characters";
@@ -79,7 +84,7 @@ You are an expert prompt engineer. You will be given some specific instructions 
   switch (contextType) {
     case "character":
       throw new Error(
-        "Character context is not supported yet in this endpoint. Please use the training context instead." 
+        "Character context is not supported yet in this endpoint. Please use the training context instead."
       );
     case "module":
       return `${generalInstructions}\n${generateMetaModulePrompts(
@@ -97,8 +102,12 @@ You are an expert prompt engineer. You will be given some specific instructions 
 }
 
 export async function POST(req: Request) {
+  logger.info("=== Chat API Request Started ===");
+
   // Check if user has sufficient credits before proceeding
   const creditCheck = await checkUserHasCredits();
+  logger.info("Credit check result:", creditCheck);
+
   if (!creditCheck.hasCredits) {
     logger.warn("Chat request blocked due to insufficient credits");
     return new Response(
@@ -117,12 +126,20 @@ export async function POST(req: Request) {
     selectedOption,
     apiKey,
   }: {
-    messages: CoreMessage[];
+    messages: UIMessage[];
     contextType?: ContextType;
     contextData?: ContextData;
     selectedOption?: SelectedOption;
     apiKey?: string;
   } = await req.json();
+
+  logger.info("Request payload:", {
+    messagesCount: messages?.length || 0,
+    contextType,
+    contextData,
+    selectedOption,
+    hasApiKey: !!apiKey,
+  });
 
   const finalApiKey = apiKey || process.env.OPENAI_API_KEY;
 
@@ -155,86 +172,88 @@ export async function POST(req: Request) {
     selectedOption
   );
 
+  logger.info("Generated system prompt length:", systemPrompt.length);
+  logger.info("Context data loaded:", {
+    hasCharacterContext: !!characterContext,
+    hasTrainingContext: !!trainingContext,
+  });
+
   // Create a configured OpenAI client instance
   const openai = createOpenAI({
     apiKey: finalApiKey,
-    compatibility: "strict", // Enable strict compatibility mode for proper token counting in streams
   });
 
-  const lastMessageContent =
-    messages.length > 0 ? messages[messages.length - 1].content : undefined;
-  const isLastMessageAnEmptyString =
-    typeof lastMessageContent === "string" && lastMessageContent.trim() === "";
+  // Check if the last message is empty (for UIMessages, check if text parts are empty)
+  const lastMessage =
+    messages.length > 0 ? messages[messages.length - 1] : null;
+  const lastMessageText =
+    lastMessage?.parts
+      ?.filter((part) => part.type === "text")
+      ?.map((part) => part.text)
+      ?.join("") || "";
+  const isLastMessageEmpty = lastMessageText.trim() === "";
 
-  if (messages.length === 0 || isLastMessageAnEmptyString) {
+  if (messages.length === 0 || isLastMessageEmpty) {
     messages.push({
+      id: `system-${Date.now()}`,
       role: "user",
-      content:
-        "Please use the relevant context in the system prompt and generate a response.",
+      parts: [
+        {
+          type: "text",
+          text: "Please use the relevant context in the system prompt and generate a response.",
+        },
+      ],
     });
   }
 
-  logger.debug(`Messages:`, JSON.stringify(messages, null, 2));
+  logger.info(
+    "Final messages for AI:",
+    messages.map((m) => ({
+      role: m.role,
+      partsCount: m.parts?.length || 0,
+      textContent:
+        m.parts?.find((p) => p.type === "text")?.text?.substring(0, 50) || "",
+    }))
+  );
   logger.debug(`System Prompt:`, JSON.stringify(systemPrompt, null, 2));
 
   const result = streamText({
     model: openai.chat(MODEL_NAMES.OPENAI_GPT4O),
     system: systemPrompt,
-    messages,
+    messages: convertToModelMessages(messages),
     temperature: 0.3,
     onError: (error) => {
       logger.error(`Stream error: ${error}`);
     },
-    onFinish: async ({ usage, finishReason, text, providerMetadata }) => {
-      // Log usage data when available
-      if (usage) {
-        logger.info(`Usage:`, usage.totalTokens);
-        logger.info(`Prompt tokens:`, usage.promptTokens);
-        logger.info(`Completion tokens:`, usage.completionTokens);
-
-        // Log cached token information if available
-        const cachedPromptTokens =
-          typeof providerMetadata?.openai?.cachedPromptTokens === "number"
-            ? providerMetadata.openai.cachedPromptTokens
-            : 0;
-        const notCachedPromptTokens = Math.max(
-          0,
-          (usage.promptTokens || 0) - cachedPromptTokens
-        );
-        logger.info(`Cached prompt tokens:`, cachedPromptTokens);
-        logger.info(`Non-cached prompt tokens:`, notCachedPromptTokens);
-
-        // Track usage in database
-        try {
-          await updatePromptHelperUsageAction({
-            modelName: MODEL_NAMES.OPENAI_GPT4O,
-            promptTokens: {
-              text: {
-                cached: cachedPromptTokens,
-                notCached: notCachedPromptTokens,
-              },
-            },
-            outputTokens: usage.completionTokens || 0,
-            totalTokens: usage.totalTokens || 0,
-          });
-          logger.info(`Usage tracked successfully for prompt helper`);
-        } catch (error) {
-          logger.error(`Failed to track prompt helper usage: ${error}`);
-          // Don't fail the request if usage tracking fails
-        }
-      } else {
-        logger.warn(
-          "Usage is null in onFinish callback - this indicates an issue"
-        );
-      }
-      logger.info(`Finish reason:`, finishReason);
-      logger.info(`Text length:`, text.length);
-    },
   });
 
-  return result.toDataStreamResponse({
-    getErrorMessage: (error: unknown) => {
-      logger.error(`Stream error: ${error}`);
+  logger.info("=== Returning AI Response Stream ===");
+
+  return result.toUIMessageStreamResponse({
+    messageMetadata: async ({ part }) => {
+      // Handle usage tracking when generation is finished
+      if (part.type === "finish") {
+        logger.info("=== AI Response Complete ===");
+        logger.info(`Finish reason:`, part.finishReason);
+
+        // Track usage and wait for it to complete
+        if (part.totalUsage) {
+          await trackUsage(
+            MODEL_NAMES.OPENAI_GPT4O,
+            part.totalUsage,
+            updatePromptHelperUsageAction,
+            "prompt helper"
+          );
+        } else {
+          logger.warn("Total usage is null - this indicates an issue");
+        }
+      }
+
+      // Don't return any metadata to the client
+      return undefined;
+    },
+    onError: (error: unknown) => {
+      logger.error(`Stream response error:`, error);
       return `${error}`;
     },
   });

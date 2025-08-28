@@ -9,7 +9,7 @@ import {
   type WaitingListEntry,
 } from "@/data/waiting-list";
 import { createClient } from "@/utils/supabase/server";
-import { z } from "zod";
+import { z } from 'zod/v3';
 import { logger } from "@/lib/logger";
 
 const createWaitingListSchema = z.object({
