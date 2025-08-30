@@ -6,7 +6,7 @@ import {
 } from "@openai/agents/realtime";
 import { getToken } from "@/app/actions/openai-agents";
 import { logger } from "@/lib/logger";
-import { MODEL_NAMES } from "@/types/models";
+import { MODEL_NAMES, CURRENT_MODEL_NAMES } from "@/types/models";
 import {
   updateConversationUsageAction,
   updateTranscriptionUsageAction,
@@ -304,7 +304,7 @@ export function useOpenAIAgentsWithTranscript(
       const clientToken = await getToken();
       logger.debug(
         "✅ Token received:",
-        clientToken ? "Valid token" : "No token"
+        clientToken ? `Valid token` : "No token"
       );
 
       if (!agent) {
@@ -328,30 +328,104 @@ export function useOpenAIAgentsWithTranscript(
       logger.debug("🔗 Creating RealtimeSession...");
       const session = new RealtimeSession(agent, {
         transport: customTransport,
-        model: MODEL_NAMES.OPENAI_REALTIME,
+        model: CURRENT_MODEL_NAMES.OPENAI,
         config: {
           inputAudioFormat: "pcm16",
           outputAudioFormat: "pcm16",
+          voice: "alloy",
           inputAudioTranscription: {
-            model: MODEL_NAMES.OPENAI_TRANSCRIBE,
+            // Align with GA realtime recommended transcription model
+            model: "gpt-4o-mini-transcribe",
           },
         },
       });
       sessionRef.current = session;
       logger.debug("✅ RealtimeSession created");
 
+      // Strip deprecated/unknown fields from session.update events emitted by the SDK
+      try {
+        const t = (session.transport ?? null) as unknown as {
+          sendEvent?: (evt: any) => void;
+        } | null;
+        if (t && typeof t.sendEvent === "function") {
+          const origSend = t.sendEvent.bind(session.transport as any);
+          (session.transport as any).sendEvent = (evt: any) => {
+            try {
+              const e = typeof evt === "string" ? JSON.parse(evt) : evt;
+              if (e && e.type === "session.update" && e.session && typeof e.session === "object") {
+                const s = { ...(e.session as Record<string, unknown>) };
+                // Remove fields the server rejects in your project rollout
+                if ("type" in s) delete s.type; // Unknown parameter: session.type
+                if ("output_modalities" in s) delete s.output_modalities; // Unknown parameter: session.output_modalities
+                if ("tool_choice" in s) delete s.tool_choice; // Be defensive; often not needed but safe to remove
+                e.session = s;
+                try {
+                  logger.debug("Sanitized session.update payload", JSON.stringify(e));
+                } catch {/* ignore */}
+              }
+              return origSend(e);
+            } catch {
+              return origSend(evt);
+            }
+          };
+        }
+      } catch {/* ignore patching errors */}
+
+      // Track whether connect() has fully completed to avoid flipping UI state on benign errors
+      const didConnectRef = { current: false };
+
+      // Heuristic: some SDK 'error' events are non-fatal/no-op (empty payload).
+      const isBenignRealtimeError = (val: unknown): boolean => {
+        if (!val || typeof val !== "object") return false;
+        const obj = val as Record<string, unknown>;
+        // No message/code/type/details — treat as benign noise
+        const msg = (obj.message as string) ?? (obj as any)?.error;
+        const code = obj.code as string | undefined;
+        const typ = obj.type as string | undefined;
+        return (
+          (!msg || String(msg).trim() === "") &&
+          (!code || String(code).trim() === "") &&
+          (!typ || String(typ).trim() === "") &&
+          Object.keys(obj).length <= 4 // matches the empty error shape seen
+        );
+      };
+
       // Set up event listeners for session events
       const handleError = (error: unknown) => {
-        logger.error("RealtimeSession error:", error);
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : (error as { message?: string })?.message ||
-              error?.toString() ||
-              "Session error occurred";
-        setError(errorMessage);
-        setIsConnecting(false);
-        setIsConnected(false);
+        try {
+          const payload =
+            typeof error === "object" && error && "error" in (error as any)
+              ? (error as any).error
+              : error;
+          // Downgrade/ignore known benign errors after connection
+          if (didConnectRef.current && isBenignRealtimeError(payload)) {
+            logger.debug("RealtimeSession benign error ignored", payload);
+            return;
+          }
+          let msg: unknown =
+            payload instanceof Error
+              ? payload.message
+              : (payload as any)?.message ?? (payload as any)?.error ?? payload;
+          // Ensure we always set a string to avoid downstream `.includes` crashes
+          if (typeof msg !== "string") {
+            try {
+              msg = JSON.stringify(msg ?? {});
+            } catch {
+              msg = "Session error occurred";
+            }
+          }
+          logger.error("RealtimeSession error:", payload ?? error);
+          setError(msg as string);
+        } catch {
+          logger.error("RealtimeSession error:", error);
+          setError("Session error occurred");
+        }
+        // Only mark connect as failed if we haven't completed connect() yet.
+        // After connection, many 'error' events are non-fatal and should not flip UI state.
+        if (!didConnectRef.current) {
+          setIsConnecting(false);
+          setIsConnected(false);
+        }
       };
 
       const handleDisconnect = () => {
@@ -559,8 +633,65 @@ export function useOpenAIAgentsWithTranscript(
         hasInstructions: !!agent.instructions,
       });
 
-      await session.connect({ apiKey: clientToken });
+      // Log all parsed realtime events to help diagnose empty error payloads
+      // (the SDK emits a '*' event with the parsed payload)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (session as any).on?.("*", (evt: unknown) => {
+        try {
+          logger.debug("Realtime '*' event:", JSON.stringify(evt));
+        } catch {
+          logger.debug("Realtime '*' event (raw)", evt as any);
+        }
+      });
+
+      // Hook-local fetch wrapper: add Calls beta header only for the SDP handshake
+      let _restoreFetch: (() => void) | null = null;
+      if (typeof window !== "undefined" && typeof window.fetch === "function") {
+        const _orig = window.fetch;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        window.fetch = (async (input: any, init?: RequestInit) => {
+          try {
+            const url =
+              typeof input === "string"
+                ? input
+                : input instanceof URL
+                ? input.toString()
+                : (input as Request).url;
+            if (url.startsWith("https://api.openai.com/v1/realtime/calls")) {
+              const headers = new Headers(
+                init?.headers ||
+                  (typeof input !== "string" && !(input instanceof URL)
+                    ? (input as Request).headers
+                    : undefined)
+              );
+              if (!headers.has("OpenAI-Beta")) headers.set("OpenAI-Beta", "realtime=v1");
+              return _orig(input, { ...init, headers });
+            }
+            return _orig(input, init);
+          } catch {
+            return _orig(input, init);
+          }
+        }) as typeof window.fetch;
+        _restoreFetch = () => {
+          window.fetch = _orig;
+        };
+      }
+
+      // IMPORTANT for @openai/agents-realtime >=0.1.x: use Calls endpoint
+      try {
+        await session.connect({
+          apiKey: clientToken,
+          url: "https://api.openai.com/v1/realtime/calls?model=gpt-4o-realtime-preview-2025-06-03",
+        });
+      } finally {
+        try {
+          _restoreFetch?.();
+        } catch {}
+      }
       logger.debug("✅ Connected to OpenAI successfully");
+
+      // Mark connection established so later 'error' events don't toggle UI state
+      didConnectRef.current = true;
 
       // Log session state
       logger.debug("📞 Session state after connect:", {

@@ -2,7 +2,7 @@
 
 import { checkUserHasCredits } from "./credit-check";
 import { logger } from "@/lib/logger";
-import { MODEL_NAMES } from "@/types/models";
+import { MODEL_NAMES, CURRENT_MODEL_NAMES } from "@/types/models";
 
 export async function getToken() {
   try {
@@ -25,17 +25,19 @@ export async function getToken() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: MODEL_NAMES.OPENAI_REALTIME,
+          model: CURRENT_MODEL_NAMES.OPENAI,
           voice: "alloy", // Default voice, can be overridden on client
         }),
       }
     );
 
+    logger.info(`Token fetch response status: ${response.status}`);
     if (!response.ok) {
       throw new Error(`Failed to create session: ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log("Session data:", JSON.stringify(data));
     return data.client_secret.value;
   } catch (error) {
     logger.error("Error creating OpenAI agents session:", error);
