@@ -186,6 +186,7 @@ export function useOpenAIAgentsWithTranscript(
     if (sessionUsage) {
       try {
         // Use simple approximation like the original hook - TODO: improve when SDK provides better data
+        console.log("Session usage data:", JSON.stringify(sessionUsage));
         await updateConversationUsageAction({
           modelName: MODEL_NAMES.OPENAI_REALTIME,
           promptTokens: {
@@ -235,13 +236,13 @@ export function useOpenAIAgentsWithTranscript(
 
     if (sessionRef.current) {
       logUsageMetrics();
-      
+
       // Capture final history from OpenAI before closing session
       if (saveFinalTranscript) {
         try {
           const finalHistory = sessionRef.current.history || [];
           logger.debug("🔚 Capturing final session history for clean save:", {
-            historyLength: finalHistory.length
+            historyLength: finalHistory.length,
           });
           saveFinalTranscript(finalHistory).catch((err) => {
             logger.error("Failed to save final transcript:", err);
@@ -250,7 +251,7 @@ export function useOpenAIAgentsWithTranscript(
           logger.error("Error capturing final history:", err);
         }
       }
-      
+
       try {
         // Clean up audio element
         if (audioRef.current) {
@@ -279,9 +280,46 @@ export function useOpenAIAgentsWithTranscript(
     logger.info("RealtimeSession disconnected and cleaned up");
   }, [logUsageMetrics, saveFinalTranscript]);
 
-  const connect = useCallback(async () => {
-    logger.debug("🔗 [connect] Starting connection process");
+  const createSession = useCallback(async () => {
+    if (!agent) {
+      throw new Error("Agent not provided");
+    }
+    if (!audioRef.current) {
+      throw new Error("Audio element not available");
+    }
 
+    const clientToken = await getToken();
+    logger.debug(
+      "✅ Token received:",
+      clientToken ? `Valid token` : "No token"
+    );
+
+    // Create custom WebRTC transport with our audio element
+    const customTransport = new OpenAIRealtimeWebRTC({
+      audioElement: audioRef.current,
+    });
+    logger.debug("✅ WebRTC transport created");
+
+    logger.debug("🔗 Creating RealtimeSession...");
+    const session = new RealtimeSession(agent, {
+      transport: customTransport,
+      model: CURRENT_MODEL_NAMES.OPENAI,
+      config: {
+        inputAudioFormat: "pcm16",
+        outputAudioFormat: "pcm16",
+        voice: agent.voice || "alloy",
+        inputAudioTranscription: {
+          // Align with GA realtime recommended transcription model
+          model: "gpt-4o-mini-transcribe",
+        },
+      },
+    });
+    sessionRef.current = session;
+    logger.debug("✅ RealtimeSession created");
+    return { session, clientToken } as const;
+  }, []);
+
+  const connect = useCallback(async () => {
     // Prevent multiple connections
     if (isConnecting || isConnected) {
       logger.warn("Connection already in progress or active");
@@ -294,139 +332,27 @@ export function useOpenAIAgentsWithTranscript(
       disconnect();
     }
 
-    logger.debug("🔗 [connect] Setting connecting state");
     setIsConnecting(true);
     setError(null);
     sessionStartTimeRef.current = Date.now();
 
     try {
-      logger.debug("🔑 Getting ephemeral token...");
-      const clientToken = await getToken();
-      logger.debug(
-        "✅ Token received:",
-        clientToken ? `Valid token` : "No token"
-      );
-
-      if (!agent) {
-        throw new Error("Agent not provided");
-      }
-      logger.debug("🤖 Agent provided:", agent);
-
-      if (!audioRef.current) {
-        throw new Error("Audio element not available");
-      }
-      logger.debug("🎵 Audio element available");
-
-      // Create custom WebRTC transport with our audio element
-      logger.debug("🌐 Creating WebRTC transport...");
-      const customTransport = new OpenAIRealtimeWebRTC({
-        audioElement: audioRef.current,
-      });
-      logger.debug("✅ WebRTC transport created");
-
-      // Create session with the custom transport and transcription config
-      logger.debug("🔗 Creating RealtimeSession...");
-      const session = new RealtimeSession(agent, {
-        transport: customTransport,
-        model: CURRENT_MODEL_NAMES.OPENAI,
-        config: {
-          inputAudioFormat: "pcm16",
-          outputAudioFormat: "pcm16",
-          voice: "alloy",
-          inputAudioTranscription: {
-            // Align with GA realtime recommended transcription model
-            model: "gpt-4o-mini-transcribe",
-          },
-        },
-      });
-      sessionRef.current = session;
-      logger.debug("✅ RealtimeSession created");
-
-      // Strip deprecated/unknown fields from session.update events emitted by the SDK
-      try {
-        const t = (session.transport ?? null) as unknown as {
-          sendEvent?: (evt: any) => void;
-        } | null;
-        if (t && typeof t.sendEvent === "function") {
-          const origSend = t.sendEvent.bind(session.transport as any);
-          (session.transport as any).sendEvent = (evt: any) => {
-            try {
-              const e = typeof evt === "string" ? JSON.parse(evt) : evt;
-              if (e && e.type === "session.update" && e.session && typeof e.session === "object") {
-                const s = { ...(e.session as Record<string, unknown>) };
-                // Remove fields the server rejects in your project rollout
-                if ("type" in s) delete s.type; // Unknown parameter: session.type
-                if ("output_modalities" in s) delete s.output_modalities; // Unknown parameter: session.output_modalities
-                if ("tool_choice" in s) delete s.tool_choice; // Be defensive; often not needed but safe to remove
-                e.session = s;
-                try {
-                  logger.debug("Sanitized session.update payload", JSON.stringify(e));
-                } catch {/* ignore */}
-              }
-              return origSend(e);
-            } catch {
-              return origSend(evt);
-            }
-          };
-        }
-      } catch {/* ignore patching errors */}
-
-      // Track whether connect() has fully completed to avoid flipping UI state on benign errors
-      const didConnectRef = { current: false };
-
-      // Heuristic: some SDK 'error' events are non-fatal/no-op (empty payload).
-      const isBenignRealtimeError = (val: unknown): boolean => {
-        if (!val || typeof val !== "object") return false;
-        const obj = val as Record<string, unknown>;
-        // No message/code/type/details — treat as benign noise
-        const msg = (obj.message as string) ?? (obj as any)?.error;
-        const code = obj.code as string | undefined;
-        const typ = obj.type as string | undefined;
-        return (
-          (!msg || String(msg).trim() === "") &&
-          (!code || String(code).trim() === "") &&
-          (!typ || String(typ).trim() === "") &&
-          Object.keys(obj).length <= 4 // matches the empty error shape seen
-        );
-      };
+      const { session, clientToken } = await createSession();
 
       // Set up event listeners for session events
       const handleError = (error: unknown) => {
+        // SDK 'error' events are mostly informational; warn-log and do not mutate state
         try {
           const payload =
             typeof error === "object" && error && "error" in (error as any)
               ? (error as any).error
               : error;
-          // Downgrade/ignore known benign errors after connection
-          if (didConnectRef.current && isBenignRealtimeError(payload)) {
-            logger.debug("RealtimeSession benign error ignored", payload);
-            return;
-          }
-          let msg: unknown =
-            payload instanceof Error
-              ? payload.message
-              : (payload as any)?.message ?? (payload as any)?.error ?? payload;
-          // Ensure we always set a string to avoid downstream `.includes` crashes
-          if (typeof msg !== "string") {
-            try {
-              msg = JSON.stringify(msg ?? {});
-            } catch {
-              msg = "Session error occurred";
-            }
-          }
-          logger.error("RealtimeSession error:", payload ?? error);
-          setError(msg as string);
+          logger.warn("RealtimeSession SDK error:", payload);
         } catch {
-          logger.error("RealtimeSession error:", error);
-          setError("Session error occurred");
-        }
-        // Only mark connect as failed if we haven't completed connect() yet.
-        // After connection, many 'error' events are non-fatal and should not flip UI state.
-        if (!didConnectRef.current) {
-          setIsConnecting(false);
-          setIsConnected(false);
+          logger.warn("RealtimeSession SDK error (unparsed):", error);
         }
       };
+      session.on("error", handleError);
 
       const handleDisconnect = () => {
         logger.info("RealtimeSession disconnected");
@@ -434,12 +360,7 @@ export function useOpenAIAgentsWithTranscript(
         setIsConnecting(false);
         setIsSpeaking(false);
       };
-
-      // Listen for session errors and history updates
-      session.on("error", handleError);
-      session.on("transport_event", () => {
-        // Transport events can be logged here if needed for debugging
-      });
+      session.transport?.on("close", handleDisconnect);
 
       // Listen for new history items being added
       session.on("history_added", (item) => {
@@ -603,27 +524,29 @@ export function useOpenAIAgentsWithTranscript(
             // logger.info(
             //   `Transport event: response.done for item ${JSON.stringify(event)}`
             // );
-            logger.info(`Usage details: ${JSON.stringify(event.response.usage)}`);
+            logger.info(
+              `Usage details: ${JSON.stringify(event.response.usage)}`
+            );
             break;
           }
         }
       });
 
       // Listen for transport layer events if available
-      if (session.transport) {
-        session.transport.on("close", handleDisconnect);
-        session.transport.on("error", handleError);
+      // if (session.transport) {
+      //   session.transport.on("close", handleDisconnect);
+      //   session.transport.on("error", handleError);
 
-        // Usage will be tracked via session.usage instead of transport events
+      //   // Usage will be tracked via session.usage instead of transport events
 
-        // Transcript handling moved to session.history events
+      //   // Transcript handling moved to session.history events
 
-        // Transcript completion handled via session.history events
+      //   // Transcript completion handled via session.history events
 
-        session.transport.on("open", () => {
-          logger.info("Transport layer connected");
-        });
-      }
+      //   session.transport.on("open", () => {
+      //     logger.info("Transport layer connected");
+      //   });
+      // }
 
       // Connect to OpenAI with the ephemeral token and transcription config
       logger.debug("📞 Connecting to OpenAI...");
@@ -655,8 +578,8 @@ export function useOpenAIAgentsWithTranscript(
               typeof input === "string"
                 ? input
                 : input instanceof URL
-                ? input.toString()
-                : (input as Request).url;
+                  ? input.toString()
+                  : (input as Request).url;
             if (url.startsWith("https://api.openai.com/v1/realtime/calls")) {
               const headers = new Headers(
                 init?.headers ||
@@ -664,7 +587,8 @@ export function useOpenAIAgentsWithTranscript(
                     ? (input as Request).headers
                     : undefined)
               );
-              if (!headers.has("OpenAI-Beta")) headers.set("OpenAI-Beta", "realtime=v1");
+              if (!headers.has("OpenAI-Beta"))
+                headers.set("OpenAI-Beta", "realtime=v1");
               return _orig(input, { ...init, headers });
             }
             return _orig(input, init);
@@ -683,15 +607,16 @@ export function useOpenAIAgentsWithTranscript(
           apiKey: clientToken,
           url: "https://api.openai.com/v1/realtime/calls?model=gpt-4o-realtime-preview-2025-06-03",
         });
-      } finally {
-        try {
-          _restoreFetch?.();
-        } catch {}
+      } catch (connectError) {
+        logger.error("Error during session.connect():", connectError);
+        throw connectError;
       }
+      // } finally {
+      //   try {
+      //     _restoreFetch?.();
+      //   } catch {}
+      // }
       logger.debug("✅ Connected to OpenAI successfully");
-
-      // Mark connection established so later 'error' events don't toggle UI state
-      didConnectRef.current = true;
 
       // Log session state
       logger.debug("📞 Session state after connect:", {
