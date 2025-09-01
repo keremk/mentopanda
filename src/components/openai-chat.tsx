@@ -26,15 +26,14 @@ import { NoCreditsDialog } from "@/components/no-credits-dialog";
 import { useRouter } from "next/navigation";
 import { CountdownBar } from "@/components/countdown-bar";
 import { ChatTextEntry } from "@/components/chat-text-entry";
-import { useOpenAIAgentsWithTranscript } from "@/hooks/use-openai-agents-with-transcript";
+import { useOpenAIRealtime } from "@/hooks/use-openai-realtime";
+import { useRealtimeUsageTracking } from "@/hooks/use-realtime-usage-tracking";
 import { useTranscript } from "@/contexts/transcript";
 import { toast } from "@/hooks/use-toast";
 import { TranscriptProvider } from "@/contexts/transcript";
 import { logger } from "@/lib/logger";
 import { SimulationCustomizationProvider } from "@/contexts/simulation-customization-context";
-import { updateTranscriptionUsageAction } from "@/app/actions/usage-actions";
 import { getTrainingNoteAction } from "@/app/actions/training-notes-actions";
-import { MODEL_NAMES } from "@/types/models";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SimulationContentTabs } from "@/components/simulation-content-tabs";
 import { TranscriptEntry } from "@/types/chat-types";
@@ -402,11 +401,10 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     setTraitsOverride,
   } = useSimulationCustomization();
   const [historyEntryId, setHistoryEntryId] = useState<number>();
-  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [isAgentSpeaking, setIsAgentSpeaking] = useState(false);
   const [notes, setNotes] = useState<string | null>(null);
   const { transcriptEntries, clearTranscript } = useTranscript();
-  const { saveAndComplete, saveFinalTranscript } = useTranscriptSave({
+  const { saveAndComplete } = useTranscriptSave({
     historyEntryId,
     transcriptBuffer: transcriptEntries,
     saveInterval: 20000,
@@ -481,24 +479,59 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
   // Avatar should appear only after connection (historyEntryId) is established
   const showAvatar = Boolean(historyEntryId);
 
-  const { muteMicrophone, unmuteMicrophone, isMuted } = useMicrophone();
+  const { muteMicrophone, unmuteMicrophone, isMuted, startMicrophone, stopMicrophone } = useMicrophone();
+
+  // Audio ref for the realtime hook
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const {
-    connect,
-    disconnect,
+    connect: connectRealtime,
+    disconnect: disconnectRealtime,
     sendTextMessage,
+    usage,
     transcriptionModel,
-    isConnected,
-    isConnecting,
-    error: agentError,
-    audioRef: agentAudioRef,
-    isSpeaking: agentSpeaking,
-  } = useOpenAIAgentsWithTranscript(agent, currentUser.displayName, agentName, saveFinalTranscript);
+  } = useOpenAIRealtime({
+    instructions: typeof agent.instructions === 'string' ? agent.instructions : agent.instructions?.toString() || "",
+    voice: agent.voice || "alloy",
+    audioRef: audioRef as React.RefObject<HTMLAudioElement>,
+    userName: currentUser.displayName,
+    agentName,
+  });
 
-  // Use the speaking state from the Voice Agents hook
+  // Add usage tracking hook
+  const { startSession, logUsageMetrics: logUsageMetricsHook } = useRealtimeUsageTracking({
+    transcriptionModel,
+    transcriptEntries,
+  });
+
+  // Connection state management (since realtime hook doesn't track this)
+  const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [agentError, setAgentError] = useState<string | null>(null);
+
+  // Track audio element speaking state
   useEffect(() => {
-    setIsAgentSpeaking(agentSpeaking);
-  }, [agentSpeaking]);
+    const audioElement = audioRef.current;
+    if (!audioElement) return;
+
+    const handlePlay = () => setIsAgentSpeaking(true);
+    const handlePause = () => setIsAgentSpeaking(false);
+    const handleEnded = () => setIsAgentSpeaking(false);
+
+    audioElement.addEventListener("play", handlePlay);
+    audioElement.addEventListener("playing", handlePlay);
+    audioElement.addEventListener("pause", handlePause);
+    audioElement.addEventListener("ended", handleEnded);
+    audioElement.addEventListener("emptied", handlePause);
+
+    return () => {
+      audioElement.removeEventListener("play", handlePlay);
+      audioElement.removeEventListener("playing", handlePlay);
+      audioElement.removeEventListener("pause", handlePause);
+      audioElement.removeEventListener("ended", handleEnded);
+      audioElement.removeEventListener("emptied", handlePause);
+    };
+  }, []);
 
   // Synchronize connection state between hook and component
   useEffect(() => {
@@ -515,69 +548,18 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
   }, []);
 
   const logUsageMetrics = useCallback(async () => {
-    logger.info("[logUsageMetrics] Attempting to log usage metrics."); // Debug log
-    logger.info(
-      `[logUsageMetrics] Current sessionStartTime: ${sessionStartTime}`
-    ); // Debug log
-    logger.info(
-      `[logUsageMetrics] Current transcriptEntries length: ${transcriptEntries.length}`
-    ); // Debug log
+    await logUsageMetricsHook(usage);
+  }, [logUsageMetricsHook, usage]);
 
-    if (sessionStartTime === null) {
-      logger.warn(
-        "[logUsageMetrics] Session start time is null. Skipping metrics logging."
-      );
-      return;
-    }
-
-    const endTime = Date.now();
-    const elapsedTimeInSeconds = (endTime - sessionStartTime) / 1000;
-
-    let totalUserChars = 0;
-    let totalAgentChars = 0;
-
-    transcriptEntries.forEach((entry) => {
-      if (entry.role === "user" && entry.text) {
-        totalUserChars += entry.text.length;
-      } else if (entry.role === "agent" && entry.text) {
-        totalAgentChars += entry.text.length;
-      }
-    });
-
-    // Usage tracking is now handled in the Voice Agents hook
-
-    // Track transcription usage in database - ALWAYS track, regardless of mount status
-    if (totalUserChars > 0 || totalAgentChars > 0) {
-      try {
-        await updateTranscriptionUsageAction({
-          modelName: transcriptionModel || MODEL_NAMES.OPENAI_TRANSCRIBE, // Use actual model or fallback
-          totalSessionLength: elapsedTimeInSeconds,
-          userChars: totalUserChars,
-          agentChars: totalAgentChars,
-        });
-
-        // Only log success if component is still mounted
-        if (isMountedRef.current) {
-          logger.info("Transcription usage tracked successfully");
-        } else {
-          logger.info(
-            "Transcription usage tracked successfully (component unmounted)"
-          );
-        }
-      } catch (error) {
-        // Always log errors, regardless of mount status
-        logger.error(`Failed to track transcription usage: ${error}`);
-        // Don't fail the request if usage tracking fails
-      }
-    }
-
-    setSessionStartTime(null); // Reset start time after logging
-  }, [
-    sessionStartTime,
-    transcriptEntries,
-    setSessionStartTime,
-    transcriptionModel,
-  ]);
+  const disconnect = useCallback(() => {
+    logger.debug("🔌 [disconnect] Called");
+    disconnectRealtime();
+    stopMicrophone();
+    setIsConnected(false);
+    setIsConnecting(false);
+    setIsAgentSpeaking(false);
+    setAgentError(null);
+  }, [disconnectRealtime, stopMicrophone]);
 
   const handleToggleConversation = useCallback(async () => {
     logger.debug("🎯 [handleToggleConversation] Button clicked");
@@ -597,13 +579,18 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
         return;
       }
 
-      setSessionStartTime(Date.now());
+      startSession();
+      setIsConnecting(true);
+      setAgentError(null);
 
-      logger.debug(
-        "🎯 [handleToggleConversation] Starting connection (Voice Agents SDK handles microphone internally)"
-      );
+      logger.debug("🎯 [handleToggleConversation] Starting microphone and connection");
       try {
-        await connect();
+        // Start microphone first
+        const micStream = await startMicrophone();
+        logger.debug("🎯 Microphone started successfully");
+
+        // Connect to realtime with microphone stream
+        await connectRealtime(micStream);
         logger.debug("🎯 [handleToggleConversation] Connection successful");
 
         const newHistoryEntryId = await createHistoryEntryAction(module.id);
@@ -611,17 +598,26 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
         logger.info(
           "[handleToggleConversation] Session fully established and history created."
         );
+        
         // Only set conversation active after successful connection
+        setIsConnected(true);
+        setIsConnecting(false);
         setChatState((prev) => ({ ...prev, isConversationActive: true }));
       } catch (error) {
         // Revert UI on failure
         logger.error(
           `🎯 [handleToggleConversation] Connection failed: ${error}`
         );
-        setSessionStartTime(null);
+        
+        // Clean up microphone if connection failed
+        stopMicrophone();
+        setIsConnected(false);
+        setIsConnecting(false);
 
         const errorMessage =
           error instanceof Error ? error.message : String(error);
+
+        setAgentError(errorMessage);
 
         // Handle specific errors like no credits
         setChatState((prev) => ({
@@ -643,7 +639,10 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     chatState.isConversationActive,
     isConnected,
     isConnecting,
-    connect,
+    startSession,
+    startMicrophone,
+    connectRealtime,
+    stopMicrophone,
     module.id,
   ]);
 
@@ -770,7 +769,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
     currentUser,
     chatState,
     setChatState,
-    audioRef: agentAudioRef,
+    audioRef,
     sessionDurationMinutes,
     HARD_TIMEOUT_MINUTES,
     handleCountdownComplete,
@@ -797,7 +796,7 @@ function OpenAIChatContent({ module, currentUser }: OpenAIChatContentProps) {
 
   return (
     <>
-      <audio ref={agentAudioRef} className="hidden" crossOrigin="anonymous" />
+      <audio ref={audioRef} className="hidden" crossOrigin="anonymous" />
       {isMobile ? (
         <MobileLayout {...layoutProps} />
       ) : (

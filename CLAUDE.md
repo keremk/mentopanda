@@ -28,3 +28,4 @@
 - Always use integration tests for testing the data layer functions in `/src/data` folder.
 - When writing integration tests for data layer, always consult the architecture and patterns document in `product/eng/integration-testing-architecture.md`
 - DO NOT use tool calls to create or push migrations. They are done manually.
+- Always search for the real types. Do not use any, do not cast using "as", search the SDK, find the right exported types and use them. If you cannot find them, then first warn the user without making changes and resorting to "any" or casting "as" or using made up type definitions in the file by redeclaring them.
