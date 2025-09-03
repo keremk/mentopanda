@@ -6,7 +6,7 @@ import {
 } from "@openai/agents/realtime";
 import { getToken } from "@/app/actions/openai-agents";
 import { logger } from "@/lib/logger";
-import { MODEL_NAMES } from "@/types/models";
+import { MODEL_NAMES, CURRENT_MODEL_NAMES } from "@/types/models";
 import { updateConversationUsageAction } from "@/app/actions/usage-actions";
 
 export interface UseOpenAIAgentsReturn {
@@ -175,8 +175,6 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
     sessionStartTimeRef.current = Date.now();
 
     try {
-      logger.debug("🔑 Getting ephemeral token...");
-      // Get ephemeral token from server
       const clientToken = await getToken();
       logger.debug(
         "✅ Token received:",
@@ -193,8 +191,6 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
       }
       logger.debug("🎵 Audio element available");
 
-      // Create custom WebRTC transport with our audio element
-      logger.debug("🌐 Creating WebRTC transport...");
       const customTransport = new OpenAIRealtimeWebRTC({
         audioElement: audioRef.current,
       });
@@ -210,7 +206,7 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
 
       // Set up event listeners for session events
       const handleError = (error: unknown) => {
-        logger.error("RealtimeSession error:", error);
+        logger.warn("RealtimeSession error:", error);
         const errorMessage =
           error instanceof Error
             ? error.message
@@ -251,10 +247,58 @@ export function useOpenAIAgents(agent: RealtimeAgent): UseOpenAIAgentsReturn {
         });
       }
 
-      // Connect to OpenAI with the ephemeral token
-      logger.debug("📞 Connecting to OpenAI...");
-      await session.connect({ apiKey: clientToken });
-      logger.debug("✅ Connected to OpenAI successfully");
+
+      // Hook-local fetch wrapper: add Calls beta header only for the SDP handshake
+      let _restoreFetch: (() => void) | null = null;
+      if (typeof window !== "undefined" && typeof window.fetch === "function") {
+        const _orig = window.fetch;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        window.fetch = (async (input: any, init?: RequestInit) => {
+          try {
+            const url =
+              typeof input === "string"
+                ? input
+                : input instanceof URL
+                  ? input.toString()
+                  : (input as Request).url;
+            if (url.startsWith("https://api.openai.com/v1/realtime/calls")) {
+              const headers = new Headers(
+                init?.headers ||
+                  (typeof input !== "string" && !(input instanceof URL)
+                    ? (input as Request).headers
+                    : undefined)
+              );
+              if (!headers.has("OpenAI-Beta"))
+                headers.set("OpenAI-Beta", "realtime=v1");
+              return _orig(input, { ...init, headers });
+            }
+            return _orig(input, init);
+          } catch {
+            return _orig(input, init);
+          }
+        }) as typeof window.fetch;
+        _restoreFetch = () => {
+          window.fetch = _orig;
+        };
+      }
+      // Reference to avoid unused var lint errors while the workaround is active
+      void _restoreFetch;
+
+      // IMPORTANT for @openai/agents-realtime >=0.1.x: use Calls endpoint
+      try {
+        await session.connect({
+          apiKey: clientToken,
+          url: `https://api.openai.com/v1/realtime/calls?model=${CURRENT_MODEL_NAMES.OPENAI}`,
+        });
+        logger.debug("✅ Connected to OpenAI successfully");
+      } catch (connectError) {
+        logger.error("Error during session.connect():", connectError);
+        throw connectError;
+      } finally {
+        try {
+          _restoreFetch?.();
+        } catch {}
+      }
 
       // Session is now connected and audio will play through our audioElement
       setIsConnected(true);

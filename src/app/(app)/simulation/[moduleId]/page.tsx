@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { getModuleByIdAction2 } from "@/app/actions/moduleActions";
-import OpenAIChat from "@/components/openai-chat";
+import RolePlaySimulation from "@/components/role-play-simulation";
 import { getCurrentUserActionCached } from "@/app/actions/user-actions";
-import { AI_MODELS } from "@/types/models";
+import { getTrainingNoteAction } from "@/app/actions/training-notes-actions";
 import { Metadata } from "next";
 import { logger } from "@/lib/logger";
 
@@ -46,48 +46,19 @@ export default async function Page(props: Props) {
     const params = await props.params;
     const moduleId = parseInt(params.moduleId, 10);
 
-    const [currentModule, currentUser] = await Promise.all([
+    const [currentModule, currentUser, trainingNote] = await Promise.all([
       getModule(moduleId),
       getCurrentUserActionCached(),
+      getTrainingNoteAction(moduleId).catch(() => null), // Notes are optional
     ]);
-
-    const isOpenAIModule =
-      currentModule.modulePrompt.aiModel === AI_MODELS.OPENAI;
-    const isGeminiModule =
-      currentModule.modulePrompt.aiModel === AI_MODELS.GEMINI;
 
     return (
       <div className="container mx-auto w-full">
-        {isOpenAIModule && (
-          <OpenAIChat module={currentModule} currentUser={currentUser} />
-        )}
-        {isGeminiModule && (
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="text-center space-y-4 max-w-md">
-              <div className="text-6xl">🤖</div>
-              <h2 className="text-xl font-semibold">
-                Gemini Simulations Coming Soon
-              </h2>
-              <p className="text-muted-foreground">
-                This module uses Gemini AI, but simulation support for Gemini is
-                currently under development. Please check back later or contact
-                support for more information.
-              </p>
-            </div>
-          </div>
-        )}
-        {!isOpenAIModule && !isGeminiModule && (
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="text-center space-y-4 max-w-md">
-              <div className="text-6xl">⚠️</div>
-              <h2 className="text-xl font-semibold">Unsupported AI Model</h2>
-              <p className="text-muted-foreground">
-                This module uses an unsupported AI model. Please contact support
-                for assistance.
-              </p>
-            </div>
-          </div>
-        )}
+        <RolePlaySimulation 
+          module={currentModule} 
+          currentUser={currentUser}
+          notes={trainingNote?.notes || null}
+        />
       </div>
     );
   } catch (error) {

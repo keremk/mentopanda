@@ -126,5 +126,323 @@ This is in prep-coach-agent.ts file. Will remain largely the same, just adopt to
 ### Role Playing Agent & Prompt
 This is the role playing simulation prompt. Again adopt it to the new format. It is currently in role-playing-agent.ts
 
+# Current Codebase Analysis
+
+## Existing Components
+Based on my analysis of the current codebase:
+
+### Current Components (src/components/)
+- **OpenAIChat** (`openai-chat.tsx:389-807`): Main role-playing simulation component with complex state management, desktop/mobile layouts
+- **MentorAgent** (`mentor-agent.tsx:21-173`): Simplified agent component using Voice Agents SDK
+- **SpeakingBubble** (`speaking-bubble.tsx:24-350`): Audio visualization component with complex animation logic
+
+### Current Hooks (src/hooks/)
+- **useOpenAIRealtime** (`use-openai-realtime.ts:92-393`): Low-level realtime SDK integration with WebRTC
+- **useOpenAIAgents** (`use-openai-agents.ts:31-356`): High-level Voice Agents SDK wrapper
+- **useMicrophone** (`use-microphone.ts:15-207`): Microphone permission and stream management
+- **useTranscriptSave** (`use-transcript-save.ts:11-98`): Periodic transcript saving to database
+- **useRealtimeUsageTracking** (`use-realtime-usage-tracking.ts:16-104`): Usage metrics tracking
+
+### Current Contexts (src/contexts/)
+- **TranscriptProvider** (`transcript.tsx:37-120`): In-memory transcript state management
+- **SimulationCustomizationProvider**: Skills/traits override management
+
+### Current Prompts (src/prompts/)
+- **role-playing-agent.ts**: Creates RealtimeAgent for role-play simulations
+- **module-creator-agent.ts**: Agent for creating new training modules with tools
+- **prep-coach-agent.ts**: Agent for preparation coaching with note-taking
+- **training-navigator-agent.ts**: Agent for training navigation and recommendations
+
+## Missing Considerations
+
+### 1. Provider Abstraction Layer
+The current implementation tightly couples UI components to specific SDK implementations. We need:
+- **RealtimeProvider interface**: Abstract provider contract
+- **OpenAIRealtimeProvider**: Implementation using the Realtime SDK
+- **Provider configuration**: Configuration object for providers
+
+### 2. Enhanced Configuration Types
+Current prompt structure is mixed between different SDKs. We need:
+- **VoicePrompt type**: Unified prompt structure with voice, tools, and instructions
+- **RealtimeConfig interface**: Complete configuration including provider selection
+- **MessageItem type**: Generic message format for different message types
+
+### 3. Enhanced State Management
+Current state is scattered across multiple hooks. We need:
+- **Connection state standardization**: Unified connection state (Stopped, Starting, Connected, Started)
+- **Error handling**: Centralized error handling with specific error types
+- **State synchronization**: Better sync between hook and component states
+
+### 4. Tool Integration Architecture
+Current tool usage is inconsistent between agents. We need:
+- **Tool execution framework**: Unified tool execution in the new architecture
+- **Tool configuration**: How tools are defined and passed to providers
+- **Function call handling**: Generic function call handling in useRealtime
+
+### 5. Usage and Metrics Architecture
+Current usage tracking is provider-specific. We need:
+- **Generic usage interface**: Provider-agnostic usage tracking
+- **Usage aggregation**: How different providers report usage
+- **Session management**: Unified session lifecycle management
+
+### 6. Testing Strategy
+The refactor needs comprehensive testing approach:
+- **Component testing**: VoiceChat component with mocked providers
+- **Hook testing**: useRealtime with different provider implementations
+- **Integration testing**: End-to-end flows with real providers
+
+
+### 7. Developer Experience
+The new architecture should improve maintainability:
+- **TypeScript coverage**: Full type safety across the new components
+- **Documentation**: Clear documentation for the new architecture
+- **Examples**: Usage examples for different scenarios
+- **Debugging**: Better debugging capabilities and error messages
+
+# Enhanced Architecture Details
+
+## Core Interfaces
+
+```typescript
+interface RealtimeProvider {
+  connect(stream: MediaStream): Promise<void>;
+  disconnect(): Promise<void>;
+  sendMessage(message: MessageItem): Promise<void>;
+  getUsage(): RealtimeUsage | null;
+  onStateChange(callback: (state: ConnectionState) => void): void;
+  onError(callback: (error: RealtimeError) => void): void;
+}
+
+interface RealtimeConfig {
+  provider: 'openai' | 'elevenlabs'; // extensible
+  voice: VoicePrompt;
+  audioRef: React.RefObject<HTMLAudioElement>;
+  userName: string;
+  enableTranscription?: boolean;
+  enableUsageTracking?: boolean;
+}
+
+interface VoicePrompt {
+  instructions: string;
+  voice: string;
+  displayName: string;
+  tools?: ToolDefinition[];
+  toolFunctions?: Record<string, Function>;
+}
+
+interface MessageItem {
+  type: 'system' | 'user' | 'assistant';
+  content: string;
+  timestamp?: number;
+}
+
+type ConnectionState = 'stopped' | 'starting' | 'connected' | 'started';
+```
+
+## Component Hierarchy
+```
+RolePlaySimulation / MentorAgent (containers)
+├── UsageProvider
+│   └── TranscriptProvider (optional)
+│       └── VoiceChat
+│           ├── SpeakingBubble
+│           ├── Start/Stop buttons
+│           ├── Mute/Unmute buttons
+│           ├── ChatTextEntry (optional)
+│           ├── StopConversationDialog
+│           └── NoCreditsDialog
+```
+
+## Hook Dependencies
+```
+VoiceChat
+├── useRealtime(config) -> provider abstraction
+├── useMicrophone() -> audio input management
+├── useTranscript() -> transcript state (optional)
+├── useTimer(countdownFrom) -> session timing (optional)
+└── useUsage() -> usage tracking (optional)
+```
+
 # Incremental Implementation Plan
-This is a plan on how to implement this incrementally in phases where each phase is working and can be tested before moving to the next phase
+This is a plan on how to implement this incrementally in phases where each phase is working and can be tested before moving to the next phase.
+
+## Phase 1: Foundation & Core Interfaces 
+**Goal**: Establish the foundation types and provider abstraction without breaking existing functionality.
+
+### Tasks:
+1. **Create Core Types** (`src/types/realtime.ts`)
+   - Define `RealtimeProvider` interface
+   - Define `RealtimeConfig`, `VoicePrompt`, `MessageItem` types
+   - Define `ConnectionState`, `RealtimeUsage`, `RealtimeError` types
+   
+2. **Create OpenAIRealtimeProvider** (`src/providers/openai-realtime-provider.ts`)
+   - Implement `RealtimeProvider` interface wrapping current `useOpenAIRealtime` logic
+   - Maintain exact same functionality as current implementation
+   - Add comprehensive error handling and state management
+   
+3. **Create useRealtime Hook** (`src/hooks/use-realtime.ts`)
+   - Generic hook that uses provider instances
+   - Initially only support OpenAI provider
+   - Maintain API compatibility with current `useOpenAIRealtime`
+
+### Testing:
+- Unit tests for provider interface
+- Integration tests with existing OpenAIChat component
+- Verify no regressions in current functionality
+
+### Success Criteria:
+- All existing functionality works unchanged
+- New provider can be instantiated and connected
+- useRealtime hook passes all current useOpenAIRealtime tests
+
+## Phase 2: VoiceChat Component Implementation 
+**Goal**: Create the unified VoiceChat component that can replace both OpenAIChat's core functionality and MentorAgent.
+
+### Tasks:
+1. **Create VoiceChat Component** (`src/components/voice-chat.tsx`)
+   - Extract common UI elements from OpenAIChat and MentorAgent
+   - Implement connection state management (Stopped, Starting, Connected, Started)
+   - Integrate with SpeakingBubble, buttons, and dialogs
+   - Support optional ChatTextEntry and countdown timer
+   
+2. **Create Enhanced Usage Provider** (`src/contexts/usage-context.tsx`)
+   - Provider-agnostic usage tracking
+   - Integration with existing usage tracking infrastructure
+   
+3. **Update Prompt Structure** (`src/prompts/`)
+   - Convert role-playing-agent to use new VoicePrompt format
+   - Ensure backward compatibility with current prompts
+   - Maintain tool integration for agents that use tools
+
+### Testing:
+- Component testing for VoiceChat with mocked providers
+- Visual regression testing for UI components
+- Accessibility testing for screen readers and keyboard navigation
+
+### Success Criteria:
+- VoiceChat component renders correctly with OpenAI provider
+- All button interactions work (start/stop, mute/unmute)
+- SpeakingBubble integrates properly
+- Connection states display correctly
+
+## Phase 3: Container Component Migration
+**Goal**: Create new RolePlaySimulation component and update MentorAgent to use VoiceChat.
+
+### Tasks:
+1. **Create RolePlaySimulation Component** (`src/components/role-play-simulation.tsx`)
+   - Rename and refactor OpenAIChat content into RolePlaySimulation
+   - Use VoiceChat component instead of embedded logic
+   - Maintain existing mobile/desktop layouts
+   - Integrate with SimulationContentTabs and customization dialogs
+   
+2. **Refactor MentorAgent Component** (`src/components/mentor-agent-v2.tsx`)
+   - Replace useOpenAIAgents logic with VoiceChat component
+   - Maintain existing agent factory pattern
+   - Ensure tool execution still works properly
+   
+3. **Create Feature Flag System**
+   - Environment variable to toggle between old and new implementations
+   - Gradual rollout capability for different user segments
+
+### Testing:
+- End-to-end testing of role-play simulation flows
+- Tool execution testing for mentor agents
+- Cross-browser testing for realtime functionality
+- Performance testing to ensure no degradation
+
+### Success Criteria:
+- RolePlaySimulation works identically to current OpenAIChat
+- MentorAgent functionality is preserved with cleaner architecture
+- Feature flags allow safe rollout
+
+## Phase 4: Provider Extension & Optimization
+**Goal**: Clean up the architecture, remove deprecated code, and prepare for future provider extensions.
+
+### Tasks:
+1. **Remove OpenAI Voice Agents SDK Dependencies**
+   - Remove all references to `@openai/agents/realtime`
+   - Update package.json to remove unused dependencies
+   - Clean up any remaining Voice Agents specific code
+   
+2. **Optimize Bundle Size**
+   - Tree-shake unused realtime code
+   - Lazy load provider implementations
+   - Optimize audio processing components
+   
+3. **Prepare Extension Points** (for future)
+   - Create provider registration system
+   - Document provider interface for future implementations
+   - Add configuration validation for different providers
+
+### Testing:
+- Bundle size analysis
+- Performance benchmarking
+- Memory usage profiling
+- Production testing with real users
+
+### Success Criteria:
+- Bundle size is same or smaller than before refactor
+- No Voice Agents dependencies remain
+- Code is prepared for easy future provider additions
+- All tests pass and performance is maintained
+
+## Phase 5: Production Rollout & Cleanup
+**Goal**: Complete migration, remove deprecated code, and establish monitoring.
+
+### Tasks:
+1. **Complete Migration**
+   - Remove original OpenAIChat component
+   - Remove useOpenAIAgents hook
+   - Update all import references
+   - Remove feature flags once rollout is complete
+   
+2. **Documentation & Examples**
+   - Document new VoiceChat component API
+   - Create usage examples for different scenarios  
+   - Update architecture documentation
+   - Add troubleshooting guides
+   
+3. **Monitoring & Analytics**
+   - Add metrics for new component usage
+   - Monitor error rates and connection success
+   - Track performance metrics
+   - Set up alerts for issues
+
+### Testing:
+- Full regression testing suite
+- User acceptance testing
+- Production monitoring setup
+- Rollback procedure testing
+
+### Success Criteria:
+- All users migrated to new architecture
+- Deprecated components removed
+- Monitoring shows stable performance
+- Team is trained on new architecture
+
+## Risk Mitigation
+
+### Technical Risks:
+1. **Audio Processing Issues**: Maintain exact same audio pipeline, test thoroughly
+2. **State Synchronization**: Carefully manage connection state across components
+3. **Performance Regression**: Continuous benchmarking throughout refactor
+4. **Tool Execution**: Ensure agent tools continue working with new architecture
+
+### User Experience Risks:
+1. **UI Consistency**: Visual regression testing and careful state management
+2. **Feature Parity**: Comprehensive testing against current functionality
+3. **Accessibility**: Screen reader testing and keyboard navigation validation
+
+### Rollback Strategy:
+- Feature flags allow immediate rollback to previous implementation
+- Database schema remains compatible throughout migration
+- Monitoring alerts trigger automatic rollback if error rates spike
+- Manual rollback procedure documented and tested
+
+## Success Metrics:
+- Zero functionality regressions
+- Bundle size maintained or reduced
+- Performance metrics stable or improved
+- Code maintainability significantly improved
+- Team velocity increased for future realtime features
+- Foundation established for multi-provider support
