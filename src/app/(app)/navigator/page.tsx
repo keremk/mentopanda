@@ -9,6 +9,7 @@ import {
   getRandomModuleRecommendationAction,
   getOnboardingModuleRecommendationAction,
 } from "@/app/actions/moduleActions";
+import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 import { AgentActionsProvider } from "@/contexts/agent-actions-context";
 
 export const metadata: Metadata = {
@@ -26,11 +27,12 @@ export default async function NavigatorPage({
   const isOnboarding = resolvedSearchParams.onboarding === "true";
 
   // Fetch the actual data objects on the server
-  const [userStatus, moduleRecommendation] = await Promise.all([
+  const [userStatus, moduleRecommendation, currentUser] = await Promise.all([
     getUserTrainingStatusAction(),
     isOnboarding
       ? getOnboardingModuleRecommendationAction()
       : getRandomModuleRecommendationAction(),
+    getCurrentUserActionCached(),
   ]);
 
   return (
@@ -58,6 +60,8 @@ export default async function NavigatorPage({
             <Navigator
               userStatus={userStatus}
               moduleRecommendation={moduleRecommendation}
+              isOnboarding={isOnboarding}
+              userName={currentUser.email?.split('@')[0] || currentUser.id.toString()}
             />
           </div>
         </div>

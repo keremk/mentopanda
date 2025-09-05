@@ -1,6 +1,10 @@
 import { logger } from "@/lib/logger";
 import { VoicePrompt, ToolDefinition } from "@/types/realtime";
 import { appendToDraftAction } from "@/app/actions/training-notes-actions";
+import {
+  addAgentStep,
+  updateAgentStep,
+} from "@/contexts/agent-actions-context";
 
 export function getPrepCoachVoicePrompt(moduleId: string, prepCoachPrompt: string): VoicePrompt {
   const prompt = `
@@ -32,16 +36,30 @@ ${prepCoachPrompt}
     },
   };
 
-  const takeNotesFunction = async (input: any) => {
+  const takeNotesFunction = async (input: unknown) => {
     const { notes, moduleId } = input as {
       notes: string;
       moduleId: string;
     };
     logger.debug(`Appending notes: ${notes} to module ${moduleId}`);
 
+    // Generate a unique id for the step with short uuid
+    const id = `appending-notes-${Math.random().toString(36).slice(2, 10)}`;
+    
     try {
+      addAgentStep({
+        id,
+        label: "Appending draft notes",
+        status: "in_progress",
+        message: `Appending notes to module ${moduleId}:\n${notes}`,
+      });
+
       // Append the notes to the module notes table
       await appendToDraftAction(Number(moduleId), notes);
+      
+      // Add a confirmation step for the user
+      updateAgentStep(id, "completed", "Notes appended successfully");
+      
       logger.debug(`Appending successful for module ${moduleId}`);
       
       return {
@@ -50,9 +68,12 @@ ${prepCoachPrompt}
       };
     } catch (error) {
       logger.error(`Failed to append notes for module ${moduleId}:`, error);
+      
+      updateAgentStep(id, "error", `Failed to append notes: ${(error as Error).message}`);
+      
       return {
         success: false,
-        message: `Failed to append notes: ${error}`,
+        message: `Failed to append notes: ${(error as Error).message}`,
       };
     }
   };

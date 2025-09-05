@@ -1,6 +1,6 @@
 import { CURRENT_MODEL_NAMES } from "@/types/models";
 import { createOpenAISession } from "@/app/actions/openai-session";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useCallback } from "react";
 import { useTranscript } from "@/contexts/transcript";
 import { useApiKey } from "@/hooks/use-api-key";
 import { logger } from "@/lib/logger";
@@ -38,12 +38,15 @@ export type ServerEvent = {
     }[];
   };
   response?: {
-    output?: {
+    output?: Array<{
+      id?: string;
+      object?: string;
       type?: string;
+      status?: string;
       name?: string;
-      arguments?: any;
       call_id?: string;
-    }[];
+      arguments?: string;
+    }>;
     status?: string;
     status_details?: {
       error?: any;
@@ -87,6 +90,10 @@ export class OpenAIRealtimeProvider implements RealtimeProvider {
   private errorCallback: ((error: RealtimeError) => void) | null = null;
   private currentState: ConnectionState = 'stopped';
 
+  // Function calling support
+  private toolFunctions: Record<string, (args: unknown) => Promise<unknown>> = {};
+  private tools: unknown[] = [];
+
   // React context dependencies
   private transcriptContext: ReturnType<typeof useTranscript>;
   private apiKey: string | null;
@@ -104,6 +111,15 @@ export class OpenAIRealtimeProvider implements RealtimeProvider {
     
     this.peerConnectionRef = { current: null };
     this.dataChannelRef = { current: null };
+
+    // Store tools and their implementations
+    if (this.voice.tools) {
+      this.tools = this.voice.tools;
+    }
+    if (this.voice.toolFunctions) {
+      // Cast to the expected type since VoicePrompt allows Function but we need async functions
+      this.toolFunctions = this.voice.toolFunctions as Record<string, (args: unknown) => Promise<unknown>>;
+    }
   }
 
   private voice: VoicePrompt;
@@ -195,8 +211,16 @@ export class OpenAIRealtimeProvider implements RealtimeProvider {
         input_audio_format: "pcm16",
         output_audio_format: "pcm16",
         turn_detection: turnDetection,
+        tools: this.tools,
+        tool_choice: "auto",
       },
     };
+
+    logger.info("🛠️ Updating session with tools:", { 
+      toolCount: this.tools.length, 
+      tools: this.tools,
+      toolFunctions: Object.keys(this.toolFunctions)
+    });
 
     this.sendClientEvent(updateEvent);
   }
@@ -325,6 +349,21 @@ export class OpenAIRealtimeProvider implements RealtimeProvider {
               },
             };
           }
+
+          // Check if response contains function calls
+          const output = serverEvent.response?.output;
+          if (output && output.length > 0) {
+            logger.info("📦 Response output received:", output);
+            for (const item of output) {
+              if (item.type === "function_call") {
+                logger.info("🔧 Function call detected:", { name: item.name, call_id: item.call_id });
+                // Execute function call without await since this method is not async
+                this.executeFunctionCall(item).catch((error) => {
+                  logger.error("Failed to execute function call:", error);
+                });
+              }
+            }
+          }
           break;
         }
       }
@@ -428,6 +467,103 @@ export class OpenAIRealtimeProvider implements RealtimeProvider {
     });
 
     this.sendClientEvent({ type: "response.create" });
+  }
+
+  // Function execution methods
+  private async executeFunctionCall(functionCallItem: {
+    name?: string;
+    call_id?: string;
+    arguments?: string;
+  }) {
+    const { name, call_id, arguments: argsString } = functionCallItem;
+    
+    logger.info("🚀 Starting function call execution:", { name, call_id, arguments: argsString });
+    
+    if (!name || !call_id || !argsString) {
+      logger.error("❌ Invalid function call item", functionCallItem);
+      return;
+    }
+
+    try {
+      // 1. Parse arguments from JSON string
+      logger.info("🔍 Parsing arguments:", argsString);
+      const args = this.parseArguments(argsString);
+      logger.info("✅ Arguments parsed:", args);
+      
+      // 2. Find and execute the function
+      logger.info("🎯 Executing function:", name);
+      const result = await this.executeFunction(name, args);
+      logger.info("✅ Function execution result:", result);
+      
+      // 3. Send results back to the model
+      logger.info("📤 Sending function result back to model");
+      await this.sendFunctionResult(call_id, result);
+      
+      // 4. Trigger response creation to continue conversation
+      logger.info("🔄 Triggering response creation");
+      this.sendClientEvent({ type: "response.create" });
+      
+    } catch (error) {
+      logger.error(`❌ Function execution failed for ${name}:`, error);
+      await this.sendFunctionError(call_id, error as Error);
+      this.sendClientEvent({ type: "response.create" });
+    }
+  }
+
+  private parseArguments(argsString: string): unknown {
+    try {
+      return JSON.parse(argsString);
+    } catch (error) {
+      logger.error("Failed to parse function arguments:", { argsString, error });
+      throw new Error(`Invalid JSON arguments: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private async executeFunction(functionName: string, args: unknown): Promise<unknown> {
+    const functionImpl = this.toolFunctions[functionName];
+    
+    if (!functionImpl) {
+      throw new Error(`Function '${functionName}' not found in toolFunctions`);
+    }
+    
+    if (typeof functionImpl !== 'function') {
+      throw new Error(`'${functionName}' is not a function`);
+    }
+    
+    try {
+      // Execute the function with parsed arguments
+      // The function can be sync or async, we await regardless
+      const result = await functionImpl(args);
+      return result;
+    } catch (error) {
+      logger.error(`Function '${functionName}' execution failed:`, error);
+      throw error;
+    }
+  }
+
+  private async sendFunctionResult(callId: string, result: unknown) {
+    // Convert result to JSON string for the API
+    const resultString = JSON.stringify(result);
+    
+    const functionResultEvent = {
+      type: "conversation.item.create",
+      item: {
+        type: "function_call_output",
+        call_id: callId,
+        output: resultString
+      }
+    };
+    
+    this.sendClientEvent(functionResultEvent);
+  }
+
+  private async sendFunctionError(callId: string, error: Error) {
+    const errorResult = {
+      success: false,
+      error: error.message
+    };
+    
+    await this.sendFunctionResult(callId, errorResult);
   }
 }
 

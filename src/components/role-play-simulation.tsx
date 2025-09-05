@@ -222,7 +222,6 @@ function RolePlaySimulationContent({
         showNoCreditsDialog: false,
       });
       setHistoryEntryId(undefined);
-      router.push("/");
     } catch (error) {
       logger.error("Failed to end without saving:", error);
       toast({
@@ -237,18 +236,26 @@ function RolePlaySimulationContent({
     try {
       if (historyEntryId) {
         await saveAndComplete();
+        // Navigate immediately - this will unmount the component and close the dialog
         router.push(`/assessments/${historyEntryId}`);
+        
+        // Clean up state after navigation is initiated
+        clearTranscript();
+        setChatState({
+          isConversationActive: false,
+          isTimeout: false,
+          showEndDialog: false,
+          showNoCreditsDialog: false,
+        });
+        setHistoryEntryId(undefined);
       }
-      clearTranscript();
-      setChatState({
-        isConversationActive: false,
-        isTimeout: false,
-        showEndDialog: false,
-        showNoCreditsDialog: false,
-      });
-      setHistoryEntryId(undefined);
     } catch (error) {
       logger.error("Failed to end and save:", error);
+      // On error, close the dialog
+      setChatState(prev => ({
+        ...prev,
+        showEndDialog: false,
+      }));
       toast({
         title: "Error",
         description: "Failed to save conversation. Please try again.",
@@ -325,10 +332,23 @@ function RolePlaySimulationContent({
     handleConversationEnd,
   };
 
-  return isMobile ? (
-    <MobileLayout {...layoutProps} />
-  ) : (
-    <DesktopLayout {...layoutProps} />
+  return (
+    <>
+      {isMobile ? (
+        <MobileLayout {...layoutProps} />
+      ) : (
+        <DesktopLayout {...layoutProps} />
+      )}
+
+      {/* Stop Conversation Dialog */}
+      <StopConversationDialog
+        isOpen={chatState.showEndDialog}
+        onClose={() => setChatState(prev => ({ ...prev, showEndDialog: false }))}
+        onStop={handleEndWithoutSaving}
+        onStopAndSave={handleEndAndSave}
+        isTimeout={chatState.isTimeout}
+      />
+    </>
   );
 }
 
@@ -340,7 +360,6 @@ function DesktopLayout({
   handleCountdownComplete,
   handleDurationChange,
   rolePlayers,
-  handleEndAndSave,
   transcriptEntries,
   notes,
   effectiveSkills,
@@ -387,10 +406,8 @@ function DesktopLayout({
               realtimeConfig={realtimeConfig}
               avatarUrl={rolePlayers[0]?.avatarUrl}
               onStop={handleVoiceChatStop}
-              onStopAndSave={handleEndAndSave}
               countdownFrom={sessionDurationMinutes}
               enableTextEntry={true}
-              stopConversationDialog={StopConversationDialog}
               onConversationStart={handleConversationStart}
               onConversationEnd={handleConversationEnd}
             />
@@ -415,7 +432,6 @@ function MobileLayout({
   handleCountdownComplete,
   handleDurationChange,
   rolePlayers,
-  handleEndAndSave,
   transcriptEntries,
   notes,
   effectiveSkills,
@@ -459,10 +475,8 @@ function MobileLayout({
           realtimeConfig={realtimeConfig}
           avatarUrl={rolePlayers[0]?.avatarUrl}
           onStop={handleVoiceChatStop}
-          onStopAndSave={handleEndAndSave}
           countdownFrom={sessionDurationMinutes}
           enableTextEntry={true}
-          stopConversationDialog={StopConversationDialog}
           onConversationStart={handleConversationStart}
           onConversationEnd={handleConversationEnd}
         />

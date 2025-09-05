@@ -13,22 +13,13 @@ import { toast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { useUsage } from "@/contexts/usage-context";
 
-export interface StopConversationDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onStop: () => void;
-  onStopAndSave?: () => void;
-  isTimeout?: boolean;
-}
 
 export interface VoiceChatProps {
   realtimeConfig: RealtimeConfig;
   avatarUrl?: string;
   onStop: () => void;
-  onStopAndSave?: () => void;
   countdownFrom?: number; // minutes to countdown from
   enableTextEntry?: boolean;
-  stopConversationDialog: React.ComponentType<StopConversationDialogProps>;
   onConversationStart?: () => Promise<void>; // Called when conversation starts
   onConversationEnd?: () => Promise<void>; // Called when conversation ends
 }
@@ -39,18 +30,14 @@ export function VoiceChat({
   realtimeConfig,
   avatarUrl,
   onStop,
-  onStopAndSave,
   countdownFrom,
   enableTextEntry = false,
-  stopConversationDialog: StopConversationDialog,
   onConversationStart,
   onConversationEnd,
 }: VoiceChatProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [conversationState, setConversationState] = useState<VoiceChatState>('stopped');
-  const [showStopDialog, setShowStopDialog] = useState(false);
   const [showNoCreditsDialog, setShowNoCreditsDialog] = useState(false);
-  const [isTimeout, setIsTimeout] = useState(false);
   const [showAvatar, setShowAvatar] = useState(false);
 
   // Use the provided audioRef in the config, but fall back to our local ref
@@ -116,12 +103,12 @@ export function VoiceChat({
 
     const timeoutDuration = countdownFrom * 60 * 1000; // convert minutes to milliseconds
     const timer = setTimeout(() => {
-      setIsTimeout(true);
-      setShowStopDialog(true);
+      // Call onStop directly - parent can handle timeout behavior
+      onStop();
     }, timeoutDuration);
 
     return () => clearTimeout(timer);
-  }, [countdownFrom, conversationState]);
+  }, [countdownFrom, conversationState, onStop]);
 
   const handleStartConversation = useCallback(async () => {
     try {
@@ -171,8 +158,6 @@ export function VoiceChat({
       
       await disconnect();
       stopMicrophone();
-      setShowStopDialog(false);
-      setIsTimeout(false);
       
       // Log usage metrics with debug info
       logger.info("VoiceChat: Logging usage metrics", { 
@@ -192,13 +177,16 @@ export function VoiceChat({
     }
   }, [disconnect, stopMicrophone, refreshUsageData, usage, transcriptionModel, logUsageMetrics, onConversationEnd]);
 
-  const handleToggleConversation = useCallback(() => {
+  const handleToggleConversation = useCallback(async () => {
     if (conversationState === 'stopped') {
       handleStartConversation();
     } else {
-      setShowStopDialog(true);
+      // First handle the conversation stop (usage tracking, etc.)
+      await handleStopConversation();
+      // Then let parent handle any dialog logic
+      onStop();
     }
-  }, [conversationState, handleStartConversation]);
+  }, [conversationState, handleStartConversation, handleStopConversation, onStop]);
 
   const handleSendTextMessage = useCallback(async (text: string) => {
     if (conversationState !== 'started') return;
@@ -221,19 +209,6 @@ export function VoiceChat({
     }
   }, [conversationState, sendMessage]);
 
-  const handleStopOnly = useCallback(() => {
-    handleStopConversation();
-    onStop();
-  }, [handleStopConversation, onStop]);
-
-  const handleStopAndSave = useCallback(() => {
-    handleStopConversation();
-    if (onStopAndSave) {
-      onStopAndSave();
-    } else {
-      onStop();
-    }
-  }, [handleStopConversation, onStopAndSave, onStop]);
 
   // Determine if conversation is active
   const isConversationActive = conversationState !== 'stopped';
@@ -311,14 +286,6 @@ export function VoiceChat({
         </div>
       )}
 
-      {/* Stop Conversation Dialog */}
-      <StopConversationDialog
-        isOpen={showStopDialog}
-        onClose={() => setShowStopDialog(false)}
-        onStop={handleStopOnly}
-        onStopAndSave={onStopAndSave ? handleStopAndSave : undefined}
-        isTimeout={isTimeout}
-      />
 
       {/* No Credits Dialog */}
       <NoCreditsDialog

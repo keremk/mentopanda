@@ -33,7 +33,7 @@ export default async function HomePage() {
           <div className="flex gap-2">
             {isAdmin && (
               <Button variant="brand" asChild>
-                <Link href="/navigator">Go Panda</Link>
+                <Link href="/navigator">New Sidequest</Link>
               </Button>
             )}
           </div>

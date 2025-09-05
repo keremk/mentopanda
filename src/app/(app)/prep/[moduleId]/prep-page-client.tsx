@@ -16,6 +16,7 @@ type PrepPageClientProps = {
   prepCoachPrompt: string | null;
   scenario: string;
   characterPrompts: string[];
+  userName: string;
 };
 
 export function PrepPageClient({
@@ -25,6 +26,7 @@ export function PrepPageClient({
   prepCoachPrompt,
   scenario,
   characterPrompts,
+  userName,
 }: PrepPageClientProps) {
   const [showExistingNotesDialog, setShowExistingNotesDialog] = useState(false);
   const [isCreatingNewSession, setIsCreatingNewSession] = useState(false);
@@ -106,12 +108,14 @@ export function PrepPageClient({
           <PrepCoach
             moduleId={moduleId.toString()}
             prepCoachPrompt={prepCoachPrompt}
+            userName={userName}
           />
         ) : (
           <PrepCoachGenerator
             moduleId={moduleId}
             scenario={scenario}
             characterPrompts={characterPrompts}
+            userName={userName}
           />
         )}
       </>

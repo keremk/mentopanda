@@ -12,6 +12,7 @@ type PrepCoachGeneratorProps = {
   moduleId: number;
   scenario: string;
   characterPrompts: string[];
+  userName: string;
 };
 
 type GenerationStatus = "idle" | "generating" | "generated" | "error";
@@ -20,6 +21,7 @@ export function PrepCoachGenerator({
   moduleId,
   scenario,
   characterPrompts,
+  userName,
 }: PrepCoachGeneratorProps) {
   const [status, setStatus] = useState<GenerationStatus>("idle");
   const [generatedContent, setGeneratedContent] = useState<string>("");
@@ -120,6 +122,7 @@ export function PrepCoachGenerator({
       <PrepCoach
         moduleId={moduleId.toString()}
         prepCoachPrompt={generatedContent}
+        userName={userName}
       />
     );
   }

@@ -1,30 +1,104 @@
 "use client";
 
-import { MentorAgent } from "@/components/mentor-agent";
-import {
-  getTrainingNavigatorAgent,
-  DEFAULT_USER_STATUS,
-  DEFAULT_RECOMMENDED_MODULE,
-} from "@/prompts/training-navigator-agent";
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { MentorChat } from "@/components/mentor-chat";
+import { getOnboardingNavigatorPrompt } from "@/prompts/onboarding-navigator-agent";
+import { getSideQuestCreatorPrompt } from "@/prompts/side-quest-creator-agent";
 import { UserTrainingStatus } from "@/data/history";
 import { RecommendedModule } from "@/prompts/training-navigator-agent";
+import { VoicePrompt } from "@/types/realtime";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useAgentActions } from "@/contexts/agent-actions-context";
 
 type NavigatorProps = {
   userStatus: UserTrainingStatus | null;
   moduleRecommendation: RecommendedModule | null;
+  isOnboarding?: boolean; // New prop to determine which prompt to use
+  userName: string;
 };
 
 export function Navigator({
-  userStatus,
-  moduleRecommendation,
+  isOnboarding = false,
+  userName,
 }: NavigatorProps) {
-  const agentFactory = async () => {
-    // Use your existing function with fallbacks
-    return getTrainingNavigatorAgent(
-      userStatus || DEFAULT_USER_STATUS,
-      moduleRecommendation || DEFAULT_RECOMMENDED_MODULE
-    );
+  const [showEndDialog, setShowEndDialog] = useState(false);
+  const router = useRouter();
+  const { nextModuleId } = useAgentActions();
+
+  const voicePromptFactory = async (): Promise<VoicePrompt> => {
+    if (isOnboarding) {
+      // Use onboarding prompt for new users
+      return getOnboardingNavigatorPrompt();
+    } else {
+      // Use side quest creator for existing users from home page
+      return getSideQuestCreatorPrompt();
+    }
   };
 
-  return <MentorAgent agentFactory={agentFactory} />;
+  const handleEndConversation = useCallback(() => {
+    setShowEndDialog(true);
+  }, []);
+
+  const handleConfirmEnd = useCallback(() => {
+    setShowEndDialog(false);
+    
+    // If a module was created during the conversation, navigate to the simulation
+    if (nextModuleId) {
+      router.push(`/simulation/${nextModuleId}`);
+    }
+    // If no module was created, just end the conversation
+  }, [nextModuleId, router]);
+
+  const handleCancelEnd = useCallback(() => {
+    setShowEndDialog(false);
+  }, []);
+
+  return (
+    <>
+      <MentorChat 
+        voicePromptFactory={voicePromptFactory} 
+        userName={userName}
+        onEndClick={handleEndConversation}
+      />
+
+      {/* Simple End Conversation Dialog */}
+      <Dialog open={showEndDialog} onOpenChange={setShowEndDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>End Conversation</DialogTitle>
+            <DialogDescription>
+              {nextModuleId 
+                ? "Great! Your side quest module has been created. Ready to start your training session?"
+                : "Are you sure you want to end your conversation with the mentor?"
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 mt-4">
+            <Button
+              onClick={handleConfirmEnd}
+              variant={nextModuleId ? "brand" : "destructive"}
+              className="flex-1"
+            >
+              {nextModuleId ? "Continue to Training" : "End Conversation"}
+            </Button>
+            <Button
+              onClick={handleCancelEnd}
+              variant="outline"
+              className="flex-1"
+            >
+              Continue Chat
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }

@@ -340,20 +340,10 @@ This is a plan on how to implement this incrementally in phases where each phase
    - Maintain existing agent factory pattern
    - Ensure tool execution still works properly
    
-3. **Create Feature Flag System**
-   - Environment variable to toggle between old and new implementations
-   - Gradual rollout capability for different user segments
-
-### Testing:
-- End-to-end testing of role-play simulation flows
-- Tool execution testing for mentor agents
-- Cross-browser testing for realtime functionality
-- Performance testing to ensure no degradation
 
 ### Success Criteria:
 - RolePlaySimulation works identically to current OpenAIChat
 - MentorAgent functionality is preserved with cleaner architecture
-- Feature flags allow safe rollout
 
 ## Phase 4: Provider Extension & Optimization
 **Goal**: Clean up the architecture, remove deprecated code, and prepare for future provider extensions.

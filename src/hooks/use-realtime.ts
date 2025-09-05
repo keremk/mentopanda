@@ -8,7 +8,6 @@ import {
   MessageItem,
 } from "@/types/realtime";
 import { 
-  OpenAIRealtimeProvider, 
   useOpenAIRealtimeProvider 
 } from "@/providers/openai-realtime-provider";
 import { logger } from "@/lib/logger";
@@ -149,51 +148,5 @@ export function useRealtime(config: RealtimeConfig): UseRealtimeReturn {
     connectionState,
     error,
     refreshUsageData,
-  };
-}
-
-// Backward compatibility helper that maintains the same API as useOpenAIRealtime
-export function useOpenAIRealtimeCompat({
-  instructions,
-  voice,
-  audioRef,
-  userName,
-  agentName,
-}: {
-  instructions: string;
-  voice: string;
-  audioRef: React.RefObject<HTMLAudioElement> | null;
-  userName: string;
-  agentName: string;
-}) {
-  const config: RealtimeConfig = {
-    provider: 'openai',
-    voice: {
-      instructions,
-      voice,
-      displayName: agentName,
-    },
-    audioRef: audioRef!,
-    userName,
-  };
-
-  const { connect, disconnect, sendMessage, usage } = useRealtime(config);
-
-  // Wrapper for sendMessage to match original API
-  const sendTextMessage = useCallback(async (text: string) => {
-    const message: MessageItem = {
-      type: 'user',
-      content: text,
-      timestamp: Date.now(),
-    };
-    await sendMessage(message);
-  }, [sendMessage]);
-
-  return {
-    connect,
-    disconnect,
-    sendTextMessage,
-    usage,
-    transcriptionModel: null, // This would need to be implemented in the provider interface
   };
 }

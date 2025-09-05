@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Metadata } from "next";
 import { getModuleByIdAction2 } from "@/app/actions/moduleActions";
 import { getTrainingNoteAction } from "@/app/actions/training-notes-actions";
+import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 import { AgentActionsProvider } from "@/contexts/agent-actions-context";
 import { notFound } from "next/navigation";
 import { PrepPageClient } from "./prep-page-client";
@@ -24,8 +25,9 @@ export default async function PrepPage(props: Props) {
   const moduleId = parseInt(params.moduleId, 10);
 
   const currentModule = await getModuleByIdAction2(moduleId);
+  const currentUser = await getCurrentUserActionCached();
 
-  if (!currentModule) {
+  if (!currentModule || !currentUser) {
     notFound();
   }
 
@@ -70,6 +72,7 @@ export default async function PrepPage(props: Props) {
               prepCoachPrompt={currentModule.modulePrompt.prepCoach}
               scenario={scenario}
               characterPrompts={characterPrompts}
+              userName={currentUser.email?.split('@')[0] || currentUser.id.toString()}
             />
           </div>
         </div>

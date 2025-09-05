@@ -43,7 +43,7 @@ export interface VoicePrompt {
   voice: string;
   displayName: string;
   tools?: ToolDefinition[];
-  toolFunctions?: Record<string, Function>;
+  toolFunctions?: Record<string, (args: unknown) => Promise<unknown>>;
 }
 
 export interface RealtimeConfig {

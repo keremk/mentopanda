@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { MentorAgent } from "@/components/mentor-agent";
-import { getPrepCoachAgent } from "@/prompts/prep-coach-agent";
+import { MentorChat } from "@/components/mentor-chat";
+import { VoicePrompt } from "@/types/realtime";
 import { generateNotesFromDraftAction } from "@/app/actions/training-notes-actions";
+import { getPrepCoachVoicePrompt } from "@/prompts/prep-coach-voice-prompt";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,16 +20,16 @@ import { toast } from "@/hooks/use-toast";
 type PrepCoachProps = {
   moduleId: string;
   prepCoachPrompt: string;
+  userName: string;
 };
 
-export function PrepCoach({ moduleId, prepCoachPrompt }: PrepCoachProps) {
+export function PrepCoach({ moduleId, prepCoachPrompt, userName }: PrepCoachProps) {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [isGeneratingNotes, setIsGeneratingNotes] = useState(false);
   const router = useRouter();
 
-  const agentFactory = async () => {
-    // Use your existing function with fallbacks
-    return getPrepCoachAgent(moduleId, prepCoachPrompt);
+  const voicePromptFactory = async (): Promise<VoicePrompt> => {
+    return getPrepCoachVoicePrompt(moduleId, prepCoachPrompt);
   };
 
   const handleEndSession = () => {
@@ -36,6 +37,7 @@ export function PrepCoach({ moduleId, prepCoachPrompt }: PrepCoachProps) {
   };
 
   const handleContinueWithoutNotes = () => {
+    setShowEndDialog(false);
     router.push(`/simulation/${moduleId}`);
   };
 
@@ -48,6 +50,7 @@ export function PrepCoach({ moduleId, prepCoachPrompt }: PrepCoachProps) {
         title: "Notes generated successfully",
         description: "Your training notes have been created from your session.",
       });
+      setShowEndDialog(false);
       router.push(`/simulation/${moduleId}`);
     } catch (error) {
       logger.error("Failed to generate notes from draft:", error);
@@ -63,10 +66,11 @@ export function PrepCoach({ moduleId, prepCoachPrompt }: PrepCoachProps) {
 
   return (
     <>
-      <MentorAgent 
-        agentFactory={agentFactory} 
+      <MentorChat 
+        voicePromptFactory={voicePromptFactory} 
         endButtonText="End Session & Continue"
         onEndClick={handleEndSession}
+        userName={userName}
       />
 
       {/* End Session Dialog */}
