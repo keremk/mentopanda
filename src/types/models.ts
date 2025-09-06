@@ -7,13 +7,13 @@ export const AI_MODELS = {
 
 // Latest model names with versions
 export const CURRENT_MODEL_NAMES = {
-  OPENAI: "gpt-4o-realtime-preview-2025-06-03",
+  OPENAI: "gpt-realtime",
   GEMINI: "gemini-2.0-flash-exp",
 } as const;
 
 // Model names without versions - used in pricing calculations
 export const MODEL_NAMES = {
-  OPENAI_REALTIME: "gpt-4o-realtime-preview",
+  OPENAI_REALTIME: "gpt-realtime",
   OPENAI_WHISPER: "whisper-1",
   OPENAI_TRANSCRIBE: "gpt-4o-transcribe", // Better transcription model
   OPENAI_GPT4O: "gpt-4o",

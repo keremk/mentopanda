@@ -195,14 +195,18 @@ export class OpenAIRealtimeProvider implements RealtimeProvider {
   private updateSession() {
     this.sendClientEvent({ type: "input_audio_buffer.clear" });
 
-    const turnDetection = {
-      type: "server_vad",
-      threshold: 0.5,
-      prefix_padding_ms: 300,
-      silence_duration_ms: 200,
-      create_response: true,
-    };
+    // const turnDetection = {
+    //   type: "server_vad",
+    //   threshold: 0.5,
+    //   prefix_padding_ms: 300,
+    //   silence_duration_ms: 200,
+    //   create_response: true,
+    // };
 
+    const turnDetection = {
+      type: "semantic_vad",
+      create_response: true
+    }
     const updateEvent = {
       type: "session.update",
       session: {

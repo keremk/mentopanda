@@ -100,6 +100,13 @@
       "output": 2.4
     },
     {
+      "model": "gpt-realtime",
+      "release": "",
+      "input": 4.0,
+      "cached_input": 0.4,
+      "output": 16.0
+    },
+    {
       "model": "o1",
       "release": "2024-12-17",
       "input": 15.0,

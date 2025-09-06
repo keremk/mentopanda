@@ -86,6 +86,7 @@ export async function createOpenAISession({
     }
 
     const session = await response.json();
+    logger.info(`Realtime session established with ${JSON.stringify(session)}`)
     return { session, transcriptionModel };
   } catch (error) {
     logger.error("Error creating OpenAI session:", error);
