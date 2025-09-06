@@ -104,7 +104,7 @@ export function OnboardingFlow({ user }: OnboardingFlowProps) {
         onboarding: "complete",
       });
 
-      router.push("/navigator?onboarding=true");
+      router.push("/sidequest?onboarding=true");
     } catch (error) {
       logger.error("Setup failed:", error);
       toast({

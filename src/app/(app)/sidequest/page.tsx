@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Metadata } from "next";
-import { Navigator } from "./navigator";
+import { Sidequest } from "./sidequest";
 import { ContinueButton } from "./continue-button";
 import { getUserTrainingStatusAction } from "@/app/actions/history-actions";
 import {
@@ -16,13 +16,13 @@ export const metadata: Metadata = {
   title: "Mentor Agent",
 };
 
-type NavigatorPageProps = {
+type SidequestPageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export default async function NavigatorPage({
+export default async function SidequestPage({
   searchParams,
-}: NavigatorPageProps) {
+}: SidequestPageProps) {
   const resolvedSearchParams = await searchParams;
   const isOnboarding = resolvedSearchParams.onboarding === "true";
 
@@ -57,11 +57,13 @@ export default async function NavigatorPage({
               : "Meet your Mentor Agent"}
           </h1>
           <div className="w-full max-w-3xl">
-            <Navigator
+            <Sidequest
               userStatus={userStatus}
               moduleRecommendation={moduleRecommendation}
               isOnboarding={isOnboarding}
-              userName={currentUser.email?.split('@')[0] || currentUser.id.toString()}
+              userName={
+                currentUser.email?.split("@")[0] || currentUser.id.toString()
+              }
             />
           </div>
         </div>

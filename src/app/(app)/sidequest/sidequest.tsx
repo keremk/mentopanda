@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { MentorChat } from "@/components/mentor-chat";
-import { getOnboardingNavigatorPrompt } from "@/prompts/onboarding-navigator-agent";
 import { getSideQuestCreatorPrompt } from "@/prompts/side-quest-creator-agent";
 import { UserTrainingStatus } from "@/data/history";
 import { RecommendedModule } from "@/prompts/training-navigator-agent";
@@ -18,29 +17,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAgentActions } from "@/contexts/agent-actions-context";
 
-type NavigatorProps = {
+type SidequestProps = {
   userStatus: UserTrainingStatus | null;
   moduleRecommendation: RecommendedModule | null;
   isOnboarding?: boolean; // New prop to determine which prompt to use
   userName: string;
 };
 
-export function Navigator({
-  isOnboarding = false,
-  userName,
-}: NavigatorProps) {
+export function Sidequest({ isOnboarding = false, userName }: SidequestProps) {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const router = useRouter();
   const { nextModuleId } = useAgentActions();
 
   const voicePromptFactory = async (): Promise<VoicePrompt> => {
-    if (isOnboarding) {
-      // Use onboarding prompt for new users
-      return getOnboardingNavigatorPrompt();
-    } else {
-      // Use side quest creator for existing users from home page
-      return getSideQuestCreatorPrompt();
-    }
+    // Use the unified side quest creator prompt for both onboarding and existing users
+    return getSideQuestCreatorPrompt(isOnboarding);
   };
 
   const handleEndConversation = useCallback(() => {
@@ -49,7 +40,7 @@ export function Navigator({
 
   const handleConfirmEnd = useCallback(() => {
     setShowEndDialog(false);
-    
+
     // If a module was created during the conversation, navigate to the simulation
     if (nextModuleId) {
       router.push(`/simulation/${nextModuleId}`);
@@ -63,8 +54,8 @@ export function Navigator({
 
   return (
     <>
-      <MentorChat 
-        voicePromptFactory={voicePromptFactory} 
+      <MentorChat
+        voicePromptFactory={voicePromptFactory}
         userName={userName}
         onEndClick={handleEndConversation}
       />
@@ -75,10 +66,9 @@ export function Navigator({
           <DialogHeader>
             <DialogTitle>End Conversation</DialogTitle>
             <DialogDescription>
-              {nextModuleId 
+              {nextModuleId
                 ? "Great! Your side quest module has been created. Ready to start your training session?"
-                : "Are you sure you want to end your conversation with the mentor?"
-              }
+                : "Are you sure you want to end your conversation with the mentor?"}
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-3 mt-4">

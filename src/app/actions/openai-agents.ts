@@ -2,7 +2,7 @@
 
 import { checkUserHasCredits } from "./credit-check";
 import { logger } from "@/lib/logger";
-import { MODEL_NAMES, CURRENT_MODEL_NAMES } from "@/types/models";
+import { CURRENT_MODEL_NAMES } from "@/types/models";
 
 export async function getToken() {
   try {
