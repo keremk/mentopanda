@@ -10,9 +10,7 @@ import {
   UpdateModuleInput,
   getModuleById2,
   Module,
-  getRandomModuleRecommendation,
   getModuleByTitle,
-  getModulesForCurrentProject,
 } from "@/data/modules";
 import { findOrCreateSideQuestsTraining } from "@/data/trainings";
 import { createClient } from "@/utils/supabase/server";
@@ -22,17 +20,6 @@ import { updatePromptHelperUsageAction } from "@/app/actions/usage-actions";
 import { logger } from "@/lib/logger";
 import modulePrompts from "@/prompts/module-prompts";
 import { checkUserHasCredits } from "./credit-check";
-
-// Hardcoded module title for onboarding recommendation
-const ONBOARDING_MODULE_TITLE = "Understanding Feedback Fundamentals";
-
-// Default onboarding recommendation fallback
-const DEFAULT_ONBOARDING_RECOMMENDATION = {
-  moduleId: "1", // This will be overridden if found
-  moduleTitle: "Welcome Training",
-  moduleDescription:
-    "A simple introduction to communication skills training to get you started on your learning journey.",
-};
 
 export async function updateModuleAction(module: UpdateModuleInput) {
   const supabase = await createClient();
@@ -74,58 +61,9 @@ export async function getModuleByIdAction2(
   return await getModuleById2(supabase, moduleId);
 }
 
-export async function getRandomModuleRecommendationAction() {
-  const supabase = await createClient();
-  return await getRandomModuleRecommendation(supabase);
-}
-
 export async function getModuleByTitleAction(moduleTitle: string) {
   const supabase = await createClient();
   return await getModuleByTitle(supabase, moduleTitle);
-}
-
-export async function getOnboardingModuleRecommendationAction(): Promise<{
-  moduleId: string;
-  moduleTitle: string;
-  moduleDescription: string;
-  requiresModuleCreation?: boolean;
-}> {
-  const supabase = await createClient();
-
-  // First check if user has any modules at all
-  const moduleIds = await getModulesForCurrentProject(supabase);
-
-  if (moduleIds.length === 0) {
-    // No modules exist - user needs to create their first module
-    return {
-      moduleId: "create-first-module", // Special indicator
-      moduleTitle: "Create Your First Training Module",
-      moduleDescription:
-        "It looks like you don't have any training modules yet. Let's create your first one together!",
-      requiresModuleCreation: true, // Special flag
-    };
-  }
-
-  // Try to find the specific onboarding module
-  const onboardingModule = await getModuleByTitle(
-    supabase,
-    ONBOARDING_MODULE_TITLE
-  );
-
-  if (onboardingModule) {
-    return onboardingModule;
-  }
-
-  // Fallback to random recommendation if onboarding module not found
-  const randomRecommendation = await getRandomModuleRecommendation(supabase);
-
-  if (randomRecommendation) {
-    return randomRecommendation;
-  }
-
-  // This shouldn't happen since we checked moduleIds.length > 0 above
-  // But keeping as final fallback
-  return DEFAULT_ONBOARDING_RECOMMENDATION;
 }
 
 export async function createSideQuestModuleAction(

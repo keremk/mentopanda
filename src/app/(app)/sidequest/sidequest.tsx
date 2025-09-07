@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { MentorChat } from "@/components/mentor-chat";
 import { getSideQuestCreatorPrompt } from "@/prompts/side-quest-creator-agent";
 import { UserTrainingStatus } from "@/data/history";
-import { RecommendedModule } from "@/prompts/training-navigator-agent";
 import { VoicePrompt } from "@/types/realtime";
 import {
   Dialog,
@@ -19,7 +18,6 @@ import { useAgentActions } from "@/contexts/agent-actions-context";
 
 type SidequestProps = {
   userStatus: UserTrainingStatus | null;
-  moduleRecommendation: RecommendedModule | null;
   isOnboarding?: boolean; // New prop to determine which prompt to use
   userName: string;
 };

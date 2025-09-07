@@ -5,10 +5,6 @@ import { Metadata } from "next";
 import { Sidequest } from "./sidequest";
 import { ContinueButton } from "./continue-button";
 import { getUserTrainingStatusAction } from "@/app/actions/history-actions";
-import {
-  getRandomModuleRecommendationAction,
-  getOnboardingModuleRecommendationAction,
-} from "@/app/actions/moduleActions";
 import { getCurrentUserActionCached } from "@/app/actions/user-actions";
 import { AgentActionsProvider } from "@/contexts/agent-actions-context";
 
@@ -27,11 +23,8 @@ export default async function SidequestPage({
   const isOnboarding = resolvedSearchParams.onboarding === "true";
 
   // Fetch the actual data objects on the server
-  const [userStatus, moduleRecommendation, currentUser] = await Promise.all([
+  const [userStatus, currentUser] = await Promise.all([
     getUserTrainingStatusAction(),
-    isOnboarding
-      ? getOnboardingModuleRecommendationAction()
-      : getRandomModuleRecommendationAction(),
     getCurrentUserActionCached(),
   ]);
 
@@ -59,7 +52,6 @@ export default async function SidequestPage({
           <div className="w-full max-w-3xl">
             <Sidequest
               userStatus={userStatus}
-              moduleRecommendation={moduleRecommendation}
               isOnboarding={isOnboarding}
               userName={
                 currentUser.email?.split("@")[0] || currentUser.id.toString()
