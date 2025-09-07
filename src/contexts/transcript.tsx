@@ -4,10 +4,18 @@ import React, {
   createContext,
   useContext,
   useState,
+  useCallback,
+  useEffect,
+  useRef,
   PropsWithChildren,
 } from "react";
 import { TranscriptEntry } from "@/types/chat-types";
 import { logger } from "@/lib/logger";
+import {
+  createHistoryEntryAction,
+  updateHistoryEntryAction,
+  deleteHistoryEntryAction,
+} from "@/app/actions/history-actions";
 
 type TranscriptContextValue = {
   transcriptEntries: TranscriptEntry[];
@@ -28,14 +36,36 @@ type TranscriptContextValue = {
     newStatus: "IN_PROGRESS" | "DONE"
   ) => void;
   clearTranscript: () => void;
+  // History and saving functionality
+  historyEntryId?: number;
+  initializeHistoryEntry: (moduleId: number) => Promise<number>;
+  deleteHistoryEntry: () => Promise<void>;
+  saveTranscript: () => Promise<void>;
+  saveAndComplete: () => Promise<void>;
+  isAutoSaving: boolean;
+  lastSavedAt?: Date;
 };
 
 const TranscriptContext = createContext<TranscriptContextValue | undefined>(
   undefined
 );
 
-export const TranscriptProvider = ({ children }: PropsWithChildren) => {
+type TranscriptProviderProps = PropsWithChildren<{
+  saveInterval?: number; // in milliseconds
+}>;
+
+export const TranscriptProvider = ({ 
+  children, 
+  saveInterval = 20000 // default to 20 seconds 
+}: TranscriptProviderProps) => {
   const [transcriptEntries, setTranscriptEntries] = useState<TranscriptEntry[]>([]);
+  const [historyEntryId, setHistoryEntryId] = useState<number>();
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date>();
+  
+  // Refs for tracking save state
+  const lastSavedTranscriptRef = useRef<string>("");
+  const transcriptBufferRef = useRef<TranscriptEntry[]>([]);
 
   function formattedTimestamp(): string {
     return new Date().toLocaleTimeString([], {
@@ -100,9 +130,131 @@ export const TranscriptProvider = ({ children }: PropsWithChildren) => {
       );
     };
 
-  const clearTranscript = () => {
+  const clearTranscript = useCallback(() => {
     setTranscriptEntries([]);
-  };
+    transcriptBufferRef.current = [];
+    lastSavedTranscriptRef.current = "";
+    setHistoryEntryId(undefined);
+    setLastSavedAt(undefined);
+  }, []);
+
+  // Keep transcriptBufferRef updated with the latest transcriptEntries
+  useEffect(() => {
+    transcriptBufferRef.current = transcriptEntries;
+  }, [transcriptEntries]);
+
+  const formatTranscript = useCallback((buffer: TranscriptEntry[]) => {
+    return buffer
+      .map((entry) => `${entry.participantName}: ${entry.text}`)
+      .join("\n");
+  }, []);
+
+  const initializeHistoryEntry = useCallback(async (moduleId: number): Promise<number> => {
+    try {
+      const entry = await createHistoryEntryAction(moduleId);
+      setHistoryEntryId(entry);
+      logger.info(`Created history entry with ID: ${entry}`);
+      return entry;
+    } catch (error) {
+      logger.error("Failed to create history entry:", error);
+      throw error;
+    }
+  }, []);
+
+  const deleteHistoryEntry = useCallback(async (): Promise<void> => {
+    if (!historyEntryId) return;
+    
+    try {
+      await deleteHistoryEntryAction(historyEntryId);
+      setHistoryEntryId(undefined);
+      logger.info(`Deleted history entry with ID: ${historyEntryId}`);
+    } catch (error) {
+      logger.error("Failed to delete history entry:", error);
+      throw error;
+    }
+  }, [historyEntryId]);
+
+  const saveTranscript = useCallback(async (isComplete = false): Promise<void> => {
+    if (!historyEntryId) return;
+    
+    setIsAutoSaving(true);
+    try {
+      const currentBuffer = transcriptBufferRef.current;
+      if (currentBuffer.length === 0 && !isComplete) return;
+      
+      const formattedTranscript = formatTranscript(currentBuffer);
+      const currentTranscriptString = JSON.stringify(currentBuffer);
+      
+      // Only save if transcript has changed, using JSON.stringify for comparison
+      if (
+        currentTranscriptString === lastSavedTranscriptRef.current &&
+        !isComplete
+      ) {
+        return; // Skip save if content is identical and not completing
+      }
+      
+      // Always update completion status if isComplete is true
+      if (
+        currentTranscriptString === lastSavedTranscriptRef.current &&
+        isComplete
+      ) {
+        await updateHistoryEntryAction({
+          id: historyEntryId,
+          completedAt: new Date(),
+        });
+        setLastSavedAt(new Date());
+        return; // Only update completion status
+      }
+      
+      // Perform the update
+      await updateHistoryEntryAction({
+        id: historyEntryId,
+        transcript: currentBuffer,
+        transcriptText: formattedTranscript,
+        ...(isComplete ? { completedAt: new Date() } : {}),
+      });
+      
+      lastSavedTranscriptRef.current = currentTranscriptString;
+      setLastSavedAt(new Date());
+      
+      logger.info(`Saved transcript for history entry ${historyEntryId}${isComplete ? ' (completed)' : ''}`);
+    } catch (error) {
+      logger.error("Failed to save transcript:", error);
+      throw error;
+    } finally {
+      setIsAutoSaving(false);
+    }
+  }, [historyEntryId, formatTranscript]);
+
+  const saveAndComplete = useCallback(async (): Promise<void> => {
+    await saveTranscript(true);
+  }, [saveTranscript]);
+
+  // Set up periodic saving
+  useEffect(() => {
+    if (!historyEntryId) return;
+    
+    const intervalId = setInterval(() => {
+      saveTranscript(false).catch((error) => {
+        logger.error("Auto-save failed:", error);
+      });
+    }, saveInterval);
+    
+    // Clean up interval on unmount or when historyEntryId changes
+    return () => clearInterval(intervalId);
+  }, [saveTranscript, saveInterval, historyEntryId]);
+
+  // Save when component unmounts
+  useEffect(() => {
+    return () => {
+      // Ensure final save attempt on unmount if historyEntryId exists
+      if (historyEntryId) {
+        saveTranscript(false).catch((error) => {
+          logger.error("Final save on unmount failed:", error);
+        });
+      }
+    };
+  }, [historyEntryId, saveTranscript]);
 
   return (
     <TranscriptContext.Provider
@@ -112,6 +264,13 @@ export const TranscriptProvider = ({ children }: PropsWithChildren) => {
         updateTranscriptMessage,
         updateTranscriptEntryStatus,
         clearTranscript,
+        historyEntryId,
+        initializeHistoryEntry,
+        deleteHistoryEntry,
+        saveTranscript,
+        saveAndComplete,
+        isAutoSaving,
+        lastSavedAt,
       }}
     >
       {children}

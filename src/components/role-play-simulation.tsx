@@ -5,11 +5,6 @@ import { User } from "@/data/user";
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { RolePlayer } from "@/types/chat-types";
-import {
-  createHistoryEntryAction,
-  deleteHistoryEntryAction,
-} from "@/app/actions/history-actions";
-import { useTranscriptSave } from "@/hooks/use-transcript-save";
 import { SkillsDialog } from "@/components/skills-dialog";
 import { TraitsDialog } from "@/components/traits-dialog";
 import { useRouter } from "next/navigation";
@@ -80,7 +75,7 @@ export default function RolePlaySimulation({
   notes,
 }: RolePlaySimulationProps) {
   return (
-    <TranscriptProvider>
+    <TranscriptProvider saveInterval={20000}>
       <SimulationCustomizationProvider>
         <UsageProvider>
           <RolePlaySimulationContent
@@ -113,14 +108,14 @@ function RolePlaySimulationContent({
     setTraitsOverride,
   } = useSimulationCustomization();
 
-  const [historyEntryId, setHistoryEntryId] = useState<number>();
-  const { transcriptEntries, clearTranscript } = useTranscript();
-  
-  const { saveAndComplete } = useTranscriptSave({
+  const { 
+    transcriptEntries, 
+    clearTranscript,
     historyEntryId,
-    transcriptBuffer: transcriptEntries,
-    saveInterval: 20000,
-  });
+    initializeHistoryEntry,
+    deleteHistoryEntry,
+    saveAndComplete
+  } = useTranscript();
 
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -211,9 +206,7 @@ function RolePlaySimulationContent({
 
   const handleEndWithoutSaving = useCallback(async () => {
     try {
-      if (historyEntryId) {
-        await deleteHistoryEntryAction(historyEntryId);
-      }
+      await deleteHistoryEntry();
       clearTranscript();
       setChatState({
         isConversationActive: false,
@@ -221,7 +214,6 @@ function RolePlaySimulationContent({
         showEndDialog: false,
         showNoCreditsDialog: false,
       });
-      setHistoryEntryId(undefined);
     } catch (error) {
       logger.error("Failed to end without saving:", error);
       toast({
@@ -230,7 +222,7 @@ function RolePlaySimulationContent({
         variant: "destructive",
       });
     }
-  }, [historyEntryId, clearTranscript, router]);
+  }, [deleteHistoryEntry, clearTranscript]);
 
   const handleEndAndSave = useCallback(async () => {
     try {
@@ -247,7 +239,6 @@ function RolePlaySimulationContent({
           showEndDialog: false,
           showNoCreditsDialog: false,
         });
-        setHistoryEntryId(undefined);
       }
     } catch (error) {
       logger.error("Failed to end and save:", error);
@@ -268,11 +259,10 @@ function RolePlaySimulationContent({
   const handleConversationStart = useCallback(async () => {
     try {
       // Create history entry when conversation starts
-      const entry = await createHistoryEntryAction(module.id);
-      setHistoryEntryId(entry);
+      await initializeHistoryEntry(module.id);
       setChatState((prev) => ({ ...prev, isConversationActive: true }));
       
-      logger.info(`Started conversation with history entry ID: ${entry}`);
+      logger.info(`Started conversation`);
     } catch (error) {
       logger.error("Failed to start conversation:", error);
       
@@ -289,7 +279,7 @@ function RolePlaySimulationContent({
       });
       throw error; // Re-throw to prevent connection
     }
-  }, [module.id]);
+  }, [module.id, initializeHistoryEntry]);
 
   const handleConversationEnd = useCallback(async () => {
     setChatState((prev) => ({ ...prev, isConversationActive: false }));
