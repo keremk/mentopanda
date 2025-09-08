@@ -54,15 +54,17 @@ type TranscriptProviderProps = PropsWithChildren<{
   saveInterval?: number; // in milliseconds
 }>;
 
-export const TranscriptProvider = ({ 
-  children, 
-  saveInterval = 20000 // default to 20 seconds 
+export const TranscriptProvider = ({
+  children,
+  saveInterval = 20000, // default to 20 seconds
 }: TranscriptProviderProps) => {
-  const [transcriptEntries, setTranscriptEntries] = useState<TranscriptEntry[]>([]);
+  const [transcriptEntries, setTranscriptEntries] = useState<TranscriptEntry[]>(
+    []
+  );
   const [historyEntryId, setHistoryEntryId] = useState<number>();
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date>();
-  
+
   // Refs for tracking save state
   const lastSavedTranscriptRef = useRef<string>("");
   const transcriptBufferRef = useRef<TranscriptEntry[]>([]);
@@ -83,6 +85,9 @@ export const TranscriptProvider = ({
     text = "",
     isHidden = false
   ) => {
+    // logger.debug(
+    //   `[addTranscriptMessage] Adding entry ${entryId}, role=${role}, text="${text}"`
+    // );
     setTranscriptEntries((prev) => {
       if (prev.some((log) => log.id === entryId)) {
         logger.warn(
@@ -102,23 +107,48 @@ export const TranscriptProvider = ({
         isHidden,
       };
 
-      return [...prev, newItem];
+      const updated = [...prev, newItem];
+      // logger.debug(
+      //   `[addTranscriptMessage] Added entry. Total entries: ${updated.length}, IDs: [${updated.map((e) => e.id).join(", ")}]`
+      // );
+      return updated;
     });
   };
 
   const updateTranscriptMessage: TranscriptContextValue["updateTranscriptMessage"] =
-    (entryId, newText, append = false) => {
-      setTranscriptEntries((prev) =>
-        prev.map((item) => {
+    (entryId, newText, isDelta = false) => {
+      // logger.debug(`[updateTranscriptMessage] entryId=${entryId}, newText="${newText}", isDelta=${isDelta}`);
+      setTranscriptEntries((prev) => {
+        // logger.debug(
+        //   `[updateTranscriptMessage] Current entries: ${prev.length}, IDs: [${prev.map((e) => e.id).join(", ")}]`
+        // );
+
+        const targetEntry = prev.find((item) => item.id === entryId);
+        if (!targetEntry) {
+          logger.error(
+            `[updateTranscriptMessage] Entry with ID ${entryId} not found! Available IDs: [${prev.map((e) => e.id).join(", ")}]`
+          );
+          return prev;
+        }
+
+        const updated = prev.map((item) => {
           if (item.id === entryId) {
+            const updatedText = isDelta ? (item.text ?? "") + newText : newText;
+            // logger.debug(
+            //   `[updateTranscriptMessage] Updating entry ${entryId}: "${item.text}" -> "${updatedText}"`
+            // );
             return {
               ...item,
-              text: append ? (item.text ?? "") + newText : newText,
+              text: updatedText,
             };
           }
           return item;
-        })
-      );
+        });
+        // logger.debug(
+        //   `[updateTranscriptMessage] Transcript entries updated: ${updated.length} total`
+        // );
+        return updated;
+      });
     };
 
   const updateTranscriptEntryStatus: TranscriptContextValue["updateTranscriptEntryStatus"] =
@@ -149,21 +179,24 @@ export const TranscriptProvider = ({
       .join("\n");
   }, []);
 
-  const initializeHistoryEntry = useCallback(async (moduleId: number): Promise<number> => {
-    try {
-      const entry = await createHistoryEntryAction(moduleId);
-      setHistoryEntryId(entry);
-      logger.info(`Created history entry with ID: ${entry}`);
-      return entry;
-    } catch (error) {
-      logger.error("Failed to create history entry:", error);
-      throw error;
-    }
-  }, []);
+  const initializeHistoryEntry = useCallback(
+    async (moduleId: number): Promise<number> => {
+      try {
+        const entry = await createHistoryEntryAction(moduleId);
+        setHistoryEntryId(entry);
+        logger.info(`Created history entry with ID: ${entry}`);
+        return entry;
+      } catch (error) {
+        logger.error("Failed to create history entry:", error);
+        throw error;
+      }
+    },
+    []
+  );
 
   const deleteHistoryEntry = useCallback(async (): Promise<void> => {
     if (!historyEntryId) return;
-    
+
     try {
       await deleteHistoryEntryAction(historyEntryId);
       setHistoryEntryId(undefined);
@@ -174,57 +207,62 @@ export const TranscriptProvider = ({
     }
   }, [historyEntryId]);
 
-  const saveTranscript = useCallback(async (isComplete = false): Promise<void> => {
-    if (!historyEntryId) return;
-    
-    setIsAutoSaving(true);
-    try {
-      const currentBuffer = transcriptBufferRef.current;
-      if (currentBuffer.length === 0 && !isComplete) return;
-      
-      const formattedTranscript = formatTranscript(currentBuffer);
-      const currentTranscriptString = JSON.stringify(currentBuffer);
-      
-      // Only save if transcript has changed, using JSON.stringify for comparison
-      if (
-        currentTranscriptString === lastSavedTranscriptRef.current &&
-        !isComplete
-      ) {
-        return; // Skip save if content is identical and not completing
-      }
-      
-      // Always update completion status if isComplete is true
-      if (
-        currentTranscriptString === lastSavedTranscriptRef.current &&
-        isComplete
-      ) {
+  const saveTranscript = useCallback(
+    async (isComplete = false): Promise<void> => {
+      if (!historyEntryId) return;
+
+      setIsAutoSaving(true);
+      try {
+        const currentBuffer = transcriptBufferRef.current;
+        if (currentBuffer.length === 0 && !isComplete) return;
+
+        const formattedTranscript = formatTranscript(currentBuffer);
+        const currentTranscriptString = JSON.stringify(currentBuffer);
+
+        // Only save if transcript has changed, using JSON.stringify for comparison
+        if (
+          currentTranscriptString === lastSavedTranscriptRef.current &&
+          !isComplete
+        ) {
+          return; // Skip save if content is identical and not completing
+        }
+
+        // Always update completion status if isComplete is true
+        if (
+          currentTranscriptString === lastSavedTranscriptRef.current &&
+          isComplete
+        ) {
+          await updateHistoryEntryAction({
+            id: historyEntryId,
+            completedAt: new Date(),
+          });
+          setLastSavedAt(new Date());
+          return; // Only update completion status
+        }
+
+        // Perform the update
         await updateHistoryEntryAction({
           id: historyEntryId,
-          completedAt: new Date(),
+          transcript: currentBuffer,
+          transcriptText: formattedTranscript,
+          ...(isComplete ? { completedAt: new Date() } : {}),
         });
+
+        lastSavedTranscriptRef.current = currentTranscriptString;
         setLastSavedAt(new Date());
-        return; // Only update completion status
+
+        logger.info(
+          `Saved transcript for history entry ${historyEntryId}${isComplete ? " (completed)" : ""}`
+        );
+      } catch (error) {
+        logger.error("Failed to save transcript:", error);
+        throw error;
+      } finally {
+        setIsAutoSaving(false);
       }
-      
-      // Perform the update
-      await updateHistoryEntryAction({
-        id: historyEntryId,
-        transcript: currentBuffer,
-        transcriptText: formattedTranscript,
-        ...(isComplete ? { completedAt: new Date() } : {}),
-      });
-      
-      lastSavedTranscriptRef.current = currentTranscriptString;
-      setLastSavedAt(new Date());
-      
-      logger.info(`Saved transcript for history entry ${historyEntryId}${isComplete ? ' (completed)' : ''}`);
-    } catch (error) {
-      logger.error("Failed to save transcript:", error);
-      throw error;
-    } finally {
-      setIsAutoSaving(false);
-    }
-  }, [historyEntryId, formatTranscript]);
+    },
+    [historyEntryId, formatTranscript]
+  );
 
   const saveAndComplete = useCallback(async (): Promise<void> => {
     await saveTranscript(true);
@@ -233,13 +271,13 @@ export const TranscriptProvider = ({
   // Set up periodic saving
   useEffect(() => {
     if (!historyEntryId) return;
-    
+
     const intervalId = setInterval(() => {
       saveTranscript(false).catch((error) => {
         logger.error("Auto-save failed:", error);
       });
     }, saveInterval);
-    
+
     // Clean up interval on unmount or when historyEntryId changes
     return () => clearInterval(intervalId);
   }, [saveTranscript, saveInterval, historyEntryId]);

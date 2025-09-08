@@ -28,9 +28,9 @@ export function TranscriptDisplay({
             </div>
           ) : (
             <>
-              {transcriptEntries.map((entry, index) => (
+              {transcriptEntries.map((entry) => (
                 <div
-                  key={index}
+                  key={entry.id}
                   className={cn(
                     "flex",
                     entry.role === "user" ? "justify-end" : "justify-start"

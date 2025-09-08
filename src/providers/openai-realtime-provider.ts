@@ -1,4 +1,4 @@
-import { CURRENT_MODEL_NAMES } from "@/types/models";
+import { CURRENT_MODEL_NAMES, MODEL_NAMES } from "@/types/models";
 import { createOpenAISession } from "@/app/actions/openai-session";
 import { useRef, useCallback, useMemo } from "react";
 import { useTranscript } from "@/contexts/transcript";
@@ -11,10 +11,11 @@ import {
   ConnectionState,
   MessageItem,
   VoicePrompt,
+  ToolDefinition,
 } from "@/types/realtime";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export type ServerEvent = {
+type ServerEvent = {
   type: string;
   event_id?: string;
   item_id?: string;
@@ -73,16 +74,85 @@ export type ServerEvent = {
 };
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
+type TranscriptionConfig = {
+  model: string;
+  language?: string;
+  prompt?: string;
+};
+
+type TurnDetection = {
+  type: "server_vad" | "semantic_vad";
+  eagerness?: "auto" | "low" | "high";
+  threshold?: number;
+  prefix_padding_ms?: number;
+  silence_duration_ms?: number;
+  idle_timeout_ms?: number;
+  create_response?: boolean;
+  interrupt_response?: boolean;
+};
+
+type NoiseReduction = {
+  type: "near_field" | "far_field";
+};
+
+type AudioFormat = {
+  type: string;
+  rate?: number;
+};
+
+type AudioInput = {
+  format?: AudioFormat;
+  transcription?: TranscriptionConfig | null;
+  noise_reduction?: NoiseReduction | null;
+  turn_detection?: TurnDetection | null;
+};
+
+type AudioOutput = {
+  format?: AudioFormat;
+  speed?: number;
+  voice?: string;
+};
+
+type PromptReference = {
+  id: string;
+  variables?: unknown;
+  version?: string | null;
+};
+
+type RealtimeSession = {
+  type: string;
+  model: string;
+  audio?: {
+    input?: AudioInput;
+    output?: AudioOutput;
+  };
+  instructions?: string;
+  max_output_tokens?: number | "inf";
+  output_modalities?: string[];
+  prompt?: PromptReference | null;
+  tools?: ToolDefinition[];
+  tool_choice?: string;
+};
+
+type UpdateSessionEvent = {
+  type: "session.update";
+  event_id?: string;
+  timestamp?: string;
+  session: RealtimeSession;
+};
+
 interface OpenAIRealtimeProviderProps {
   voice: VoicePrompt;
   audioRef: React.RefObject<HTMLAudioElement | null>;
   userName: string;
 }
 
-export function useOpenAIRealtimeProvider(props: OpenAIRealtimeProviderProps): RealtimeProvider {
+export function useOpenAIRealtimeProvider(
+  props: OpenAIRealtimeProviderProps
+): RealtimeProvider {
   const transcriptContext = useTranscript();
   const { apiKey } = useApiKey();
-  
+
   const voice = props.voice;
   const audioRef = props.audioRef;
   const userName = props.userName;
@@ -93,18 +163,29 @@ export function useOpenAIRealtimeProvider(props: OpenAIRealtimeProviderProps): R
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const usageRef = useRef<RealtimeUsage | null>(null);
   const transcriptionModelRef = useRef<string | null>(null);
-  const stateChangeCallbackRef = useRef<((state: ConnectionState) => void) | null>(null);
-  const errorCallbackRef = useRef<((error: RealtimeError) => void) | null>(null);
-  const currentStateRef = useRef<ConnectionState>('stopped');
+  const stateChangeCallbackRef = useRef<
+    ((state: ConnectionState) => void) | null
+  >(null);
+  const errorCallbackRef = useRef<((error: RealtimeError) => void) | null>(
+    null
+  );
+  const currentStateRef = useRef<ConnectionState>("stopped");
 
   // Constants
-  const providerUrl = "https://api.openai.com/v1/realtime";
+  const providerUrl = "https://api.openai.com/v1/realtime/calls";
   const model = CURRENT_MODEL_NAMES.OPENAI;
 
   // Function calling support - memoized to prevent dependency issues
-  const toolFunctions = useMemo(() => voice.toolFunctions 
-    ? (voice.toolFunctions as Record<string, (args: unknown) => Promise<unknown>>)
-    : {}, [voice.toolFunctions]);
+  const toolFunctions = useMemo(
+    () =>
+      voice.toolFunctions
+        ? (voice.toolFunctions as Record<
+            string,
+            (args: unknown) => Promise<unknown>
+          >)
+        : {},
+    [voice.toolFunctions]
+  );
   const tools = useMemo(() => voice.tools || [], [voice.tools]);
 
   const setState = useCallback((newState: ConnectionState) => {
@@ -114,18 +195,27 @@ export function useOpenAIRealtimeProvider(props: OpenAIRealtimeProviderProps): R
     }
   }, []);
 
-  const emitError = useCallback((type: RealtimeError['type'], message: string, originalError?: Error) => {
-    const error: RealtimeError = { type, message, originalError };
-    errorCallbackRef.current?.(error);
-  }, []);
+  const emitError = useCallback(
+    (type: RealtimeError["type"], message: string, originalError?: Error) => {
+      const error: RealtimeError = { type, message, originalError };
+      errorCallbackRef.current?.(error);
+    },
+    []
+  );
 
-  const onStateChange = useCallback((callback: (state: ConnectionState) => void): void => {
-    stateChangeCallbackRef.current = callback;
-  }, []);
+  const onStateChange = useCallback(
+    (callback: (state: ConnectionState) => void): void => {
+      stateChangeCallbackRef.current = callback;
+    },
+    []
+  );
 
-  const onError = useCallback((callback: (error: RealtimeError) => void): void => {
-    errorCallbackRef.current = callback;
-  }, []);
+  const onError = useCallback(
+    (callback: (error: RealtimeError) => void): void => {
+      errorCallbackRef.current = callback;
+    },
+    []
+  );
 
   const getUsage = useCallback((): RealtimeUsage | null => {
     return usageRef.current;
@@ -137,74 +227,100 @@ export function useOpenAIRealtimeProvider(props: OpenAIRealtimeProviderProps): R
 
   const tokenFetcher = useCallback(async (): Promise<string> => {
     try {
-      const { session, transcriptionModel } = await createOpenAISession({
+      const { ephemeralToken } = await createOpenAISession({
         apiKey: resolvedApiKey || undefined,
-        instructions: voice.instructions,
         voice: voice.voice,
-        forceEnglishTranscription: true,
       });
 
-      transcriptionModelRef.current = transcriptionModel;
-      return session.client_secret.value;
+      return ephemeralToken;
     } catch (error) {
       if (error instanceof Error && error.message === "No credits available") {
-        emitError('credits', "No credits available", error);
+        emitError("credits", "No credits available", error);
         throw new Error("No credits available");
       }
-      emitError('session', "Failed to create session", error as Error);
+      emitError("session", "Failed to create session", error as Error);
       throw error;
     }
   }, [resolvedApiKey, voice.instructions, voice.voice, emitError]);
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const sendClientEvent = useCallback((eventObj: any) => {
-    if (
-      dataChannelRef.current &&
-      dataChannelRef.current.readyState === "open"
-    ) {
-      dataChannelRef.current.send(JSON.stringify(eventObj));
-    } else {
-      logger.error(
-        "Failed to send message - no data channel available",
-        eventObj
-      );
-      emitError('connection', 'No data channel available');
-    }
-  }, [emitError]);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
+  const sendClientEvent = useCallback(
+    (eventObj: unknown) => {
+      if (
+        dataChannelRef.current &&
+        dataChannelRef.current.readyState === "open"
+      ) {
+        dataChannelRef.current.send(JSON.stringify(eventObj));
+      } else {
+        logger.error(
+          "Failed to send message - no data channel available",
+          eventObj
+        );
+        emitError("connection", "No data channel available");
+      }
+    },
+    [emitError]
+  );
 
   const updateSession = useCallback(() => {
     sendClientEvent({ type: "input_audio_buffer.clear" });
 
-    // const turnDetection = {
-    //   type: "server_vad",
-    //   threshold: 0.5,
-    //   prefix_padding_ms: 300,
-    //   silence_duration_ms: 200,
-    //   create_response: true,
-    // };
-
-    const turnDetection = {
-      type: "semantic_vad",
-      create_response: true
-    }
-    const updateEvent = {
-      type: "session.update",
-      session: {
-        modalities: ["text", "audio"],
-        instructions: voice.instructions,
-        input_audio_format: "pcm16",
-        output_audio_format: "pcm16",
-        turn_detection: turnDetection,
-        tools: tools,
-        tool_choice: "auto",
-      },
+    const turnDetection: TurnDetection = {
+      type: "server_vad",
+      threshold: 0.5,
+      prefix_padding_ms: 300,
+      silence_duration_ms: 200,
+      create_response: true,
     };
 
-    logger.info("🛠️ Updating session with tools:", { 
-      toolCount: tools.length, 
+    // const turnDetection: TurnDetection = {
+    //   type: "semantic_vad",
+    //   eagerness: "low",
+    //   create_response: true,
+    // };
+    const transcription: TranscriptionConfig = {
+      model: MODEL_NAMES.OPENAI_TRANSCRIBE,
+      language: "en",
+    };
+
+    transcriptionModelRef.current = transcription.model;
+
+    const audio: AudioInput = {
+      noise_reduction: { type: "far_field" },
+      transcription,
+      turn_detection: turnDetection,
+    };
+
+    const session: RealtimeSession = {
+      type: "realtime",
+      model: MODEL_NAMES.OPENAI_REALTIME,
+      instructions: voice.instructions,
+      output_modalities: ["audio"],
+      audio: { input: audio },
+      tools,
+      tool_choice: "auto",
+    };
+
+    const updateEvent: UpdateSessionEvent = {
+      type: "session.update",
+      session,
+    };
+    // const updateEvent = {
+    //   type: "session.update",
+    //   session: {
+    //     modalities: ["text", "audio"],
+    //     instructions: voice.instructions,
+    //     input_audio_format: "pcm16",
+    //     output_audio_format: "pcm16",
+    //     turn_detection: turnDetection,
+    //     tools: tools,
+    //     tool_choice: "auto",
+    //   },
+    // };
+
+    logger.info("🛠️ Updating session with tools:", {
+      toolCount: tools.length,
       tools: tools,
-      toolFunctions: Object.keys(toolFunctions)
+      toolFunctions: Object.keys(toolFunctions),
     });
 
     sendClientEvent(updateEvent);
@@ -233,296 +349,379 @@ export function useOpenAIRealtimeProvider(props: OpenAIRealtimeProviderProps): R
   }, [transcriptContext.transcriptEntries, sendClientEvent]);
 
   // Forward declarations for functions that reference each other
-  const executeFunctionCall = useCallback(async (functionCallItem: {
-    name?: string;
-    call_id?: string;
-    arguments?: string;
-  }) => {
-    const { name, call_id, arguments: argsString } = functionCallItem;
-    
-    logger.info("🚀 Starting function call execution:", { name, call_id, arguments: argsString });
-    
-    if (!name || !call_id || !argsString) {
-      logger.error("❌ Invalid function call item", functionCallItem);
-      return;
-    }
+  const executeFunctionCall = useCallback(
+    async (functionCallItem: {
+      name?: string;
+      call_id?: string;
+      arguments?: string;
+    }) => {
+      const { name, call_id, arguments: argsString } = functionCallItem;
 
-    try {
-      // 1. Parse arguments from JSON string
-      logger.info("🔍 Parsing arguments:", argsString);
-      const args = parseArguments(argsString);
-      logger.info("✅ Arguments parsed:", args);
-      
-      // 2. Find and execute the function
-      logger.info("🎯 Executing function:", name);
-      const result = await executeFunction(name, args);
-      logger.info("✅ Function execution result:", result);
-      
-      // 3. Send results back to the model
-      logger.info("📤 Sending function result back to model");
-      await sendFunctionResult(call_id, result);
-      
-      // 4. Trigger response creation to continue conversation
-      logger.info("🔄 Triggering response creation");
-      sendClientEvent({ type: "response.create" });
-      
-    } catch (error) {
-      logger.error(`❌ Function execution failed for ${name}:`, error);
-      await sendFunctionError(call_id, error as Error);
-      sendClientEvent({ type: "response.create" });
-    }
-  }, [sendClientEvent]); // parseArguments, executeFunction, sendFunctionResult, sendFunctionError are stable functions
+      logger.info("🚀 Starting function call execution:", {
+        name,
+        call_id,
+        arguments: argsString,
+      });
+
+      if (!name || !call_id || !argsString) {
+        logger.error("❌ Invalid function call item", functionCallItem);
+        return;
+      }
+
+      try {
+        // 1. Parse arguments from JSON string
+        logger.info("🔍 Parsing arguments:", argsString);
+        const args = parseArguments(argsString);
+        logger.info("✅ Arguments parsed:", args);
+
+        // 2. Find and execute the function
+        logger.info("🎯 Executing function:", name);
+        const result = await executeFunction(name, args);
+        logger.info("✅ Function execution result:", result);
+
+        // 3. Send results back to the model
+        logger.info("📤 Sending function result back to model");
+        await sendFunctionResult(call_id, result);
+
+        // 4. Trigger response creation to continue conversation
+        logger.info("🔄 Triggering response creation");
+        sendClientEvent({ type: "response.create" });
+      } catch (error) {
+        logger.error(`❌ Function execution failed for ${name}:`, error);
+        await sendFunctionError(call_id, error as Error);
+        sendClientEvent({ type: "response.create" });
+      }
+    },
+    [sendClientEvent]
+  ); // parseArguments, executeFunction, sendFunctionResult, sendFunctionError are stable functions
 
   const parseArguments = useCallback((argsString: string): unknown => {
     try {
       return JSON.parse(argsString);
     } catch (error) {
-      logger.error("Failed to parse function arguments:", { argsString, error });
-      throw new Error(`Invalid JSON arguments: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logger.error("Failed to parse function arguments:", {
+        argsString,
+        error,
+      });
+      throw new Error(
+        `Invalid JSON arguments: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     }
   }, []);
 
-  const executeFunction = useCallback(async (functionName: string, args: unknown): Promise<unknown> => {
-    const functionImpl = toolFunctions[functionName];
-    
-    if (!functionImpl) {
-      throw new Error(`Function '${functionName}' not found in toolFunctions`);
-    }
-    
-    if (typeof functionImpl !== 'function') {
-      throw new Error(`'${functionName}' is not a function`);
-    }
-    
-    try {
-      // Execute the function with parsed arguments
-      // The function can be sync or async, we await regardless
-      const result = await functionImpl(args);
-      return result;
-    } catch (error) {
-      logger.error(`Function '${functionName}' execution failed:`, error);
-      throw error;
-    }
-  }, [toolFunctions]);
+  const executeFunction = useCallback(
+    async (functionName: string, args: unknown): Promise<unknown> => {
+      const functionImpl = toolFunctions[functionName];
 
-  const sendFunctionResult = useCallback(async (callId: string, result: unknown) => {
-    // Convert result to JSON string for the API
-    const resultString = JSON.stringify(result);
-    
-    const functionResultEvent = {
-      type: "conversation.item.create",
-      item: {
-        type: "function_call_output",
-        call_id: callId,
-        output: resultString
+      if (!functionImpl) {
+        throw new Error(
+          `Function '${functionName}' not found in toolFunctions`
+        );
       }
-    };
-    
-    sendClientEvent(functionResultEvent);
-  }, [sendClientEvent]);
 
-  const sendFunctionError = useCallback(async (callId: string, error: Error) => {
-    const errorResult = {
-      success: false,
-      error: error.message
-    };
-    
-    await sendFunctionResult(callId, errorResult);
-  }, [sendFunctionResult]);
+      if (typeof functionImpl !== "function") {
+        throw new Error(`'${functionName}' is not a function`);
+      }
 
-  const handleMessage = useCallback((event: MessageEvent) => {
-    try {
-      const serverEvent = JSON.parse(event.data) as ServerEvent;
+      try {
+        // Execute the function with parsed arguments
+        // The function can be sync or async, we await regardless
+        const result = await functionImpl(args);
+        return result;
+      } catch (error) {
+        logger.error(`Function '${functionName}' execution failed:`, error);
+        throw error;
+      }
+    },
+    [toolFunctions]
+  );
 
-      switch (serverEvent.type) {
-        case "session.created":
-          setState('connected');
-          updateSession();
-          break;
+  const sendFunctionResult = useCallback(
+    async (callId: string, result: unknown) => {
+      // Convert result to JSON string for the API
+      const resultString = JSON.stringify(result);
 
-        case "conversation.item.created": {
-          let text =
-            serverEvent.item?.content?.[0]?.text ||
-            serverEvent.item?.content?.[0]?.transcript ||
-            "";
+      const functionResultEvent = {
+        type: "conversation.item.create",
+        item: {
+          type: "function_call_output",
+          call_id: callId,
+          output: resultString,
+        },
+      };
 
-          const role = serverEvent.item?.role === "user" ? "user" : "agent";
-          const entryId = serverEvent.item?.id;
-          const name = role === "user" ? userName : voice.displayName;
-          
-          if (
-            entryId &&
-            transcriptContext.transcriptEntries.some((entry) => entry.id === entryId)
-          ) {
+      sendClientEvent(functionResultEvent);
+    },
+    [sendClientEvent]
+  );
+
+  const sendFunctionError = useCallback(
+    async (callId: string, error: Error) => {
+      const errorResult = {
+        success: false,
+        error: error.message,
+      };
+
+      await sendFunctionResult(callId, errorResult);
+    },
+    [sendFunctionResult]
+  );
+
+  const handleMessage = useCallback(
+    (event: MessageEvent) => {
+      try {
+        const serverEvent = JSON.parse(event.data);
+        // logger.debug(`Server Event: ${JSON.stringify(serverEvent)}`);
+
+        switch (serverEvent.type) {
+          case "session.created":
+            setState("connected");
+            updateSession();
+            break;
+
+          case "session.updated":
+            logger.debug(`Session Updated ${JSON.stringify(serverEvent)}`);
+            break;
+
+          case "response.output_item.added": {
+            let text =
+              serverEvent.item?.content?.[0]?.text ||
+              serverEvent.item?.content?.[0]?.transcript ||
+              "";
+
+            const entryId = serverEvent.item?.id;
+            if (
+              entryId &&
+              transcriptContext.transcriptEntries.some(
+                (entry) => entry.id === entryId
+              )
+            ) {
+              break;
+            }
+
+            if (entryId) {
+              transcriptContext.addTranscriptMessage(
+                entryId,
+                userName,
+                "agent",
+                text
+              );
+            }
             break;
           }
 
-          if (entryId) {
-            if (role === "user" && !text) {
-              text = "[Transcribing...]";
+          case "conversation.item.input_audio_transcription.completed": {
+            const entryId = serverEvent.item_id;
+            const finalTranscript =
+              !serverEvent.transcript || serverEvent.transcript === "\n"
+                ? "[inaudible]"
+                : serverEvent.transcript;
+            if (entryId) {
+              logger.debug(
+                `[input_audio_transcription.completed] Updating transcript for entry ${entryId}: "${finalTranscript}"`
+              );
+              transcriptContext.addTranscriptMessage(
+                entryId,
+                voice.displayName, 
+                "user",
+                finalTranscript,
+                false
+              );
             }
-            transcriptContext.addTranscriptMessage(entryId, name, role, text);
+            break;
           }
-          break;
-        }
 
-        case "conversation.item.input_audio_transcription.completed": {
-          const entryId = serverEvent.item_id;
-          const finalTranscript =
-            !serverEvent.transcript || serverEvent.transcript === "\n"
-              ? "[inaudible]"
-              : serverEvent.transcript;
-          if (entryId) {
-            transcriptContext.updateTranscriptMessage(entryId, finalTranscript, false);
+          case "response.output_audio_transcript.delta": {
+            const entryId = serverEvent.item_id;
+            const deltaText = serverEvent.delta || "";
+            if (entryId) {
+              logger.debug(
+                `[output_audio_transcript.delta] Appending delta for entry ${entryId}: "${deltaText}"`
+              );
+              transcriptContext.updateTranscriptMessage(
+                entryId,
+                deltaText,
+                true
+              );
+            }
+            break;
           }
-          break;
-        }
 
-        case "response.audio_transcript.delta": {
-          const entryId = serverEvent.item_id;
-          const deltaText = serverEvent.delta || "";
-          if (entryId) {
-            transcriptContext.updateTranscriptMessage(entryId, deltaText, true);
+          case "response.output_audio_transcript.done": {
+            const entryId = serverEvent.item_id;
+            const finalTranscript = serverEvent.transcript || "";
+            if (entryId) {
+              logger.debug(
+                `[output_audio_transcript.done] Final transcript for entry ${entryId}: "${finalTranscript}"`
+              );
+              transcriptContext.updateTranscriptMessage(
+                entryId,
+                finalTranscript,
+                false
+              );
+            }
+            break;
           }
-          break;
-        }
 
-        case "response.audio_transcript.done": {
-          const entryId = serverEvent.item_id;
-          const finalTranscript = serverEvent.transcript || "";
-          if (entryId) {
-            transcriptContext.updateTranscriptMessage(entryId, finalTranscript, false);
+          case "response.output_item.done": {
+            const entryId = serverEvent.item?.id;
+            if (entryId) {
+              transcriptContext.updateTranscriptEntryStatus(entryId, "DONE");
+            }
+            break;
           }
-          break;
-        }
 
-        case "response.output_item.done": {
-          const entryId = serverEvent.item?.id;
-          if (entryId) {
-            transcriptContext.updateTranscriptEntryStatus(entryId, "DONE");
-          }
-          break;
-        }
-
-        case "response.done": {
-          const usageData = serverEvent.response?.usage;
-          if (usageData) {
-            logger.info("State:", serverEvent.response?.status);
-            logger.info("Token Usage:", usageData);
-            usageRef.current = {
-              totalTokens: usageData.total_tokens,
-              inputTokens: usageData.input_tokens,
-              outputTokens: usageData.output_tokens,
-              inputTokenDetails: {
-                cachedTokens: usageData.input_token_details.cached_tokens,
-                textTokens: usageData.input_token_details.text_tokens,
-                audioTokens: usageData.input_token_details.audio_tokens,
-                cachedTokensDetails: {
-                  textTokens:
-                    usageData.input_token_details.cached_tokens_details
-                      .text_tokens,
-                  audioTokens:
-                    usageData.input_token_details.cached_tokens_details
-                      .audio_tokens,
+          case "response.done": {
+            const usageData = serverEvent.response?.usage;
+            if (usageData) {
+              logger.info("State:", serverEvent.response?.status);
+              logger.info("Token Usage:", usageData);
+              usageRef.current = {
+                totalTokens: usageData.total_tokens,
+                inputTokens: usageData.input_tokens,
+                outputTokens: usageData.output_tokens,
+                inputTokenDetails: {
+                  cachedTokens: usageData.input_token_details.cached_tokens,
+                  textTokens: usageData.input_token_details.text_tokens,
+                  audioTokens: usageData.input_token_details.audio_tokens,
+                  cachedTokensDetails: {
+                    textTokens:
+                      usageData.input_token_details.cached_tokens_details
+                        .text_tokens,
+                    audioTokens:
+                      usageData.input_token_details.cached_tokens_details
+                        .audio_tokens,
+                  },
                 },
-              },
-              outputTokenDetails: {
-                textTokens: usageData.output_token_details.text_tokens,
-                audioTokens: usageData.output_token_details.audio_tokens,
-              },
-            };
-          }
+                outputTokenDetails: {
+                  textTokens: usageData.output_token_details.text_tokens,
+                  audioTokens: usageData.output_token_details.audio_tokens,
+                },
+              };
+            }
 
-          // Check if response contains function calls
-          const output = serverEvent.response?.output;
-          if (output && output.length > 0) {
-            logger.info("📦 Response output received:", output);
-            for (const item of output) {
-              if (item.type === "function_call") {
-                logger.info("🔧 Function call detected:", { name: item.name, call_id: item.call_id });
-                // Execute function call without await since this method is not async
-                executeFunctionCall(item).catch((error) => {
-                  logger.error("Failed to execute function call:", error);
-                });
+            // Check if response contains function calls
+            const output = serverEvent.response?.output;
+            if (output && output.length > 0) {
+              logger.info("📦 Response output received:", output);
+              for (const item of output) {
+                if (item.type === "function_call") {
+                  logger.info("🔧 Function call detected:", {
+                    name: item.name,
+                    call_id: item.call_id,
+                  });
+                  // Execute function call without await since this method is not async
+                  executeFunctionCall(item).catch((error) => {
+                    logger.error("Failed to execute function call:", error);
+                  });
+                }
               }
             }
+            break;
           }
-          break;
         }
+      } catch (error) {
+        logger.error("Failed to parse data channel message:", error);
+        emitError(
+          "connection",
+          "Failed to parse server message",
+          error as Error
+        );
       }
-    } catch (error) {
-      logger.error("Failed to parse data channel message:", error);
-      emitError('connection', 'Failed to parse server message', error as Error);
-    }
-  }, [setState, updateSession, userName, voice.displayName, transcriptContext, emitError, executeFunctionCall]);
+    },
+    [
+      setState,
+      updateSession,
+      userName,
+      voice.displayName,
+      transcriptContext,
+      emitError,
+      executeFunctionCall,
+    ]
+  );
 
-  const registerHandlers = useCallback((dataChannel: RTCDataChannel) => {
-    dataChannel.addEventListener("message", handleMessage);
+  const registerHandlers = useCallback(
+    (dataChannel: RTCDataChannel) => {
+      dataChannel.addEventListener("message", handleMessage);
 
-    dataChannel.addEventListener("error", (error) => {
-      logger.error("Data channel error:", error);
-      emitError('connection', 'Data channel error');
-    });
-  }, [handleMessage, emitError]);
-
-  const connect = useCallback(async (localStream: MediaStream): Promise<void> => {
-    try {
-      setState('starting');
-      
-      const ephemeralKey = await tokenFetcher();
-
-      const connection = new RTCPeerConnection();
-      peerConnectionRef.current = connection;
-
-      // Setup remote audio playback
-      const audioElement = audioRef?.current;
-      if (audioElement) {
-        audioElement.autoplay = true;
-        connection.ontrack = (event) => {
-          audioElement.srcObject = event.streams[0];
-          setState('started');
-        };
-      }
-
-      // Create and store the data channel reference
-      const dataChannel = connection.createDataChannel("provider-data");
-      dataChannelRef.current = dataChannel;
-      registerHandlers(dataChannel);
-
-      // Add the local microphone tracks
-      if (localStream) {
-        localStream.getTracks().forEach((track) => {
-          connection.addTrack(track, localStream);
-        });
-      }
-
-      const offer = await connection.createOffer();
-      await connection.setLocalDescription(offer);
-
-      const response = await fetch(`${providerUrl}?model=${model}`, {
-        method: "POST",
-        body: offer.sdp,
-        headers: {
-          Authorization: `Bearer ${ephemeralKey}`,
-          "Content-Type": "application/sdp",
-        },
+      dataChannel.addEventListener("error", (error) => {
+        logger.error("Data channel error:", error);
+        emitError("connection", "Data channel error");
       });
+    },
+    [handleMessage, emitError]
+  );
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  const connect = useCallback(
+    async (localStream: MediaStream): Promise<void> => {
+      try {
+        setState("starting");
+
+        const ephemeralKey = await tokenFetcher();
+
+        const connection = new RTCPeerConnection();
+        peerConnectionRef.current = connection;
+
+        // Setup remote audio playback
+        const audioElement = audioRef?.current;
+        if (audioElement) {
+          audioElement.autoplay = true;
+          connection.ontrack = (event) => {
+            audioElement.srcObject = event.streams[0];
+            setState("started");
+          };
+        }
+
+        // Create and store the data channel reference
+        const dataChannel = connection.createDataChannel("provider-data");
+        dataChannelRef.current = dataChannel;
+        registerHandlers(dataChannel);
+
+        // Add the local microphone tracks
+        if (localStream) {
+          localStream.getTracks().forEach((track) => {
+            connection.addTrack(track, localStream);
+          });
+        }
+
+        const offer = await connection.createOffer();
+        await connection.setLocalDescription(offer);
+
+        const response = await fetch(`${providerUrl}?model=${model}`, {
+          method: "POST",
+          body: offer.sdp,
+          headers: {
+            Authorization: `Bearer ${ephemeralKey}`,
+            "Content-Type": "application/sdp",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const answerSDP = await response.text();
+        const answer: RTCSessionDescriptionInit = {
+          type: "answer",
+          sdp: answerSDP,
+        };
+        await connection.setRemoteDescription(answer);
+      } catch (error) {
+        setState("stopped");
+        emitError("connection", "Failed to connect", error as Error);
+        throw error;
       }
-
-      const answerSDP = await response.text();
-      const answer: RTCSessionDescriptionInit = {
-        type: "answer",
-        sdp: answerSDP,
-      };
-      await connection.setRemoteDescription(answer);
-    } catch (error) {
-      setState('stopped');
-      emitError('connection', 'Failed to connect', error as Error);
-      throw error;
-    }
-  }, [setState, tokenFetcher, audioRef, registerHandlers, providerUrl, model, emitError]);
+    },
+    [
+      setState,
+      tokenFetcher,
+      audioRef,
+      registerHandlers,
+      providerUrl,
+      model,
+      emitError,
+    ]
+  );
 
   const disconnect = useCallback(async (): Promise<void> => {
     if (peerConnectionRef.current) {
@@ -533,28 +732,31 @@ export function useOpenAIRealtimeProvider(props: OpenAIRealtimeProviderProps): R
       audioRef.current.srcObject = null;
     }
     dataChannelRef.current = null;
-    setState('stopped');
+    setState("stopped");
   }, [audioRef, setState]);
 
-  const sendMessage = useCallback(async (message: MessageItem): Promise<void> => {
-    await cancelAssistantSpeech();
+  const sendMessage = useCallback(
+    async (message: MessageItem): Promise<void> => {
+      await cancelAssistantSpeech();
 
-    sendClientEvent({
-      type: "conversation.item.create",
-      item: {
-        type: "message",
-        role: "user",
-        content: [{ type: "input_text", text: message.content.trim() }],
-      },
-    });
+      sendClientEvent({
+        type: "conversation.item.create",
+        item: {
+          type: "message",
+          role: "user",
+          content: [{ type: "input_text", text: message.content.trim() }],
+        },
+      });
 
-    sendClientEvent({ type: "response.create" });
-  }, [cancelAssistantSpeech, sendClientEvent]);
+      sendClientEvent({ type: "response.create" });
+    },
+    [cancelAssistantSpeech, sendClientEvent]
+  );
 
   // Return the provider object implementing the RealtimeProvider interface
   return {
     connect,
-    disconnect, 
+    disconnect,
     sendMessage,
     getUsage,
     getTranscriptionModel,
@@ -562,4 +764,3 @@ export function useOpenAIRealtimeProvider(props: OpenAIRealtimeProviderProps): R
     onError,
   };
 }
-
