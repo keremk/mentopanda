@@ -471,7 +471,7 @@ export function useOpenAIRealtimeProvider(
     (event: MessageEvent) => {
       try {
         const serverEvent = JSON.parse(event.data);
-        // logger.debug(`Server Event: ${JSON.stringify(serverEvent)}`);
+        logger.debug(`Server Event: ${JSON.stringify(serverEvent)}`);
 
         switch (serverEvent.type) {
           case "session.created":
@@ -482,6 +482,20 @@ export function useOpenAIRealtimeProvider(
           case "session.updated":
             logger.debug(`Session Updated ${JSON.stringify(serverEvent)}`);
             break;
+          
+          case "conversation.item.added": {
+            const isUser = serverEvent.item?.role === "user"
+            if (isUser) {
+              // We should create an entry that marks the start of transcription
+              transcriptContext.addTranscriptMessage(
+                serverEvent.item?.id,
+                voice.displayName, 
+                "user",
+                "Transcribing ..."
+              )
+            }
+            break;
+          }
 
           case "response.output_item.added": {
             let text =
@@ -520,10 +534,8 @@ export function useOpenAIRealtimeProvider(
               logger.debug(
                 `[input_audio_transcription.completed] Updating transcript for entry ${entryId}: "${finalTranscript}"`
               );
-              transcriptContext.addTranscriptMessage(
+              transcriptContext.updateTranscriptMessage(
                 entryId,
-                voice.displayName, 
-                "user",
                 finalTranscript,
                 false
               );
@@ -535,9 +547,9 @@ export function useOpenAIRealtimeProvider(
             const entryId = serverEvent.item_id;
             const deltaText = serverEvent.delta || "";
             if (entryId) {
-              logger.debug(
-                `[output_audio_transcript.delta] Appending delta for entry ${entryId}: "${deltaText}"`
-              );
+              // logger.debug(
+              //   `[output_audio_transcript.delta] Appending delta for entry ${entryId}: "${deltaText}"`
+              // );
               transcriptContext.updateTranscriptMessage(
                 entryId,
                 deltaText,
