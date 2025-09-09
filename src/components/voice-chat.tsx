@@ -59,6 +59,7 @@ export function VoiceChat({
     disconnect,
     sendMessage,
     usage,
+    transcriptionUsage,
     transcriptionModel,
     connectionState,
     error,
@@ -161,12 +162,14 @@ export function VoiceChat({
       
       // Log usage metrics with debug info
       logger.info("VoiceChat: Logging usage metrics", { 
-        latestUsage: latestUsageData.usage, 
+        latestUsage: latestUsageData.usage,
+        latestTranscriptionUsage: latestUsageData.transcriptionUsage, 
         latestTranscriptionModel: latestUsageData.transcriptionModel,
         hookUsage: usage,
+        hookTranscriptionUsage: transcriptionUsage,
         hookTranscriptionModel: transcriptionModel
       });
-      await logUsageMetrics(latestUsageData.usage, latestUsageData.transcriptionModel);
+      await logUsageMetrics(latestUsageData.usage, latestUsageData.transcriptionUsage, latestUsageData.transcriptionModel);
       
       // Call the conversation end callback
       if (onConversationEnd) {
@@ -175,7 +178,7 @@ export function VoiceChat({
     } catch (err) {
       logger.error("Failed to stop conversation:", err);
     }
-  }, [disconnect, stopMicrophone, refreshUsageData, usage, transcriptionModel, logUsageMetrics, onConversationEnd]);
+  }, [disconnect, stopMicrophone, refreshUsageData, usage, transcriptionUsage, transcriptionModel, logUsageMetrics, onConversationEnd]);
 
   const handleToggleConversation = useCallback(async () => {
     if (conversationState === 'stopped') {

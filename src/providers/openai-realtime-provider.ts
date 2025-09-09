@@ -1,4 +1,4 @@
-import { CURRENT_MODEL_NAMES, MODEL_NAMES } from "@/types/models";
+import { MODEL_NAMES } from "@/types/models";
 import { createOpenAISession } from "@/app/actions/openai-session";
 import { useRef, useCallback, useMemo } from "react";
 import { useTranscript } from "@/contexts/transcript";
@@ -7,72 +7,13 @@ import { logger } from "@/lib/logger";
 import {
   RealtimeProvider,
   RealtimeUsage,
+  TranscriptionUsage,
   RealtimeError,
   ConnectionState,
   MessageItem,
   VoicePrompt,
   ToolDefinition,
 } from "@/types/realtime";
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-type ServerEvent = {
-  type: string;
-  event_id?: string;
-  item_id?: string;
-  transcript?: string;
-  delta?: string;
-  session?: {
-    id?: string;
-  };
-  item?: {
-    id?: string;
-    object?: string;
-    type?: string;
-    status?: string;
-    name?: string;
-    arguments?: string;
-    role?: "user" | "assistant";
-    content?: {
-      type?: string;
-      transcript?: string | null;
-      text?: string;
-    }[];
-  };
-  response?: {
-    output?: Array<{
-      id?: string;
-      object?: string;
-      type?: string;
-      status?: string;
-      name?: string;
-      call_id?: string;
-      arguments?: string;
-    }>;
-    status?: string;
-    status_details?: {
-      error?: any;
-    };
-    usage?: {
-      total_tokens: number;
-      input_tokens: number;
-      output_tokens: number;
-      input_token_details: {
-        cached_tokens: number;
-        text_tokens: number;
-        audio_tokens: number;
-        cached_tokens_details: {
-          text_tokens: number;
-          audio_tokens: number;
-        };
-      };
-      output_token_details: {
-        text_tokens: number;
-        audio_tokens: number;
-      };
-    };
-  };
-};
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 type TranscriptionConfig = {
   model: string;
@@ -141,6 +82,36 @@ type UpdateSessionEvent = {
   session: RealtimeSession;
 };
 
+type OpenAIRealtimeUsage = {
+  total_tokens: number;
+  input_tokens: number;
+  output_tokens: number;
+  input_token_details: {
+    cached_tokens: number;
+    text_tokens: number;
+    audio_tokens: number;
+    cached_tokens_details: {
+      text_tokens: number;
+      audio_tokens: number;
+    };
+  };
+  output_token_details: {
+    text_tokens: number;
+    audio_tokens: number;
+  };
+};
+
+type OpenAITranscriptionUsage = {
+  type: "tokens";
+  total_tokens: number;
+  input_tokens: number;
+  input_token_details: {
+    text_tokens: number;
+    audio_tokens: number;
+  };
+  output_tokens: number;
+};
+
 interface OpenAIRealtimeProviderProps {
   voice: VoicePrompt;
   audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -158,10 +129,87 @@ export function useOpenAIRealtimeProvider(
   const userName = props.userName;
   const resolvedApiKey = apiKey || null;
 
+  // Helper function to accumulate usage data across multiple response.done events
+  const accumulateRealtimeUsage = useCallback((newUsageData: OpenAIRealtimeUsage) => {
+    const currentUsage = usageRef.current;
+    
+    if (!currentUsage) {
+      // First usage data - initialize
+      usageRef.current = {
+        totalTokens: newUsageData.total_tokens,
+        inputTokens: newUsageData.input_tokens,
+        outputTokens: newUsageData.output_tokens,
+        inputTokenDetails: {
+          cachedTokens: newUsageData.input_token_details.cached_tokens,
+          textTokens: newUsageData.input_token_details.text_tokens,
+          audioTokens: newUsageData.input_token_details.audio_tokens,
+          cachedTokensDetails: {
+            textTokens: newUsageData.input_token_details.cached_tokens_details.text_tokens,
+            audioTokens: newUsageData.input_token_details.cached_tokens_details.audio_tokens,
+          },
+        },
+        outputTokenDetails: {
+          textTokens: newUsageData.output_token_details.text_tokens,
+          audioTokens: newUsageData.output_token_details.audio_tokens,
+        },
+      };
+    } else {
+      // Accumulate with existing usage data
+      usageRef.current = {
+        totalTokens: currentUsage.totalTokens + newUsageData.total_tokens,
+        inputTokens: currentUsage.inputTokens + newUsageData.input_tokens,
+        outputTokens: currentUsage.outputTokens + newUsageData.output_tokens,
+        inputTokenDetails: {
+          cachedTokens: currentUsage.inputTokenDetails.cachedTokens + newUsageData.input_token_details.cached_tokens,
+          textTokens: currentUsage.inputTokenDetails.textTokens + newUsageData.input_token_details.text_tokens,
+          audioTokens: currentUsage.inputTokenDetails.audioTokens + newUsageData.input_token_details.audio_tokens,
+          cachedTokensDetails: {
+            textTokens: currentUsage.inputTokenDetails.cachedTokensDetails.textTokens + newUsageData.input_token_details.cached_tokens_details.text_tokens,
+            audioTokens: currentUsage.inputTokenDetails.cachedTokensDetails.audioTokens + newUsageData.input_token_details.cached_tokens_details.audio_tokens,
+          },
+        },
+        outputTokenDetails: {
+          textTokens: currentUsage.outputTokenDetails.textTokens + newUsageData.output_token_details.text_tokens,
+          audioTokens: currentUsage.outputTokenDetails.audioTokens + newUsageData.output_token_details.audio_tokens,
+        },
+      };
+    }
+  }, []);
+
+  // Helper function to accumulate transcription usage data
+  const accumulateTranscriptionUsage = useCallback((newTranscriptionUsage: OpenAITranscriptionUsage) => {
+    const currentUsage = transcriptionUsageRef.current;
+    
+    if (!currentUsage) {
+      // First transcription usage data - initialize
+      transcriptionUsageRef.current = {
+        totalTokens: newTranscriptionUsage.total_tokens,
+        inputTokens: newTranscriptionUsage.input_tokens,
+        outputTokens: newTranscriptionUsage.output_tokens,
+        inputTokenDetails: {
+          textTokens: newTranscriptionUsage.input_token_details.text_tokens,
+          audioTokens: newTranscriptionUsage.input_token_details.audio_tokens,
+        },
+      };
+    } else {
+      // Accumulate transcription usage with existing data
+      transcriptionUsageRef.current = {
+        totalTokens: currentUsage.totalTokens + newTranscriptionUsage.total_tokens,
+        inputTokens: currentUsage.inputTokens + newTranscriptionUsage.input_tokens,
+        outputTokens: currentUsage.outputTokens + newTranscriptionUsage.output_tokens,
+        inputTokenDetails: {
+          textTokens: currentUsage.inputTokenDetails.textTokens + newTranscriptionUsage.input_token_details.text_tokens,
+          audioTokens: currentUsage.inputTokenDetails.audioTokens + newTranscriptionUsage.input_token_details.audio_tokens,
+        },
+      };
+    }
+  }, []);
+
   // State management with refs for persistence
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const usageRef = useRef<RealtimeUsage | null>(null);
+  const transcriptionUsageRef = useRef<TranscriptionUsage | null>(null);
   const transcriptionModelRef = useRef<string | null>(null);
   const stateChangeCallbackRef = useRef<
     ((state: ConnectionState) => void) | null
@@ -173,7 +221,7 @@ export function useOpenAIRealtimeProvider(
 
   // Constants
   const providerUrl = "https://api.openai.com/v1/realtime/calls";
-  const model = CURRENT_MODEL_NAMES.OPENAI;
+  const model = MODEL_NAMES.OPENAI_REALTIME;
 
   // Function calling support - memoized to prevent dependency issues
   const toolFunctions = useMemo(
@@ -219,6 +267,10 @@ export function useOpenAIRealtimeProvider(
 
   const getUsage = useCallback((): RealtimeUsage | null => {
     return usageRef.current;
+  }, []);
+
+  const getTranscriptionUsage = useCallback((): TranscriptionUsage | null => {
+    return transcriptionUsageRef.current;
   }, []);
 
   const getTranscriptionModel = useCallback((): string | null => {
@@ -304,18 +356,6 @@ export function useOpenAIRealtimeProvider(
       type: "session.update",
       session,
     };
-    // const updateEvent = {
-    //   type: "session.update",
-    //   session: {
-    //     modalities: ["text", "audio"],
-    //     instructions: voice.instructions,
-    //     input_audio_format: "pcm16",
-    //     output_audio_format: "pcm16",
-    //     turn_detection: turnDetection,
-    //     tools: tools,
-    //     tool_choice: "auto",
-    //   },
-    // };
 
     logger.info("🛠️ Updating session with tools:", {
       toolCount: tools.length,
@@ -498,7 +538,7 @@ export function useOpenAIRealtimeProvider(
           }
 
           case "response.output_item.added": {
-            let text =
+            const text =
               serverEvent.item?.content?.[0]?.text ||
               serverEvent.item?.content?.[0]?.transcript ||
               "";
@@ -530,6 +570,14 @@ export function useOpenAIRealtimeProvider(
               !serverEvent.transcript || serverEvent.transcript === "\n"
                 ? "[inaudible]"
                 : serverEvent.transcript;
+            
+            // Track transcription token usage
+            const transcriptionUsage = serverEvent.usage;
+            if (transcriptionUsage) {
+              logger.info("Transcription Usage:", transcriptionUsage);
+              accumulateTranscriptionUsage(transcriptionUsage);
+            }
+            
             if (entryId) {
               logger.debug(
                 `[input_audio_transcription.completed] Updating transcript for entry ${entryId}: "${finalTranscript}"`
@@ -539,6 +587,7 @@ export function useOpenAIRealtimeProvider(
                 finalTranscript,
                 false
               );
+              
             }
             break;
           }
@@ -588,28 +637,7 @@ export function useOpenAIRealtimeProvider(
             if (usageData) {
               logger.info("State:", serverEvent.response?.status);
               logger.info("Token Usage:", usageData);
-              usageRef.current = {
-                totalTokens: usageData.total_tokens,
-                inputTokens: usageData.input_tokens,
-                outputTokens: usageData.output_tokens,
-                inputTokenDetails: {
-                  cachedTokens: usageData.input_token_details.cached_tokens,
-                  textTokens: usageData.input_token_details.text_tokens,
-                  audioTokens: usageData.input_token_details.audio_tokens,
-                  cachedTokensDetails: {
-                    textTokens:
-                      usageData.input_token_details.cached_tokens_details
-                        .text_tokens,
-                    audioTokens:
-                      usageData.input_token_details.cached_tokens_details
-                        .audio_tokens,
-                  },
-                },
-                outputTokenDetails: {
-                  textTokens: usageData.output_token_details.text_tokens,
-                  audioTokens: usageData.output_token_details.audio_tokens,
-                },
-              };
+              accumulateRealtimeUsage(usageData);
             }
 
             // Check if response contains function calls
@@ -649,6 +677,8 @@ export function useOpenAIRealtimeProvider(
       transcriptContext,
       emitError,
       executeFunctionCall,
+      accumulateRealtimeUsage,
+      accumulateTranscriptionUsage,
     ]
   );
 
@@ -771,6 +801,7 @@ export function useOpenAIRealtimeProvider(
     disconnect,
     sendMessage,
     getUsage,
+    getTranscriptionUsage,
     getTranscriptionModel,
     onStateChange,
     onError,

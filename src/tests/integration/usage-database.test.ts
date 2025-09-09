@@ -3,17 +3,15 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   getCurrentUsage,
   updateAssessmentUsage,
-  updateImageUsage,
   updateConversationUsage,
   updateTranscriptionUsage,
   updatePromptHelperUsage,
-  updateReplicateImageUsage,
+  updateImageUsage,
   type AssessmentUpdate,
-  type ImageUpdate,
   type ConversationUpdate,
   type TranscriptionUpdate,
   type PromptHelperUpdate,
-  type ReplicateImageUpdate,
+  type ImageUpdate,
   type ImageUsage,
 } from "@/data/usage";
 import {
@@ -26,15 +24,12 @@ import {
   cleanupTestEnvironment,
 } from "@/tests/utils/test-setup";
 
-// Type alias to extract the replicate image usage type
-type ReplicateImageModelUsage = NonNullable<ImageUsage[string][string]> & {
-  imageCount: number;
-  costPerImage: number;
-  totalCost: number;
+// Type alias to extract the image usage type
+type ImageModelUsage = NonNullable<ImageUsage[string][string]> & {
+  totalImageCount: number;
+  lastRequestCount: number;
   meanTimeElapsed: number;
   maxTimeElapsed: number;
-  quality: string;
-  size: string;
 };
 
 // Integration tests against real Supabase database
@@ -163,30 +158,6 @@ describe("Usage Database Integration Tests", () => {
       if (result.id) testUsageIds.push(result.id);
     });
 
-    it("should track image usage correctly", async () => {
-      const { createdUsers, createdProjectIds, createdUserIds } =
-        await setupTestEnvironment(adminSupabase, [
-          { role: "member", projectName: "Usage-Track", pricingPlan: "free" },
-        ]);
-      projectIds = createdProjectIds;
-      userIds = createdUserIds;
-      const user = createdUsers[0]!;
-
-      const imageUpdate: ImageUpdate = {
-        modelName: "gpt-image-1",
-        quality: "medium",
-        size: "square",
-        promptTokens: {
-          text: { cached: 0, notCached: 0 },
-          image: { cached: 0, notCached: 0 },
-        },
-      };
-
-      const result = await updateImageUsage(user.supabase, imageUpdate);
-      const qualitySizeKey = "medium-square";
-      expect(result.images["gpt-image-1"][qualitySizeKey].requestCount).toBe(1);
-      if (result.id) testUsageIds.push(result.id);
-    });
 
     it("should track conversation usage correctly", async () => {
       const { createdUsers, createdProjectIds, createdUserIds } =
@@ -228,10 +199,13 @@ describe("Usage Database Integration Tests", () => {
       const user = createdUsers[0]!;
 
       const transcriptionUpdate: TranscriptionUpdate = {
-        modelName: MODEL_NAMES.OPENAI_WHISPER,
+        modelName: MODEL_NAMES.OPENAI_TRANSCRIBE,
         totalSessionLength: 60,
-        userChars: 235,
-        agentChars: 712,
+        inputTokens: 38,
+        outputTokens: 10,
+        totalTokens: 48,
+        inputTextTokens: 10,
+        inputAudioTokens: 28,
       };
 
       const result = await updateTranscriptionUsage(
@@ -239,7 +213,7 @@ describe("Usage Database Integration Tests", () => {
         transcriptionUpdate
       );
       expect(
-        result.transcription[MODEL_NAMES.OPENAI_WHISPER].requestCount
+        result.transcription[MODEL_NAMES.OPENAI_TRANSCRIBE].requestCount
       ).toBe(1);
       if (result.id) testUsageIds.push(result.id);
     });
@@ -319,32 +293,29 @@ describe("Usage Database Integration Tests", () => {
       userIds = createdUserIds;
       const user = createdUsers[0]!;
 
-      const replicateUpdate: ReplicateImageUpdate = {
+      const replicateUpdate: ImageUpdate = {
         modelName: "google/imagen-4-fast",
+        inferenceProvider: "replicate",
         imageCount: 1,
-        costPerImage: 0.02,
         elapsedTimeSeconds: 2.5,
       };
 
-      const result = await updateReplicateImageUsage(user.supabase, replicateUpdate);
+      const result = await updateImageUsage(user.supabase, replicateUpdate);
 
       expect(result).not.toBeNull();
-      const replicateKey = "replicate-replicate";
+      const replicateKey = "replicate";
       const replicateUsage = result.images["google/imagen-4-fast"]?.[replicateKey];
       
       expect(replicateUsage).toBeDefined();
       expect(replicateUsage?.requestCount).toBe(1);
-      // Type assertion to access Replicate-specific fields
-      const replicateData = replicateUsage as ReplicateImageModelUsage;
-      expect(replicateData.imageCount).toBe(1);
-      expect(replicateData.costPerImage).toBe(0.02);
-      expect(replicateData.totalCost).toBe(0.02);
+      // Type assertion to access image-specific fields
+      const replicateData = replicateUsage as ImageModelUsage;
+      expect(replicateData.totalImageCount).toBe(1);
+      expect(replicateData.lastRequestCount).toBe(1);
       expect(replicateData.meanTimeElapsed).toBe(2.5);
       expect(replicateData.maxTimeElapsed).toBe(2.5);
-      expect(replicateData.quality).toBe("replicate");
-      expect(replicateData.size).toBe("replicate");
 
-      // Verify credit deduction: $0.02 * 1.5 margin / $0.05 per credit = 0.6 credits
+      // Verify credit deduction: 1 image * 0.6 credits = 0.6 credits
       expect(result.usedSubscriptionCredits).toBeCloseTo(0.6, 2);
       
       if (result.id) testUsageIds.push(result.id);
@@ -360,27 +331,27 @@ describe("Usage Database Integration Tests", () => {
       const user = createdUsers[0]!;
 
       // First request - 1 image, 2.0 seconds
-      await updateReplicateImageUsage(user.supabase, {
+      await updateImageUsage(user.supabase, {
         modelName: "google/imagen-4-fast",
+        inferenceProvider: "replicate",
         imageCount: 1,
-        costPerImage: 0.02,
         elapsedTimeSeconds: 2.0,
       });
 
       // Second request - 2 images, 4.0 seconds  
-      const secondResult = await updateReplicateImageUsage(user.supabase, {
+      const secondResult = await updateImageUsage(user.supabase, {
         modelName: "google/imagen-4-fast",
+        inferenceProvider: "replicate",
         imageCount: 2,
-        costPerImage: 0.02,
         elapsedTimeSeconds: 4.0,
       });
 
-      const replicateKey = "replicate-replicate";
-      const replicateUsage = secondResult.images["google/imagen-4-fast"]?.[replicateKey] as ReplicateImageModelUsage;
+      const replicateKey = "replicate";
+      const replicateUsage = secondResult.images["google/imagen-4-fast"]?.[replicateKey] as ImageModelUsage;
       
       expect(replicateUsage.requestCount).toBe(2);
-      expect(replicateUsage.imageCount).toBe(3); // 1 + 2
-      expect(replicateUsage.totalCost).toBeCloseTo(0.06, 2); // 3 * $0.02
+      expect(replicateUsage.totalImageCount).toBe(3); // 1 + 2
+      expect(replicateUsage.lastRequestCount).toBe(2); // Last request had 2 images
       // Mean elapsed time: (2.0 * 1 + 4.0 * 1) / 2 = 3.0
       expect(replicateUsage.meanTimeElapsed).toBeCloseTo(3.0, 1);
       expect(replicateUsage.maxTimeElapsed).toBe(4.0);
@@ -400,42 +371,24 @@ describe("Usage Database Integration Tests", () => {
       userIds = createdUserIds;
       const user = createdUsers[0]!;
 
-      // Add regular OpenAI image usage
-      await updateImageUsage(user.supabase, {
-        modelName: "gpt-image-1",
-        quality: "medium",
-        size: "square",
-        promptTokens: {
-          text: { cached: 0, notCached: 100 },
-          image: { cached: 0, notCached: 0 },
-        },
-        outputTokens: 0,
-        totalTokens: 100,
-      });
-
-      // Add Replicate image usage for the same model name
-      const result = await updateReplicateImageUsage(user.supabase, {
-        modelName: "gpt-image-1", // Same model name
+      // Add Replicate image usage
+      const result = await updateImageUsage(user.supabase, {
+        modelName: "google/imagen-4-fast",
+        inferenceProvider: "replicate",
         imageCount: 1,
-        costPerImage: 0.02,
         elapsedTimeSeconds: 1.5,
       });
 
-      // Both should exist independently
-      const regularKey = "medium-square";
-      const replicateKey = "replicate-replicate";
+      // Verify replicate usage exists
+      const replicateKey = "replicate";
       
-      expect(result.images["gpt-image-1"]?.[regularKey]).toBeDefined();
-      expect(result.images["gpt-image-1"]?.[replicateKey]).toBeDefined();
+      expect(result.images["google/imagen-4-fast"]?.[replicateKey]).toBeDefined();
       
-      // Verify they don't interfere with each other
-      const regularUsage = result.images["gpt-image-1"]?.[regularKey];
-      const replicateUsage = result.images["gpt-image-1"]?.[replicateKey] as ReplicateImageModelUsage;
+      // Verify replicate usage data
+      const replicateUsage = result.images["google/imagen-4-fast"]?.[replicateKey] as ImageModelUsage;
       
-      expect(regularUsage?.requestCount).toBe(1);
       expect(replicateUsage?.requestCount).toBe(1);
-      expect(regularUsage?.totalTokens).toBe(100);
-      expect(replicateUsage?.imageCount).toBe(1);
+      expect(replicateUsage?.totalImageCount).toBe(1);
 
       if (result.id) testUsageIds.push(result.id);
     });

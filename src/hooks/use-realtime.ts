@@ -3,6 +3,7 @@ import {
   RealtimeProvider,
   RealtimeConfig,
   RealtimeUsage,
+  TranscriptionUsage,
   RealtimeError,
   ConnectionState,
   MessageItem,
@@ -17,16 +18,18 @@ interface UseRealtimeReturn {
   disconnect: () => Promise<void>;
   sendMessage: (message: MessageItem) => Promise<void>;
   usage: RealtimeUsage | null;
+  transcriptionUsage: TranscriptionUsage | null;
   transcriptionModel: string | null;
   connectionState: ConnectionState;
   error: RealtimeError | null;
-  refreshUsageData: () => { usage: RealtimeUsage | null; transcriptionModel: string | null };
+  refreshUsageData: () => { usage: RealtimeUsage | null; transcriptionUsage: TranscriptionUsage | null; transcriptionModel: string | null };
 }
 
 export function useRealtime(config: RealtimeConfig): UseRealtimeReturn {
   const [connectionState, setConnectionState] = useState<ConnectionState>('stopped');
   const [error, setError] = useState<RealtimeError | null>(null);
   const [usage, setUsage] = useState<RealtimeUsage | null>(null);
+  const [transcriptionUsage, setTranscriptionUsage] = useState<TranscriptionUsage | null>(null);
   const [transcriptionModel, setTranscriptionModel] = useState<string | null>(null);
   
   const providerRef = useRef<RealtimeProvider | null>(null);
@@ -83,6 +86,11 @@ export function useRealtime(config: RealtimeConfig): UseRealtimeReturn {
         logger.info("useRealtime: Updating usage data on stop", currentUsage);
         setUsage(currentUsage);
       }
+      const currentTranscriptionUsage = providerRef.current.getTranscriptionUsage?.();
+      if (currentTranscriptionUsage) {
+        logger.info("useRealtime: Updating transcription usage on stop", currentTranscriptionUsage);
+        setTranscriptionUsage(currentTranscriptionUsage);
+      }
       const currentTranscriptionModel = providerRef.current.getTranscriptionModel?.();
       if (currentTranscriptionModel) {
         logger.info("useRealtime: Updating transcription model on stop", currentTranscriptionModel);
@@ -95,23 +103,28 @@ export function useRealtime(config: RealtimeConfig): UseRealtimeReturn {
   const refreshUsageData = useCallback(() => {
     if (providerRef.current) {
       const currentUsage = providerRef.current.getUsage();
+      const currentTranscriptionUsage = providerRef.current.getTranscriptionUsage?.();
       const currentTranscriptionModel = providerRef.current.getTranscriptionModel?.();
       
       logger.info("useRealtime: Manually refreshing usage data", { 
         currentUsage, 
+        currentTranscriptionUsage,
         currentTranscriptionModel 
       });
       
       if (currentUsage) {
         setUsage(currentUsage);
       }
+      if (currentTranscriptionUsage) {
+        setTranscriptionUsage(currentTranscriptionUsage);
+      }
       if (currentTranscriptionModel) {
         setTranscriptionModel(currentTranscriptionModel);
       }
       
-      return { usage: currentUsage, transcriptionModel: currentTranscriptionModel || null };
+      return { usage: currentUsage, transcriptionUsage: currentTranscriptionUsage || null, transcriptionModel: currentTranscriptionModel || null };
     }
-    return { usage: null, transcriptionModel: null };
+    return { usage: null, transcriptionUsage: null, transcriptionModel: null };
   }, []);
 
   const connect = useCallback(async (stream: MediaStream) => {
@@ -127,6 +140,10 @@ export function useRealtime(config: RealtimeConfig): UseRealtimeReturn {
     const finalUsage = provider.getUsage();
     if (finalUsage) {
       setUsage(finalUsage);
+    }
+    const finalTranscriptionUsage = provider.getTranscriptionUsage?.();
+    if (finalTranscriptionUsage) {
+      setTranscriptionUsage(finalTranscriptionUsage);
     }
     const finalTranscriptionModel = provider.getTranscriptionModel?.();
     if (finalTranscriptionModel) {
@@ -144,6 +161,7 @@ export function useRealtime(config: RealtimeConfig): UseRealtimeReturn {
     disconnect,
     sendMessage,
     usage,
+    transcriptionUsage,
     transcriptionModel,
     connectionState,
     error,

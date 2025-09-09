@@ -6,10 +6,9 @@ import {
   getUsageByPeriod,
   updateAssessmentUsage,
   updatePromptHelperUsage,
-  updateImageUsage,
   updateConversationUsage,
   updateTranscriptionUsage,
-  updateReplicateImageUsage,
+  updateImageUsage,
   getUserUsageHistory,
   checkCreditAvailability,
   addPurchasedCredits,
@@ -21,7 +20,6 @@ import {
   type ImageUpdate,
   type ConversationUpdate,
   type TranscriptionUpdate,
-  type ReplicateImageUpdate,
 } from "@/data/usage";
 import { type SubscriptionTier, type CreditBalance } from "@/lib/usage/types";
 
@@ -55,14 +53,6 @@ export async function updatePromptHelperUsageAction(
   return await updatePromptHelperUsage(supabase, update);
 }
 
-// Update image usage
-export async function updateImageUsageAction(
-  update: ImageUpdate
-): Promise<Usage> {
-  const supabase = await createClient();
-  return await updateImageUsage(supabase, update);
-}
-
 // Update conversation usage
 export async function updateConversationUsageAction(
   update: ConversationUpdate
@@ -80,11 +70,11 @@ export async function updateTranscriptionUsageAction(
 }
 
 // Update Replicate image usage
-export async function updateReplicateImageUsageAction(
-  update: ReplicateImageUpdate
+export async function updateImageUsageAction(
+  update: ImageUpdate
 ): Promise<Usage> {
   const supabase = await createClient();
-  return await updateReplicateImageUsage(supabase, update);
+  return await updateImageUsage(supabase, update);
 }
 
 // Get usage history for a user

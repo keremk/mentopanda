@@ -7,12 +7,12 @@ import {
   updateConversationUsageAction,
   updateTranscriptionUsageAction,
 } from "@/app/actions/usage-actions";
-import { RealtimeUsage } from "@/types/realtime";
+import { RealtimeUsage, TranscriptionUsage } from "@/types/realtime";
 import { useTranscript } from "@/contexts/transcript";
 
 interface UsageContextValue {
   startSession: () => void;
-  logUsageMetrics: (usage: RealtimeUsage | null, transcriptionModel?: string | null) => Promise<void>;
+  logUsageMetrics: (usage: RealtimeUsage | null, transcriptionUsage: TranscriptionUsage | null, transcriptionModel?: string | null) => Promise<void>;
 }
 
 const UsageContext = createContext<UsageContextValue | undefined>(undefined);
@@ -32,9 +32,10 @@ export function UsageProvider({ children }: UsageProviderProps) {
   }, []);
 
   const logUsageMetrics = useCallback(
-    async (usage: RealtimeUsage | null, transcriptionModel: string | null = null) => {
+    async (usage: RealtimeUsage | null, transcriptionUsage: TranscriptionUsage | null, transcriptionModel: string | null = null) => {
       logger.info("[UsageProvider] Attempting to log usage metrics:", { 
-        usage, 
+        usage,
+        transcriptionUsage, 
         transcriptionModel, 
         sessionStartTime: sessionStartTimeRef.current,
         transcriptEntriesCount: transcriptEntries.length 
@@ -49,18 +50,6 @@ export function UsageProvider({ children }: UsageProviderProps) {
 
       const endTime = Date.now();
       const elapsedTimeInSeconds = (endTime - sessionStartTimeRef.current) / 1000;
-
-      // Calculate character counts from transcript
-      let totalUserChars = 0;
-      let totalAgentChars = 0;
-
-      transcriptEntries.forEach((entry) => {
-        if (entry.role === "user" && entry.text) {
-          totalUserChars += entry.text.length;
-        } else if (entry.role === "agent" && entry.text) {
-          totalAgentChars += entry.text.length;
-        }
-      });
 
       // Track conversation usage (tokens) if available
       if (usage) {
@@ -90,14 +79,17 @@ export function UsageProvider({ children }: UsageProviderProps) {
         }
       }
 
-      // Track transcription usage (characters)
-      if (totalUserChars > 0 || totalAgentChars > 0) {
+      // Track transcription usage (tokens)
+      if (transcriptionUsage) {
         try {
           await updateTranscriptionUsageAction({
             modelName: transcriptionModel || MODEL_NAMES.OPENAI_TRANSCRIBE,
             totalSessionLength: elapsedTimeInSeconds,
-            userChars: totalUserChars,
-            agentChars: totalAgentChars,
+            inputTokens: transcriptionUsage.inputTokens,
+            outputTokens: transcriptionUsage.outputTokens,
+            totalTokens: transcriptionUsage.totalTokens,
+            inputTextTokens: transcriptionUsage.inputTokenDetails.textTokens,
+            inputAudioTokens: transcriptionUsage.inputTokenDetails.audioTokens,
           });
           logger.info("[UsageProvider] Transcription usage tracked successfully");
         } catch (error) {

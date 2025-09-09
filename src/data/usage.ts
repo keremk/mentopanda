@@ -6,9 +6,8 @@ import { logger } from "@/lib/logger";
 // Import business logic
 import {
   calculateTextModelCreditCost,
-  calculateImageCreditCost,
   calculateConversationCreditCost,
-  calculateTranscriptionCreditCost,
+  calculateTranscriptionTokenCreditCost,
   calculateReplicateImageCreditCost,
 } from "@/lib/usage/credit-calculator";
 import {
@@ -21,8 +20,6 @@ import {
 import {
   type SubscriptionTier,
   type CreditBalance,
-  type ImageQuality,
-  type ImageSize,
 } from "@/lib/usage/types";
 
 // Credit management types
@@ -90,11 +87,6 @@ async function initializePeriodCreditsInternal(
   return mapUsageFromDB(updatedData);
 }
 
-// Helper functions for image keys
-function createImageKey(quality: ImageQuality, size: ImageSize): string {
-  return `${quality}-${size}`;
-}
-
 // Base usage per model
 type BaseModelUsage = {
   requestCount: number;
@@ -125,24 +117,12 @@ type PromptHelperModelUsage = BaseModelUsage & {
   totalTokens: number;
 };
 
-// Image usage - text + image tokens with quality and size tracking
+// Image usage - simplified structure for all inference providers
 type ImageModelUsage = BaseModelUsage & {
-  promptTokens: {
-    text: {
-      cached: number;
-      notCached: number;
-    };
-    image: {
-      cached: number;
-      notCached: number;
-    };
-  };
-  outputTokens: number;
-  totalTokens: number;
+  totalImageCount: number; // Cumulative number of images generated
+  lastRequestCount: number; // Number of generations in the last request
   meanTimeElapsed: number; // Average elapsed time across all generations
   maxTimeElapsed: number; // Maximum elapsed time for any single generation
-  quality: ImageQuality;
-  size: ImageSize;
 };
 
 // Conversation usage - text + audio
@@ -165,43 +145,22 @@ type ConversationModelUsage = BaseModelUsage & {
   totalSessionLength: number; // in seconds
 };
 
-// Transcription usage - character-based, not token-based
+// Transcription usage - token-based
 type TranscriptionModelUsage = BaseModelUsage & {
   totalSessionLength: number; // in seconds
-  userChars: number;
-  agentChars: number;
-};
-
-// Replicate image usage - extends ImageModelUsage for compatibility
-type ReplicateImageModelUsage = BaseModelUsage & {
-  promptTokens: {
-    text: {
-      cached: number;
-      notCached: number;
-    };
-    image: {
-      cached: number;
-      notCached: number;
-    };
-  };
+  inputTokens: number;
   outputTokens: number;
   totalTokens: number;
-  meanTimeElapsed: number; // Average elapsed time across all generations
-  maxTimeElapsed: number; // Maximum elapsed time for any single generation
-  quality: string; // Will be "replicate" for replicate images
-  size: string; // Will be "replicate" for replicate images
-  // Replicate-specific fields
-  imageCount: number;
-  costPerImage: number;
-  totalCost: number;
+  inputTextTokens: number;
+  inputAudioTokens: number;
 };
 
 // Category types that map model names to their usage
 export type AssessmentUsage = Record<string, AssessmentModelUsage>;
 export type PromptHelperUsage = Record<string, PromptHelperModelUsage>;
-// Image usage now maps model -> quality-size compound key -> usage data
-// For Replicate, we'll use "replicate-replicate" as the key
-export type ImageUsage = Record<string, Record<string, ImageModelUsage | ReplicateImageModelUsage>>;
+// Image usage now maps model -> inference provider key -> usage data
+// For Replicate, we'll use "replicate" as the key
+export type ImageUsage = Record<string, Record<string, ImageModelUsage>>;
 export type ConversationUsage = Record<string, ConversationModelUsage>;
 export type TranscriptionUsage = Record<string, TranscriptionModelUsage>;
 
@@ -266,24 +225,6 @@ export type PromptHelperUpdate = {
   totalTokens?: number;
 };
 
-export type ImageUpdate = {
-  modelName: string;
-  quality: ImageQuality;
-  size: ImageSize;
-  promptTokens: {
-    text?: {
-      cached?: number;
-      notCached?: number;
-    };
-    image?: {
-      cached?: number;
-      notCached?: number;
-    };
-  };
-  outputTokens?: number;
-  totalTokens?: number;
-  elapsedTimeSeconds?: number;
-};
 
 export type ConversationUpdate = {
   modelName: string;
@@ -308,14 +249,17 @@ export type ConversationUpdate = {
 export type TranscriptionUpdate = {
   modelName: string;
   totalSessionLength?: number;
-  userChars?: number;
-  agentChars?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  inputTextTokens?: number;
+  inputAudioTokens?: number;
 };
 
-export type ReplicateImageUpdate = {
+export type ImageUpdate = {
   modelName: string;
+  inferenceProvider: string; // e.g., "replicate", "openai"
   imageCount?: number; // Usually 1 per call
-  costPerImage?: number; // Fixed cost per image
   elapsedTimeSeconds?: number;
 };
 
@@ -539,119 +483,6 @@ export async function updatePromptHelperUsage(
   });
 }
 
-// Update image usage
-export async function updateImageUsage(
-  supabase: SupabaseClient,
-  update: ImageUpdate
-): Promise<Usage> {
-  const current = await getCurrentUsage(supabase);
-  const currentImages = current?.images || {};
-
-  // Get existing model usage or create empty object
-  const modelUsage = currentImages[update.modelName] || {};
-  const imageKey = createImageKey(update.quality, update.size);
-
-  // Get existing usage for this quality-size combination
-  const existing = modelUsage[imageKey] || {
-    promptTokens: {
-      text: { cached: 0, notCached: 0 },
-      image: { cached: 0, notCached: 0 },
-    },
-    outputTokens: 0,
-    totalTokens: 0,
-    requestCount: 0,
-    lastUpdated: new Date().toISOString(),
-    meanTimeElapsed: 0,
-    maxTimeElapsed: 0,
-    quality: update.quality,
-    size: update.size,
-  };
-
-  const newElapsedTime = update.elapsedTimeSeconds || 0;
-  const newRequestCount = existing.requestCount + 1;
-  const newMeanTimeElapsed =
-    newElapsedTime > 0
-      ? (existing.meanTimeElapsed * existing.requestCount + newElapsedTime) /
-        newRequestCount
-      : existing.meanTimeElapsed;
-  const newMaxTimeElapsed = Math.max(existing.maxTimeElapsed, newElapsedTime);
-
-  const updatedImages: ImageUsage = {
-    ...currentImages,
-    [update.modelName]: {
-      ...modelUsage,
-      [imageKey]: {
-        promptTokens: {
-          text: {
-            cached:
-              existing.promptTokens.text.cached +
-              (update.promptTokens.text?.cached || 0),
-            notCached:
-              existing.promptTokens.text.notCached +
-              (update.promptTokens.text?.notCached || 0),
-          },
-          image: {
-            cached:
-              existing.promptTokens.image.cached +
-              (update.promptTokens.image?.cached || 0),
-            notCached:
-              existing.promptTokens.image.notCached +
-              (update.promptTokens.image?.notCached || 0),
-          },
-        },
-        outputTokens: existing.outputTokens + (update.outputTokens || 0),
-        totalTokens: existing.totalTokens + (update.totalTokens || 0),
-        requestCount: newRequestCount,
-        lastUpdated: new Date().toISOString(),
-        meanTimeElapsed: newMeanTimeElapsed,
-        maxTimeElapsed: newMaxTimeElapsed,
-        quality: update.quality,
-        size: update.size,
-      },
-    },
-  };
-
-  // Calculate credit cost and deduct credits
-  const creditCost = calculateImageCreditCost({
-    modelName: update.modelName,
-    quality: update.quality,
-    size: update.size,
-    textTokens: {
-      cachedTokens: update.promptTokens.text?.cached || 0,
-      notCachedTokens: update.promptTokens.text?.notCached || 0,
-    },
-    imageTokens: {
-      cachedTokens: update.promptTokens.image?.cached || 0,
-      notCachedTokens: update.promptTokens.image?.notCached || 0,
-    },
-  });
-
-  if (!current) {
-    throw new Error("No current usage record found");
-  }
-
-  const deductionResult = deductCreditsWithPriority(
-    current.subscriptionCredits,
-    current.usedSubscriptionCredits,
-    current.purchasedCredits,
-    current.usedPurchasedCredits,
-    creditCost
-  );
-
-  logger.info(
-    `[CREDITS] Image (${update.modelName} ${update.quality}/${update.size}): ${creditCost.toFixed(3)} credits (${deductionResult.deductedFromSubscription.toFixed(3)} subscription + ${deductionResult.deductedFromPurchased.toFixed(3)} purchased)`
-  );
-
-  return updateUsageRecord(supabase, {
-    images: updatedImages,
-    used_subscription_credits:
-      current.usedSubscriptionCredits +
-      deductionResult.deductedFromSubscription,
-    used_purchased_credits:
-      current.usedPurchasedCredits + deductionResult.deductedFromPurchased,
-  });
-}
-
 // Update conversation usage
 export async function updateConversationUsage(
   supabase: SupabaseClient,
@@ -755,8 +586,11 @@ export async function updateTranscriptionUsage(
 
   const existing = currentTranscription[update.modelName] || {
     totalSessionLength: 0,
-    userChars: 0,
-    agentChars: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+    totalTokens: 0,
+    inputTextTokens: 0,
+    inputAudioTokens: 0,
     requestCount: 0,
     lastUpdated: new Date().toISOString(),
   };
@@ -766,16 +600,22 @@ export async function updateTranscriptionUsage(
     [update.modelName]: {
       totalSessionLength:
         existing.totalSessionLength + (update.totalSessionLength || 0),
-      userChars: existing.userChars + (update.userChars || 0),
-      agentChars: existing.agentChars + (update.agentChars || 0),
+      inputTokens: existing.inputTokens + (update.inputTokens || 0),
+      outputTokens: existing.outputTokens + (update.outputTokens || 0),
+      totalTokens: existing.totalTokens + (update.totalTokens || 0),
+      inputTextTokens: existing.inputTextTokens + (update.inputTextTokens || 0),
+      inputAudioTokens: existing.inputAudioTokens + (update.inputAudioTokens || 0),
       requestCount: existing.requestCount + 1,
       lastUpdated: new Date().toISOString(),
     },
   };
 
   // Calculate credit cost and deduct credits
-  const creditCost = calculateTranscriptionCreditCost({
-    sessionLengthMinutes: (update.totalSessionLength || 0) / 60,
+  const creditCost = calculateTranscriptionTokenCreditCost(update.modelName, {
+    inputTokens: update.inputTokens || 0,
+    outputTokens: update.outputTokens || 0,
+    inputTextTokens: update.inputTextTokens || 0,
+    inputAudioTokens: update.inputAudioTokens || 0,
   });
 
   if (!current) {
@@ -805,40 +645,30 @@ export async function updateTranscriptionUsage(
 }
 
 // Update Replicate image usage
-export async function updateReplicateImageUsage(
+export async function updateImageUsage(
   supabase: SupabaseClient,
-  update: ReplicateImageUpdate
+  update: ImageUpdate
 ): Promise<Usage> {
   const current = await getCurrentUsage(supabase);
   const currentImages = current?.images || {};
 
   // Get existing model usage or create empty object
   const modelUsage = currentImages[update.modelName] || {};
-  const replicateKey = "replicate-replicate"; // Special key for Replicate images
+  const providerKey = update.inferenceProvider; // Use inference provider as key
 
-  // Get existing usage for this Replicate model
-  const existing = modelUsage[replicateKey] as ReplicateImageModelUsage | undefined || {
-    promptTokens: {
-      text: { cached: 0, notCached: 0 },
-      image: { cached: 0, notCached: 0 },
-    },
-    outputTokens: 0,
-    totalTokens: 0,
+  // Get existing usage for this model + provider combination
+  const existing = modelUsage[providerKey] as ImageModelUsage | undefined || {
     requestCount: 0,
     lastUpdated: new Date().toISOString(),
+    totalImageCount: 0,
+    lastRequestCount: 0,
     meanTimeElapsed: 0,
     maxTimeElapsed: 0,
-    quality: "replicate",
-    size: "replicate",
-    imageCount: 0,
-    costPerImage: update.costPerImage || 0,
-    totalCost: 0,
   };
 
   const newImageCount = update.imageCount || 1;
   const newElapsedTime = update.elapsedTimeSeconds || 0;
   const newRequestCount = existing.requestCount + 1;
-  const costPerImage = update.costPerImage || existing.costPerImage;
   
   const newMeanTimeElapsed =
     newElapsedTime > 0
@@ -851,23 +681,14 @@ export async function updateReplicateImageUsage(
     ...currentImages,
     [update.modelName]: {
       ...modelUsage,
-      [replicateKey]: {
-        promptTokens: {
-          text: { cached: 0, notCached: 0 },
-          image: { cached: 0, notCached: 0 },
-        },
-        outputTokens: 0,
-        totalTokens: 0,
+      [providerKey]: {
         requestCount: newRequestCount,
         lastUpdated: new Date().toISOString(),
+        totalImageCount: existing.totalImageCount + newImageCount,
+        lastRequestCount: newImageCount,
         meanTimeElapsed: newMeanTimeElapsed,
         maxTimeElapsed: newMaxTimeElapsed,
-        quality: "replicate",
-        size: "replicate",
-        imageCount: existing.imageCount + newImageCount,
-        costPerImage: costPerImage,
-        totalCost: existing.totalCost + (newImageCount * costPerImage),
-      } as ReplicateImageModelUsage,
+      } as ImageModelUsage,
     },
   };
 
@@ -990,54 +811,45 @@ function mapUsageFromDB(data: UsageRow): Usage {
   };
 }
 
-// Helper function to get total image usage for a model across all quality-size combinations
+// Helper function to get total image usage for a model across all inference providers
 export function getTotalImageUsageForModel(
   imageUsage: ImageUsage,
   modelName: string
 ): {
-  totalTokens: number;
+  totalImageCount: number;
   totalRequests: number;
   totalElapsedTime: number;
-  combinations: Array<{
+  providers: Array<{
     key: string;
-    quality: ImageQuality;
-    size: ImageSize;
     usage: ImageModelUsage;
   }>;
 } {
   const modelUsage = imageUsage[modelName] || {};
 
-  let totalTokens = 0;
+  let totalImageCount = 0;
   let totalRequests = 0;
   let totalElapsedTime = 0;
-  const combinations: Array<{
+  const providers: Array<{
     key: string;
-    quality: ImageQuality;
-    size: ImageSize;
     usage: ImageModelUsage;
   }> = [];
 
   Object.entries(modelUsage).forEach(([key, usage]) => {
-    totalTokens += usage.totalTokens;
+    totalImageCount += usage.totalImageCount;
     totalRequests += usage.requestCount;
     totalElapsedTime += usage.meanTimeElapsed * usage.requestCount; // Total elapsed time
 
-    // Only include regular ImageModelUsage (not Replicate) in this function
-    if (usage.quality !== "replicate") {
-      combinations.push({
-        key,
-        quality: usage.quality as ImageQuality,
-        size: usage.size as ImageSize,
-        usage: usage as ImageModelUsage,
-      });
-    }
+    providers.push({
+      key,
+      usage: usage as ImageModelUsage,
+    });
   });
 
   return {
-    totalTokens,
+    totalImageCount,
     totalRequests,
     totalElapsedTime,
-    combinations,
+    providers,
   };
 }
 

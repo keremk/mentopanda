@@ -1,16 +1,14 @@
 import { describe, it, expect } from "vitest";
 import {
   calculateTextModelCreditCost,
-  calculateImageCreditCost,
   calculateConversationCreditCost,
-  calculateTranscriptionCreditCost,
+  calculateTranscriptionTokenCreditCost,
   calculateReplicateImageCreditCost,
 } from "@/lib/usage/credit-calculator";
 import type {
   TokenUsage,
-  AudioTokenUsage,
-  ImageGenerationParams,
-  TranscriptionParams,
+  RealtimeTokenUsage,
+  TranscriptionTokenUsage,
 } from "@/lib/usage/types";
 import { MODEL_NAMES } from "@/types/models";
 
@@ -29,15 +27,15 @@ describe("Credit Calculator", () => {
       expect(typeof credits).toBe("number");
     });
 
-    it("should return 0 for unknown model", () => {
+    it("should throw error for unknown model", () => {
       const tokenUsage: TokenUsage = {
         notCachedTokens: 1000,
         outputTokens: 500,
       };
 
-      const credits = calculateTextModelCreditCost("unknown-model", tokenUsage);
-
-      expect(credits).toBe(0);
+      expect(() => {
+        calculateTextModelCreditCost("unknown-model", tokenUsage);
+      }).toThrow("Token pricing for unknown-model is missing!");
     });
 
     it("should handle cached tokens with lower cost", () => {
@@ -63,57 +61,10 @@ describe("Credit Calculator", () => {
     });
   });
 
-  describe("calculateImageCreditCost", () => {
-    it("should calculate credits for image generation", () => {
-      const params: ImageGenerationParams = {
-        modelName: "gpt-image-1",
-        quality: "medium",
-        size: "square",
-      };
-
-      const credits = calculateImageCreditCost(params);
-
-      expect(credits).toBeGreaterThan(0);
-      expect(typeof credits).toBe("number");
-    });
-
-    it("should return 0 for unknown model", () => {
-      const params: ImageGenerationParams = {
-        modelName: "unknown-model",
-        quality: "medium",
-        size: "square",
-      };
-
-      const credits = calculateImageCreditCost(params);
-
-      expect(credits).toBe(0);
-    });
-
-    it("should handle different quality levels", () => {
-      const lowQuality: ImageGenerationParams = {
-        modelName: "gpt-image-1",
-        quality: "low",
-        size: "square",
-      };
-
-      const highQuality: ImageGenerationParams = {
-        modelName: "gpt-image-1",
-        quality: "high",
-        size: "square",
-      };
-
-      const lowCredits = calculateImageCreditCost(lowQuality);
-      const highCredits = calculateImageCreditCost(highQuality);
-
-      // High quality should cost more than low quality (if pricing data supports this)
-      expect(typeof lowCredits).toBe("number");
-      expect(typeof highCredits).toBe("number");
-    });
-  });
 
   describe("calculateConversationCreditCost", () => {
     it("should calculate credits for conversation usage", () => {
-      const audioUsage: AudioTokenUsage = {
+      const audioUsage: RealtimeTokenUsage = {
         textTokens: {
           cachedTokens: 0,
           notCachedTokens: 768,
@@ -135,61 +86,20 @@ describe("Credit Calculator", () => {
       expect(typeof credits).toBe("number");
     });
 
-    it("should return 0 for unknown model", () => {
-      const audioUsage: AudioTokenUsage = {
+    it("should throw error for unknown model", () => {
+      const audioUsage: RealtimeTokenUsage = {
         textTokens: { notCachedTokens: 768 },
         audioTokens: { notCachedTokens: 700 },
         outputTextTokens: 108,
         outputAudioTokens: 505,
       };
 
-      const credits = calculateConversationCreditCost(
-        "unknown-model",
-        audioUsage
-      );
-
-      expect(credits).toBe(0);
+      expect(() => {
+        calculateConversationCreditCost("unknown-model", audioUsage);
+      }).toThrow("Realtime conversation pricing for unknown-model is missing!");
     });
   });
 
-  describe("calculateTranscriptionCreditCost", () => {
-    it("should calculate credits for transcription", () => {
-      const params: TranscriptionParams = {
-        sessionLengthMinutes: 1, // 1 minute
-      };
-
-      const credits = calculateTranscriptionCreditCost(params);
-
-      expect(credits).toBeGreaterThan(0);
-      expect(typeof credits).toBe("number");
-    });
-
-    it("should scale with session length", () => {
-      const shortSession: TranscriptionParams = {
-        sessionLengthMinutes: 1,
-      };
-
-      const longSession: TranscriptionParams = {
-        sessionLengthMinutes: 5,
-      };
-
-      const shortCredits = calculateTranscriptionCreditCost(shortSession);
-      const longCredits = calculateTranscriptionCreditCost(longSession);
-
-      expect(longCredits).toBeGreaterThan(shortCredits);
-      expect(longCredits).toBeCloseTo(shortCredits * 5, 5);
-    });
-
-    it("should handle zero session length", () => {
-      const params: TranscriptionParams = {
-        sessionLengthMinutes: 0,
-      };
-
-      const credits = calculateTranscriptionCreditCost(params);
-
-      expect(credits).toBe(0);
-    });
-  });
 
   describe("calculateReplicateImageCreditCost", () => {
     it("should calculate replicate image credits correctly", () => {
@@ -211,10 +121,10 @@ describe("Credit Calculator", () => {
       expect(result).toBe(0);
     });
 
-    it("should handle unknown replicate models gracefully", () => {
-      // Unknown model should return 0 credits
-      const result = calculateReplicateImageCreditCost("unknown-model", 1);
-      expect(result).toBe(0);
+    it("should throw error for unknown replicate model", () => {
+      expect(() => {
+        calculateReplicateImageCreditCost("unknown-model", 1);
+      }).toThrow("Replicate pricing for unknown-model is missing!");
     });
 
     it("should handle decimal image counts", () => {
@@ -230,6 +140,109 @@ describe("Credit Calculator", () => {
       // At $0.05 per credit: 0.6 credits per image
       const result = calculateReplicateImageCreditCost("google/imagen-4-fast", 10);
       expect(result).toBeCloseTo(6.0, 2); // 10 * 0.6
+    });
+  });
+
+  describe("calculateTranscriptionTokenCreditCost", () => {
+    it("should calculate credits for transcription token usage", () => {
+      const tokenUsage: TranscriptionTokenUsage = {
+        inputTokens: 1000,
+        outputTokens: 500,
+        inputTextTokens: 600,
+        inputAudioTokens: 400,
+      };
+
+      const credits = calculateTranscriptionTokenCreditCost(
+        MODEL_NAMES.OPENAI_TRANSCRIBE,
+        tokenUsage
+      );
+
+      expect(credits).toBeGreaterThan(0);
+      expect(typeof credits).toBe("number");
+    });
+
+    it("should handle zero token usage", () => {
+      const tokenUsage: TranscriptionTokenUsage = {
+        inputTokens: 0,
+        outputTokens: 0,
+        inputTextTokens: 0,
+        inputAudioTokens: 0,
+      };
+
+      const credits = calculateTranscriptionTokenCreditCost(
+        MODEL_NAMES.OPENAI_TRANSCRIBE,
+        tokenUsage
+      );
+
+      expect(credits).toBe(0);
+    });
+
+    it("should calculate higher cost for audio tokens vs text tokens", () => {
+      const audioOnlyUsage: TranscriptionTokenUsage = {
+        inputTokens: 1000,
+        outputTokens: 100,
+        inputTextTokens: 0,
+        inputAudioTokens: 1000,
+      };
+
+      const textOnlyUsage: TranscriptionTokenUsage = {
+        inputTokens: 1000,
+        outputTokens: 100,
+        inputTextTokens: 1000,
+        inputAudioTokens: 0,
+      };
+
+      const audioCredits = calculateTranscriptionTokenCreditCost(
+        MODEL_NAMES.OPENAI_TRANSCRIBE,
+        audioOnlyUsage
+      );
+      const textCredits = calculateTranscriptionTokenCreditCost(
+        MODEL_NAMES.OPENAI_TRANSCRIBE,
+        textOnlyUsage
+      );
+
+      expect(audioCredits).toBeGreaterThan(textCredits);
+    });
+
+    it("should throw error for unknown model", () => {
+      const tokenUsage: TranscriptionTokenUsage = {
+        inputTokens: 1000,
+        outputTokens: 500,
+        inputTextTokens: 600,
+        inputAudioTokens: 400,
+      };
+
+      expect(() => {
+        calculateTranscriptionTokenCreditCost("unknown-model", tokenUsage);
+      }).toThrow("Transcription pricing for unknown-model is missing!");
+    });
+
+    it("should scale proportionally with token count", () => {
+      const smallUsage: TranscriptionTokenUsage = {
+        inputTokens: 500,
+        outputTokens: 250,
+        inputTextTokens: 300,
+        inputAudioTokens: 200,
+      };
+
+      const largeUsage: TranscriptionTokenUsage = {
+        inputTokens: 2000,
+        outputTokens: 1000,
+        inputTextTokens: 1200,
+        inputAudioTokens: 800,
+      };
+
+      const smallCredits = calculateTranscriptionTokenCreditCost(
+        MODEL_NAMES.OPENAI_TRANSCRIBE,
+        smallUsage
+      );
+      const largeCredits = calculateTranscriptionTokenCreditCost(
+        MODEL_NAMES.OPENAI_TRANSCRIBE,
+        largeUsage
+      );
+
+      // Large usage should be 4x the cost (2000/500 = 4)
+      expect(largeCredits).toBeCloseTo(smallCredits * 4, 5);
     });
   });
 });

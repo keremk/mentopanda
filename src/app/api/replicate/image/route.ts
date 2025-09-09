@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { z } from 'zod/v3';
 import { logger } from "@/lib/logger";
 import { checkUserHasCredits } from "@/app/actions/credit-check";
-import { updateReplicateImageUsageAction } from "@/app/actions/usage-actions";
+import { updateImageUsageAction } from "@/app/actions/usage-actions";
 import {
   IMAGE_CONFIG,
   type ImageAspectRatio,
@@ -52,20 +52,16 @@ async function trackReplicateImageUsage(
   imageCount: number = 1
 ) {
   try {
-    // Fixed cost per image for Replicate - $0.02 per image
-    const costPerImage = 0.02;
-
     logger.debug("📊 Tracking Replicate image usage:", {
       modelName,
       imageCount,
-      costPerImage,
       elapsedTimeInSeconds,
     });
 
-    await updateReplicateImageUsageAction({
+    await updateImageUsageAction({
       modelName,
+      inferenceProvider: "replicate",
       imageCount,
-      costPerImage,
       elapsedTimeSeconds: elapsedTimeInSeconds,
     });
   } catch (error) {

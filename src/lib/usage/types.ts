@@ -91,7 +91,7 @@ export type TokenUsage = {
 };
 
 // Audio token usage
-export type AudioTokenUsage = {
+export type RealtimeTokenUsage = {
   textTokens: TokenUsage;
   audioTokens: TokenUsage;
   outputTextTokens?: number;
@@ -107,7 +107,10 @@ export type ImageGenerationParams = {
   imageTokens?: TokenUsage;
 };
 
-// Transcription parameters
-export type TranscriptionParams = {
-  sessionLengthMinutes: number;
+// Transcription token parameters (new token-based)
+export type TranscriptionTokenUsage = {
+  inputTokens: number;
+  outputTokens: number;
+  inputTextTokens: number;
+  inputAudioTokens: number;
 };

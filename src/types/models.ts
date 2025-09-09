@@ -5,22 +5,13 @@ export const AI_MODELS = {
   GEMINI: "gemini",
 } as const;
 
-// Latest model names with versions
-export const CURRENT_MODEL_NAMES = {
-  OPENAI: "gpt-realtime",
-  GEMINI: "gemini-2.0-flash-exp",
-} as const;
-
-// Model names without versions - used in pricing calculations
 export const MODEL_NAMES = {
   OPENAI_REALTIME: "gpt-realtime",
-  OPENAI_WHISPER: "whisper-1",
-  OPENAI_TRANSCRIBE: "gpt-4o-transcribe", // Better transcription model
+  OPENAI_TRANSCRIBE: "gpt-4o-transcribe",
   OPENAI_GPT4O: "gpt-4o",
-  OPENAI_GPT41: "gpt-4.1",
-  OPENAI_O3: "o3",
-  OPENAI_GPT_IMAGE: "gpt-image-1",
-  GEMINI: "gemini-2.0-flash-exp",
+  OPENAI_GPT5: "gpt-5",
+  OPENAI_GPT5_CHAT: "gpt-5-chat-latest",
+  REPLICATE_IMAGEN_FAST: "google/imagen-4-fast"
 } as const;
 
 export type Voice = {

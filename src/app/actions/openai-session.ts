@@ -1,7 +1,6 @@
 "use server";
 
 import {
-  CURRENT_MODEL_NAMES,
   DEFAULT_VOICE,
   MODEL_NAMES,
 } from "@/types/models";

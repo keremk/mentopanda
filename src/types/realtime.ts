@@ -19,6 +19,16 @@ export interface RealtimeUsage {
   };
 }
 
+export interface TranscriptionUsage {
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  inputTokenDetails: {
+    textTokens: number;
+    audioTokens: number;
+  };
+}
+
 export interface RealtimeError {
   type: 'connection' | 'audio' | 'session' | 'credits' | 'unknown';
   message: string;
@@ -60,6 +70,7 @@ export interface RealtimeProvider {
   disconnect(): Promise<void>;
   sendMessage(message: MessageItem): Promise<void>;
   getUsage(): RealtimeUsage | null;
+  getTranscriptionUsage?(): TranscriptionUsage | null;
   getTranscriptionModel?(): string | null;
   onStateChange(callback: (state: ConnectionState) => void): void;
   onError(callback: (error: RealtimeError) => void): void;

@@ -1,12 +1,86 @@
-import pricingData from "@/data/pricing.json";
+import { MODEL_NAMES } from "@/types/models";
 import {
   CREDIT_CONFIG,
-  IMAGE_CONFIG,
   type TokenUsage,
-  type AudioTokenUsage,
-  type ImageGenerationParams,
-  type TranscriptionParams,
+  type RealtimeTokenUsage,
+  type TranscriptionTokenUsage,
 } from "./types";
+
+type TokenPricing = {
+  input: number;
+  cachedInput: number;
+  output: number;
+};
+
+type RealtimePricing = {
+  text: TokenPricing;
+  audio: TokenPricing;
+};
+
+type GenerationPricing = {
+  costPerGeneration: number;
+};
+
+type TranscriptionPricing = {
+  text: TokenPricing;
+  audio: TokenPricing;
+};
+
+type PricingMap = {
+  [key: string]:
+    | TokenPricing
+    | RealtimePricing
+    | GenerationPricing
+    | TranscriptionPricing;
+};
+
+// Pricing data for text models (per 1M tokens)
+const MODEL_PRICING: PricingMap = {
+  [MODEL_NAMES.OPENAI_REALTIME]: {
+    text: {
+      input: 4.0,
+      cachedInput: 0.4,
+      output: 16.0,
+    },
+    audio: {
+      input: 32.0,
+      cachedInput: 0.4,
+      output: 64.0,
+    },
+  },
+  [MODEL_NAMES.OPENAI_GPT4O]: {
+    input: 2.5,
+    cachedInput: 1.25,
+    output: 10.0,
+  },
+  [MODEL_NAMES.OPENAI_GPT5]: {
+    input: 1.25,
+    cachedInput: 0.125,
+    output: 10.0,
+  },
+  [MODEL_NAMES.OPENAI_GPT5_CHAT]: {
+    input: 1.25,
+    cachedInput: 0.125,
+    output: 10.0,
+  },
+  [MODEL_NAMES.OPENAI_TRANSCRIBE]: {
+    text: {
+      input: 2.5,
+      cachedInput: 0.0,
+      output: 10.0,
+    },
+    audio: {
+      input: 6.0,
+      cachedInput: 0.0,
+      output: 0.0,
+    },
+  },
+  [MODEL_NAMES.REPLICATE_IMAGEN_FAST]: {
+    costPerGeneration: 0.02,
+  },
+} as const;
+
+const MILLION_TOKENS = 1_000_000;
 
 // Helper function to calculate credits from USD cost
 function calculateCreditsFromUSD(costUSD: number): number {
@@ -15,195 +89,73 @@ function calculateCreditsFromUSD(costUSD: number): number {
   );
 }
 
-// Get pricing for text models (per 1M tokens)
-function getTextModelPricing(
-  modelName: string
-): { input: number; cachedInput: number; output: number } | null {
-  const model = pricingData.latest_models_text_tokens.find(
-    (m) => m.model === modelName
-  );
-  if (!model) return null;
-
-  return {
-    input: model.input / 1_000_000, // Convert from per 1M to per token
-    cachedInput: (model.cached_input || model.input) / 1_000_000,
-    output: model.output / 1_000_000,
-  };
-}
-
-// Get pricing for image generation
-function getImagePricing(
-  modelName: string,
-  quality: string,
-  size: string
-): number {
-  const dimensions =
-    IMAGE_CONFIG.ASPECT_RATIO_TO_DIMENSIONS[
-      size as keyof typeof IMAGE_CONFIG.ASPECT_RATIO_TO_DIMENSIONS
-    ];
-  return (
-    (
-      pricingData.image_generation as Record<
-        string,
-        Record<string, Record<string, number>>
-      >
-    )[modelName]?.[quality]?.[dimensions] || 0
-  );
-}
-
-// Get transcription pricing (per minute)
-function getTranscriptionPricing(): number {
-  return pricingData.whisper.transcription_per_minute;
-}
-
-// Get Replicate image pricing (per image)
-function getReplicateImagePricing(modelName: string): number {
-  return (
-    pricingData.replicate_image_generation as Record<string, { per_image: number }>
-  )[modelName]?.per_image || 0;
-}
-
-// Get image token pricing (per 1M tokens)
-function getImageTokenPricing(
-  modelName: string
-): { input: number; cachedInput: number; output: number } | null {
-  const model = pricingData.image_tokens.find((m) => m.model === modelName);
-  if (!model) return null;
-
-  return {
-    input: model.input / 1_000_000, // Convert from per 1M to per token
-    cachedInput: (model.cached_input || model.input) / 1_000_000,
-    output: model.output / 1_000_000,
-  };
-}
-
-// Get realtime audio pricing
-function getRealtimePricing(modelName: string): {
-  inputText: number;
-  inputAudio: number;
-  outputText: number;
-  outputAudio: number;
-} | null {
-  // Find in text models for text pricing
-  const textModel = pricingData.latest_models_text_tokens.find(
-    (m) => m.model === modelName
-  );
-  if (!textModel) return null;
-
-  // Find in audio models for audio pricing
-  const audioModel = pricingData.image_tokens.find(
-    (m) => m.model === modelName
-  );
-  if (!audioModel) return null;
-
-  return {
-    inputText: textModel.input / 1_000_000,
-    inputAudio: audioModel.input / 1_000_000,
-    outputText: textModel.output / 1_000_000,
-    outputAudio: audioModel.output / 1_000_000,
-  };
-}
-
 // Pure credit calculation functions
 
 export function calculateTextModelCreditCost(
   modelName: string,
   tokenUsage: TokenUsage
 ): number {
-  const pricing = getTextModelPricing(modelName);
-
-  if (!pricing) {
-    return 0;
-  }
+  const pricing = MODEL_PRICING[
+    modelName as keyof typeof MODEL_PRICING
+  ] as TokenPricing;
+  if (!pricing) throw Error(`Token pricing for ${modelName} is missing!`);
 
   const cachedTokens = tokenUsage.cachedTokens || 0;
   const notCachedTokens = tokenUsage.notCachedTokens || 0;
   const outputTokens = tokenUsage.outputTokens || 0;
 
   const costUSD =
-    cachedTokens * pricing.cachedInput +
-    notCachedTokens * pricing.input +
-    outputTokens * pricing.output;
+    (cachedTokens * pricing.cachedInput) / MILLION_TOKENS +
+    (notCachedTokens * pricing.input) / MILLION_TOKENS +
+    (outputTokens * pricing.output) / MILLION_TOKENS;
 
   return calculateCreditsFromUSD(costUSD);
-}
-
-export function calculateImageCreditCost(
-  params: ImageGenerationParams
-): number {
-  let totalCostUSD = 0;
-
-  // 1. Image generation cost (based on quality and size)
-  const imageGenerationCost = getImagePricing(
-    params.modelName,
-    params.quality,
-    params.size
-  );
-  totalCostUSD += imageGenerationCost;
-
-  // 2. Input token processing costs (if any tokens are provided)
-  if (params.textTokens || params.imageTokens) {
-    const imageTokenPricing = getImageTokenPricing(params.modelName);
-
-    if (imageTokenPricing) {
-      // Text tokens in the prompt
-      if (params.textTokens) {
-        const cachedTokens = params.textTokens.cachedTokens || 0;
-        const notCachedTokens = params.textTokens.notCachedTokens || 0;
-        totalCostUSD +=
-          cachedTokens * imageTokenPricing.cachedInput +
-          notCachedTokens * imageTokenPricing.input;
-      }
-
-      // Image tokens in the prompt
-      if (params.imageTokens) {
-        const cachedTokens = params.imageTokens.cachedTokens || 0;
-        const notCachedTokens = params.imageTokens.notCachedTokens || 0;
-        totalCostUSD +=
-          cachedTokens * imageTokenPricing.cachedInput +
-          notCachedTokens * imageTokenPricing.input;
-      }
-    }
-  }
-
-  // Note: outputTokens are ignored as per pricing structure
-
-  return calculateCreditsFromUSD(totalCostUSD);
 }
 
 export function calculateConversationCreditCost(
   modelName: string,
-  audioUsage: AudioTokenUsage
+  tokenUsage: RealtimeTokenUsage
 ): number {
-  const pricing = getRealtimePricing(modelName);
+  const pricing = MODEL_PRICING[
+    modelName as keyof typeof MODEL_PRICING
+  ] as RealtimePricing;
 
-  if (!pricing) {
-    return 0;
-  }
+  if (!pricing)
+    throw Error(`Realtime conversation pricing for ${modelName} is missing!`);
 
-  const textCachedTokens = audioUsage.textTokens.cachedTokens || 0;
-  const textNotCachedTokens = audioUsage.textTokens.notCachedTokens || 0;
-  const audioCachedTokens = audioUsage.audioTokens.cachedTokens || 0;
-  const audioNotCachedTokens = audioUsage.audioTokens.notCachedTokens || 0;
-  const outputTextTokens = audioUsage.outputTextTokens || 0;
-  const outputAudioTokens = audioUsage.outputAudioTokens || 0;
+  const textCachedTokens = tokenUsage.textTokens.cachedTokens || 0;
+  const textNotCachedTokens = tokenUsage.textTokens.notCachedTokens || 0;
+  const audioCachedTokens = tokenUsage.audioTokens.cachedTokens || 0;
+  const audioNotCachedTokens = tokenUsage.audioTokens.notCachedTokens || 0;
+  const outputTextTokens = tokenUsage.outputTextTokens || 0;
+  const outputAudioTokens = tokenUsage.outputAudioTokens || 0;
 
   const costUSD =
-    textCachedTokens * pricing.inputText * 0.5 + // Assuming 50% discount for cached
-    textNotCachedTokens * pricing.inputText +
-    audioCachedTokens * pricing.inputAudio * 0.5 + // Assuming 50% discount for cached
-    audioNotCachedTokens * pricing.inputAudio +
-    outputTextTokens * pricing.outputText +
-    outputAudioTokens * pricing.outputAudio;
+    (textCachedTokens * pricing.text.cachedInput +
+      textNotCachedTokens * pricing.text.input +
+      audioCachedTokens * pricing.audio.cachedInput +
+      audioNotCachedTokens * pricing.audio.input +
+      outputTextTokens * pricing.text.output +
+      outputAudioTokens * pricing.audio.output) /
+    MILLION_TOKENS;
 
   return calculateCreditsFromUSD(costUSD);
 }
 
-export function calculateTranscriptionCreditCost(
-  params: TranscriptionParams
+export function calculateTranscriptionTokenCreditCost(
+  modelName: string,
+  tokenUsage: TranscriptionTokenUsage
 ): number {
-  const costPerMinute = getTranscriptionPricing();
-  const costUSD = params.sessionLengthMinutes * costPerMinute;
+  const pricing = MODEL_PRICING[
+    modelName as keyof typeof MODEL_PRICING
+  ] as TranscriptionPricing;
+
+  if (!pricing)
+    throw Error(`Transcription pricing for ${modelName} is missing!`);
+
+  const costUSD = (tokenUsage.inputAudioTokens * pricing.audio.input +
+    tokenUsage.inputTextTokens * pricing.text.input +
+    tokenUsage.outputTokens * pricing.text.output) / MILLION_TOKENS;
 
   return calculateCreditsFromUSD(costUSD);
 }
@@ -212,8 +164,12 @@ export function calculateReplicateImageCreditCost(
   modelName: string,
   imageCount: number
 ): number {
-  const costPerImage = getReplicateImagePricing(modelName);
-  const totalCostUSD = imageCount * costPerImage;
+  const pricing = MODEL_PRICING[
+    modelName as keyof typeof MODEL_PRICING
+  ] as GenerationPricing;
+  if (!pricing) throw Error(`Replicate pricing for ${modelName} is missing!`);
+
+  const totalCostUSD = imageCount * pricing.costPerGeneration;
 
   return calculateCreditsFromUSD(totalCostUSD);
 }
