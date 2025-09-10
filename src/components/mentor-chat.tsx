@@ -120,8 +120,11 @@ function MentorChatContent({
     logger.info("Mentor conversation ended");
   }, []);
 
-  const handleVoiceChatStop = useCallback(() => {
-    // Always call parent's onEndClick if provided, otherwise do nothing
+  const handleVoiceChatStop = useCallback(async (actualStopFn: () => Promise<void>) => {
+    // Call the actual stop function to disconnect voice chat
+    await actualStopFn();
+    
+    // Always call parent's onEndClick if provided
     if (onEndClick) {
       onEndClick();
     }

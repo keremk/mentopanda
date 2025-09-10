@@ -17,7 +17,7 @@ import { useUsage } from "@/contexts/usage-context";
 export interface VoiceChatProps {
   realtimeConfig: RealtimeConfig;
   avatarUrl?: string;
-  onStop: () => void;
+  onStop: (actualStopFn: () => Promise<void>) => void;
   countdownFrom?: number; // minutes to countdown from
   enableTextEntry?: boolean;
   onConversationStart?: () => Promise<void>; // Called when conversation starts
@@ -98,18 +98,7 @@ export function VoiceChat({
     }
   }, [error]);
 
-  // Timer management for countdown
-  useEffect(() => {
-    if (!countdownFrom || conversationState !== 'started') return;
-
-    const timeoutDuration = countdownFrom * 60 * 1000; // convert minutes to milliseconds
-    const timer = setTimeout(() => {
-      // Call onStop directly - parent can handle timeout behavior
-      onStop();
-    }, timeoutDuration);
-
-    return () => clearTimeout(timer);
-  }, [countdownFrom, conversationState, onStop]);
+  // Timer management will be set up after function declarations
 
   const handleStartConversation = useCallback(async () => {
     try {
@@ -184,12 +173,23 @@ export function VoiceChat({
     if (conversationState === 'stopped') {
       handleStartConversation();
     } else {
-      // First handle the conversation stop (usage tracking, etc.)
-      await handleStopConversation();
-      // Then let parent handle any dialog logic
-      onStop();
+      // Let parent handle dialog, pass the actual stop function
+      onStop(handleStopConversation);
     }
   }, [conversationState, handleStartConversation, handleStopConversation, onStop]);
+
+  // Timer management for countdown
+  useEffect(() => {
+    if (!countdownFrom || conversationState !== 'started') return;
+
+    const timeoutDuration = countdownFrom * 60 * 1000; // convert minutes to milliseconds
+    const timer = setTimeout(() => {
+      // Call onStop directly - parent can handle timeout behavior
+      onStop(handleStopConversation);
+    }, timeoutDuration);
+
+    return () => clearTimeout(timer);
+  }, [countdownFrom, conversationState, onStop, handleStopConversation]);
 
   const handleSendTextMessage = useCallback(async (text: string) => {
     if (conversationState !== 'started') return;

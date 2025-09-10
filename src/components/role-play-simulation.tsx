@@ -64,7 +64,7 @@ type LayoutProps = {
   onSkillsChange: (skills: Skills) => void;
   onTraitsChange: (traits: Traits) => void;
   realtimeConfig: RealtimeConfig;
-  handleVoiceChatStop: () => void;
+  handleVoiceChatStop: (actualStopFn: () => Promise<void>) => void;
   handleConversationStart: () => Promise<void>;
   handleConversationEnd: () => Promise<void>;
 };
@@ -132,6 +132,9 @@ function RolePlaySimulationContent({
   const [sessionDurationMinutes, setSessionDurationMinutes] = useState(
     Math.floor(HARD_TIMEOUT_MINUTES / 2) || 1 // Default to half, min 1
   );
+
+  // Store the actual stop function from VoiceChat
+  const actualStopFnRef = useRef<(() => Promise<void>) | null>(null);
 
   // Get current character skills and traits for the dialogs
   const currentCharacter = module.modulePrompt.characters[0];
@@ -206,6 +209,11 @@ function RolePlaySimulationContent({
 
   const handleEndWithoutSaving = useCallback(async () => {
     try {
+      // First call the actual stop function to disconnect voice chat
+      if (actualStopFnRef.current) {
+        await actualStopFnRef.current();
+      }
+
       await deleteHistoryEntry();
       clearTranscript();
       setChatState({
@@ -226,6 +234,11 @@ function RolePlaySimulationContent({
 
   const handleEndAndSave = useCallback(async () => {
     try {
+      // First call the actual stop function to disconnect voice chat
+      if (actualStopFnRef.current) {
+        await actualStopFnRef.current();
+      }
+
       if (historyEntryId) {
         await saveAndComplete();
         // Navigate immediately - this will unmount the component and close the dialog
@@ -285,7 +298,9 @@ function RolePlaySimulationContent({
     setChatState((prev) => ({ ...prev, isConversationActive: false }));
   }, []);
 
-  const handleVoiceChatStop = useCallback(() => {
+  const handleVoiceChatStop = useCallback((actualStopFn: () => Promise<void>) => {
+    // Store the actual stop function and show dialog
+    actualStopFnRef.current = actualStopFn;
     setChatState((prev) => ({ ...prev, showEndDialog: true }));
   }, []);
 
