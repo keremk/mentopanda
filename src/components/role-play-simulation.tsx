@@ -40,6 +40,7 @@ type LayoutProps = {
     isTimeout: boolean;
     showEndDialog: boolean;
     showNoCreditsDialog: boolean;
+    isSaving: boolean;
   };
   setChatState: React.Dispatch<
     React.SetStateAction<{
@@ -47,6 +48,7 @@ type LayoutProps = {
       isTimeout: boolean;
       showEndDialog: boolean;
       showNoCreditsDialog: boolean;
+      isSaving: boolean;
     }>
   >;
   audioRef: React.RefObject<HTMLAudioElement | null>;
@@ -99,6 +101,7 @@ function RolePlaySimulationContent({
     isTimeout: false,
     showEndDialog: false,
     showNoCreditsDialog: false,
+    isSaving: false,
   });
 
   const {
@@ -221,6 +224,7 @@ function RolePlaySimulationContent({
         isTimeout: false,
         showEndDialog: false,
         showNoCreditsDialog: false,
+        isSaving: false,
       });
     } catch (error) {
       logger.error("Failed to end without saving:", error);
@@ -234,6 +238,12 @@ function RolePlaySimulationContent({
 
   const handleEndAndSave = useCallback(async () => {
     try {
+      // Set saving state to show progress
+      setChatState(prev => ({
+        ...prev,
+        isSaving: true,
+      }));
+
       // First call the actual stop function to disconnect voice chat
       if (actualStopFnRef.current) {
         await actualStopFnRef.current();
@@ -241,24 +251,27 @@ function RolePlaySimulationContent({
 
       if (historyEntryId) {
         await saveAndComplete();
-        // Navigate immediately - this will unmount the component and close the dialog
-        router.push(`/assessments/${historyEntryId}`);
         
-        // Clean up state after navigation is initiated
+        // Clean up state and navigate
         clearTranscript();
         setChatState({
           isConversationActive: false,
           isTimeout: false,
           showEndDialog: false,
           showNoCreditsDialog: false,
+          isSaving: false,
         });
+        
+        // Navigate after state cleanup
+        router.push(`/assessments/${historyEntryId}`);
       }
     } catch (error) {
       logger.error("Failed to end and save:", error);
-      // On error, close the dialog
+      // On error, reset saving state and close the dialog
       setChatState(prev => ({
         ...prev,
         showEndDialog: false,
+        isSaving: false,
       }));
       toast({
         title: "Error",
@@ -352,6 +365,7 @@ function RolePlaySimulationContent({
         onStop={handleEndWithoutSaving}
         onStopAndSave={handleEndAndSave}
         isTimeout={chatState.isTimeout}
+        isSaving={chatState.isSaving}
       />
     </>
   );

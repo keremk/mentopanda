@@ -17,6 +17,7 @@ export type StopConversationDialogProps = {
   onStop: () => void;
   onStopAndSave?: () => void;
   isTimeout?: boolean;
+  isSaving?: boolean;
 };
 
 export function StopConversationDialog({
@@ -25,6 +26,7 @@ export function StopConversationDialog({
   onStop,
   onStopAndSave,
   isTimeout = false,
+  isSaving = false,
 }: StopConversationDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -40,41 +42,49 @@ export function StopConversationDialog({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={isTimeout ? undefined : onClose}>
+    <Dialog open={isOpen} onOpenChange={isTimeout || isSaving ? undefined : onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {isTimeout ? "Time's Up!" : "End Conversation"}
+            {isSaving 
+              ? "Saving Assessment..." 
+              : isTimeout 
+                ? "Time's Up!" 
+                : "End Conversation"}
           </DialogTitle>
           <DialogDescription>
-            {isTimeout
-              ? "Your conversation time has ended."
-              : "Choose how you would like to end this conversation."}
+            {isSaving
+              ? "Please wait while we save your conversation and prepare your assessment. This may take a moment."
+              : isTimeout
+                ? "Your conversation time has ended."
+                : "Choose how you would like to end this conversation."}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-3 mt-4">
-          {!isTimeout && (
-            <Button variant="ghost-brand" onClick={onClose}>
-              Cancel & Continue
-            </Button>
-          )}
-          <Button
-            variant="ghost-danger"
-            onClick={() => handleAction(onStop)}
-            disabled={isLoading}
-          >
-            End Without Saving
-          </Button>
-          {onStopAndSave && (
+        {!isSaving && (
+          <div className="flex flex-col gap-3 mt-4">
+            {!isTimeout && (
+              <Button variant="ghost-brand" onClick={onClose}>
+                Cancel & Continue
+              </Button>
+            )}
             <Button
-              variant="brand"
-              onClick={() => handleAction(onStopAndSave)}
+              variant="ghost-danger"
+              onClick={() => handleAction(onStop)}
               disabled={isLoading}
             >
-              End & Save Assessment
+              End Without Saving
             </Button>
-          )}
-        </div>
+            {onStopAndSave && (
+              <Button
+                variant="brand"
+                onClick={() => handleAction(onStopAndSave)}
+                disabled={isLoading}
+              >
+                End & Save Assessment
+              </Button>
+            )}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
