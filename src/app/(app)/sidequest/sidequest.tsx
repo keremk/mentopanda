@@ -24,6 +24,7 @@ type SidequestProps = {
 
 export function Sidequest({ isOnboarding = false, userName }: SidequestProps) {
   const [showEndDialog, setShowEndDialog] = useState(false);
+  const [actualStopFn, setActualStopFn] = useState<(() => Promise<void>) | null>(null);
   const router = useRouter();
   const { nextModuleId } = useAgentActions();
 
@@ -32,11 +33,17 @@ export function Sidequest({ isOnboarding = false, userName }: SidequestProps) {
     return getSideQuestCreatorPrompt(isOnboarding);
   };
 
-  const handleEndConversation = useCallback(() => {
+  const handleEndConversation = useCallback((stopFn?: () => Promise<void>) => {
+    setActualStopFn(() => stopFn || null);
     setShowEndDialog(true);
   }, []);
 
-  const handleConfirmEnd = useCallback(() => {
+  const handleConfirmEnd = useCallback(async () => {
+    // First call the actual stop function to disconnect voice chat
+    if (actualStopFn) {
+      await actualStopFn();
+    }
+
     setShowEndDialog(false);
 
     // If a module was created during the conversation, navigate to the simulation
@@ -44,7 +51,7 @@ export function Sidequest({ isOnboarding = false, userName }: SidequestProps) {
       router.push(`/simulation/${nextModuleId}`);
     }
     // If no module was created, just end the conversation
-  }, [nextModuleId, router]);
+  }, [actualStopFn, nextModuleId, router]);
 
   const handleCancelEnd = useCallback(() => {
     setShowEndDialog(false);

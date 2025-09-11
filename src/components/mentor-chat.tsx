@@ -14,7 +14,7 @@ const AVATAR_URL =
 export interface MentorChatProps {
   voicePromptFactory: () => Promise<VoicePrompt>;
   endButtonText?: string;
-  onEndClick?: () => void;
+  onEndClick?: (actualStopFn?: () => Promise<void>) => void;
   userName: string;
 }
 
@@ -120,13 +120,13 @@ function MentorChatContent({
     logger.info("Mentor conversation ended");
   }, []);
 
-  const handleVoiceChatStop = useCallback(async (actualStopFn: () => Promise<void>) => {
-    // Call the actual stop function to disconnect voice chat
-    await actualStopFn();
-    
-    // Always call parent's onEndClick if provided
+  const handleVoiceChatStop = useCallback((actualStopFn: () => Promise<void>) => {
+    // Pass the stop function to parent so they can decide when to call it
     if (onEndClick) {
-      onEndClick();
+      onEndClick(actualStopFn);
+    } else {
+      // If no parent handler, just stop immediately
+      actualStopFn();
     }
   }, [onEndClick]);
 

@@ -26,23 +26,36 @@ type PrepCoachProps = {
 export function PrepCoach({ moduleId, prepCoachPrompt, userName }: PrepCoachProps) {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [isGeneratingNotes, setIsGeneratingNotes] = useState(false);
+  const [actualStopFn, setActualStopFn] = useState<(() => Promise<void>) | null>(null);
   const router = useRouter();
 
   const voicePromptFactory = async (): Promise<VoicePrompt> => {
     return getPrepCoachVoicePrompt(moduleId, prepCoachPrompt);
   };
 
-  const handleEndSession = () => {
+  const handleEndSession = (stopFn?: () => Promise<void>) => {
+    setActualStopFn(() => stopFn || null);
     setShowEndDialog(true);
   };
 
-  const handleContinueWithoutNotes = () => {
+  const handleContinueWithoutNotes = async () => {
+    // First call the actual stop function to disconnect voice chat
+    if (actualStopFn) {
+      await actualStopFn();
+    }
+    
     setShowEndDialog(false);
     router.push(`/simulation/${moduleId}`);
   };
 
   const handleGenerateNotesAndContinue = async () => {
     setIsGeneratingNotes(true);
+    
+    // First call the actual stop function to disconnect voice chat
+    if (actualStopFn) {
+      await actualStopFn();
+    }
+    
     try {
       await generateNotesFromDraftAction(parseInt(moduleId));
       logger.info("Notes generated successfully from draft");
