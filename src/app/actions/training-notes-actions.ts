@@ -13,9 +13,12 @@ import {
   type CreateTrainingNoteInput,
   type UpdateTrainingNoteInput,
 } from "@/data/training-notes";
-import { z } from 'zod/v3';
+import { z } from "zod/v3";
 import { logger } from "@/lib/logger";
 import { checkUserHasCredits } from "./credit-check";
+const { generateText } = await import("ai");
+const { createOpenAI } = await import("@ai-sdk/openai");
+const { MODEL_NAMES } = await import("@/types/models");
 
 const createTrainingNoteSchema = z.object({
   moduleId: z.number().int().positive(),
@@ -167,13 +170,11 @@ export async function generateNotesFromDraftAction(
     // Get the current training note with draft content
     const currentNote = await getTrainingNote(supabase, validated);
     if (!currentNote || !currentNote.draft) {
+      logger.warn(`No draft notes were generated for module ${moduleId}`);
       throw new Error("No draft content found to generate notes from");
     }
 
     // Use OpenAI to generate organized notes from the draft
-    const { generateText } = await import("ai");
-    const { createOpenAI } = await import("@ai-sdk/openai");
-    const { MODEL_NAMES } = await import("@/types/models");
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
