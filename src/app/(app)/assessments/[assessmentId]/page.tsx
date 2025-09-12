@@ -66,8 +66,8 @@ export default async function AssessmentPage(props: Props) {
           <TabsTrigger value="assessment">Assessment</TabsTrigger>
           <TabsTrigger value="transcript">Transcript</TabsTrigger>
         </TabsList>
-        <TabsContent value="assessment" className="mt-6">
-          <Suspense key={historyEntry.assessmentCreated?.toString()}>
+        <TabsContent value="assessment" className="mt-6 data-[state=inactive]:hidden" forceMount>
+          <Suspense>
             <AssessmentContent
               moduleId={historyEntry.moduleId}
               entryId={historyEntry.id}

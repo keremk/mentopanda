@@ -1,16 +1,17 @@
 "use client";
 
 import { useCompletion } from "@ai-sdk/react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { updateHistoryEntryAction } from "@/app/actions/history-actions";
 import { Response } from "@/components/ai-elements/response";
 import { NoCreditsDialog } from "@/components/no-credits-dialog";
-import { useRouter } from "next/navigation";
 import { useApiKey } from "@/hooks/use-api-key";
 import { AlertTriangle, ThumbsUp, ThumbsDown, RotateCw } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger";
+import { useThrottledValue } from "@/hooks/use-throttled-value";
 
 type Props = {
   moduleId: number;
@@ -39,16 +40,21 @@ export default function AssessmentContent({
       entryId: entryId,
       apiKey: apiKey,
     },
-    onFinish: (prompt, completionResponse) => {
+    onFinish: (_prompt, completionResponse) => {
       updateHistoryEntryAction({
         id: entryId,
         assessmentText: completionResponse,
         assessmentCreated: true,
       });
+      // Batch state updates to prevent multiple re-renders
       setIsAssessmentCreated(true);
       setCurrentAssessmentText(completionResponse);
       setFeedbackGiven(null);
-      if (router) router.refresh();
+      // Refresh server props so future remounts have up-to-date data
+      // and do not re-trigger streaming unnecessarily.
+      try {
+        router.refresh();
+      } catch {}
     },
     onError: (err) => {
       logger.error("Error fetching assessment completion:", err);
@@ -65,11 +71,11 @@ export default function AssessmentContent({
         setShowNoCreditsDialog(true);
       }
     },
-    experimental_throttle: 500,
+    // Reduce churn from streaming updates; UI also throttles rendering
+    experimental_throttle: 150,
   });
 
   const [hasTriggered, setHasTriggered] = useState(false);
-  const [streamedContent, setStreamedContent] = useState("");
   const [isAssessmentCreated, setIsAssessmentCreated] =
     useState(assessmentCreated);
   const [currentAssessmentText, setCurrentAssessmentText] =
@@ -79,16 +85,17 @@ export default function AssessmentContent({
   );
   const [showNoCreditsDialog, setShowNoCreditsDialog] = useState(false);
 
+  // Throttle the visible text to avoid jittery re-renders while streaming
+  const throttledCompletion = useThrottledValue(completion, 150);
+
   // Check if there's a credit-related error
-  const hasCreditError =
+  const hasCreditError = useMemo(() => 
     error &&
     (error.message.includes("No credits available") ||
       error.message.includes("402") ||
-      showNoCreditsDialog);
+      showNoCreditsDialog)
+  , [error, showNoCreditsDialog]);
 
-  useEffect(() => {
-    setStreamedContent(completion);
-  }, [completion]);
 
   useEffect(() => {
     // Only trigger assessment generation if:
@@ -134,7 +141,6 @@ export default function AssessmentContent({
     // Reset all states for a fresh assessment generation
     setIsAssessmentCreated(false);
     setCurrentAssessmentText(undefined);
-    setStreamedContent("");
     setHasTriggered(false);
     setFeedbackGiven(null);
     setShowNoCreditsDialog(false);
@@ -205,19 +211,20 @@ export default function AssessmentContent({
     );
   }
 
+  // Prefer showing an existing assessment if present.
+  // While streaming, use the throttled completion for smoother updates.
+  const displayText =
+    (throttledCompletion && throttledCompletion.length > 0)
+      ? throttledCompletion
+      : (currentAssessmentText ?? "");
+
   return (
     <>
       <div className="space-y-4">
         <div className="prose dark:prose-invert max-w-none">
-          {isAssessmentCreated && currentAssessmentText ? (
-            <Response parseIncompleteMarkdown={true}>
-              {currentAssessmentText}
-            </Response>
-          ) : (
-            <Response parseIncompleteMarkdown={true}>
-              {streamedContent}
-            </Response>
-          )}
+          <Response parseIncompleteMarkdown={true}>
+            {displayText}
+          </Response>
         </div>
 
         {isAssessmentCreated && !error && (
