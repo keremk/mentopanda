@@ -22,9 +22,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { SkillsDialog } from "@/components/skills-dialog";
 import { TraitsDialog } from "@/components/traits-dialog";
-import { Skills, Traits } from "@/types/character-attributes";
+import { Traits } from "@/types/character-attributes";
 
 export function EditModuleCharacter() {
   const { state, dispatch, getModuleById, createAndAssignCharacterToModule } =
@@ -96,20 +95,6 @@ export function EditModuleCharacter() {
         characterId,
         field: "voice",
         value: voice === undefined ? null : voice,
-      },
-    });
-  };
-
-  const handleSkillsChange = (skills: Skills) => {
-    if (!selectedModule || !selectedModule.modulePrompt.characters[0]) return;
-    const characterId = selectedModule.modulePrompt.characters[0].id;
-    logger.debug("Skills changed to:", skills);
-    dispatch({
-      type: "UPDATE_MODULE_CHARACTER_SKILLS",
-      payload: {
-        moduleId: selectedModule.id,
-        characterId,
-        skills,
       },
     });
   };
@@ -265,11 +250,6 @@ export function EditModuleCharacter() {
                       Character Attributes
                     </label>
                     <div className="flex gap-2">
-                      <SkillsDialog
-                        mode="training-edit"
-                        skills={currentCharacter.skills}
-                        onSave={handleSkillsChange}
-                      />
                       <TraitsDialog
                         mode="training-edit"
                         traits={currentCharacter.traits}

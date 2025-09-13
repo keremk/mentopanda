@@ -18,36 +18,39 @@ export function TraitsEditor({ traits, onChange, disabled = false }: TraitsEdito
     });
   };
 
-  const traitLabels: Record<keyof Traits, { label: string; description: string; lowLabel: string; highLabel: string }> = {
+  const traitLabels: Record<
+    keyof Traits,
+    { label: string; description: string; lowLabel: string; highLabel: string }
+  > = {
     Outlook: {
       label: "Outlook",
-      description: "Valence: Positive/optimistic vs negative/critical",
+      description: "Critical/negative vs Optimistic/positive",
       lowLabel: "Critical",
-      highLabel: "Optimistic"
+      highLabel: "Optimistic",
     },
     Energy: {
-      label: "Energy", 
-      description: "Arousal: Lively/animated vs calm/measured",
+      label: "Energy",
+      description: "Calm/measured vs Animated/lively",
       lowLabel: "Calm",
-      highLabel: "Animated"
+      highLabel: "Animated",
     },
     Control: {
       label: "Control",
-      description: "Dominance: Assertive/directive vs deferential/yielding",
+      description: "Yielding/deferential vs Assertive/directive",
       lowLabel: "Yielding",
-      highLabel: "Assertive"
+      highLabel: "Assertive",
     },
     Confidence: {
       label: "Confidence",
-      description: "Certainty: Decisive/sure vs tentative/exploratory",
+      description: "Tentative/exploratory vs Decisive/sure",
       lowLabel: "Tentative",
-      highLabel: "Decisive"
+      highLabel: "Decisive",
     },
     Warmth: {
       label: "Warmth",
-      description: "Affiliation: Person-focused/friendly vs task-only/detached",
+      description: "Task-focused/detached vs People-focused/friendly",
       lowLabel: "Task-focused",
-      highLabel: "People-focused"
+      highLabel: "People-focused",
     },
   };
 

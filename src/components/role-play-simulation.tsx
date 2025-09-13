@@ -5,7 +5,6 @@ import { User } from "@/data/user";
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { RolePlayer } from "@/types/chat-types";
-import { SkillsDialog } from "@/components/skills-dialog";
 import { TraitsDialog } from "@/components/traits-dialog";
 import { useRouter } from "next/navigation";
 import { CountdownBar } from "@/components/countdown-bar";
@@ -19,7 +18,7 @@ import { SimulationContentTabs } from "@/components/simulation-content-tabs";
 import { TranscriptEntry } from "@/types/chat-types";
 import { createRolePlayingVoicePrompt } from "@/prompts/role-playing-voice-prompt";
 import { useSimulationCustomization } from "@/contexts/simulation-customization-context";
-import { Skills, Traits } from "@/types/character-attributes";
+import { Traits } from "@/types/character-attributes";
 import { VoiceChat } from "@/components/voice-chat";
 import { StopConversationDialog } from "@/components/stop-conversation-dialog";
 import { RealtimeConfig } from "@/types/realtime";
@@ -61,9 +60,7 @@ type LayoutProps = {
   handleEndAndSave: () => Promise<void>;
   transcriptEntries: TranscriptEntry[];
   notes: string | null;
-  effectiveSkills: Skills;
   effectiveTraits: Traits;
-  onSkillsChange: (skills: Skills) => void;
   onTraitsChange: (traits: Traits) => void;
   realtimeConfig: RealtimeConfig;
   handleVoiceChatStop: (actualStopFn: () => Promise<void>) => void;
@@ -105,9 +102,7 @@ function RolePlaySimulationContent({
   });
 
   const {
-    getEffectiveSkills,
     getEffectiveTraits,
-    setSkillsOverride,
     setTraitsOverride,
   } = useSimulationCustomization();
 
@@ -139,21 +134,18 @@ function RolePlaySimulationContent({
   // Store the actual stop function from VoiceChat
   const actualStopFnRef = useRef<(() => Promise<void>) | null>(null);
 
-  // Get current character skills and traits for the dialogs
+  // Get current character traits for the dialog
   const currentCharacter = module.modulePrompt.characters[0];
-  const currentSkills = currentCharacter?.skills;
   const currentTraits = currentCharacter?.traits;
-  const effectiveSkills = getEffectiveSkills(currentSkills);
   const effectiveTraits = getEffectiveTraits(currentTraits);
 
   // Create voice prompt from module
   const voicePrompt = useMemo(() => {
     return createRolePlayingVoicePrompt(
       module.modulePrompt,
-      effectiveSkills,
       effectiveTraits
     );
-  }, [module.modulePrompt, effectiveSkills, effectiveTraits]);
+  }, [module.modulePrompt, effectiveTraits]);
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -317,10 +309,6 @@ function RolePlaySimulationContent({
     setChatState((prev) => ({ ...prev, showEndDialog: true }));
   }, []);
 
-  const onSkillsChange = useCallback((skills: Skills) => {
-    setSkillsOverride(skills);
-  }, [setSkillsOverride]);
-
   const onTraitsChange = useCallback((traits: Traits) => {
     setTraitsOverride(traits);
   }, [setTraitsOverride]);
@@ -340,9 +328,7 @@ function RolePlaySimulationContent({
     handleEndAndSave,
     transcriptEntries,
     notes,
-    effectiveSkills,
     effectiveTraits,
-    onSkillsChange,
     onTraitsChange,
     realtimeConfig,
     handleVoiceChatStop,
@@ -381,9 +367,7 @@ function DesktopLayout({
   rolePlayers,
   transcriptEntries,
   notes,
-  effectiveSkills,
   effectiveTraits,
-  onSkillsChange,
   onTraitsChange,
   realtimeConfig,
   handleVoiceChatStop,
@@ -405,12 +389,6 @@ function DesktopLayout({
                 isActive={chatState.isConversationActive}
               />
               <div className="flex items-center gap-2">
-                <SkillsDialog
-                  disabled={chatState.isConversationActive}
-                  mode="simulation"
-                  skills={effectiveSkills}
-                  onSave={onSkillsChange}
-                />
                 <TraitsDialog
                   disabled={chatState.isConversationActive}
                   mode="simulation"
@@ -453,9 +431,7 @@ function MobileLayout({
   rolePlayers,
   transcriptEntries,
   notes,
-  effectiveSkills,
   effectiveTraits,
-  onSkillsChange,
   onTraitsChange,
   realtimeConfig,
   handleVoiceChatStop,
@@ -475,12 +451,6 @@ function MobileLayout({
             isActive={chatState.isConversationActive}
           />
           <div className="flex items-center gap-2">
-            <SkillsDialog
-              disabled={chatState.isConversationActive}
-              mode="simulation"
-              skills={effectiveSkills}
-              onSave={onSkillsChange}
-            />
             <TraitsDialog
               disabled={chatState.isConversationActive}
               mode="simulation"

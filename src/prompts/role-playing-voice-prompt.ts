@@ -1,13 +1,12 @@
 import { ModulePrompt } from "@/data/modules";
 import { DEFAULT_VOICE } from "@/types/models";
-import { Skills, Traits } from "@/types/character-attributes";
-import { getCompleteBehaviorPrompt } from "./behavior-selector";
+import { Traits } from "@/types/character-attributes";
+import { getCombinedTraitPrompt } from "./traits-prompts";
 import { logger } from "@/lib/logger";
 import { VoicePrompt } from "@/types/realtime";
 
 export function createRolePlayingVoicePrompt(
   modulePrompt: ModulePrompt,
-  skillsOverride?: Skills,
   traitsOverride?: Traits
 ): VoicePrompt {
   const yourName =
@@ -16,7 +15,6 @@ export function createRolePlayingVoicePrompt(
       : "";
 
   const character = modulePrompt.characters[0];
-  const effectiveSkills = skillsOverride || character?.skills;
   const effectiveTraits = traitsOverride || character?.traits;
 
   const yourCharacter = character
@@ -25,15 +23,11 @@ export function createRolePlayingVoicePrompt(
   `
     : "";
 
-  // Generate comprehensive behavior prompt using the advanced system
-  let behaviorPrompt = "";
-  if (effectiveSkills && effectiveTraits) {
-    const behaviorState = {
-      skills: effectiveSkills,
-      traits: effectiveTraits,
-    };
-    const completeBehaviorPrompt = getCompleteBehaviorPrompt(behaviorState);
-    behaviorPrompt = `\n\n${completeBehaviorPrompt.metaPrompt}`;
+  // Generate traits prompt
+  let traitsPrompt = "";
+  if (effectiveTraits) {
+    const traitPromptConfig = getCombinedTraitPrompt(effectiveTraits);
+    traitsPrompt = `\n\n${traitPromptConfig.metaPrompt}`;
   }
 
   const instructions = `
@@ -55,7 +49,7 @@ You are a role-playing agent. You will be given a scenario, your character trait
 # Character instructions
 ${yourName} 
 ${yourCharacter}
-${behaviorPrompt}
+${traitsPrompt}
 # Scenario
 The scenario you will be acting out is:
 ${modulePrompt.scenario}

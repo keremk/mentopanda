@@ -1,18 +1,15 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import { Skills, Traits, createDefaultSkills, createDefaultTraits } from "@/types/character-attributes";
+import { Traits, createDefaultTraits } from "@/types/character-attributes";
 
 type SimulationCustomizationState = {
-  skillsOverride: Skills | null;
   traitsOverride: Traits | null;
 };
 
 type SimulationCustomizationContextType = {
   state: SimulationCustomizationState;
-  setSkillsOverride: (skills: Skills | null) => void;
   setTraitsOverride: (traits: Traits | null) => void;
-  getEffectiveSkills: (originalSkills?: Skills) => Skills;
   getEffectiveTraits: (originalTraits?: Traits) => Traits;
   hasOverrides: () => boolean;
   clearOverrides: () => void;
@@ -30,20 +27,11 @@ export function SimulationCustomizationProvider({
   children 
 }: SimulationCustomizationProviderProps) {
   const [state, setState] = useState<SimulationCustomizationState>({
-    skillsOverride: null,
     traitsOverride: null,
   });
 
-  const setSkillsOverride = (skills: Skills | null) => {
-    setState(prev => ({ ...prev, skillsOverride: skills }));
-  };
-
   const setTraitsOverride = (traits: Traits | null) => {
     setState(prev => ({ ...prev, traitsOverride: traits }));
-  };
-
-  const getEffectiveSkills = (originalSkills?: Skills): Skills => {
-    return state.skillsOverride || originalSkills || createDefaultSkills();
   };
 
   const getEffectiveTraits = (originalTraits?: Traits): Traits => {
@@ -51,12 +39,11 @@ export function SimulationCustomizationProvider({
   };
 
   const hasOverrides = (): boolean => {
-    return state.skillsOverride !== null || state.traitsOverride !== null;
+    return state.traitsOverride !== null;
   };
 
   const clearOverrides = () => {
     setState({
-      skillsOverride: null,
       traitsOverride: null,
     });
   };
@@ -65,9 +52,7 @@ export function SimulationCustomizationProvider({
     <SimulationCustomizationContext.Provider
       value={{
         state,
-        setSkillsOverride,
         setTraitsOverride,
-        getEffectiveSkills,
         getEffectiveTraits,
         hasOverrides,
         clearOverrides,
