@@ -6,9 +6,8 @@ import { useRealtime } from "@/hooks/use-realtime";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Phone, PhoneOff } from "lucide-react";
 import { SpeakingBubble } from "@/components/speaking-bubble";
-import { ChatTextEntry } from "@/components/chat-text-entry";
 import { NoCreditsDialog } from "@/components/no-credits-dialog";
-import { RealtimeConfig, MessageItem } from "@/types/realtime";
+import { RealtimeConfig, ConnectionState } from "@/types/realtime";
 import { toast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { useUsage } from "@/contexts/usage-context";
@@ -19,26 +18,24 @@ export interface VoiceChatProps {
   avatarUrl?: string;
   onStop: (actualStopFn: () => Promise<void>) => void;
   countdownFrom?: number; // minutes to countdown from
-  enableTextEntry?: boolean;
   onConversationStart?: () => Promise<void>; // Called when conversation starts
   onConversationEnd?: () => Promise<void>; // Called when conversation ends
 }
 
-type VoiceChatState = 'stopped' | 'starting' | 'connected' | 'started';
 
 export function VoiceChat({
   realtimeConfig,
   avatarUrl,
   onStop,
   countdownFrom,
-  enableTextEntry = false,
   onConversationStart,
   onConversationEnd,
 }: VoiceChatProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [conversationState, setConversationState] = useState<VoiceChatState>('stopped');
+  const [conversationState, setConversationState] = useState<ConnectionState>('stopped');
   const [showNoCreditsDialog, setShowNoCreditsDialog] = useState(false);
   const [showAvatar, setShowAvatar] = useState(false);
+  const [isAudioAvailable, setIsAudioAvailable] = useState(false);
 
   // Use the provided audioRef in the config, but fall back to our local ref
   const effectiveAudioRef = realtimeConfig.audioRef || audioRef;
@@ -57,7 +54,6 @@ export function VoiceChat({
   const {
     connect,
     disconnect,
-    sendMessage,
     usage,
     transcriptionUsage,
     transcriptionModel,
@@ -72,14 +68,40 @@ export function VoiceChat({
   // Sync our local state with the realtime connection state
   useEffect(() => {
     setConversationState(connectionState);
-    
+
     // Show avatar when connected
     if (connectionState === 'connected') {
       setShowAvatar(true);
     } else if (connectionState === 'stopped') {
       setShowAvatar(false);
+      setIsAudioAvailable(false);
     }
   }, [connectionState]);
+
+  // Track audio availability separately from connection state
+  useEffect(() => {
+    const audioElement = effectiveAudioRef?.current;
+    if (!audioElement) return;
+
+    const handleLoadedData = () => setIsAudioAvailable(true);
+    const handleEmptied = () => setIsAudioAvailable(false);
+    const handleError = () => setIsAudioAvailable(false);
+
+    audioElement.addEventListener('loadeddata', handleLoadedData);
+    audioElement.addEventListener('emptied', handleEmptied);
+    audioElement.addEventListener('error', handleError);
+
+    // Check current state
+    if (audioElement.srcObject) {
+      setIsAudioAvailable(true);
+    }
+
+    return () => {
+      audioElement.removeEventListener('loadeddata', handleLoadedData);
+      audioElement.removeEventListener('emptied', handleEmptied);
+      audioElement.removeEventListener('error', handleError);
+    };
+  }, [effectiveAudioRef]);
 
   // Handle errors from the realtime provider
   useEffect(() => {
@@ -180,7 +202,7 @@ export function VoiceChat({
 
   // Timer management for countdown
   useEffect(() => {
-    if (!countdownFrom || conversationState !== 'started') return;
+    if (!countdownFrom || conversationState !== 'connected') return;
 
     const timeoutDuration = countdownFrom * 60 * 1000; // convert minutes to milliseconds
     const timer = setTimeout(() => {
@@ -191,32 +213,13 @@ export function VoiceChat({
     return () => clearTimeout(timer);
   }, [countdownFrom, conversationState, onStop, handleStopConversation]);
 
-  const handleSendTextMessage = useCallback(async (text: string) => {
-    if (conversationState !== 'started') return;
-    
-    const message: MessageItem = {
-      type: 'user',
-      content: text,
-      timestamp: Date.now(),
-    };
-    
-    try {
-      await sendMessage(message);
-    } catch (err) {
-      logger.error("Failed to send message:", err);
-      toast({
-        title: "Message Error",
-        description: "Failed to send message",
-        variant: "destructive",
-      });
-    }
-  }, [conversationState, sendMessage]);
 
 
   // Determine if conversation is active
   const isConversationActive = conversationState !== 'stopped';
-  const isConnecting = conversationState === 'starting';
-  const isAgentSpeaking = conversationState === 'started' && showAvatar;
+  const isConnecting = conversationState === 'connecting';
+  // Agent is speaking when connected and audio is available
+  const isAgentSpeaking = isConversationActive && showAvatar && isAudioAvailable;
 
   return (
     <div className="space-y-6">
@@ -279,15 +282,6 @@ export function VoiceChat({
         )}
       </div>
 
-      {/* Text Entry (Optional) */}
-      {enableTextEntry && isConversationActive && (
-        <div className="max-w-md mx-auto">
-          <ChatTextEntry 
-            onSendMessage={handleSendTextMessage}
-            isEnabled={conversationState === 'started'}
-          />
-        </div>
-      )}
 
 
       {/* No Credits Dialog */}

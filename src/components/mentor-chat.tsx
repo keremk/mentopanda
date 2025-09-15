@@ -173,7 +173,6 @@ function MentorChatContent({
         realtimeConfig={realtimeConfig}
         avatarUrl={AVATAR_URL}
         onStop={handleVoiceChatStop}
-        enableTextEntry={false} // Mentors typically don't need text input
         onConversationStart={handleConversationStart}
         onConversationEnd={handleConversationEnd}
       />

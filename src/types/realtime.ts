@@ -1,4 +1,4 @@
-export type ConnectionState = 'stopped' | 'starting' | 'connected' | 'started';
+export type ConnectionState = 'stopped' | 'connecting' | 'connected';
 
 export interface RealtimeUsage {
   totalTokens: number;

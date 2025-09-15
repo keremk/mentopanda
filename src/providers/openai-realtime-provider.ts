@@ -515,6 +515,7 @@ export function useOpenAIRealtimeProvider(
 
         switch (serverEvent.type) {
           case "session.created":
+            // Session is ready - we can now send/receive messages
             setState("connected");
             updateSession();
             break;
@@ -697,7 +698,7 @@ export function useOpenAIRealtimeProvider(
   const connect = useCallback(
     async (localStream: MediaStream): Promise<void> => {
       try {
-        setState("starting");
+        setState("connecting");
 
         const ephemeralKey = await tokenFetcher();
 
@@ -709,8 +710,8 @@ export function useOpenAIRealtimeProvider(
         if (audioElement) {
           audioElement.autoplay = true;
           connection.ontrack = (event) => {
+            // Just set up audio stream for playback, don't change connection state
             audioElement.srcObject = event.streams[0];
-            setState("started");
           };
         }
 

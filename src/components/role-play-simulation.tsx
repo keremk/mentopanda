@@ -404,7 +404,6 @@ function DesktopLayout({
               avatarUrl={rolePlayers[0]?.avatarUrl}
               onStop={handleVoiceChatStop}
               countdownFrom={sessionDurationMinutes}
-              enableTextEntry={true}
               onConversationStart={handleConversationStart}
               onConversationEnd={handleConversationEnd}
             />
@@ -465,7 +464,6 @@ function MobileLayout({
           avatarUrl={rolePlayers[0]?.avatarUrl}
           onStop={handleVoiceChatStop}
           countdownFrom={sessionDurationMinutes}
-          enableTextEntry={true}
           onConversationStart={handleConversationStart}
           onConversationEnd={handleConversationEnd}
         />
