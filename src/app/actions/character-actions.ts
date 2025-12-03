@@ -34,8 +34,8 @@ export async function updateCharacterAction(
   const result = await updateCharacter(supabase, characterId, data);
 
   // Revalidate only the affected data
-  revalidateTag("characters");
-  revalidateTag(`character-${characterId}`);
+  revalidateTag("characters", `max`);
+  revalidateTag(`character-${characterId}`, `max`);
 
   return result;
 }
@@ -55,7 +55,7 @@ export async function createCharacterAction(data: CreateCharacterInput) {
     const character = await createCharacter(supabase, validated);
 
     // Revalidate the characters list
-    revalidateTag("characters");
+    revalidateTag("characters", "max");
 
     return { success: true, data: character };
   } catch (error) {
@@ -72,7 +72,7 @@ export async function deleteCharacterAction(characterId: number) {
     await deleteCharacter(supabase, characterId);
 
     // Revalidate the characters list
-    revalidateTag("characters");
+    revalidateTag("characters", "max");
 
     return { success: true };
   } catch (error) {

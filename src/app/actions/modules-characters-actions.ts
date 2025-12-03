@@ -19,7 +19,7 @@ export async function insertModuleCharacterAction(
     await insertModuleCharacter(supabase, data);
 
     // Revalidate the module data
-    revalidateTag(`module-${data.moduleId}`);
+    revalidateTag(`module-${data.moduleId}`, `max`);
 
     return { success: true };
   } catch (error) {
@@ -39,7 +39,7 @@ export async function updateModuleCharacterPromptAction(
     await updateModuleCharacterPrompt(supabase, data);
 
     // Revalidate the module data
-    revalidateTag(`module-${data.moduleId}`);
+    revalidateTag(`module-${data.moduleId}`, `max`);
 
     return { success: true };
   } catch (error) {
@@ -57,8 +57,8 @@ export async function updateModuleCharacterAttributesAction(
     const supabase = await createClient();
     await updateModuleCharacterAttributes(supabase, data);
 
-    // Revalidate the module data
-    revalidateTag(`module-${data.moduleId}`);
+    // Revalidate the module data 
+    revalidateTag(`module-${data.moduleId}`, `max`);
 
     return { success: true };
   } catch (error) {

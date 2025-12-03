@@ -43,7 +43,7 @@ export async function updateTrainingAction(training: UpdateTrainingInput) {
   const result = await updateTraining(supabase, training);
 
   // Revalidate training cache
-  revalidateTag(`training-${training.id}`);
+  revalidateTag(`training-${training.id}` , `max`);
 
   return result;
 }
@@ -70,11 +70,11 @@ export async function toggleTrainingPublicStatusAction(
   const result = await toggleTrainingPublicStatus(supabase, trainingId, isPublic);
 
   // Revalidate training cache
-  revalidateTag(`training-${trainingId}`);
+  revalidateTag(`training-${trainingId}`, `max`);
   
   // If making public, also revalidate public trainings cache
   if (isPublic) {
-    revalidateTag("public-trainings");
+    revalidateTag("public-trainings", `max`);
   }
 
   return result;
@@ -98,7 +98,7 @@ export async function copyPublicTrainingToProjectAction(
     await copyPublicTrainingToProject(supabase, sourceTrainingId);
 
   // Revalidate training cache
-  revalidateTag(`training-${trainingId}`);
+  revalidateTag(`training-${trainingId}`, `max`);
 
   return { 
     trainingId, 

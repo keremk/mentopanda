@@ -26,7 +26,7 @@ export async function updateModuleAction(module: UpdateModuleInput) {
   const result = await updateModule(supabase, module);
 
   // Revalidate training cache since module changes affect training data
-  revalidateTag(`training-${module.trainingId}`);
+  revalidateTag(`training-${module.trainingId}`, `max`);
 
   return result;
 }
@@ -39,7 +39,7 @@ export async function createModuleAction(
   const result = await createModule(supabase, trainingId, module);
 
   // Revalidate training cache since new module affects training data
-  revalidateTag(`training-${trainingId}`);
+  revalidateTag(`training-${trainingId}`, `max`);
 
   return result;
 }
@@ -49,7 +49,7 @@ export async function deleteModuleAction(moduleId: number, trainingId: number) {
   const result = await deleteModule(supabase, moduleId, trainingId);
 
   // Revalidate training cache since module deletion affects training data
-  revalidateTag(`training-${trainingId}`);
+  revalidateTag(`training-${trainingId}`, `max`);
 
   return result;
 }
@@ -312,7 +312,7 @@ export async function generatePrepCoachAction(
     });
 
     // Revalidate the module cache
-    revalidateTag(`module-${moduleId}`);
+    revalidateTag(`module-${moduleId}`, `max`);
 
     return prepCoachResult.text;
   } catch (error) {
